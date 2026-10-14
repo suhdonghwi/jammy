@@ -4,7 +4,7 @@ import { Compartment, EditorState, StateEffect, StateField, type Extension } fro
 import { Decoration, EditorView, keymap, placeholder, type DecorationSet } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { useEffect, useRef, useState } from 'react';
-import { LoaderCircle, ShieldCheck } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import { useGame } from '../store/game';
 import { check } from '../director/play';
 
@@ -67,6 +67,8 @@ export function FormulaBox() {
   const spot = useGame((s) => s.spotlight);
   // errors appear only once typing pauses, so half-typed input doesn't flash errors
   const [settledError, setSettledError] = useState<{ message: string; span: { from: number; to: number } } | null>(null);
+  const errorNudge = useGame((s) => s.errorNudge);
+  const [shake, setShake] = useState(false);
   useEffect(() => {
     const err = formula && !formula.ok ? { message: formula.error.message, span: formula.error.span } : null;
     if (!err) {
@@ -76,6 +78,15 @@ export function FormulaBox() {
     const t = setTimeout(() => setSettledError(err), 800);
     return () => clearTimeout(t);
   }, [formula]);
+  // Check pressed with an invalid formula: show its error right away, with a nudge
+  useEffect(() => {
+    if (!errorNudge) return;
+    const f = useGame.getState().formula;
+    if (f && !f.ok) setSettledError({ message: f.error.message, span: f.error.span });
+    setShake(true);
+    const t = setTimeout(() => setShake(false), 340);
+    return () => clearTimeout(t);
+  }, [errorNudge]);
 
   useEffect(() => {
     const ghostExt = (g: string | null): Extension => placeholder(g ? `${g}   ⇥ Tab` : 'type a condition, e.g. x >= 0');
@@ -151,17 +162,23 @@ export function FormulaBox() {
   const canCheck = !busy && !checking && (mode !== 'tutorial' || awaitingCheck);
   return (
     <div className={`formula ${spot === 'formula' ? 'spotlight-wrap' : ''}`}>
-      {/* floats above the box, so it never pushes the layout around */}
-      {settledError && <div className="formula-error">{settledError.message}</div>}
-      <div className={`formula-row ${settledError ? 'has-error' : ''} ${spot === 'formula' ? 'spotlight' : ''}`}>
+      <div
+        className={`formula-row ${settledError ? 'has-error' : ''} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'shake' : ''}`}
+      >
         <span className="formula-label">area</span>
         <div className="formula-editor" ref={host} />
+        {/* inside the box: never covers the caption, never changes the layout */}
+        {settledError && (
+          <span className="formula-error" title={settledError.message}>
+            {settledError.message}
+          </span>
+        )}
         <button
           className={`btn primary icon-btn ${spot === 'check' ? 'spotlight' : ''}`}
           disabled={!canCheck}
           onClick={() => void check()}
         >
-          {checking ? <LoaderCircle size={16} strokeWidth={2.6} className="spin" /> : <ShieldCheck size={16} strokeWidth={2.4} />}
+          {checking && <LoaderCircle size={16} strokeWidth={2.6} className="spin" />}
           {checking ? 'Checking…' : 'Check'}
         </button>
       </div>

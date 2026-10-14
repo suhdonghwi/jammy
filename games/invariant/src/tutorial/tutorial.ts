@@ -47,13 +47,14 @@ function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone
       // a fast double click must not also press the next caption's button
       if (performance.now() - shownAt < 350) return;
       pendingNext = null;
-      game().patch({ spotlight: null });
+      game().patch({ spotlight: null, nextAction: null });
       if (gen !== generation) reject(new Aborted());
       else resolve();
     };
     const secondary = game().caption?.text === text ? game().caption?.secondary : undefined;
-    game().setCaption({ text, tone, action: { label, onClick: () => pendingNext?.() }, secondary });
-    game().patch({ spotlight: spot });
+    const action = { label, onClick: () => pendingNext?.() };
+    game().setCaption({ text, tone, action, secondary });
+    game().patch({ spotlight: spot, nextAction: action });
   });
 }
 
@@ -65,8 +66,10 @@ function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone
 async function beat(
   gen: number,
   text: string,
-  opts: { prepare?: () => Promise<void> | void; label?: string; spot?: Spot; settle?: number } = {},
+  opts: { prepare?: () => Promise<void> | void; label?: string; spot?: Spot; settle?: number; callouts?: Game['callouts'] } = {},
 ): Promise<void> {
+  // small labelled tags in the scene for what this beat talks about (cleared otherwise)
+  useGame.setState({ callouts: opts.callouts ?? [] });
   say(text, opts.spot ?? null, 'info', opts.label ?? 'Next');
   if (opts.prepare) await opts.prepare();
   guard(gen);
@@ -113,6 +116,10 @@ function normalize(text: string): string | null {
 export function tutorialCheck() {
   const g = game();
   if (!pendingCheck || !expected) return;
+  if (g.formula && !g.formula.ok) {
+    useGame.setState((st) => ({ errorNudge: st.errorNudge + 1 }));
+    return;
+  }
   const got = normalize(g.formulaText);
   if (!got || !expected.accepted.includes(got)) {
     g.setCaption({
@@ -130,7 +137,7 @@ export function stopTutorial() {
   pendingCheck = null;
   pendingNext = null;
   expected = null;
-  useGame.setState({ awaitingCheck: false, spotlight: null, tutorialAllow: { step: false, run: false, eggs: false } });
+  useGame.setState({ awaitingCheck: false, spotlight: null, nextAction: null, tutorialAllow: { step: false, run: false, eggs: false } });
 }
 
 /** Ask for one specific formula, wait for Check, and run the given rules. */
@@ -139,7 +146,7 @@ async function attempt(gen: number, formula: string, alternatives: string[], rul
     display: formula,
     accepted: [formula, ...alternatives].map((t) => normalize(t)).filter((t): t is string => !!t),
   };
-  game().patch({ ghost: formula, showMe: formula });
+  game().patch({ ghost: formula, showMe: formula, callouts: [] });
   for (;;) {
     await new Promise<void>((resolve, reject) => {
       pendingCheck = () => {
@@ -184,7 +191,8 @@ async function script(gen: number) {
   guard(gen);
 
   // ---------------- Act 1: The world ----------------
-  await beat(gen, 'This frog is a program state. It sits at i = 0, n = 3 — its position on the plane is its values.', {
+  await beat(gen, 'This frog is a program state. It sits at `i = 0, n = 3` — its position on the plane is its values.', {
+    callouts: [{ x: 0, y: 3, text: 'i = 0, n = 3', tone: 'info' }],
     prepare: async () => {
       g().setReveal({ axes: true });
       director.spawnReal(st(0, 3));
@@ -201,17 +209,22 @@ async function script(gen: number) {
   allow({ step: true });
   say('Press Step to run the loop body once.', 'step');
   await waitEvent(gen, 'stepped');
-  say('One hop = one run of the loop body: i went from 0 to 1. Keep pressing Step until the frog stops.', 'step');
+  say('One hop = one run of the loop body: `i` went from `0` to `1`. Keep pressing Step until the frog stops.', 'step');
   await waitEvent(gen, 'stepped', realFrogsStopped);
   allow({});
 
   await beat(
     gen,
-    'Now `i < n` is false (3 < 3 fails), so the loop ends and the frog stops. Striped tiles are where the loop stops. Hover over any tile to preview where a frog there would hop.',
-    { prepare: () => g().setReveal({ stop: true, hover: true }), settle: 1000 },
+    'Now `i < n` is false (`3 < 3` fails), so the loop ends and the frog stops. Striped tiles are where the loop stops. Hover over any tile to preview where a frog there would hop.',
+    {
+      prepare: () => g().setReveal({ stop: true, hover: true }),
+      settle: 1000,
+      callouts: [{ x: 3, y: 3, text: 'stops: 3 < 3 is false', tone: 'info' }],
+    },
   );
 
-  await beat(gen, 'Where can frogs start? Anywhere the precondition allows: i starts at 0, and n can be any number ≥ 0. Each egg is one possible input.', {
+  await beat(gen, 'Where can frogs start? Anywhere the precondition allows: `i` starts at `0`, and `n` can be any number `≥ 0`. Each egg is one possible input.', {
+    callouts: [{ x: 0, y: 2, text: 'egg: input n = 2', tone: 'info' }],
     prepare: () => {
       director.clearFrogs();
       g().setReveal({ eggs: true });
@@ -220,11 +233,13 @@ async function script(gen: number) {
   });
 
   await beat(gen, 'What we want when the loop ends: `i == n`. The amber pools are the goals — every frog should finish on one.', {
+    callouts: [{ x: 2, y: 2, text: 'goal: i == n', tone: 'info' }],
     prepare: () => g().setReveal({ goals: true }),
     settle: 1000,
   });
 
   g().setReveal({ run: true });
+  useGame.setState({ callouts: [] });
   allow({ run: true });
   say('Press Run to hatch every egg and run all the frogs at once.', 'run');
   await waitEvent(gen, 'runDone', realFrogsStopped);
@@ -233,7 +248,7 @@ async function script(gen: number) {
 
   await beat(
     gen,
-    'But how many eggs are there? n can be any number — the eggs never end. Click a few eggs to run them: they all work… but watching them one at a time can never cover them all.',
+    'But how many eggs are there? `n` can be any number — the eggs never end. Click a few eggs to run them: they all work… but watching them one at a time can never cover them all.',
     {
       label: 'So how can we check them all?',
       prepare: async () => {
@@ -269,7 +284,10 @@ async function script(gen: number) {
     guard(gen);
     await holdCaption(gen);
   }
-  await beat(gen, 'Rule 1 — Init: every egg must sit on your area. Only the egg at n = 0 was on `i == n`.', { spot: 'lights' });
+  await beat(gen, 'Rule 1 — Init: every egg must sit on your area. Only the egg at `n = 0` was on `i == n`.', {
+    spot: 'lights',
+    callouts: [{ x: 0, y: 0, text: 'on your area', tone: 'good' }],
+  });
 
   // B — Preservation
   g().setReveal({ lights: ['init', 'pres'] });
@@ -286,11 +304,12 @@ async function script(gen: number) {
   });
 
   // C — Init and Preservation hold; follow one frog; then Exit
-  say('Frogs start at i = 0 and only ever move right. Type `i >= 0`, then Check.', 'check');
+  say('Frogs start at `i = 0` and only ever move right. Type `i >= 0`, then Check.', 'check');
   await attempt(gen, 'i >= 0', ['0 <= i'], ['init', 'pres']);
   await beat(gen, 'Both rules hold for `i >= 0`. Let’s follow one frog to see what that means.', { spot: 'lights' });
 
   await beat(gen, 'It starts on your area — that’s Init.', {
+    callouts: [{ x: 0, y: 3, text: 'Init', tone: 'good' }],
     prepare: async () => {
       director.clearFrogs();
       await cameraRig.lookAtTile(1.5, 3, 12);
@@ -303,11 +322,16 @@ async function script(gen: number) {
     await director.sleep(650);
     await director.step(true);
     guard(gen);
+    const f = frogWorld.frogs[0];
+    if (f) useGame.setState({ callouts: [{ x: f.x, y: f.y, text: 'still on your area', tone: 'good' }] });
   }
   await director.sleep(500);
-  await beat(gen, 'So it can never leave your area, no matter how many hops. When the loop ends, it is still somewhere on your area. Is that enough?');
+  await beat(gen, 'So it can never leave your area, no matter how many hops. When the loop ends, it is still somewhere on your area. Is that enough?', {
+    callouts: useGame.getState().callouts,
+  });
 
   g().setReveal({ lights: ['init', 'pres', 'exit'] });
+  useGame.setState({ callouts: [] });
   director.clearFrogs();
   say('Rule 3 — Exit: a frog that stops on your area must be on a goal. Let’s check it.', 'lights');
   await director.sleep(1800);
@@ -317,7 +341,7 @@ async function script(gen: number) {
   const ev = exitRes?.verdicts.exit;
   if (ev?.status === 'fail') {
     await director.playCounterexample(ev.cex, {
-      extra: '“But i never passes n!” — Your area doesn’t say that. It claims a frog could be anywhere on it, and the hand is just taking you at your word.',
+      extra: '“But `i` never passes `n`!” — Your area doesn’t say that. It claims a frog could be anywhere on it, and the hand is just taking you at your word.',
       reserveNext: true,
     });
     guard(gen);
@@ -326,13 +350,13 @@ async function script(gen: number) {
   await beat(gen, 'Rule 3 — Exit. To fix it, shrink your area so it stops claiming impossible frogs.');
 
   // D — all three
-  say('Add what every real frog knows: it never passes n. Type `0 <= i <= n`, then Check.', 'check');
+  say('Add what every real frog knows: it never passes `n`. Type `0 <= i <= n`, then Check.', 'check');
   await attempt(gen, '0 <= i <= n', ['i >= 0 && i <= n', 'i <= n && i >= 0'], ['init', 'pres', 'exit']);
   await director.playRain();
   guard(gen);
   await beat(
     gen,
-    'Every egg starts on your area, no hop leaves it, and every frog that stops on it is on a goal. That area is a loop invariant — and you just proved the loop correct for every n.',
+    'Every egg starts on your area, no hop leaves it, and every frog that stops on it is on a goal. That area is a loop invariant — and you just proved the loop correct for every `n`.',
     { label: 'Finish' },
   );
   useGame.setState({ showRules: true });

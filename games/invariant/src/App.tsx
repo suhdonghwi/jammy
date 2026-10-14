@@ -4,6 +4,7 @@ import { useGame } from './store/game';
 import { CaptionBar, CodePanel, ElevatorToast, HoverReadout, PondGauge, RunControls, TopBar } from './ui/Hud';
 import { FormulaBox } from './ui/FormulaBox';
 import { HomeOverlay, RulesCard } from './ui/Home';
+import { RevealSlot } from './ui/RevealSlot';
 import { browserZ3 } from './checker/z3-browser';
 
 export function App() {
@@ -37,8 +38,12 @@ export function App() {
           </div>
           <div className="hud-bottom">
             <CaptionBar />
-            {reveal.formula && <FormulaBox />}
-            <RunControls />
+            <RevealSlot open={reveal.formula}>
+              <FormulaBox />
+            </RevealSlot>
+            <RevealSlot open={reveal.run || reveal.step}>
+              <RunControls />
+            </RevealSlot>
           </div>
         </div>
       )}

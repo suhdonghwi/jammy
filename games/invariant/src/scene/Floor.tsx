@@ -92,28 +92,60 @@ void main() {
   if (uShowStop > 0.002) {
     float w = 0.045;
     float line = 0.0;
-    // nearest vertical grid line x = kx + 0.5, between tiles kx and kx + 1
-    int kx = int(floor(p.x));
-    float dx = abs(p.x - (float(kx) + 0.5));
-    int ty = int(floor(p.y + 0.5));
-    float fy = p.y - float(ty);
-    bool edgeV = edgeBetween(ivec3(kx, ty, uPond), ivec3(kx + 1, ty, uPond));
-    if (!edgeV && abs(fy) > 0.5 - w) {
-      int ty2 = ty + (fy > 0.0 ? 1 : -1);
-      edgeV = edgeBetween(ivec3(kx, ty2, uPond), ivec3(kx + 1, ty2, uPond));
+    // Near a grid vertex where the boundary turns, follow a quarter-circle arc
+    // (radius RC) instead of a sharp corner.
+    const float RC = 0.24;
+    vec2 V = floor(p) + 0.5;
+    vec2 local = p - V;
+    ivec3 cSW = ivec3(int(floor(p.x)), int(floor(p.y)), uPond);
+    ivec3 cSE = cSW + ivec3(1, 0, 0);
+    ivec3 cNW = cSW + ivec3(0, 1, 0);
+    ivec3 cNE = cSW + ivec3(1, 1, 0);
+    bool inCorner = max(abs(local.x), abs(local.y)) < RC
+      && L_exists(cSW) && L_exists(cSE) && L_exists(cNW) && L_exists(cNE);
+    if (inCorner) {
+      bool sw = stopAt(cSW);
+      bool se = stopAt(cSE);
+      bool nw = stopAt(cNW);
+      bool ne = stopAt(cNE);
+      bool up = nw != ne;
+      bool down = sw != se;
+      bool right = ne != se;
+      bool left = nw != sw;
+      int count = int(up) + int(down) + int(right) + int(left);
+      float d = 1e3;
+      if (count == 2 && up && down) d = abs(local.x);
+      else if (count == 2 && left && right) d = abs(local.y);
+      else if (count == 2) {
+        vec2 dir = vec2(right ? 1.0 : -1.0, up ? 1.0 : -1.0);
+        d = abs(length(local - dir * RC) - RC);
+      } else if (count == 4) d = min(abs(local.x), abs(local.y));
+      float fwl = length(fw);
+      line = 1.0 - smoothstep(w - fwl, w + fwl, d);
+    } else {
+      // nearest vertical grid line x = kx + 0.5, between tiles kx and kx + 1
+      int kx = int(floor(p.x));
+      float dx = abs(p.x - (float(kx) + 0.5));
+      int ty = int(floor(p.y + 0.5));
+      float fy = p.y - float(ty);
+      bool edgeV = edgeBetween(ivec3(kx, ty, uPond), ivec3(kx + 1, ty, uPond));
+      if (!edgeV && abs(fy) > 0.5 - w) {
+        int ty2 = ty + (fy > 0.0 ? 1 : -1);
+        edgeV = edgeBetween(ivec3(kx, ty2, uPond), ivec3(kx + 1, ty2, uPond));
+      }
+      if (edgeV) line = max(line, 1.0 - smoothstep(w - fw.x, w + fw.x, dx));
+      // nearest horizontal grid line y = ky + 0.5, between tiles ky and ky + 1
+      int ky = int(floor(p.y));
+      float dy = abs(p.y - (float(ky) + 0.5));
+      int tx = int(floor(p.x + 0.5));
+      float fx = p.x - float(tx);
+      bool edgeH = edgeBetween(ivec3(tx, ky, uPond), ivec3(tx, ky + 1, uPond));
+      if (!edgeH && abs(fx) > 0.5 - w) {
+        int tx2 = tx + (fx > 0.0 ? 1 : -1);
+        edgeH = edgeBetween(ivec3(tx2, ky, uPond), ivec3(tx2, ky + 1, uPond));
+      }
+      if (edgeH) line = max(line, 1.0 - smoothstep(w - fw.y, w + fw.y, dy));
     }
-    if (edgeV) line = max(line, 1.0 - smoothstep(w - fw.x, w + fw.x, dx));
-    // nearest horizontal grid line y = ky + 0.5, between tiles ky and ky + 1
-    int ky = int(floor(p.y));
-    float dy = abs(p.y - (float(ky) + 0.5));
-    int tx = int(floor(p.x + 0.5));
-    float fx = p.x - float(tx);
-    bool edgeH = edgeBetween(ivec3(tx, ky, uPond), ivec3(tx, ky + 1, uPond));
-    if (!edgeH && abs(fx) > 0.5 - w) {
-      int tx2 = tx + (fx > 0.0 ? 1 : -1);
-      edgeH = edgeBetween(ivec3(tx2, ky, uPond), ivec3(tx2, ky + 1, uPond));
-    }
-    if (edgeH) line = max(line, 1.0 - smoothstep(w - fw.y, w + fw.y, dy));
     col = mix(col, uEdge, line * uShowStop);
   }
 

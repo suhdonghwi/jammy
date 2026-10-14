@@ -1,6 +1,6 @@
 import { allLevels, levels } from '../levels/defs';
 import { RULES, type LevelDef } from '../levels/level';
-import { game } from '../store/game';
+import { game, useGame } from '../store/game';
 import { frogWorld } from '../scene/frogSim';
 import { director } from './director';
 import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';
@@ -42,7 +42,8 @@ export async function check() {
     return;
   }
   if (!g.formula || !g.formula.ok) {
-    g.setCaption({ text: g.formula ? g.formula.error.message : 'Type a formula for your area first.', tone: 'fail' });
+    // the formula box shows the error itself; don't duplicate it in the caption
+    useGame.setState((s) => ({ errorNudge: s.errorNudge + 1 }));
     return;
   }
   frogWorld.clear('test');

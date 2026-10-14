@@ -97,10 +97,16 @@ export interface Game {
   stepping: boolean;
   /** Tutorial: the current step is waiting for the learner to press Check. */
   awaitingCheck: boolean;
+  /** Tutorial: the Next action the script is currently waiting on (so replays can restore it). */
+  nextAction: { label: string; onClick: () => void } | null;
   /** Tutorial: which controls the current beat lets the learner use. */
   tutorialAllow: { step: boolean; run: boolean; eggs: boolean };
   /** Tutorial: the UI element the caption is talking about. */
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
+  /** Bumped when Check is pressed with an invalid formula (shows the inline error at once). */
+  errorNudge: number;
+  /** Tutorial: small labelled tags on tiles. */
+  callouts: { x: number; y: number; text: string; tone: 'info' | 'good' }[];
   /** Where the last check failed (tile in the focused pond) and why. */
   failMark: { x: number; y: number; label: string; t0: number } | null;
 
@@ -143,9 +149,12 @@ export const useGame = create<Game>((set, get) => ({
   pitfallMessage: null,
   cinematic: false,
   failMark: null,
+  errorNudge: 0,
+  callouts: [],
   stepping: false,
   awaitingCheck: false,
   tutorialAllow: { step: false, run: false, eggs: false },
+  nextAction: null,
   spotlight: null,
 
   openLevel(def, mode) {
@@ -172,9 +181,11 @@ export const useGame = create<Game>((set, get) => ({
       pitfallMessage: null,
       elevating: false,
       failMark: null,
+      callouts: [],
       stepping: false,
       awaitingCheck: false,
       tutorialAllow: { step: false, run: false, eggs: false },
+      nextAction: null,
       spotlight: null,
     });
   },

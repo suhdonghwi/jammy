@@ -47,7 +47,8 @@ function caption(text: string, tone: CaptionTone = 'info', action?: { label: str
   game().setCaption({ text, tone, action });
 }
 
-const fmt = (s: State) => `(${showState(lvl(), s)})`;
+/** A state as inline code in captions, e.g. `n = 0, i = 1`. */
+const fmt = (s: State) => '`' + showState(lvl(), s) + '`';
 
 /** Mark the tile where a check failed, with a short reason. */
 function markFailure(x: number, y: number, label: string) {
@@ -82,10 +83,12 @@ async function handOut() {
 
 /**
  * The hand brings a test frog sitting in its cupped, upturned palm, lowers it
- * straight down over the tile, then slips its palm away as the frog hops off.
+ * just behind the target tile, and the frog hops forward off the palm — over
+ * the curled fingertips — onto the tile. Then the hand withdraws.
  */
 const PALM_TOP = 0.125; // palm surface above the hand's origin when palm-up
-const SET_DOWN = 0.5; // palm surface height above the tile when releasing
+const SET_DOWN = 0.42; // palm surface height above the tile when releasing
+const BEHIND = 0.6; // the palm waits this far behind the tile (away from the camera)
 async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   const L = lvl();
   const x = Number(s[L.view.x]);
@@ -93,23 +96,23 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   const base = field.heightAt(x, y) * SLAB_H;
   const p = above(x, y);
   // the frog rides on the palm: its height follows the hand
-  const f = frogWorld.add(L, 'test', s, { carried: 6 });
+  const f = frogWorld.add(L, 'test', s, { carried: 6, carryOff: { dx: 0, dy: BEHIND } });
   const follow = () => {
     f.carried = handState.y + PALM_TOP - base;
   };
-  Object.assign(handState, { x: p.x, y: base + 6, z: p.z, curl: 0.5, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.3, palmUp: 1, visible: 0 });
+  Object.assign(handState, { x: p.x, y: base + 6, z: p.z - BEHIND, curl: 0.45, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.3, palmUp: 1, visible: 0 });
   follow();
   await tween(handState, { visible: 1, y: base + SET_DOWN - PALM_TOP + 0.6, duration: 0.65, ease: 'power3.out', onUpdate: follow });
   if (!tok.alive) return null;
-  await tween(handState, { y: base + SET_DOWN - PALM_TOP, duration: 0.35, ease: 'power2.inOut', onUpdate: follow });
+  await tween(handState, { y: base + SET_DOWN - PALM_TOP, curl: 0.3, duration: 0.35, ease: 'power2.inOut', onUpdate: follow });
   if (!tok.alive) return null;
-  // release: the palm slides back out from under the frog as it hops down
+  // the frog hops forward and down onto the tile, clearing the fingertips
   f.carried = undefined;
-  f.drop = { t0: now(), dur: 0.42, from: SET_DOWN, arc: 0.22 };
-  void tween(handState, { z: p.z - 1.1, y: base + 1.0, curl: 0.15, duration: 0.3, ease: 'power2.in' });
-  await sleep(450);
+  f.carryOff = undefined;
+  f.drop = { t0: now(), dur: 0.5, from: SET_DOWN, arc: 0.32, dx: 0, dy: BEHIND };
+  await sleep(380);
   if (!tok.alive) return null;
-  await tween(handState, { palmUp: 0, tilt: 0, y: base + 2.2, duration: 0.35, ease: 'power2.out' });
+  await tween(handState, { palmUp: 0, tilt: 0, curl: 0.15, y: base + 2.2, z: p.z - BEHIND - 0.8, duration: 0.45, ease: 'power2.inOut' });
   return f;
 }
 
@@ -391,8 +394,15 @@ export const director = {
       if (opts.extra) text += ` ${opts.extra}`;
       const replay = { label: 'Replay', onClick: () => void director.playCounterexample(cex, opts) };
       if (opts.reserveNext) {
-        // the tutorial will add Next here: reserve its space now so nothing shifts
-        game().setCaption({ text, tone: 'fail', action: { label: 'Next', onClick: () => {}, pending: true }, secondary: replay });
+        // The tutorial adds Next here: if it's already waiting (this is a replay),
+        // keep its live button; otherwise reserve the space so nothing shifts.
+        const waiting = game().nextAction;
+        game().setCaption({
+          text,
+          tone: 'fail',
+          action: waiting ?? { label: 'Next', onClick: () => {}, pending: true },
+          secondary: replay,
+        });
       } else caption(text, 'fail', replay);
       await sleep(600);
       if (tok.alive) await handOut();

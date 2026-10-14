@@ -17,7 +17,10 @@ export interface FrogSim {
   y: number;
   hop?: { fx: number; fy: number; tx: number; ty: number; t0: number; dur: number };
   /** Dropping from a height (placed by the hand). */
-  drop?: { t0: number; dur: number; from: number; arc?: number };
+  /** Falling/hopping down; (dx, dy) is a starting tile offset that eases to 0. */
+  drop?: { t0: number; dur: number; from: number; arc?: number; dx?: number; dy?: number };
+  /** Tile offset while carried (e.g. sitting on a palm behind the tile). */
+  carryOff?: { dx: number; dy: number };
   /** Extra height while carried by the hand. */
   carried?: number;
   hatchT0?: number;

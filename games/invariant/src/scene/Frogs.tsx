@@ -130,6 +130,9 @@ function pose(f: FrogSim, t: number): Pose {
     const raw = (t - f.drop.t0) / f.drop.dur;
     const u = clamp01(raw);
     h += f.drop.from * (1 - u * u) + (f.drop.arc ?? 0) * bump(u);
+    const e = u * u * (3 - 2 * u);
+    x += (f.drop.dx ?? 0) * (1 - e);
+    ty += (f.drop.dy ?? 0) * (1 - e);
     if (raw >= 1 && !f.touched) {
       f.touched = true;
       dropLandings.push(f);
@@ -137,7 +140,13 @@ function pose(f: FrogSim, t: number): Pose {
     squash += -0.2 * bump(clamp01((raw - 1) / 0.3));
     if (raw >= 1.3) f.drop = undefined;
   }
-  if (f.carried !== undefined) h += f.carried;
+  if (f.carried !== undefined) {
+    h += f.carried;
+    if (f.carryOff) {
+      x += f.carryOff.dx;
+      ty += f.carryOff.dy;
+    }
+  }
   // gentle breathing, always on, so it never switches abruptly
   const breath = 0.022 * Math.sin(t * 2.4 + f.phase);
   let s = 1;
