@@ -10,6 +10,7 @@ import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, now, type FrogSim } from '../scene/frogSim';
 import { handState } from '../scene/handState';
 import { field } from '../scene/field';
+import { occupancy } from '../scene/occupancy';
 import { SLAB_H } from '../scene/constants';
 import { areaNear, eggsNear, tileState } from '../scene/tiles';
 import { bridgeState } from '../scene/Bridge';
@@ -207,6 +208,7 @@ export const director = {
     begin();
     frogWorld.clear();
     field.reset();
+    occupancy.eggs = new Set();
     Object.assign(handState, { visible: 0 });
     bridgeState.active = false;
     game().patch({ busy: false, running: false, selected: null, lastFailure: null, cinematic: false, failMark: null });

@@ -420,6 +420,13 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
   const slots = useRef(new Map<string, { fx: number; fy: number; fs: number; tx: number; ty: number; ts: number; t0: number }>());
 
   const eggs = useMemo(() => eggsNear(level, pond, win.cx, win.cy, win.R), [level, pond, win]);
+  // when eggs are hidden or this layer goes away, frogs must not make room for them
+  useEffect(
+    () => () => {
+      occupancy.eggs = new Set();
+    },
+    [],
+  );
 
   const { geom, shadowGeom } = useMemo(() => {
     const n = eggs.length;
