@@ -108,20 +108,25 @@ function Rule({ n, name, text, art }: { n: number; name: string; text: string; a
 const iso = (i: number, j: number) => ({ x: 60 + (i - j) * 20, y: 36 + (i + j) * 9 });
 const SLAB_T = 6;
 
+// Cells are drawn a little smaller than the grid pitch, so neighbours stay
+// visibly separate (like the world's tiles and slabs).
+const HW = 17;
+const HH = 7.65;
+
 const Tile = ({ i, j }: { i: number; j: number }) => {
   const { x, y } = iso(i, j);
   return (
-    <path d={`M${x - 20} ${y} L${x} ${y - 9} L${x + 20} ${y} L${x} ${y + 9} Z`} fill="#ffffff" stroke="#d3d9e2" strokeWidth="1.5" />
+    <path d={`M${x - HW} ${y} L${x} ${y - HH} L${x + HW} ${y} L${x} ${y + HH} Z`} fill="#ffffff" stroke="#d3d9e2" strokeWidth="1.5" strokeLinejoin="round" />
   );
 };
 const Slab = ({ i, j }: { i: number; j: number }) => {
   const { x, y } = iso(i, j);
   const t = y - SLAB_T;
   return (
-    <g>
-      <path d={`M${x - 20} ${t} L${x} ${t + 9} L${x} ${y + 9} L${x - 20} ${y} Z`} fill="#3a78d8" />
-      <path d={`M${x + 20} ${t} L${x} ${t + 9} L${x} ${y + 9} L${x + 20} ${y} Z`} fill="#2f66bf" />
-      <path d={`M${x - 20} ${t} L${x} ${t - 9} L${x + 20} ${t} L${x} ${t + 9} Z`} fill="#5c9df5" />
+    <g strokeLinejoin="round">
+      <path d={`M${x - HW} ${t} L${x} ${t + HH} L${x} ${y + HH} L${x - HW} ${y} Z`} fill="#3a78d8" />
+      <path d={`M${x + HW} ${t} L${x} ${t + HH} L${x} ${y + HH} L${x + HW} ${y} Z`} fill="#2f66bf" />
+      <path d={`M${x - HW} ${t} L${x} ${t - HH} L${x + HW} ${t} L${x} ${t + HH} Z`} fill="#5c9df5" />
     </g>
   );
 };
@@ -205,8 +210,8 @@ function ArtExit() {
       </defs>
       <Cells cells={PLUS('slab')} />
       {/* the goal: a pale amber pool with a column of light, as in the world */}
-      <ellipse cx={p.x} cy={p.y} rx="14" ry="6.3" fill="#fde3a7" stroke="#efa52b" strokeWidth="2" />
-      <path d={`M${p.x - 14} ${p.y} L${p.x - 14} ${p.y - 24} L${p.x + 14} ${p.y - 24} L${p.x + 14} ${p.y} Z`} fill="url(#goal-col)" />
+      <ellipse cx={p.x} cy={p.y} rx="11.5" ry="5.2" fill="#fde3a7" stroke="#efa52b" strokeWidth="2" />
+      <path d={`M${p.x - 11.5} ${p.y} L${p.x - 11.5} ${p.y - 24} L${p.x + 11.5} ${p.y - 24} L${p.x + 11.5} ${p.y} Z`} fill="url(#goal-col)" />
       <Frog x={p.x} y={p.y - 2} />
     </svg>
   );
