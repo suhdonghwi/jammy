@@ -6,6 +6,7 @@ import { cameraRig } from './scene/cameraRig';
 import { useGame } from './store/game';
 import { openLevel, openTutorial, check } from './director/play';
 import { allLevels } from './levels/defs';
+import { director } from './director/director';
 
 if (import.meta.env.DEV) {
   Object.assign(window, {
@@ -13,6 +14,7 @@ if (import.meta.env.DEV) {
     __game: useGame,
     __open: (id: string) => (id === 'tutorial' ? openTutorial() : openLevel(allLevels.find((l) => l.id === id)!)),
     __check: check,
+    __director: director,
   });
 }
 

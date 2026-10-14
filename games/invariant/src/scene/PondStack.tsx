@@ -65,7 +65,7 @@ function Sheet({ p, name, focused, focusedP }: { p: number; name: string; focuse
     const offset = p - stackAnim.focus;
     g.position.y = offset * POND_SPACING - 0.03;
     if (matRef.current) {
-      const target = focused ? 0 : offset > 0 ? 0.16 / offset : 0.5;
+      const target = focused ? 0 : offset > 0 ? 0.05 / offset : 0.5;
       matRef.current.opacity += (target - matRef.current.opacity) * 0.15;
     }
   });
