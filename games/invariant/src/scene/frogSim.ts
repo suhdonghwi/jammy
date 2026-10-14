@@ -61,33 +61,36 @@ function facingFor(level: CompiledLevel, s: State, fallback: number): number {
 
 // ---------------------------------------------------------------------------
 // Hop announcements for the code panel: the body lights up while frogs hop,
-// then the loop condition flashes with its result when they land. Calls made
-// in the same tick are coalesced into one beat.
+// then the loop condition flashes with its result when they land. Hops started
+// in the same tick form one batch: one body beat, and one condition flash once
+// every frog in the batch has landed (their landing timers fire separately).
 // ---------------------------------------------------------------------------
 
-let hopQueued = false;
-let landQueue: boolean[] | null = null;
-
-function announceHop(dur: number) {
-  if (hopQueued) return;
-  hopQueued = true;
-  queueMicrotask(() => {
-    hopQueued = false;
-    useGame.setState((g) => ({ hopTick: g.hopTick + 1, hopDur: dur }));
-  });
+interface HopBatch {
+  pending: number;
+  results: boolean[];
 }
+let openBatch: HopBatch | null = null;
 
-function announceLand(continues: boolean) {
-  if (!landQueue) {
-    landQueue = [];
+function joinHopBatch(dur: number): HopBatch {
+  if (!openBatch) {
+    const b: HopBatch = { pending: 0, results: [] };
+    openBatch = b;
     queueMicrotask(() => {
-      const q = landQueue!;
-      landQueue = null;
-      const guard = q.every(Boolean) ? 'true' : q.some(Boolean) ? 'mixed' : 'false';
-      useGame.setState((g) => ({ landTick: g.landTick + 1, landGuard: guard }));
+      openBatch = null;
+      useGame.setState((g) => ({ hopTick: g.hopTick + 1, hopDur: dur }));
     });
   }
-  landQueue.push(continues);
+  openBatch.pending++;
+  return openBatch;
+}
+
+function landInBatch(b: HopBatch, continues: boolean) {
+  b.results.push(continues);
+  if (b.results.length < b.pending) return;
+  const q = b.results;
+  const guard = q.every(Boolean) ? 'true' : q.some(Boolean) ? 'mixed' : 'false';
+  useGame.setState((g) => ({ landTick: g.landTick + 1, landGuard: guard }));
 }
 
 class FrogWorld {
@@ -144,7 +147,7 @@ class FrogWorld {
     const ty = Number(next[level.view.y]);
     if (tx !== f.x || ty !== f.y) f.face = yawToward(f.x, f.y, tx, ty);
     f.hop = { fx: f.x, fy: f.y, tx, ty, t0: now(), dur };
-    if (!quiet) announceHop(dur);
+    const batch = quiet ? null : joinHopBatch(dur);
     return new Promise((res) =>
       setTimeout(() => {
         f.x = tx;
@@ -152,7 +155,7 @@ class FrogWorld {
         f.hop = undefined;
         // look ahead to the next hop (a stopped frog keeps looking the way it came)
         f.face = facingFor(level, next, f.face);
-        if (!quiet) announceLand(holds(level.guard, next));
+        if (batch) landInBatch(batch, holds(level.guard, next));
         if (!holds(level.guard, next) && holds(level.post, next)) goalEvents.push(tx, ty, f.pond);
         res();
       }, dur * 1000),
