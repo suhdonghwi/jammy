@@ -103,19 +103,35 @@ function Rule({ n, name, text, art }: { n: number; name: string; text: string; a
   );
 }
 
-// Small isometric illustrations in the world's visual language.
-const Slab = ({ x, y }: { x: number; y: number }) => (
-  <g transform={`translate(${x},${y})`}>
-    <path d="M2 10 L22 1 L42 10 L22 19 Z" fill="#5c9df5" />
-    <path d="M2 10 L22 19 L22 25 L2 16 Z" fill="#3a78d8" />
-    <path d="M42 10 L22 19 L22 25 L42 16 Z" fill="#2f66bf" />
-  </g>
-);
-const Tile = ({ x, y }: { x: number; y: number }) => (
-  <path transform={`translate(${x},${y})`} d="M2 10 L22 1 L42 10 L22 19 Z" fill="#ffffff" stroke="#d3d9e2" strokeWidth="1.5" />
-);
+// Small isometric illustrations in the world's visual language, laid out on a
+// real isometric grid: cell (i, j) sits at x = (i − j)·20, y = (i + j)·9.
+const iso = (i: number, j: number) => ({ x: 60 + (i - j) * 20, y: 36 + (i + j) * 9 });
+const SLAB_T = 6;
+
+const Tile = ({ i, j }: { i: number; j: number }) => {
+  const { x, y } = iso(i, j);
+  return (
+    <path d={`M${x - 20} ${y} L${x} ${y - 9} L${x + 20} ${y} L${x} ${y + 9} Z`} fill="#ffffff" stroke="#d3d9e2" strokeWidth="1.5" />
+  );
+};
+const Slab = ({ i, j }: { i: number; j: number }) => {
+  const { x, y } = iso(i, j);
+  const t = y - SLAB_T;
+  return (
+    <g>
+      <path d={`M${x - 20} ${t} L${x} ${t + 9} L${x} ${y + 9} L${x - 20} ${y} Z`} fill="#3a78d8" />
+      <path d={`M${x + 20} ${t} L${x} ${t + 9} L${x} ${y + 9} L${x + 20} ${y} Z`} fill="#2f66bf" />
+      <path d={`M${x - 20} ${t} L${x} ${t - 9} L${x + 20} ${t} L${x} ${t + 9} Z`} fill="#5c9df5" />
+    </g>
+  );
+};
+/** Top-centre of a slab, where things sit. */
+const top = (i: number, j: number) => {
+  const { x, y } = iso(i, j);
+  return { x, y: y - SLAB_T };
+};
 const Frog = ({ x, y, color = '#52c24a' }: { x: number; y: number; color?: string }) => (
-  <g transform={`translate(${x},${y})`}>
+  <g transform={`translate(${x},${y - 6})`}>
     <ellipse cx="0" cy="1" rx="9" ry="6.5" fill={color} stroke="#2a3142" strokeWidth="1.2" />
     <circle cx="-4.2" cy="-5" r="3.4" fill="#fff" stroke="#2a3142" strokeWidth="1.2" />
     <circle cx="4.2" cy="-5" r="3.4" fill="#fff" stroke="#2a3142" strokeWidth="1.2" />
@@ -124,32 +140,74 @@ const Frog = ({ x, y, color = '#52c24a' }: { x: number; y: number; color?: strin
   </g>
 );
 
+/** Cells drawn back to front. */
+function Cells({ cells }: { cells: [number, number, 'tile' | 'slab'][] }) {
+  return (
+    <>
+      {[...cells]
+        .sort((a, b) => a[0] + a[1] - (b[0] + b[1]))
+        .map(([i, j, k]) => (k === 'slab' ? <Slab key={`${i},${j}`} i={i} j={j} /> : <Tile key={`${i},${j}`} i={i} j={j} />))}
+    </>
+  );
+}
+
+const PLUS = (center: 'tile' | 'slab'): [number, number, 'tile' | 'slab'][] => [
+  [0, -1, 'tile'],
+  [-1, 0, 'tile'],
+  [0, 0, center],
+  [1, 0, 'tile'],
+  [0, 1, 'tile'],
+];
+
 function ArtInit() {
+  const p = top(0, 0);
   return (
     <svg viewBox="0 0 120 70" width="120" height="70">
-      <Tile x={12} y={32} />
-      <Slab x={38} y={19} />
-      <Tile x={64} y={32} />
-      <ellipse cx="60" cy="22" rx="5" ry="6.5" fill="#f8efd9" stroke="#2a3142" strokeWidth="1.2" />
+      <Cells cells={PLUS('slab')} />
+      <ellipse cx={p.x} cy={p.y - 6} rx="5" ry="6.5" fill="#f8efd9" stroke="#2a3142" strokeWidth="1.2" />
     </svg>
   );
 }
 function ArtPres() {
+  const a = top(-1, 0);
+  const b = top(1, 0);
   return (
     <svg viewBox="0 0 120 70" width="120" height="70">
-      <Slab x={14} y={28} />
-      <Slab x={62} y={28} />
-      <path d="M36 32 Q60 2 84 30" fill="none" stroke="#2f6fe0" strokeDasharray="3 3" strokeWidth="1.8" />
-      <Frog x={84} y={32} />
+      <Cells
+        cells={[
+          [-1, 0, 'slab'],
+          [0, 0, 'slab'],
+          [1, 0, 'slab'],
+          [0, -1, 'tile'],
+          [0, 1, 'tile'],
+        ]}
+      />
+      <path
+        d={`M${a.x} ${a.y - 2} Q${(a.x + b.x) / 2} ${Math.min(a.y, b.y) - 30} ${b.x} ${b.y - 10}`}
+        fill="none"
+        stroke="#2f6fe0"
+        strokeDasharray="3 3"
+        strokeWidth="1.8"
+      />
+      <Frog x={b.x} y={b.y} />
     </svg>
   );
 }
 function ArtExit() {
+  const p = top(0, 0);
   return (
     <svg viewBox="0 0 120 70" width="120" height="70">
-      <Slab x={38} y={22} />
-      <ellipse cx="60" cy="32" rx="9" ry="4.5" fill="none" stroke="#efa52b" strokeWidth="2.4" />
-      <Frog x={60} y={28} />
+      <defs>
+        <linearGradient id="goal-col" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#f6c35b" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#f6c35b" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <Cells cells={PLUS('slab')} />
+      {/* the goal: a pale amber pool with a column of light, as in the world */}
+      <ellipse cx={p.x} cy={p.y} rx="14" ry="6.3" fill="#fde3a7" stroke="#efa52b" strokeWidth="2" />
+      <path d={`M${p.x - 14} ${p.y} L${p.x - 14} ${p.y - 24} L${p.x + 14} ${p.y - 24} L${p.x + 14} ${p.y} Z`} fill="url(#goal-col)" />
+      <Frog x={p.x} y={p.y - 2} />
     </svg>
   );
 }
