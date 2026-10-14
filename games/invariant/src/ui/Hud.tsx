@@ -240,12 +240,27 @@ export function CaptionBar() {
           <div className="caption-pitfall">{renderInlineCode(pitfall)}</div>
         )}
       </div>
-      {caption.action && (
-        <button className="btn toy primary small icon-btn" onClick={caption.action.onClick}>
-          {caption.action.label === 'Replay' ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
-          {caption.action.label}
-          {caption.action.label !== 'Replay' ? <ArrowRight size={15} strokeWidth={2.4} /> : null}
-        </button>
+      {(caption.secondary || caption.action) && (
+        <div className="caption-actions">
+          {caption.secondary && (
+            <button className="btn ghost small icon-btn" onClick={caption.secondary.onClick}>
+              <RotateCcw size={15} strokeWidth={2.4} />
+              {caption.secondary.label}
+            </button>
+          )}
+          {caption.action && (
+            <button
+              className={`btn toy primary small icon-btn caption-main ${caption.action.pending ? 'pending' : ''}`}
+              tabIndex={caption.action.pending ? -1 : 0}
+              aria-hidden={caption.action.pending}
+              onClick={() => !caption.action!.pending && caption.action!.onClick()}
+            >
+              {caption.action.label === 'Replay' ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
+              {caption.action.label}
+              {caption.action.label !== 'Replay' ? <ArrowRight size={15} strokeWidth={2.4} /> : null}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

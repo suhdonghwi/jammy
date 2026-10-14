@@ -346,7 +346,7 @@ export const director = {
   },
 
   /** Play the hand's demonstration of one counterexample. */
-  async playCounterexample(cex: Counterexample, opts: { prefix?: string; extra?: string } = {}) {
+  async playCounterexample(cex: Counterexample, opts: { prefix?: string; extra?: string; reserveNext?: boolean } = {}) {
     const tok = begin();
     const L = lvl();
     game().patch({ busy: true, lastFailure: cex, running: false, failMark: null });
@@ -389,7 +389,11 @@ export const director = {
         }
       }
       if (opts.extra) text += ` ${opts.extra}`;
-      caption(text, 'fail', { label: 'Replay', onClick: () => void director.playCounterexample(cex, opts) });
+      const replay = { label: 'Replay', onClick: () => void director.playCounterexample(cex, opts) };
+      if (opts.reserveNext) {
+        // the tutorial will add Next here: reserve its space now so nothing shifts
+        game().setCaption({ text, tone: 'fail', action: { label: 'Next', onClick: () => {}, pending: true }, secondary: replay });
+      } else caption(text, 'fail', replay);
       await sleep(600);
       if (tok.alive) await handOut();
     } finally {

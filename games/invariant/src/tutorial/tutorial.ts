@@ -32,9 +32,10 @@ function guard(gen: number) {
 
 type Spot = Game['spotlight'];
 
-/** Show a caption (no button). */
-function say(text: string, spot: Spot = null, tone: 'info' | 'fail' | 'success' | 'muted' = 'info') {
-  game().setCaption({ text, tone });
+/** Show a caption. `reserve`: the label of a button that will appear later —
+ *  its space is kept from the start so the caption never reflows. */
+function say(text: string, spot: Spot = null, tone: 'info' | 'fail' | 'success' | 'muted' = 'info', reserve?: string) {
+  game().setCaption({ text, tone, action: reserve ? { label: reserve, onClick: () => {}, pending: true } : undefined });
   game().patch({ spotlight: spot });
 }
 
@@ -50,7 +51,8 @@ function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone
       if (gen !== generation) reject(new Aborted());
       else resolve();
     };
-    game().setCaption({ text, tone, action: { label, onClick: () => pendingNext?.() } });
+    const secondary = game().caption?.text === text ? game().caption?.secondary : undefined;
+    game().setCaption({ text, tone, action: { label, onClick: () => pendingNext?.() }, secondary });
     game().patch({ spotlight: spot });
   });
 }
@@ -65,7 +67,7 @@ async function beat(
   text: string,
   opts: { prepare?: () => Promise<void> | void; label?: string; spot?: Spot; settle?: number } = {},
 ): Promise<void> {
-  say(text, opts.spot ?? null);
+  say(text, opts.spot ?? null, 'info', opts.label ?? 'Next');
   if (opts.prepare) await opts.prepare();
   guard(gen);
   await director.sleep(opts.settle ?? 300);
@@ -263,7 +265,7 @@ async function script(gen: number) {
   let res = await attempt(gen, 'i == n', ['n == i'], ['init']);
   let cex = failureOf(res, 'init');
   if (cex) {
-    await director.playCounterexample(cex, { prefix: 'This hand checks your area — it looks for a frog that breaks it. ' });
+    await director.playCounterexample(cex, { prefix: 'This hand checks your area — it looks for a frog that breaks it. ', reserveNext: true });
     guard(gen);
     await holdCaption(gen);
   }
@@ -275,7 +277,7 @@ async function script(gen: number) {
   res = await attempt(gen, 'i == 0 || i == n', ['i == n || i == 0'], ['init', 'pres']);
   cex = failureOf(res, 'pres');
   if (cex) {
-    await director.playCounterexample(cex);
+    await director.playCounterexample(cex, { reserveNext: true });
     guard(gen);
     await holdCaption(gen);
   }
@@ -316,6 +318,7 @@ async function script(gen: number) {
   if (ev?.status === 'fail') {
     await director.playCounterexample(ev.cex, {
       extra: '“But i never passes n!” — Your area doesn’t say that. It claims a frog could be anywhere on it, and the hand is just taking you at your word.',
+      reserveNext: true,
     });
     guard(gen);
     await holdCaption(gen);

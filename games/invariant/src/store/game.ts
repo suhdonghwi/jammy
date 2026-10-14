@@ -49,7 +49,11 @@ export interface Caption {
   text: string;
   tone: CaptionTone;
   /** Optional button shown in the caption bar (tutorial "Next" etc.). */
-  action?: { label: string; onClick: () => void };
+  /** Main button. `pending`: shown invisible to reserve its space, so the caption
+   *  doesn't reflow when it becomes available. */
+  action?: { label: string; onClick: () => void; pending?: boolean };
+  /** Optional quieter button next to it (e.g. Replay). */
+  secondary?: { label: string; onClick: () => void };
 }
 
 export interface Game {
