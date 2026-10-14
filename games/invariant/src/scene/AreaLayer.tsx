@@ -7,10 +7,13 @@ import type { FastFn } from '../lang/eval';
 import { clock, SLAB_H, TILE } from './constants';
 import { field, RISE_DUR, type TileFlags } from './field';
 import { cameraRig } from './cameraRig';
-import { colorUniform, getBlobTexture, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, tileSeed } from './shaders';
+import { colorUniform, getBlobTexture, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, GOAL_STYLES, goalUniforms, tileSeed } from './shaders';
+import { useGame } from '../store/game';
 import { hover } from './hover';
 import { frogWorld } from './frogSim';
 import { eggsNear, tileState } from './tiles';
+import { occupancy, slotFor } from './occupancy';
+import { GoalFX } from './GoalFX';
 
 const HEIGHT_GLSL = /* glsl */ `
 attribute vec2 aTile;
@@ -144,24 +147,38 @@ function eggGeometry() {
     const t = i / N; // 0 bottom → 1 top
     const a = Math.PI * t;
     // egg profile: wider near the bottom
-    const r = Math.sin(a) * (0.135 - 0.03 * t);
-    const y = (1 - Math.cos(a)) * 0.13;
+    const r = Math.sin(a) * (0.19 - 0.042 * t);
+    const y = (1 - Math.cos(a)) * 0.182;
     pts.push(new THREE.Vector2(Math.max(r, 0.0001), y));
   }
   return new THREE.LatheGeometry(pts, 28);
 }
 
+// Eggs make room when a frog shares their tile: offset and scale glide from
+// (from) to (to) starting at t0.
+const SLOT_GLSL = /* glsl */ `
+attribute vec4 aSlot;      // from.xy, to.xy
+attribute vec3 aSlotAnim;  // from scale, to scale, t0
+vec3 slotNow() {
+  float u = clamp((uTime - aSlotAnim.z) / 0.3, 0.0, 1.0);
+  u = u * u * (3.0 - 2.0 * u);
+  return vec3(mix(aSlot.xy, aSlot.zw, u), mix(aSlotAnim.x, aSlotAnim.y, u));
+}
+`;
+
 const eggVertex = /* glsl */ `
 ${HEIGHT_GLSL}
+${SLOT_GLSL}
 attribute float aHide;
 varying vec3 vN;
 varying vec3 vWorld;
 varying vec3 vLocal;
 void main() {
   float h = heightNow();
-  float s = 1.0 - aHide;
+  vec3 sl = slotNow();
+  float s = (1.0 - aHide) * sl.z;
   vec3 p = position * s;
-  vec4 w = modelMatrix * vec4(p + vec3(aTile.x, h * ${SLAB_H.toFixed(3)}, -aTile.y), 1.0);
+  vec4 w = modelMatrix * vec4(p + vec3(aTile.x + sl.x, h * ${SLAB_H.toFixed(3)}, -aTile.y - sl.y), 1.0);
   vWorld = w.xyz;
   vLocal = position;
   vN = normalize(mat3(modelMatrix) * normal);
@@ -274,6 +291,7 @@ export function AreaLayer({ level, pond, inv, dim, showStop, showGoal, showEggs,
     <group>
       <Slabs version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
       {showEggs && <Eggs level={level} pond={pond} win={win} version={version} />}
+      {showGoal && <GoalFX level={level} pond={pond} win={win} version={version} />}
     </group>
   );
 }
@@ -321,8 +339,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
           uTop: colorUniform('slabTop'),
           uSide: colorUniform('slabSide'),
           uStopTop: colorUniform('slabStopTop'),
-          uGoal: colorUniform('goal'),
-          uGoalGlow: colorUniform('goalGlow'),
+          ...goalUniforms(),
           uHoverCol: colorUniform('hover'),
           uLabelOn: { value: new THREE.Color('#ffffff') },
           uHover: { value: new THREE.Vector2() },
@@ -349,6 +366,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     const t = clock.now();
     material.uniforms.uTime.value = t;
     shadowMat.uniforms.uTime.value = t;
+    material.uniforms.uGoalStyle.value = GOAL_STYLES.indexOf(useGame.getState().goalStyle);
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);
@@ -366,11 +384,15 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
 
 function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: number; win: { cx: number; cy: number; R: number }; version: number }) {
   const base = useMemo(() => eggGeometry(), []);
-  const shadowBase = useMemo(() => new THREE.PlaneGeometry(0.5, 0.5).rotateX(-Math.PI / 2), []);
+  const shadowBase = useMemo(() => new THREE.PlaneGeometry(0.66, 0.66).rotateX(-Math.PI / 2), []);
   const [hatchVersion, setHatchVersion] = useState(0);
+  const [occVersion, setOccVersion] = useState(0);
   useFrame(() => {
     if (frogWorld.hatchVersion !== hatchVersion) setHatchVersion(frogWorld.hatchVersion);
+    if (occupancy.version !== occVersion) setOccVersion(occupancy.version);
   });
+  /** Current slot animation per egg tile, so changes continue from where they are. */
+  const slots = useRef(new Map<string, { fx: number; fy: number; fs: number; tx: number; ty: number; ts: number; t0: number }>());
 
   const eggs = useMemo(() => eggsNear(level, pond, win.cx, win.cy, win.R), [level, pond, win]);
 
@@ -379,25 +401,54 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
     const tile = new Float32Array(n * 2);
     const anim = new Float32Array(n * 3);
     const hide = new Float32Array(n);
+    const slot = new Float32Array(n * 4);
+    const slotAnim = new Float32Array(n * 3);
+    const now = clock.now();
+    const visibleEggs = new Set<string>();
     eggs.forEach(([x, y], i) => {
+      const key = `${x},${y}`;
       tile.set([x, y], i * 2);
-      const a = field.anims.get(`${x},${y}`);
+      const a = field.anims.get(key);
       anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
-      hide[i] = frogWorld.hatched.has(`${x},${y}`) ? 1 : 0;
+      const hatched = frogWorld.hatched.has(key);
+      hide[i] = hatched ? 1 : 0;
+      if (!hatched) visibleEggs.add(key);
+      // the egg takes the last slot after any frogs settled on its tile
+      const frogs = occupancy.frogs.get(key) ?? 0;
+      const target = slotFor(frogs, frogs + 1);
+      const prev = slots.current.get(key);
+      let cur = { fx: target.dx, fy: target.dy, fs: target.scale, tx: target.dx, ty: target.dy, ts: target.scale, t0: 0 };
+      if (prev) {
+        const u = Math.min(1, Math.max(0, (now - prev.t0) / 0.3));
+        const e = u * u * (3 - 2 * u);
+        const at = { x: prev.fx + (prev.tx - prev.fx) * e, y: prev.fy + (prev.ty - prev.fy) * e, s: prev.fs + (prev.ts - prev.fs) * e };
+        cur =
+          prev.tx === target.dx && prev.ty === target.dy && prev.ts === target.scale
+            ? prev
+            : { fx: at.x, fy: at.y, fs: at.s, tx: target.dx, ty: target.dy, ts: target.scale, t0: now };
+      }
+      slots.current.set(key, cur);
+      slot.set([cur.fx, cur.fy, cur.tx, cur.ty], i * 4);
+      slotAnim.set([cur.fs, cur.ts, cur.t0], i * 3);
     });
+    occupancy.eggs = visibleEggs;
     const geom = new THREE.InstancedBufferGeometry().copy(base as unknown as THREE.InstancedBufferGeometry);
     geom.instanceCount = n;
     geom.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));
     geom.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
     geom.setAttribute('aHide', new THREE.InstancedBufferAttribute(hide, 1));
+    geom.setAttribute('aSlot', new THREE.InstancedBufferAttribute(slot, 4));
+    geom.setAttribute('aSlotAnim', new THREE.InstancedBufferAttribute(slotAnim, 3));
     const shadowGeom = new THREE.InstancedBufferGeometry().copy(shadowBase as unknown as THREE.InstancedBufferGeometry);
     shadowGeom.instanceCount = n;
     shadowGeom.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));
     shadowGeom.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
     shadowGeom.setAttribute('aHide', new THREE.InstancedBufferAttribute(hide, 1));
+    shadowGeom.setAttribute('aSlot', new THREE.InstancedBufferAttribute(slot, 4));
+    shadowGeom.setAttribute('aSlotAnim', new THREE.InstancedBufferAttribute(slotAnim, 3));
     return { geom, shadowGeom };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eggs, version, hatchVersion, base, shadowBase]);
+  }, [eggs, version, hatchVersion, occVersion, base, shadowBase]);
   useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
 
   const material = useMemo(
@@ -414,13 +465,15 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
       new THREE.ShaderMaterial({
         vertexShader: /* glsl */ `
           ${HEIGHT_GLSL}
+          ${SLOT_GLSL}
           attribute float aHide;
           varying vec2 vUv;
           varying float vA;
           void main() {
             vUv = uv;
-            vA = 1.0 - aHide;
-            vec4 w = modelMatrix * vec4(position + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.006, -aTile.y), 1.0);
+            vec3 sl = slotNow();
+            vA = (1.0 - aHide) * sl.z;
+            vec4 w = modelMatrix * vec4(position * sl.z + vec3(aTile.x + sl.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.006, -aTile.y - sl.y), 1.0);
             gl_Position = projectionMatrix * viewMatrix * w;
           }`,
         fragmentShader: /* glsl */ `

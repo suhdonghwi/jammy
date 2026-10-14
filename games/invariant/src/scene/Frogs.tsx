@@ -7,8 +7,45 @@ import { field } from './field';
 import { frogWorld, now, type FrogSim } from './frogSim';
 import { frogGeometry, frogMaterial } from './models';
 import { getBlobTexture } from './shaders';
+import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
 
 const MAX_FROGS = 400;
+const BADGES = 24;
+
+// "×n" badges over crowded tiles
+const badgeTextures = new Map<number, THREE.Texture>();
+function badgeTexture(n: number): THREE.Texture {
+  const hit = badgeTextures.get(n);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = 160;
+  c.height = 96;
+  const g = c.getContext('2d')!;
+  g.fillStyle = 'rgba(28, 35, 51, 0.9)';
+  g.beginPath();
+  g.roundRect(4, 8, 152, 80, 40);
+  g.fill();
+  g.fillStyle = '#ffffff';
+  g.font = '600 52px Fredoka, ui-rounded, sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(`×${n}`, 80, 50);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  badgeTextures.set(n, t);
+  return t;
+}
+function placeBadge(sp: THREE.Sprite | null | undefined, x: number, y: number, ground: number, n: number) {
+  if (!sp) return;
+  sp.visible = true;
+  sp.position.set(x, ground + 0.78, -y);
+  const m = sp.material as THREE.SpriteMaterial;
+  const tex = badgeTexture(n);
+  if (m.map !== tex) {
+    m.map = tex;
+    m.needsUpdate = true;
+  }
+}
 
 const dummy = new THREE.Object3D();
 const col = new THREE.Color();
@@ -119,6 +156,8 @@ export function Frogs() {
   const pond = useGame((s) => s.pond);
   const hasPonds = useGame((s) => !!s.level?.pond);
   const visibleList = useRef<FrogSim[]>([]);
+  const lastT = useRef<number | undefined>(undefined);
+  const badgeRefs = useRef<(THREE.Sprite | null)[]>([]);
   // nothing renders until the first frame has placed every instance
   useLayoutEffect(() => {
     for (const r of [body, shadows]) if (r.current) r.current.count = 0;
@@ -129,29 +168,74 @@ export function Frogs() {
     const sh = shadows.current;
     if (!b || !sh) return;
     const t = now();
+    // which frogs have settled on which tile (for slot layout)
+    const visible = frogWorld.frogs.filter((f) => !hasPonds || f.pond === pond);
+    const groups = new Map<string, FrogSim[]>();
+    for (const f of visible) {
+      if (f.hop || f.carried !== undefined || f.drop) continue;
+      const key = `${f.x},${f.y}`;
+      const g = groups.get(key);
+      if (g) g.push(f);
+      else groups.set(key, [f]);
+    }
+    const sig = [...groups].map(([k, g]) => `${k}:${g.length}`).join('|');
+    if (sig !== occupancy.signature) {
+      occupancy.signature = sig;
+      occupancy.frogs = new Map([...groups].map(([k, g]) => [k, g.length]));
+      occupancy.version++;
+    }
     let n = 0;
     const list: FrogSim[] = [];
-    for (const f of frogWorld.frogs) {
-      if (hasPonds && f.pond !== pond) continue;
+    const k = 1 - Math.exp(-Math.min(0.1, t - (lastT.current ?? t)) * 11);
+    lastT.current = t;
+    let badges = 0;
+    for (const f of visible) {
       if (n >= MAX_FROGS) break;
       const p = pose(f, t);
-      dummy.position.set(p.x, p.y, p.z);
+      // slot within a shared tile; glide toward it so nothing pops
+      let target = { dx: 0, dy: 0, scale: 1 };
+      if (!f.hop && f.carried === undefined && !f.drop) {
+        const key = `${f.x},${f.y}`;
+        const g = groups.get(key)!;
+        const count = g.length + (occupancy.eggs.has(key) ? 1 : 0);
+        target = slotFor(g.indexOf(f), count);
+        if (g.length > MAX_SHOWN && g.indexOf(f) === 0 && badges < BADGES) {
+          placeBadge(badgeRefs.current[badges++], f.x, f.y, p.ground, g.length);
+        }
+      }
+      if (f.ox === undefined) {
+        f.ox = target.dx;
+        f.oy = target.dy;
+        f.os = target.scale;
+      } else {
+        f.ox += (target.dx - f.ox) * k;
+        f.oy! += (target.dy - f.oy!) * k;
+        f.os! += (target.scale - f.os!) * k;
+      }
+      const os = f.os!;
+      const px = p.x + f.ox;
+      const pz = p.z - f.oy!;
+      dummy.position.set(px, p.y, pz);
       dummy.rotation.set(p.pitch, p.yaw, p.roll, 'YXZ');
-      dummy.scale.set(p.sx, p.sy, p.sx);
+      dummy.scale.set(p.sx * os, p.sy * os, p.sx * os);
       dummy.updateMatrix();
       b.setMatrixAt(n, dummy.matrix);
       col.copy(f.red ? C.fail : f.kind === 'real' ? C.real : C.test);
       b.setColorAt(n, col);
       // the shadow shrinks as the frog rises
       const air = Math.max(0, p.y - p.ground);
-      const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2);
-      dummy.position.set(p.x, p.ground + 0.008, p.z);
+      const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2) * os;
+      dummy.position.set(px, p.ground + 0.008, pz);
       dummy.rotation.set(0, 0, 0);
       dummy.scale.set(ss, 1, ss);
       dummy.updateMatrix();
       sh.setMatrixAt(n, dummy.matrix);
       list.push(f);
       n++;
+    }
+    for (let i = badges; i < BADGES; i++) {
+      const sp = badgeRefs.current[i];
+      if (sp) sp.visible = false;
     }
     visibleList.current = list;
     b.count = sh.count = n;
@@ -170,6 +254,11 @@ export function Frogs() {
     <group>
       <instancedMesh ref={shadows} args={[shadowGeom, shadowMat, MAX_FROGS]} frustumCulled={false} renderOrder={3} />
       <instancedMesh ref={body} args={[geom, mat, MAX_FROGS]} frustumCulled={false} onClick={onClick} />
+      {Array.from({ length: BADGES }, (_, i) => (
+        <sprite key={i} ref={(el) => void (badgeRefs.current[i] = el)} visible={false} scale={[0.5, 0.3, 1]} renderOrder={10}>
+          <spriteMaterial depthTest={false} transparent />
+        </sprite>
+      ))}
     </group>
   );
 }

@@ -29,6 +29,10 @@ export interface FrogSim {
   /** Smoothed current facing. */
   yaw: number;
   lastT?: number;
+  /** Smoothed slot offset/scale when sharing a tile. */
+  ox?: number;
+  oy?: number;
+  os?: number;
 }
 
 export const now = () => performance.now() / 1000;

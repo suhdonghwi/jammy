@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
 import { GLSL_INT_HELPERS, levelGlsl } from './glsl';
-import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, tileSeed } from './shaders';
+import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, GOAL_STYLES, goalUniforms, tileSeed } from './shaders';
+import { useGame } from '../store/game';
 import { clock } from './constants';
 import { cameraRig } from './cameraRig';
 import { hover } from './hover';
@@ -167,8 +168,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
         uShowGoal: { value: showGoal ? 1 : 0 },
         uShowAxes: { value: showAxes ? 1 : 0 },
         uDigits: { value: getDigitTexture() },
-        uGoal: colorUniform('goal'),
-        uGoalGlow: colorUniform('goalGlow'),
+        ...goalUniforms(),
         uTime: { value: 0 },
         uGap: colorUniform('gap'),
         uVoid: colorUniform('void'),
@@ -207,6 +207,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     m.scale.setScalar(R * 2.2);
     u.uCenter.value.set(t.x, t.z);
     u.uTime.value = clock.now();
+    u.uGoalStyle.value = GOAL_STYLES.indexOf(useGame.getState().goalStyle);
     u.uFade.value.set(R * 0.62, R);
     if ((performance.now() - born.current) / 1000 >= fadeDelay) {
       const k = 1 - Math.exp(-dt * fadeSpeed);

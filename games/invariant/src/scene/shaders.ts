@@ -40,52 +40,76 @@ float numberMask(vec2 f, int v) {
 }
 `;
 
-/** Goal emblem: a gold coin with a white star (signed distances, crisp at any zoom). */
+/**
+ * Goal tiles. Three styles are being explored (switchable in the HUD):
+ *   0 portal  — a swirling vortex disc with a bright rim and core
+ *   1 sparkle — a soft glowing pad (particles rise from it in 3D)
+ *   2 ripple  — pulse rings expanding from a bright centre (with a light beam in 3D)
+ */
 export const GLSL_GOAL = /* glsl */ `
 uniform vec3 uGoal;
-float sdStar5(vec2 p, float r, float rf) {
-  const vec2 k1 = vec2(0.809016994375, -0.587785252292);
-  const vec2 k2 = vec2(-k1.x, k1.y);
-  p.x = abs(p.x);
-  p -= 2.0 * max(dot(k1, p), 0.0) * k1;
-  p -= 2.0 * max(dot(k2, p), 0.0) * k2;
-  p.x = abs(p.x);
-  p.y -= r;
-  vec2 ba = rf * vec2(-k1.y, k1.x) - vec2(0.0, 1.0);
-  float h = clamp(dot(p, ba) / dot(ba, ba), 0.0, r);
-  return length(p - ba * h) * sign(p.y * ba.x - p.x * ba.y);
-}
 uniform vec3 uGoalGlow;
+uniform vec3 uPortalA;
+uniform vec3 uPortalB;
 uniform float uTime;
+uniform int uGoalStyle;
 // fwr: screen-space derivative of length(f), taken outside any branch.
-// seed: per-tile value so neighbouring goals don't pulse in lockstep.
+// seed: per-tile value so neighbouring goals don't move in lockstep.
 vec3 drawGoal(vec3 col, vec2 f, float fwr, float seed) {
   float aa = fwr * 1.3;
   float r = length(f);
-  float pulse = 0.5 + 0.5 * sin(uTime * 2.1 + seed * 6.283);
-  // warm glow spreading over the tile, breathing slowly
-  float glow = pow(1.0 - smoothstep(0.08, 0.5, r), 1.6);
-  col = mix(col, uGoalGlow, glow * (0.55 + 0.35 * pulse));
-  // a soft bright ring of light that swells with the pulse
-  float halo = exp(-pow((r - (0.33 + 0.03 * pulse)) / 0.045, 2.0));
-  col = mix(col, vec3(1.0, 0.93, 0.7), halo * (0.35 + 0.35 * pulse));
-  // the coin, lit from the top-left
-  float coin = 1.0 - smoothstep(0.27 - aa, 0.27 + aa, r);
-  vec3 gold = mix(uGoal * 1.15, uGoal * 0.88, clamp(0.5 - (f.y - f.x) * 1.1, 0.0, 1.0));
-  col = mix(col, gold, coin);
-  float rim = 1.0 - smoothstep(0.02 - aa, 0.02 + aa, abs(r - 0.245));
-  col = mix(col, uGoal * 0.74, rim * coin);
-  // a sheen that sweeps across the coin now and then
-  float sweep = fract(uTime * 0.28 + seed) * 2.2 - 1.1;
-  float sheen = 1.0 - smoothstep(0.0, 0.07, abs((f.x + f.y) * 0.707 - sweep));
-  col = mix(col, vec3(1.0, 0.98, 0.9), sheen * coin * 0.55);
-  // white star, breathing a little with the glow
-  float st = sdStar5(f + vec2(0.0, 0.01), 0.15 + 0.01 * pulse, 0.46);
-  float star = 1.0 - smoothstep(-aa, aa, st);
-  col = mix(col, vec3(1.0, 0.99, 0.95), star);
+  float a = atan(f.y, f.x);
+  float pulse = 0.5 + 0.5 * sin(uTime * 2.0 + seed * 6.283);
+  if (uGoalStyle == 0) {
+    // portal
+    float glow = pow(1.0 - smoothstep(0.2, 0.5, r), 1.5);
+    col = mix(col, uPortalB, glow * (0.3 + 0.18 * pulse));
+    float disk = 1.0 - smoothstep(0.29 - aa, 0.29 + aa, r);
+    float swirl = 0.5 + 0.5 * sin(a * 3.0 - r * 26.0 + uTime * 2.6 + seed * 6.283);
+    float depth = smoothstep(0.0, 0.29, r);
+    vec3 inner = mix(uPortalA, uPortalB, swirl * 0.8 * depth + 0.2 * depth);
+    inner = mix(vec3(1.0, 0.97, 0.9), inner, smoothstep(0.0, 0.11, r));
+    col = mix(col, inner, disk);
+    float rim = exp(-pow((r - 0.29) / 0.022, 2.0));
+    col = mix(col, vec3(1.0, 0.96, 0.88), rim * (0.75 + 0.25 * pulse));
+  } else if (uGoalStyle == 1) {
+    // glowing pad
+    float glow = pow(1.0 - smoothstep(0.05, 0.5, r), 1.4);
+    col = mix(col, uGoalGlow, glow * (0.55 + 0.3 * pulse));
+    float pad = 1.0 - smoothstep(0.2 - aa, 0.2 + aa, r);
+    vec3 padCol = mix(vec3(1.0, 0.97, 0.88), uGoal, smoothstep(0.0, 0.2, r));
+    col = mix(col, padCol, pad);
+    float ring = exp(-pow((r - (0.26 + 0.02 * pulse)) / 0.014, 2.0));
+    col = mix(col, uGoal, ring * 0.8);
+  } else {
+    // ripple
+    for (int k = 0; k < 3; k++) {
+      float ph = fract(uTime * 0.55 + float(k) / 3.0 + seed);
+      float rr = 0.1 + ph * 0.36;
+      float ring = exp(-pow((r - rr) / 0.018, 2.0)) * (1.0 - ph) * (1.0 - ph);
+      col = mix(col, uGoal, ring * 0.95);
+    }
+    float glow = 1.0 - smoothstep(0.0, 0.3, r);
+    col = mix(col, uGoalGlow, glow * 0.45);
+    float dotm = 1.0 - smoothstep(0.1 - aa, 0.1 + aa, r);
+    col = mix(col, mix(vec3(1.0, 0.96, 0.85), uGoal, 0.35), dotm);
+  }
   return col;
 }
 `;
+
+export const GOAL_STYLES = ['portal', 'sparkle', 'ripple'] as const;
+export type GoalStyle = (typeof GOAL_STYLES)[number];
+
+export function goalUniforms(): Record<string, THREE.IUniform> {
+  return {
+    uGoal: { value: new THREE.Color(COLORS.goal) },
+    uGoalGlow: { value: new THREE.Color(COLORS.goalGlow) },
+    uPortalA: { value: new THREE.Color(COLORS.portalA) },
+    uPortalB: { value: new THREE.Color(COLORS.portalB) },
+    uGoalStyle: { value: 0 },
+  };
+}
 
 export const tileSeed = /* glsl */ `
 float tileSeed(vec2 t) { return fract(sin(dot(t, vec2(12.9898, 78.233))) * 43758.5453); }

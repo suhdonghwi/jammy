@@ -426,6 +426,36 @@ code {
   opacity: 1;
 }
 
+/* goal style picker (exploration) */
+.style-picker {
+  gap: 2px;
+  padding: 4px;
+}
+.style-picker-label {
+  font-family: var(--display);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 0 8px 0 10px;
+}
+.style-opt {
+  border: none;
+  background: transparent;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.style-opt.on {
+  background: #fff3df;
+  color: #c76a00;
+}
+
 /* code card */
 .code-card {
   padding: 13px 16px 12px;
