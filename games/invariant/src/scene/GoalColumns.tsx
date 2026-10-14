@@ -80,7 +80,7 @@ export function GoalColumns({ level, pond, win, version }: { level: CompiledLeve
     return out;
   }, [level, pond, win]);
 
-  const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.75, 40, 1, true).translate(0, 0.375, 0), []);
+  const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
   const geom = useMemo(() => {
     const g = new THREE.InstancedBufferGeometry().copy(base as unknown as THREE.InstancedBufferGeometry);
     const n = tiles.length;
