@@ -1,0 +1,43 @@
+{
+  "name": "invariant-frog",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/copy-z3.mjs",
+    "predev": "node scripts/copy-z3.mjs",
+    "prebuild": "node scripts/copy-z3.mjs",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "validate": "tsx scripts/validate-levels.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.14",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
+    "codemirror": "^6.0.2",
+    "gsap": "^3.15.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "three": "^0.186.1",
+    "z3-solver": "^5.2.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^4.1.11"
+  }
+}
