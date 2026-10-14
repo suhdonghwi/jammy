@@ -8,7 +8,7 @@ import { COLORS } from './constants';
 import { field } from './field';
 import { Floor } from './Floor';
 import { Frogs } from './Frogs';
-import { frogWorld } from './frogSim';
+import { frogWorld, yawToward } from './frogSim';
 import { Slabs } from './AreaLayer';
 import { outlineMaterial } from './models';
 import { letterGeometries, loadTitleFont } from './text3d';
@@ -80,14 +80,23 @@ export function HomeScene() {
     frogWorld.clear();
     const starts = [0, 9, 18, 27];
     const frogs = starts.map((k) =>
-      frogWorld.add(tutorial, 'real', { i: BigInt(PATH[k][0]), n: BigInt(PATH[k][1]) }, { hatchT0: performance.now() / 1000 + k * 0.05 }),
+      frogWorld.add(tutorial, 'real', { i: BigInt(PATH[k][0]), n: BigInt(PATH[k][1]) }, { hatchT0: performance.now() / 1000 + k * 0.02 }),
     );
     const pos = [...starts];
+    frogs.forEach((f, j) => {
+      const [x, y] = PATH[pos[j]];
+      const [nx, ny] = PATH[(pos[j] + 1) % PATH.length];
+      f.face = f.yaw = yawToward(x, y, nx, ny);
+    });
     const timer = setInterval(() => {
       frogs.forEach((f, j) => {
         pos[j] = (pos[j] + 1) % PATH.length;
         const [x, y] = PATH[pos[j]];
-        void frogWorld.hopTo(tutorial, f, { i: BigInt(x), n: BigInt(y) }, 0.45);
+        void frogWorld.hopTo(tutorial, f, { i: BigInt(x), n: BigInt(y) }, 0.45, true).then(() => {
+          // look ahead along the loop
+          const [nx, ny] = PATH[(pos[j] + 1) % PATH.length];
+          f.face = yawToward(x, y, nx, ny);
+        });
       });
     }, 900);
     void cameraRig.controls?.setLookAt(0, 4.4, 11.5, 0, 1.6, -1, false);

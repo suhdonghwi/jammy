@@ -62,7 +62,7 @@ export function Hand() {
     inner.current.position.y = Math.abs(Math.sin(t * 10)) * 0.12 * h.shrug;
 
     fingers.current.forEach((f, i) => {
-      const isIndex = i === 1;
+      const isIndex = i === 0; // the finger next to the thumb
       let curl = isIndex ? h.curl * (1 - h.point) : Math.max(h.curl, h.point * 0.95);
       curl += Math.max(0, Math.sin(t * 13 - i * 0.9)) * 0.5 * h.tap;
       if (f.a) f.a.rotation.set(-curl * 1.05, FINGERS[i].spread * (1 - curl * 0.6), 0);

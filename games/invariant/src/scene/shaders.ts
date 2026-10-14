@@ -40,17 +40,39 @@ float numberMask(vec2 f, int v) {
 }
 `;
 
-/** Goal emblem: an amber ring with a dot. */
+/** Goal emblem: a gold coin with a white star (signed distances, crisp at any zoom). */
 export const GLSL_GOAL = /* glsl */ `
 uniform vec3 uGoal;
+float sdStar5(vec2 p, float r, float rf) {
+  const vec2 k1 = vec2(0.809016994375, -0.587785252292);
+  const vec2 k2 = vec2(-k1.x, k1.y);
+  p.x = abs(p.x);
+  p -= 2.0 * max(dot(k1, p), 0.0) * k1;
+  p -= 2.0 * max(dot(k2, p), 0.0) * k2;
+  p.x = abs(p.x);
+  p.y -= r;
+  vec2 ba = rf * vec2(-k1.y, k1.x) - vec2(0.0, 1.0);
+  float h = clamp(dot(p, ba) / dot(ba, ba), 0.0, r);
+  return length(p - ba * h) * sign(p.y * ba.x - p.x * ba.y);
+}
+// fwr: screen-space derivative of length(f), taken outside any branch
 vec3 drawGoal(vec3 col, vec2 f, float fwr) {
+  float aa = fwr * 1.3;
   float r = length(f);
-  float aa = fwr * 1.2;
-  float ring = 1.0 - smoothstep(0.03 - aa, 0.03 + aa, abs(r - 0.25));
-  float dotm = 1.0 - smoothstep(0.085 - aa, 0.085 + aa, r);
-  float halo = (1.0 - smoothstep(0.0, 0.3, r)) * 0.12;
-  col = mix(col, uGoal, halo);
-  return mix(col, uGoal, max(ring, dotm));
+  // soft glow under the coin
+  col = mix(col, uGoal, (1.0 - smoothstep(0.2, 0.42, r)) * 0.22);
+  // coin body: lighter toward the top-left, like it's lit
+  float coin = 1.0 - smoothstep(0.3 - aa, 0.3 + aa, r);
+  vec3 gold = mix(uGoal * 1.12, uGoal * 0.9, clamp(0.5 + (f.y - f.x) * -1.1, 0.0, 1.0));
+  col = mix(col, gold, coin);
+  // darker rim
+  float rim = 1.0 - smoothstep(0.022 - aa, 0.022 + aa, abs(r - 0.272));
+  col = mix(col, uGoal * 0.72, rim * coin);
+  // white star
+  float st = sdStar5(f * vec2(1.0, 1.0) + vec2(0.0, 0.012), 0.165, 0.46);
+  float star = 1.0 - smoothstep(-aa, aa, st);
+  col = mix(col, vec3(1.0, 0.99, 0.95), star);
+  return col;
 }
 `;
 

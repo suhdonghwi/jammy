@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo } from 'react';
-import { RULE_NAMES, showState, type Rule } from '../levels/level';
+import { RULE_NAMES, showState, type CompiledLevel, type Rule } from '../levels/level';
 import { useGame } from '../store/game';
 import { director } from '../director/director';
 import { goMenu, showHint } from '../director/play';
@@ -14,7 +14,30 @@ import { tileState } from '../scene/tiles';
 
 const KW = new Set(['input', 'var', 'requires', 'ensures', 'while', 'if', 'else', 'true', 'false', 'abs', 'min', 'max']);
 
-function highlightSource(src: string, header: { from: number; to: number }, landings: number) {
+interface Beat {
+  hopTick: number;
+  hopDur: number;
+  landTick: number;
+  landGuard: 'true' | 'false' | 'mixed';
+}
+
+/**
+ * Syntax-highlighted program. While frogs hop, the loop body lights up (that is
+ * what a hop runs); when they land, the condition flashes green (keep looping)
+ * or amber (stop).
+ */
+function highlightSource(level: CompiledLevel, beat: Beat) {
+  const src = level.program.source;
+  const header = level.program.loop.headerSpan;
+  const stmts = level.program.loop.body;
+  const lineStart = (i: number) => src.lastIndexOf('\n', i - 1) + 1;
+  const lineEnd = (i: number) => {
+    const k = src.indexOf('\n', i);
+    return k < 0 ? src.length : k;
+  };
+  const body = stmts.length
+    ? { from: lineStart(stmts[0].span.from), to: lineEnd(stmts[stmts.length - 1].span.to) }
+    : { from: header.to, to: header.to };
   const toks = tokenize(src).filter((t) => t.kind !== 'eof');
   const piece = (from: number, to: number, keyBase: string): React.ReactNode[] => {
     const out: React.ReactNode[] = [];
@@ -35,21 +58,32 @@ function highlightSource(src: string, header: { from: number; to: number }, land
   };
   return [
     ...piece(0, header.from, 'a'),
-    <span key={`hdr${landings}`} className={`loop-header ${landings > 0 ? 'pulse' : ''}`}>
+    <span key={`hdr${beat.landTick}`} className={`loop-header ${beat.landTick > 0 ? `check-${beat.landGuard}` : ''}`}>
       {piece(header.from, header.to, 'h')}
     </span>,
-    ...piece(header.to, src.length, 'b'),
+    ...piece(header.to, body.from, 'm'),
+    <span
+      key={`body${beat.hopTick}`}
+      className={`loop-body ${beat.hopTick > 0 ? 'running' : ''}`}
+      style={{ animationDuration: `${Math.max(0.3, beat.hopDur + 0.15)}s` }}
+    >
+      {piece(body.from, body.to, 'b')}
+    </span>,
+    ...piece(body.to, src.length, 'c'),
   ];
 }
 
 export function CodePanel() {
   const level = useGame((s) => s.level)!;
-  const landings = useGame((s) => s.landings);
+  const hopTick = useGame((s) => s.hopTick);
+  const hopDur = useGame((s) => s.hopDur);
+  const landTick = useGame((s) => s.landTick);
+  const landGuard = useGame((s) => s.landGuard);
   const selected = useGame((s) => s.selected);
   const reveal = useGame((s) => s.reveal);
   const nodes = useMemo(
-    () => highlightSource(level.program.source, level.program.loop.headerSpan, landings),
-    [level, landings],
+    () => highlightSource(level, { hopTick, hopDur, landTick, landGuard }),
+    [level, hopTick, hopDur, landTick, landGuard],
   );
   if (!reveal.code) return null;
   return (

@@ -458,8 +458,23 @@ code {
   padding: 1px 3px;
   margin: -1px -3px;
 }
-.loop-header.pulse {
-  animation: flash 0.7s ease-out;
+.loop-header.check-true {
+  animation: check-true 0.9s ease-out;
+}
+.loop-header.check-false {
+  animation: check-false 1.4s ease-out forwards;
+}
+.loop-header.check-mixed {
+  animation: check-mixed 0.9s ease-out;
+}
+.loop-body {
+  border-radius: 6px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.loop-body.running {
+  animation-name: body-run;
+  animation-timing-function: ease-out;
 }
 .debugger {
   margin-top: 10px;
@@ -826,9 +841,36 @@ code {
     opacity: 1;
   }
 }
-@keyframes flash {
+@keyframes body-run {
   0% {
-    background: rgba(82, 194, 74, 0.45);
+    background: rgba(82, 194, 74, 0.38);
+  }
+  70% {
+    background: rgba(82, 194, 74, 0.28);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@keyframes check-true {
+  0% {
+    background: rgba(82, 194, 74, 0.4);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@keyframes check-false {
+  0% {
+    background: rgba(239, 165, 43, 0.55);
+  }
+  100% {
+    background: rgba(239, 165, 43, 0.18);
+  }
+}
+@keyframes check-mixed {
+  0% {
+    background: rgba(59, 130, 246, 0.3);
   }
   100% {
     background: transparent;

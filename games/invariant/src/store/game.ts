@@ -74,8 +74,12 @@ export interface Game {
   reveal: Reveal;
   /** Values shown under the code like a debugger. */
   selected: State | null;
-  /** Increments whenever frogs land (loop header highlight). */
-  landings: number;
+  /** Increments when frogs start a hop (the loop body runs). */
+  hopTick: number;
+  hopDur: number;
+  /** Increments when frogs land (the loop condition is checked). */
+  landTick: number;
+  landGuard: 'true' | 'false' | 'mixed';
   lastFailure: Counterexample | null;
   ghost: string | null;
   hints: string[];
@@ -112,7 +116,10 @@ export const useGame = create<Game>((set, get) => ({
   caption: null,
   reveal: FULL_REVEAL,
   selected: null,
-  landings: 0,
+  hopTick: 0,
+  hopDur: 0.42,
+  landTick: 0,
+  landGuard: 'true',
   lastFailure: null,
   ghost: null,
   hints: [],

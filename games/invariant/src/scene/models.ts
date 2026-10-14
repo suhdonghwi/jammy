@@ -23,27 +23,24 @@ export function frogGeometry(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
   const add = (g: THREE.BufferGeometry, p: number) => parts.push(tag(g, p));
 
-  add(sphere(0.25, 36, 26).scale(1.18, 0.82, 1.05).translate(0, 0.21, -0.01), PART.body);
-  add(sphere(0.2, 28, 18).scale(1.0, 0.72, 0.62).translate(0, 0.17, 0.125), PART.belly);
+  // one soft, squat body
+  add(sphere(0.27, 40, 28).scale(1.12, 0.78, 1.0).translate(0, 0.2, 0), PART.body);
   for (const s of [-1, 1]) {
-    add(sphere(0.105, 26, 18).translate(s * 0.125, 0.365, 0.045), PART.body);
-    add(sphere(0.088, 26, 18).translate(s * 0.13, 0.382, 0.088), PART.sclera);
-    add(sphere(0.05, 18, 12).scale(1, 1.12, 0.62).translate(s * 0.136, 0.388, 0.162), PART.pupil);
-    add(sphere(0.017, 10, 8).translate(s * 0.12, 0.414, 0.19), PART.shine);
-    add(sphere(0.032, 14, 10).scale(1.35, 0.8, 0.4).translate(s * 0.165, 0.255, 0.19), PART.cheek);
-    // front legs and feet
-    add(new THREE.CapsuleGeometry(0.034, 0.09, 6, 12).translate(s * 0.12, 0.075, 0.15), PART.body);
-    add(sphere(0.05, 16, 10).scale(1.3, 0.42, 1.2).translate(s * 0.13, 0.02, 0.19), PART.body);
-    // folded back legs
-    add(sphere(0.125, 22, 16).scale(0.6, 0.72, 1.15).translate(s * 0.215, 0.11, -0.07), PART.body);
-    add(sphere(0.072, 16, 10).scale(1.25, 0.32, 1.3).translate(s * 0.25, 0.02, 0.06), PART.body);
+    // eyes sit on top, in little body-colored bumps
+    add(sphere(0.1, 28, 20).translate(s * 0.13, 0.35, 0.05), PART.body);
+    add(sphere(0.082, 28, 20).translate(s * 0.135, 0.375, 0.09), PART.sclera);
+    add(sphere(0.046, 20, 14).scale(1, 1.1, 0.6).translate(s * 0.138, 0.38, 0.158), PART.pupil);
+    add(sphere(0.016, 10, 8).translate(s * 0.122, 0.405, 0.183), PART.shine);
+    add(sphere(0.034, 16, 10).scale(1.4, 0.75, 0.35).translate(s * 0.17, 0.245, 0.205), PART.cheek);
+    // two little front feet
+    add(sphere(0.06, 18, 12).scale(1.25, 0.42, 1.15).translate(s * 0.13, 0.025, 0.2), PART.body);
   }
   // smile
-  const arc = Math.PI * 0.62;
-  const mouth = new THREE.TorusGeometry(0.075, 0.0095, 8, 28, arc);
+  const arc = Math.PI * 0.6;
+  const mouth = new THREE.TorusGeometry(0.07, 0.0095, 8, 28, arc);
   mouth.rotateZ(-Math.PI / 2 - arc / 2);
-  mouth.rotateX(-0.28);
-  mouth.translate(0, 0.285, 0.232);
+  mouth.rotateX(-0.3);
+  mouth.translate(0, 0.275, 0.243);
   add(mouth, PART.mouth);
 
   const merged = mergeGeometries(parts)!;

@@ -5,7 +5,7 @@ import { checkFormula, type CheckResult, type Formula } from '../checker/check';
 import type { Counterexample } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
 import { hop, RULES, running, showState, toBig, type CompiledLevel, type Rule } from '../levels/level';
-import { game, useGame, type CaptionTone } from '../store/game';
+import { game, type CaptionTone } from '../store/game';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, now, type FrogSim } from '../scene/frogSim';
 import { handState } from '../scene/handState';
@@ -185,7 +185,6 @@ async function hopAllOnce(dur = 0.42): Promise<number> {
       });
     }),
   );
-  useGame.setState((g) => ({ landings: g.landings + 1 }));
   const sel = game().selected;
   if (frogs.length === 1 || sel) game().patch({ selected: frogs[0].state });
   return frogs.length;
@@ -269,7 +268,6 @@ export const director = {
       const n = hop(L, f.state);
       await frogWorld.hopTo(L, f, n, 0.36);
       f.stopped = !running(L, n);
-      useGame.setState((st) => ({ landings: st.landings + 1 }));
       if (game().selected) game().patch({ selected: n });
       k++;
     }
@@ -353,7 +351,6 @@ export const director = {
         await sleep(380);
         if (cex.rule === 'pres' && cex.next) {
           await frogWorld.hopTo(L, f, cex.next, 0.55);
-          useGame.setState((g) => ({ landings: g.landings + 1 }));
           game().patch({ selected: cex.next });
           f.red = true;
           if (!tok.alive) return;
@@ -433,7 +430,6 @@ export const director = {
       // Every frog on the continue region hops once — and lands on the area again.
       const movers = frogs.filter((f) => running(L, f.state));
       await Promise.all(movers.map((f) => frogWorld.hopTo(L, f, hop(L, f.state), 0.45)));
-      useGame.setState((g) => ({ landings: g.landings + 1 }));
       void t0;
     } finally {
       if (tok.alive) game().patch({ busy: false });
@@ -457,7 +453,6 @@ export const director = {
         const n = hop(L, f.state);
         await frogWorld.hopTo(L, f, n, 0.5);
         f.stopped = !running(L, n);
-        useGame.setState((g) => ({ landings: g.landings + 1 }));
         game().patch({ selected: n });
         caption(k === 0 ? lines.hop : `${lines.hop} Again — still on your area.`, 'info');
         await sleep(900);

@@ -31,9 +31,20 @@ interface Pose {
   sy: number;
   yaw: number;
   pitch: number;
+  roll: number;
 }
 
+/** Shortest signed angle from a to b. */
+const angleDelta = (a: number, b: number) => {
+  let d = (b - a) % (Math.PI * 2);
+  if (d > Math.PI) d -= Math.PI * 2;
+  if (d < -Math.PI) d += Math.PI * 2;
+  return d;
+};
+
 function pose(f: FrogSim, t: number): Pose {
+  const dt = f.lastT === undefined ? 0 : Math.min(0.1, t - f.lastT);
+  f.lastT = t;
   let x = f.x;
   let ty = f.y;
   let h = baseAt(x, ty);
@@ -41,7 +52,14 @@ function pose(f: FrogSim, t: number): Pose {
   let sy = 1;
   let sx = 1;
   let pitch = 0;
-  let yaw = f.yaw ?? 0;
+  let roll = 0;
+
+  // Turn smoothly toward where the frog is going (or toward the viewer once
+  // it has stopped). Turning is quick while hopping, unhurried while sitting.
+  const target = f.face;
+  const rate = f.hop ? 18 : 7;
+  f.yaw += angleDelta(f.yaw, target) * (1 - Math.exp(-dt * rate));
+
   if (f.hop) {
     const u = Math.min(1, (t - f.hop.t0) / f.hop.dur);
     const e = easeInOut(u);
@@ -52,20 +70,19 @@ function pose(f: FrogSim, t: number): Pose {
     const dist = Math.hypot(f.hop.tx - f.hop.fx, f.hop.ty - f.hop.fy);
     h = h0 + (h1 - h0) * u + Math.sin(Math.PI * u) * (0.42 + 0.16 * dist);
     ground = baseAt(x, ty);
-    // anticipation squash at take-off, stretch in the air, squash on landing
+    // crouch before take-off, stretch in the air, squash on landing
     const s =
       u < 0.12
-        ? -Math.sin((u / 0.12) * Math.PI) * 0.25
+        ? -Math.sin((u / 0.12) * Math.PI) * 0.24
         : u > 0.88
-          ? -Math.sin(((u - 0.88) / 0.12) * Math.PI) * 0.22
-          : Math.sin(Math.PI * u) * 0.18;
+          ? -Math.sin(((u - 0.88) / 0.12) * Math.PI) * 0.2
+          : Math.sin(Math.PI * u) * 0.16;
     sy = 1 + s;
     sx = 1 - s * 0.45;
-    pitch = -Math.cos(Math.PI * u) * 0.35;
-    if (dist > 0) {
-      yaw = Math.atan2(f.hop.tx - f.hop.fx, -(f.hop.ty - f.hop.fy));
-      f.yaw = yaw;
-    }
+    // nose up on the way up, nose down coming in
+    pitch = -Math.cos(Math.PI * u) * 0.32 * Math.min(1, dist);
+    // lean into turns
+    roll = angleDelta(f.yaw, target) * -0.35;
   } else {
     sy = 1 + 0.025 * Math.sin(t * 2.4 + f.phase);
     sx = 1 - 0.012 * Math.sin(t * 2.4 + f.phase);
@@ -82,17 +99,11 @@ function pose(f: FrogSim, t: number): Pose {
   if (f.carried !== undefined) h += f.carried;
   let s = 1;
   if (f.hatchT0 !== undefined) {
-    const u = Math.min(1, (t - f.hatchT0) / 0.45);
-    // pop out of the egg with a little overshoot
-    s = u < 1 ? 0.15 + 0.85 * (1 - Math.pow(1 - u, 3)) + Math.sin(u * Math.PI) * 0.12 : 1;
+    const raw = (t - f.hatchT0) / 0.45;
+    // invisible until it hatches, then pops out with a little overshoot
+    s = raw <= 0 ? 0 : raw >= 1 ? 1 : 0.15 + 0.85 * (1 - Math.pow(1 - raw, 3)) + Math.sin(raw * Math.PI) * 0.12;
   }
-  return { x, y: h, z: -ty, ground, sx: sx * s, sy: sy * s, yaw, pitch };
-}
-
-declare module './frogSim' {
-  interface FrogSim {
-    yaw?: number;
-  }
+  return { x, y: h, z: -ty, ground, sx: sx * s, sy: sy * s, yaw: f.yaw, pitch, roll };
 }
 
 export function Frogs() {
@@ -129,7 +140,7 @@ export function Frogs() {
       if (n >= MAX_FROGS) break;
       const p = pose(f, t);
       dummy.position.set(p.x, p.y, p.z);
-      dummy.rotation.set(p.pitch, p.yaw, 0, 'YXZ');
+      dummy.rotation.set(p.pitch, p.yaw, p.roll, 'YXZ');
       dummy.scale.set(p.sx, p.sy, p.sx);
       dummy.updateMatrix();
       b.setMatrixAt(n, dummy.matrix);
@@ -137,7 +148,7 @@ export function Frogs() {
       b.setColorAt(n, col);
       // the shadow shrinks as the frog rises
       const air = Math.max(0, p.y - p.ground);
-      const ss = Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2);
+      const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2);
       dummy.position.set(p.x, p.ground + 0.008, p.z);
       dummy.rotation.set(0, 0, 0);
       dummy.scale.set(ss, 1, ss);
