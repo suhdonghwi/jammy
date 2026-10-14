@@ -2,6 +2,7 @@ import type { State } from '../lang/ast';
 import { holds, step } from '../lang/eval';
 import type { CompiledLevel } from '../levels/level';
 import { useGame } from '../store/game';
+import { goalEvents } from './goalEvents';
 
 export type FrogKind = 'real' | 'test';
 
@@ -33,6 +34,8 @@ export interface FrogSim {
   ox?: number;
   oy?: number;
   os?: number;
+  /** A dropped frog has touched down (fires once). */
+  touched?: boolean;
 }
 
 export const now = () => performance.now() / 1000;
@@ -147,6 +150,7 @@ class FrogWorld {
         // look ahead to the next hop (or at the viewer, if the loop is done)
         f.face = facingFor(level, next, f.face);
         if (!quiet) announceLand(holds(level.guard, next));
+        if (!holds(level.guard, next) && holds(level.post, next)) goalEvents.push(tx, ty, f.pond);
         res();
       }, dur * 1000),
     );

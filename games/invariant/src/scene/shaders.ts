@@ -41,73 +41,98 @@ float numberMask(vec2 f, int v) {
 `;
 
 /**
- * Goal tiles. Three styles are being explored (switchable in the HUD):
- *   0 portal  — a swirling vortex disc with a bright rim and core
- *   1 sparkle — a soft glowing pad (particles rise from it in 3D)
- *   2 ripple  — pulse rings expanding from a bright centre (with a light beam in 3D)
+ * Goal tiles — styles being explored (switchable in the HUD):
+ *   0 ripple — pulse rings expanding from a bright centre (+ a light beam in 3D)
+ *   1 calm   — one slow thin ring now and then, a small dot
+ *   2 halo   — a still amber ring with a faint breathing glow
+ *   3 well   — a softly recessed amber pool, completely still
+ * Styles 1–3 stay quiet until a frog lands on a goal: then a water-like
+ * ripple spreads from it (see landingRipples).
  */
+export const MAX_EVENTS = 24;
 export const GLSL_GOAL = /* glsl */ `
 uniform vec3 uGoal;
 uniform vec3 uGoalGlow;
-uniform vec3 uPortalA;
-uniform vec3 uPortalB;
 uniform float uTime;
 uniform int uGoalStyle;
+uniform vec3 uEvents[${MAX_EVENTS}];
 // fwr: screen-space derivative of length(f), taken outside any branch.
 // seed: per-tile value so neighbouring goals don't move in lockstep.
 vec3 drawGoal(vec3 col, vec2 f, float fwr, float seed) {
   float aa = fwr * 1.3;
   float r = length(f);
-  float a = atan(f.y, f.x);
-  float pulse = 0.5 + 0.5 * sin(uTime * 2.0 + seed * 6.283);
   if (uGoalStyle == 0) {
-    // portal
-    float glow = pow(1.0 - smoothstep(0.2, 0.5, r), 1.5);
-    col = mix(col, uPortalB, glow * (0.3 + 0.18 * pulse));
-    float disk = 1.0 - smoothstep(0.29 - aa, 0.29 + aa, r);
-    float swirl = 0.5 + 0.5 * sin(a * 3.0 - r * 26.0 + uTime * 2.6 + seed * 6.283);
-    float depth = smoothstep(0.0, 0.29, r);
-    vec3 inner = mix(uPortalA, uPortalB, swirl * 0.8 * depth + 0.2 * depth);
-    inner = mix(vec3(1.0, 0.97, 0.9), inner, smoothstep(0.0, 0.11, r));
-    col = mix(col, inner, disk);
-    float rim = exp(-pow((r - 0.29) / 0.022, 2.0));
-    col = mix(col, vec3(1.0, 0.96, 0.88), rim * (0.75 + 0.25 * pulse));
-  } else if (uGoalStyle == 1) {
-    // glowing pad
-    float glow = pow(1.0 - smoothstep(0.05, 0.5, r), 1.4);
-    col = mix(col, uGoalGlow, glow * (0.55 + 0.3 * pulse));
-    float pad = 1.0 - smoothstep(0.2 - aa, 0.2 + aa, r);
-    vec3 padCol = mix(vec3(1.0, 0.97, 0.88), uGoal, smoothstep(0.0, 0.2, r));
-    col = mix(col, padCol, pad);
-    float ring = exp(-pow((r - (0.26 + 0.02 * pulse)) / 0.014, 2.0));
-    col = mix(col, uGoal, ring * 0.8);
-  } else {
-    // ripple
     for (int k = 0; k < 3; k++) {
       float ph = fract(uTime * 0.55 + float(k) / 3.0 + seed);
       float rr = 0.1 + ph * 0.36;
       float ring = exp(-pow((r - rr) / 0.018, 2.0)) * (1.0 - ph) * (1.0 - ph);
       col = mix(col, uGoal, ring * 0.95);
     }
-    float glow = 1.0 - smoothstep(0.0, 0.3, r);
-    col = mix(col, uGoalGlow, glow * 0.45);
+    col = mix(col, uGoalGlow, (1.0 - smoothstep(0.0, 0.3, r)) * 0.45);
     float dotm = 1.0 - smoothstep(0.1 - aa, 0.1 + aa, r);
     col = mix(col, mix(vec3(1.0, 0.96, 0.85), uGoal, 0.35), dotm);
+  } else if (uGoalStyle == 1) {
+    // one slow, thin ring every few seconds
+    float ph = fract(uTime / 3.4 + seed);
+    float rr = 0.09 + ph * 0.33;
+    float ring = exp(-pow((r - rr) / 0.012, 2.0)) * pow(1.0 - ph, 1.5);
+    col = mix(col, uGoal, ring * 0.55);
+    col = mix(col, uGoalGlow, (1.0 - smoothstep(0.0, 0.26, r)) * 0.18);
+    float dotm = 1.0 - smoothstep(0.075 - aa, 0.075 + aa, r);
+    col = mix(col, uGoal, dotm * 0.9);
+  } else if (uGoalStyle == 2) {
+    // still ring, faint breathing glow
+    float breath = 0.5 + 0.5 * sin(uTime * 1.3 + seed * 6.283);
+    col = mix(col, uGoalGlow, (1.0 - smoothstep(0.0, 0.3, r)) * (0.16 + 0.1 * breath));
+    float ring = 1.0 - smoothstep(0.016 - aa, 0.016 + aa, abs(r - 0.27));
+    col = mix(col, uGoal, ring * 0.9);
+    float dotm = 1.0 - smoothstep(0.06 - aa, 0.06 + aa, r);
+    col = mix(col, uGoal, dotm * 0.85);
+  } else {
+    // recessed pool: darker toward the top edge (inner shadow), lit rim at the bottom
+    float pool = 1.0 - smoothstep(0.3 - aa, 0.3 + aa, r);
+    vec2 n = r > 0.0 ? f / r : vec2(0.0);
+    float shade = smoothstep(0.12, 0.3, r) * dot(n, vec2(0.0, 1.0));
+    vec3 water = mix(uGoalGlow, uGoal, 0.35 + 0.35 * smoothstep(0.0, 0.3, r));
+    water *= 1.0 - 0.18 * max(shade, 0.0);
+    col = mix(col, water, pool);
+    float lit = (1.0 - smoothstep(0.012 - aa, 0.012 + aa, abs(r - 0.3))) * max(-dot(n, vec2(0.0, 1.0)), 0.0);
+    col = mix(col, vec3(1.0, 0.97, 0.9), lit * 0.9);
+    float dark = (1.0 - smoothstep(0.012 - aa, 0.012 + aa, abs(r - 0.3))) * max(dot(n, vec2(0.0, 1.0)), 0.0);
+    col = mix(col, uGoal * 0.7, dark * 0.6);
+  }
+  return col;
+}
+// Water-like rings spreading from where frogs landed on goals (p in tile space).
+vec3 landingRipples(vec3 col, vec2 p) {
+  if (uGoalStyle == 0) return col;
+  for (int i = 0; i < ${MAX_EVENTS}; i++) {
+    vec3 e = uEvents[i];
+    float age = uTime - e.z;
+    if (age < 0.0 || age > 1.6) continue;
+    float d = length(p - e.xy);
+    for (int k = 0; k < 2; k++) {
+      float a = age - float(k) * 0.28;
+      if (a < 0.0) continue;
+      float rr = 0.12 + a * 0.95;
+      float fade = pow(max(0.0, 1.0 - a / 1.3), 1.6);
+      float ring = exp(-pow((d - rr) / 0.03, 2.0)) * fade;
+      col = mix(col, uGoal, ring * (k == 0 ? 0.75 : 0.45));
+    }
   }
   return col;
 }
 `;
 
-export const GOAL_STYLES = ['portal', 'sparkle', 'ripple'] as const;
+export const GOAL_STYLES = ['ripple', 'calm', 'halo', 'well'] as const;
 export type GoalStyle = (typeof GOAL_STYLES)[number];
 
 export function goalUniforms(): Record<string, THREE.IUniform> {
   return {
     uGoal: { value: new THREE.Color(COLORS.goal) },
     uGoalGlow: { value: new THREE.Color(COLORS.goalGlow) },
-    uPortalA: { value: new THREE.Color(COLORS.portalA) },
-    uPortalB: { value: new THREE.Color(COLORS.portalB) },
-    uGoalStyle: { value: 0 },
+    uGoalStyle: { value: 1 },
+    uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
   };
 }
 

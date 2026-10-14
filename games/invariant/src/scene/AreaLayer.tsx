@@ -14,6 +14,7 @@ import { frogWorld } from './frogSim';
 import { eggsNear, tileState } from './tiles';
 import { occupancy, slotFor } from './occupancy';
 import { GoalFX } from './GoalFX';
+import { goalEvents } from './goalEvents';
 
 const HEIGHT_GLSL = /* glsl */ `
 attribute vec2 aTile;
@@ -101,6 +102,7 @@ void main() {
     if (t.y == 0) m = numberMask(vF, t.x);
     else if (t.x == 0) m = numberMask(vF, t.y);
     col = mix(col, uLabelOn, m * 0.85);
+    col = landingRipples(col, vTile + vF);
     if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
       col = mix(col, vec3(1.0), (1.0 - smoothstep(-fwRing, fwRing, ringD)) * 0.95);
     }
@@ -367,6 +369,8 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     material.uniforms.uTime.value = t;
     shadowMat.uniforms.uTime.value = t;
     material.uniforms.uGoalStyle.value = GOAL_STYLES.indexOf(useGame.getState().goalStyle);
+    const g = useGame.getState();
+    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.pond ? g.pond : undefined);
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);

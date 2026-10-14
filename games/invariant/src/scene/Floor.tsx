@@ -9,6 +9,7 @@ import { clock } from './constants';
 import { cameraRig } from './cameraRig';
 import { hover } from './hover';
 import { field } from './field';
+import { goalEvents } from './goalEvents';
 import { SLAB_H } from './constants';
 
 const vertex = /* glsl */ `
@@ -79,6 +80,7 @@ void main() {
       tcol = mix(tcol, uLabel, m * 0.9);
     }
     col = mix(uGap, tcol, inside);
+    if (uShowGoal > 0.5) col = landingRipples(col, p);
 
     // boundary between the continue and stop regions, drawn in the gap
     if (uShowStop > 0.5) {
@@ -208,6 +210,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     u.uCenter.value.set(t.x, t.z);
     u.uTime.value = clock.now();
     u.uGoalStyle.value = GOAL_STYLES.indexOf(useGame.getState().goalStyle);
+    goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.pond ? pond : undefined);
     u.uFade.value.set(R * 0.62, R);
     if ((performance.now() - born.current) / 1000 >= fadeDelay) {
       const k = 1 - Math.exp(-dt * fadeSpeed);

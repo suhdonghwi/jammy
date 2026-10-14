@@ -8,9 +8,14 @@ import { frogWorld, now, type FrogSim } from './frogSim';
 import { frogGeometry, frogMaterial } from './models';
 import { getBlobTexture } from './shaders';
 import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
+import { goalEvents } from './goalEvents';
+import { toNum } from '../levels/level';
 
 const MAX_FROGS = 400;
 const BADGES = 24;
+
+/** Frogs that touched down this frame after being dropped (for goal ripples). */
+const dropLandings: FrogSim[] = [];
 
 // "×n" badges over crowded tiles
 const badgeTextures = new Map<number, THREE.Texture>();
@@ -126,6 +131,10 @@ function pose(f: FrogSim, t: number): Pose {
     const raw = (t - f.drop.t0) / f.drop.dur;
     const u = clamp01(raw);
     h += f.drop.from * (1 - u * u);
+    if (raw >= 1 && !f.touched) {
+      f.touched = true;
+      dropLandings.push(f);
+    }
     squash += -0.2 * bump(clamp01((raw - 1) / 0.3));
     if (raw >= 1.3) f.drop = undefined;
   }
@@ -233,6 +242,13 @@ export function Frogs() {
       list.push(f);
       n++;
     }
+    const level = useGame.getState().level;
+    if (level) {
+      for (const f of dropLandings) {
+        if (level.fast.guard(toNum(f.state)) !== true && level.fast.post(toNum(f.state)) === true) goalEvents.push(f.x, f.y, f.pond);
+      }
+    }
+    dropLandings.length = 0;
     for (let i = badges; i < BADGES; i++) {
       const sp = badgeRefs.current[i];
       if (sp) sp.visible = false;
