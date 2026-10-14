@@ -6,6 +6,8 @@ import { GLSL_INT_HELPERS, levelGlsl } from './glsl';
 import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL } from './shaders';
 import { cameraRig } from './cameraRig';
 import { hover } from './hover';
+import { field } from './field';
+import { SLAB_H } from './constants';
 
 const vertex = /* glsl */ `
 varying vec3 vWorld;
@@ -106,6 +108,26 @@ void main() {
 `;
 }
 
+const _p = new THREE.Vector3();
+/**
+ * The tile under the pointer. A raised slab is hit first: intersect the ray
+ * with the slab-top plane and keep that tile if it is raised; otherwise use the
+ * floor hit.
+ */
+function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>, floorY: number): [number, number] {
+  const ray = e.ray;
+  if (Math.abs(ray.direction.y) > 1e-4) {
+    const t = (floorY + SLAB_H - ray.origin.y) / ray.direction.y;
+    if (t > 0) {
+      ray.at(t, _p);
+      const tx = Math.round(_p.x);
+      const ty = Math.round(-_p.z);
+      if (field.heightAt(tx, ty) > 0.5) return [tx, ty];
+    }
+  }
+  return [Math.round(e.point.x), Math.round(-e.point.z)];
+}
+
 export interface FloorProps {
   level: CompiledLevel | null;
   pond: number;
@@ -195,15 +217,12 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
 
   const handlers = interactive
     ? {
-        onPointerMove: (e: ThreeEvent<PointerEvent>) => {
-          const x = Math.round(e.point.x);
-          const ty = Math.round(-e.point.z);
-          hover.set([x, ty]);
-        },
+        onPointerMove: (e: ThreeEvent<PointerEvent>) => hover.set(pickTile(e, y)),
         onPointerOut: () => hover.set(null),
         onClick: (e: ThreeEvent<MouseEvent>) => {
           if (e.delta > 4) return;
-          onTile?.(Math.round(e.point.x), Math.round(-e.point.z));
+          const [tx, ty] = pickTile(e, y);
+          onTile?.(tx, ty);
         },
       }
     : {};
