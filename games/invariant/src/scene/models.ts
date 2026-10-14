@@ -17,8 +17,8 @@ function tag(g: THREE.BufferGeometry, part: number): THREE.BufferGeometry {
   return geo;
 }
 
-/** Low-poly sphere (faceted look comes from the material's flat shading). */
-const lp = (r: number, w = 9, h = 7) => new THREE.SphereGeometry(r, w, h);
+/** Smooth sphere (segment hints are scaled up for a soft surface). */
+const lp = (r: number, w = 9, h = 7) => new THREE.SphereGeometry(r, Math.max(20, w * 3), Math.max(14, h * 3));
 
 export function frogGeometry(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
@@ -36,7 +36,7 @@ export function frogGeometry(): THREE.BufferGeometry {
     add(lp(0.1, 8, 6).scale(0.5, 0.75, 1.25).translate(s * 0.135, 0.09, -0.06), PART.body);
     add(lp(0.06, 8, 4).scale(0.95, 0.3, 1.55).translate(s * 0.15, 0.016, 0.05), PART.body);
     // thin front arms
-    add(new THREE.CylinderGeometry(0.026, 0.032, 0.14, 6).rotateX(0.2).translate(s * 0.078, 0.08, 0.1), PART.body);
+    add(new THREE.CapsuleGeometry(0.028, 0.1, 6, 14).rotateX(0.2).translate(s * 0.078, 0.08, 0.1), PART.body);
     add(lp(0.034, 7, 4).scale(1.3, 0.4, 1.2).translate(s * 0.08, 0.012, 0.125), PART.body);
   }
   const merged = mergeGeometries(parts)!;
@@ -49,8 +49,7 @@ export function frogGeometry(): THREE.BufferGeometry {
 export function frogMaterial(opts: { ghost?: boolean; tint?: string } = {}): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    flatShading: true,
-    roughness: 0.5,
+    roughness: 0.45,
     metalness: 0,
     transparent: !!opts.ghost,
     opacity: opts.ghost ? 0.4 : 1,
