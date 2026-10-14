@@ -126,7 +126,6 @@ export function TopBar() {
           {level.title}
         </div>
       </div>
-      <GoalStylePicker />
       <div className="pill-group">
         {(['init', 'pres', 'exit'] as Rule[])
           .filter((r) => lights.includes(r))
@@ -355,23 +354,3 @@ export function ElevatorToast() {
   );
 }
 
-/** Temporary: compare goal styles while we explore. */
-function GoalStylePicker() {
-  const style = useGame((s) => s.goalStyle);
-  const options: { id: 'well' | 'deep' | 'basin' | 'shimmer'; label: string }[] = [
-    { id: 'well', label: 'Well' },
-    { id: 'deep', label: 'Deep' },
-    { id: 'basin', label: 'Basin' },
-    { id: 'shimmer', label: 'Shimmer' },
-  ];
-  return (
-    <div className="pill-group style-picker" title="Exploring goal styles">
-      <span className="style-picker-label">Goal</span>
-      {options.map((o) => (
-        <button key={o.id} className={`style-opt ${style === o.id ? 'on' : ''}`} onClick={() => useGame.setState({ goalStyle: o.id })}>
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}

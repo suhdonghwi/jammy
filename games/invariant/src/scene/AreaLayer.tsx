@@ -7,13 +7,14 @@ import type { FastFn } from '../lang/eval';
 import { clock, SLAB_H, TILE } from './constants';
 import { field, RISE_DUR, type TileFlags } from './field';
 import { cameraRig } from './cameraRig';
-import { colorUniform, getBlobTexture, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, GOAL_STYLES, goalUniforms, tileSeed } from './shaders';
+import { colorUniform, getBlobTexture, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, goalUniforms } from './shaders';
 import { useGame } from '../store/game';
 import { hover } from './hover';
 import { frogWorld } from './frogSim';
 import { eggsNear, tileState } from './tiles';
 import { occupancy, slotFor } from './occupancy';
 import { goalEvents } from './goalEvents';
+import { GoalColumns } from './GoalColumns';
 
 const HEIGHT_GLSL = /* glsl */ `
 attribute vec2 aTile;
@@ -77,7 +78,6 @@ uniform float uDim;
 ${GLSL_COMMON}
 ${GLSL_DIGITS}
 ${GLSL_GOAL}
-${tileSeed}
 ${FADE_GLSL}
 void main() {
   vec2 fw = fwidth(vF);
@@ -95,10 +95,7 @@ void main() {
       float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
       col = mix(col, col * 0.9, hatch);
     }
-    if (vFlags.y > 0.5) {
-      vec3 Vw = normalize(cameraPosition - vWorld);
-      col = drawGoal(col, vF, fwr, tileSeed(vTile), vTile, vec3(Vw.x, Vw.y, -Vw.z));
-    }
+    if (vFlags.y > 0.5) col = drawGoal(col, vF, fwr, vTile);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
     float m = 0.0;
     if (t.y == 0) m = numberMask(vF, t.x);
@@ -294,6 +291,7 @@ export function AreaLayer({ level, pond, inv, dim, showStop, showGoal, showEggs,
     <group>
       <Slabs version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
       {showEggs && <Eggs level={level} pond={pond} win={win} version={version} />}
+      {showGoal && <GoalColumns level={level} pond={pond} win={win} version={version} />}
     </group>
   );
 }
@@ -368,7 +366,6 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     const t = clock.now();
     material.uniforms.uTime.value = t;
     shadowMat.uniforms.uTime.value = t;
-    material.uniforms.uGoalStyle.value = GOAL_STYLES.indexOf(useGame.getState().goalStyle);
     const g = useGame.getState();
     goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.pond ? g.pond : undefined);
     const ht = hover.tile;

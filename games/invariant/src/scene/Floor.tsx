@@ -3,8 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
 import { GLSL_INT_HELPERS, levelGlsl } from './glsl';
-import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, GOAL_STYLES, goalUniforms, tileSeed } from './shaders';
-import { useGame } from '../store/game';
+import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, goalUniforms } from './shaders';
 import { clock } from './constants';
 import { cameraRig } from './cameraRig';
 import { hover } from './hover';
@@ -39,7 +38,6 @@ uniform vec3 uGap, uVoid, uTile, uStop, uHatch, uEdge, uHoverCol, uCross, uLabel
 ${GLSL_COMMON}
 ${GLSL_DIGITS}
 ${GLSL_GOAL}
-${tileSeed}
 ${GLSL_INT_HELPERS}
 ${levelGlsl(level)}
 
@@ -54,8 +52,6 @@ void main() {
 
   // derivatives are taken up front (uniform control flow)
   vec2 fw = fwidth(f);
-  vec3 Vw = normalize(cameraPosition - vWorld);
-  vec3 viewTile = vec3(Vw.x, Vw.y, -Vw.z);
   float fwr = fwidth(length(f));
   float ringD = abs(sdRoundBox(f, vec2(0.47), 0.13)) - 0.035;
   float fwRing = fwidth(ringD);
@@ -74,7 +70,7 @@ void main() {
     }
     bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
     if (onCross && !st) tcol = mix(tcol, uCross, 0.9);
-    if (st && uShowGoal > 0.5 && L_goal(t)) tcol = drawGoal(tcol, f, fwr, tileSeed(tc), tc, viewTile);
+    if (st && uShowGoal > 0.5 && L_goal(t)) tcol = drawGoal(tcol, f, fwr, tc);
     if (uShowAxes > 0.5) {
       float m = 0.0;
       if (t.y == 0) m = numberMask(f, t.x);
@@ -210,7 +206,6 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     m.scale.setScalar(R * 2.2);
     u.uCenter.value.set(t.x, t.z);
     u.uTime.value = clock.now();
-    u.uGoalStyle.value = GOAL_STYLES.indexOf(useGame.getState().goalStyle);
     goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.pond ? pond : undefined);
     u.uFade.value.set(R * 0.62, R);
     if ((performance.now() - born.current) / 1000 >= fadeDelay) {

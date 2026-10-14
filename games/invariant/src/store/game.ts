@@ -89,8 +89,6 @@ export interface Game {
   pitfallMessage: string | null;
   /** A cinematic is playing; the level scene is hidden. */
   cinematic: boolean;
-  /** Goal visual being explored. */
-  goalStyle: 'well' | 'deep' | 'basin' | 'shimmer';
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
   backToMenu(view?: 'home' | 'levels'): void;
@@ -130,7 +128,6 @@ export const useGame = create<Game>((set, get) => ({
   showRules: false,
   pitfallMessage: null,
   cinematic: false,
-  goalStyle: 'deep',
 
   openLevel(def, mode) {
     const level = compileLevel(def);
