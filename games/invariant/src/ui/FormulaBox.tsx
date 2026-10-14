@@ -96,7 +96,7 @@ export function FormulaBox() {
   }, [errorNudge]);
 
   useEffect(() => {
-    const ghostExt = (g: string | null): Extension => placeholder(g ? `${g}   ⇥ Tab` : 'type a condition, e.g. x >= 0');
+    const ghostExt = (g: string | null): Extension => placeholder(g ? `${g}   ⇥ Tab` : 'type a condition');
     const v = new EditorView({
       parent: host.current!,
       state: EditorState.create({
@@ -146,7 +146,7 @@ export function FormulaBox() {
     const v = view.current;
     if (!v) return;
     v.dispatch({
-      effects: ghostComp.current.reconfigure(placeholder(ghost ? `${ghost}   ⇥ Tab` : 'type a condition, e.g. x >= 0')),
+      effects: ghostComp.current.reconfigure(placeholder(ghost ? `${ghost}   ⇥ Tab` : 'type a condition')),
     });
   }, [ghost]);
 
