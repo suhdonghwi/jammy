@@ -318,7 +318,7 @@ Because animation and proof share one definition, they cannot disagree.
 
 **Platform:** desktop first. Mobile, at most, view-only.
 
-**Progress** is saved in the browser; the tutorial can be skipped and replayed.
+No progress is persisted; the tutorial can be replayed any time.
 
 ---
 
@@ -501,10 +501,15 @@ Where the build differs from the plan above, and why:
 | Plan | Implemented | Why |
 |---|---|---|
 | Lezer grammar for programs and formulas | Hand-written recursive-descent parser (`src/lang/parser.ts`); CodeMirror uses a small `StreamLanguage` for highlighting | Precise, friendly error messages with spans; one parser feeds the interpreter, Z3, and rendering |
-| Formula → GLSL slabs | Formula compiled to a fast JS function, evaluated over a tile window that follows the camera (size grows with zoom); instanced meshes with a per-instance height attribute | Exact integer semantics everywhere, no shader overflow; a window of up to 141×141 tiles plus fog reads as endless |
-| Z3 in our own Web Worker | Z3's async API on the main thread | z3-solver already runs `check()` on Emscripten worker threads; the page stays responsive |
-| Spikes S1/S2 | Skipped | Verified during implementation: Z3 runs in the browser (dev and production builds) and every level's solution is proved in < 100 ms in Node |
+| Raised slabs + per-tile floor geometry | **Floor is one shader plane**: the level's `requires`, loop guard and `ensures` are compiled to GLSL and evaluated per pixel — grid, hatched stop region, continue/stop boundary, amber goal rings, axis numbers, hover cursor and crosshair, all in one draw call on a truly infinite plane | Performance and crispness at any zoom |
+| Slab height animation in JS | Rounded instanced slabs rise/sink on the GPU from per-instance `(from, to, t0)`; the same function gives frogs and eggs their base height on the CPU | No per-frame JS loops over tiles |
+| Real-time shadow maps | Soft blob shadows (slabs, eggs, frogs, hand) | Cheap, and reads better in a white world |
+| Z3 in our own Web Worker | Z3's async API on the main thread | z3-solver already runs `check()` on Emscripten worker threads |
+| Pond stack with sliding layers | **Elevator**: ponds are floors at `y = n × 6`; changing `n` moves only the camera, the old floor fades out and the new one fades in as the camera arrives, with an "▲ n = 5" toast and an elevator-style Input panel (PageUp/PageDown) | Nothing else moves, so it's clear what happened |
+| Home as an HTML menu | 3D home scene: extruded Fredoka title (opentype.js → `ExtrudeGeometry`, bundled font, no CDN), frogs hopping around a loop of slabs; **Tutorial** and **Levels** buttons. No progress is persisted | |
 
-**Palette:** tiles `#fbfbfa` on background `#e9ebef` (gaps read as grid lines); stop tiles `#d9dce2`; area slabs `#7fb2f0` (stop-region slabs `#a3b7cf`, so the stop region stays readable on top of the area); real frogs `#5fbf4a`; test frogs `#b48cf0`; failures `#ef4f4f`.
+**Models:** frogs are a merged procedural mesh (body, belly, big eyes with pupils and highlights, smile, cheeks, folded legs) tinted per instance, with an inverted-hull outline; the hand is a puffy cartoon glove (two-segment fingers, thumb, rolled cuff) with the same outline.
+
+**Palette:** tiles `#ffffff` with `#d3d9e2` gaps; stop tiles `#eef0f4` with diagonal hatching and a `#6f7b8f` boundary; area slabs `#5c9df5` (stop-region slabs `#93b2dc`); goals amber `#efa52b`; real frogs `#52c24a`; test frogs `#a77df2`; failures `#f04f55`. UI type: Fredoka (display) and Nunito (text).
 
 **Counterexample ranking (box search):** nearest pond first, then smallest `|x| + |y|`, then closest to the camera. Z3 counterexamples come from growing bounds (±8, ±64, ±1024, then unbounded, then `QF_NIA`).

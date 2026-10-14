@@ -1,5 +1,5 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../store/game';
 import { COLORS, SLAB_H } from './constants';
@@ -110,6 +110,10 @@ export function Frogs() {
   const pond = useGame((s) => s.pond);
   const hasPonds = useGame((s) => !!s.level?.pond);
   const visibleList = useRef<FrogSim[]>([]);
+  // nothing renders until the first frame has placed every instance
+  useLayoutEffect(() => {
+    for (const r of [body, outline, shadows]) if (r.current) r.current.count = 0;
+  }, []);
 
   useFrame(() => {
     const b = body.current;

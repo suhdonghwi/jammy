@@ -74,12 +74,13 @@ export function CodePanel() {
 // ---------------------------------------------------------------------------
 
 export function TopBar() {
-  const level = useGame((s) => s.level)!;
+  const level = useGame((s) => s.level);
   const mode = useGame((s) => s.mode);
   const lights = useGame((s) => s.reveal.lights);
   const verdicts = useGame((s) => s.verdicts);
   const checking = useGame((s) => s.checking);
   const busy = useGame((s) => s.busy);
+  if (!level) return null;
   return (
     <div className="topbar">
       <div className="pill-group">
