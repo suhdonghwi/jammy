@@ -4,7 +4,7 @@ import { Compartment, EditorState, StateEffect, StateField, type Extension } fro
 import { Decoration, EditorView, keymap, placeholder, type DecorationSet } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { useEffect, useRef, useState } from 'react';
-import { LoaderCircle } from 'lucide-react';
+import { Check, LoaderCircle } from 'lucide-react';
 import { useGame } from '../store/game';
 import { check } from '../director/play';
 
@@ -69,6 +69,13 @@ export function FormulaBox() {
   const [settledError, setSettledError] = useState<{ message: string; span: { from: number; to: number } } | null>(null);
   const errorNudge = useGame((s) => s.errorNudge);
   const [shake, setShake] = useState(false);
+  // most checks finish almost instantly; only swap in a spinner if one takes a while
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!checking) return setSlow(false);
+    const t = setTimeout(() => setSlow(true), 450);
+    return () => clearTimeout(t);
+  }, [checking]);
   useEffect(() => {
     const err = formula && !formula.ok ? { message: formula.error.message, span: formula.error.span } : null;
     if (!err) {
@@ -178,8 +185,8 @@ export function FormulaBox() {
           disabled={!canCheck}
           onClick={() => void check()}
         >
-          {checking && <LoaderCircle size={16} strokeWidth={2.6} className="spin" />}
-          {checking ? 'Checking…' : 'Check'}
+          {slow ? <LoaderCircle size={16} strokeWidth={2.6} className="spin" /> : <Check size={16} strokeWidth={2.8} />}
+          Check
         </button>
       </div>
     </div>
