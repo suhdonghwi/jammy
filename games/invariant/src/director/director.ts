@@ -1,0 +1,517 @@
+import gsap from 'gsap';
+import type { State } from '../lang/ast';
+import { holds } from '../lang/eval';
+import { checkFormula, type CheckResult, type Formula } from '../checker/check';
+import type { Counterexample } from '../checker/types';
+import { browserZ3 } from '../checker/z3-browser';
+import { hop, RULES, running, showState, toBig, type CompiledLevel, type Rule } from '../levels/level';
+import { game, useGame, type CaptionTone } from '../store/game';
+import { cameraRig } from '../scene/cameraRig';
+import { frogWorld, now, type FrogSim } from '../scene/frogSim';
+import { handState } from '../scene/handState';
+import { sceneShared, tileState, windowIndex } from '../scene/tiles';
+import { bridgeState } from '../scene/Bridge';
+
+// ---------------------------------------------------------------------------
+// Sequencing: every sequence gets a token; starting a new one cancels the old.
+// ---------------------------------------------------------------------------
+
+let seq = 0;
+interface Token {
+  readonly alive: boolean;
+}
+function begin(): Token {
+  const id = ++seq;
+  gsap.killTweensOf(handState);
+  return {
+    get alive() {
+      return id === seq;
+    },
+  };
+}
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+function tween(target: object, vars: gsap.TweenVars): Promise<void> {
+  return new Promise((resolve) => {
+    gsap.to(target, { ...vars, onComplete: () => resolve(), onInterrupt: () => resolve() });
+  });
+}
+
+const lvl = (): CompiledLevel => game().level!;
+
+function caption(text: string, tone: CaptionTone = 'info', action?: { label: string; onClick: () => void }) {
+  game().setCaption({ text, tone, action });
+}
+
+const fmt = (s: State) => `(${showState(lvl(), s)})`;
+
+function inArea(s: State): boolean {
+  const v = game().valid;
+  return !!v && holds(v.expr, s);
+}
+
+/** World position just above a tile in the focused pond. */
+function above(x: number, y: number) {
+  return { x, z: -y };
+}
+
+// ---------------------------------------------------------------------------
+// The hand
+// ---------------------------------------------------------------------------
+
+async function handIn(x: number, y: number, h = 1.8, pose: Partial<typeof handState> = {}) {
+  const p = above(x, y);
+  if (handState.visible < 0.05) {
+    Object.assign(handState, { x: p.x + 1.5, y: h + 5, z: p.z + 3, curl: 0.25, point: 0, shrug: 0, tap: 0 });
+  }
+  await tween(handState, { visible: 1, x: p.x, y: h, z: p.z, duration: 0.7, ease: 'power3.out', ...pose });
+}
+
+async function handOut() {
+  await tween(handState, { visible: 0, y: handState.y + 4, z: handState.z + 2, point: 0, shrug: 0, tap: 0, duration: 0.6, ease: 'power2.in' });
+}
+
+/** The hand carries a test frog down and sets it on a tile. */
+async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
+  const L = lvl();
+  const x = Number(s[L.view.x]);
+  const y = Number(s[L.view.y]);
+  const carry = { h: 3.2 };
+  const f = frogWorld.add(L, 'test', s, { carried: carry.h });
+  const p = above(x, y);
+  Object.assign(handState, { x: p.x + 1.2, y: carry.h + 5, z: p.z + 2.5, curl: 0.8, point: 0, shrug: 0, tap: 0 });
+  await Promise.all([
+    tween(handState, { visible: 1, x: p.x, z: p.z + 0.15, y: carry.h + 0.55, duration: 0.6, ease: 'power3.out' }),
+  ]);
+  if (!tok.alive) return null;
+  await tween(carry, {
+    h: 0.55,
+    duration: 0.55,
+    ease: 'power2.inOut',
+    onUpdate: () => {
+      f.carried = carry.h;
+      handState.y = carry.h + 0.55;
+    },
+  });
+  if (!tok.alive) return null;
+  // release
+  f.carried = undefined;
+  f.drop = { t0: now(), dur: 0.22, from: 0.55 };
+  await tween(handState, { curl: 0.1, y: 2.2, z: p.z + 1.2, duration: 0.45, ease: 'power2.out' });
+  return f;
+}
+
+async function pointAt(x: number, y: number) {
+  const p = above(x, y);
+  await tween(handState, { visible: 1, x: p.x + 0.35, y: 1.25, z: p.z + 1.25, point: 1, curl: 0.2, tilt: 0.25, duration: 0.5, ease: 'power2.out' });
+  await tween(handState, { y: 1.05, duration: 0.18, yoyo: true, repeat: 3, ease: 'sine.inOut' });
+}
+
+// ---------------------------------------------------------------------------
+// Camera / ponds
+// ---------------------------------------------------------------------------
+
+async function focusState(s: State, far = false) {
+  const L = lvl();
+  const x = Number(s[L.view.x]);
+  const y = Number(s[L.view.y]);
+  if (L.pond) {
+    const p = Number(s[L.pond]);
+    if (p !== game().pond) {
+      game().setPond(p);
+      await sleep(450);
+    }
+  }
+  if (far) {
+    await cameraRig.zoomTo(45);
+    await cameraRig.lookAtTile(x, y);
+    await cameraRig.zoomTo(13);
+  } else {
+    const t = cameraRig.target();
+    const dist = Math.hypot(t.x - x, -t.z - y);
+    if (dist > 3 || cameraRig.distance() > 22) await cameraRig.lookAtTile(x, y, Math.min(cameraRig.distance(), 16));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Real frogs: hatching, stepping, running
+// ---------------------------------------------------------------------------
+
+function eggStatesNear(maxCount: number, radius: number): State[] {
+  const w = sceneShared.win;
+  const L = lvl();
+  if (!w) return [];
+  const t = cameraRig.target();
+  const tx = t.x;
+  const ty = -t.z;
+  const out: { s: State; d: number }[] = [];
+  for (let k = 0; k < w.egg.length; k++) {
+    if (!w.egg[k]) continue;
+    const x = w.cx - w.R + (k % w.size);
+    const y = w.cy - w.R + Math.floor(k / w.size);
+    const d = Math.hypot(x - tx, y - ty);
+    if (d > radius) continue;
+    if (frogWorld.hatched.has(`${x},${y}`)) continue;
+    out.push({ s: toBig(tileState(L, x, y, game().pond)), d });
+  }
+  out.sort((a, b) => a.d - b.d);
+  return out.slice(0, maxCount).map((o) => o.s);
+}
+
+function hatch(s: State): FrogSim {
+  const L = lvl();
+  const x = Number(s[L.view.x]);
+  const y = Number(s[L.view.y]);
+  frogWorld.hatched.add(`${x},${y}`);
+  const f = frogWorld.add(L, 'real', s, { hatchT0: now() });
+  f.stopped = !running(L, s);
+  return f;
+}
+
+function activeReal(): FrogSim[] {
+  const L = lvl();
+  const pond = game().pond;
+  return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.stopped && (!L.pond || f.pond === pond));
+}
+
+async function hopAllOnce(dur = 0.42): Promise<number> {
+  const L = lvl();
+  const frogs = activeReal();
+  if (frogs.length === 0) return 0;
+  await Promise.all(
+    frogs.map((f) => {
+      const n = hop(L, f.state);
+      return frogWorld.hopTo(L, f, n, dur).then(() => {
+        f.stopped = !running(L, n);
+      });
+    }),
+  );
+  useGame.setState((g) => ({ landings: g.landings + 1 }));
+  const sel = game().selected;
+  if (frogs.length === 1 || sel) game().patch({ selected: frogs[0].state });
+  return frogs.length;
+}
+
+
+export const director = {
+  /** Called when a level opens. */
+  reset() {
+    begin();
+    frogWorld.clear();
+    Object.assign(handState, { visible: 0 });
+    bridgeState.active = false;
+    game().patch({ busy: false, running: false, selected: null, lastFailure: null });
+  },
+
+  clearFrogs() {
+    begin();
+    frogWorld.clear();
+    game().patch({ running: false, selected: null });
+  },
+
+  /** Hatch one real frog (tutorial beat 1). */
+  spawnReal(s: State): FrogSim {
+    const f = hatch(s);
+    game().patch({ selected: s });
+    return f;
+  },
+
+  async step() {
+    if (game().busy) return;
+    if (activeReal().length === 0 && !frogWorld.frogs.some((f) => f.kind === 'real')) {
+      const eggs = eggStatesNear(1, 6);
+      if (eggs.length) director.spawnReal(eggs[0]);
+      return;
+    }
+    await hopAllOnce();
+    events.emit('stepped');
+  },
+
+  async run() {
+    const g = game();
+    if (g.busy || g.running) return;
+    const tok = begin();
+    frogWorld.clear('test');
+    gsap.to(handState, { visible: 0, duration: 0.3 });
+    if (activeReal().length === 0) {
+      frogWorld.clear('real');
+      const eggs = eggStatesNear(140, Math.max(8, Math.min(22, cameraRig.distance() * 0.9)));
+      eggs.forEach((s, i) => setTimeout(() => tok.alive && hatch(s), i * 6));
+      await sleep(Math.min(900, 300 + eggs.length * 6));
+    }
+    game().patch({ running: true });
+    let beats = 0;
+    while (tok.alive && game().running && beats < 80) {
+      const n = await hopAllOnce();
+      if (n === 0) break;
+      beats++;
+      await sleep(140);
+    }
+    if (tok.alive) {
+      game().patch({ running: false });
+      events.emit('runDone');
+    }
+  },
+
+  pause() {
+    game().patch({ running: false });
+  },
+
+  /** Run a single egg's frog (clicking an egg). */
+  async runEgg(s: State) {
+    const g = game();
+    if (g.busy) return;
+    const f = hatch(s);
+    game().patch({ selected: s });
+    await sleep(350);
+    const L = lvl();
+    let k = 0;
+    while (!f.stopped && k < 60 && frogWorld.frogs.includes(f)) {
+      const n = hop(L, f.state);
+      await frogWorld.hopTo(L, f, n, 0.36);
+      f.stopped = !running(L, n);
+      useGame.setState((st) => ({ landings: st.landings + 1 }));
+      if (game().selected) game().patch({ selected: n });
+      k++;
+    }
+    events.emit('eggRun');
+  },
+
+  clickTile(x: number, y: number) {
+    const g = game();
+    const w = sceneShared.win;
+    if (g.busy || !w || !g.reveal.eggs) return;
+    const k = windowIndex(w, x, y);
+    if (k < 0 || !w.egg[k] || frogWorld.hatched.has(`${x},${y}`)) {
+      game().patch({ selected: null });
+      return;
+    }
+    void director.runEgg(toBig(tileState(lvl(), x, y, g.pond)));
+  },
+
+  // -------------------------------------------------------------------------
+  // Checking
+  // -------------------------------------------------------------------------
+
+  async runChecker(rules: Rule[] = RULES, formula?: Formula): Promise<CheckResult | null> {
+    const g = game();
+    const inv = formula ?? g.valid;
+    if (!g.level || !inv) return null;
+    if (!formula && g.formula && !g.formula.ok) return null;
+    const t = cameraRig.target();
+    const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, pondR: 20, pond: g.pond };
+    if (!formula) game().patch({ checking: true, verdicts: {} });
+    let tapping = false;
+    const tapTimer = setTimeout(() => {
+      tapping = true;
+      const tt = cameraRig.target();
+      void handIn(tt.x / 1 + 2.5, -tt.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
+    }, 350);
+    try {
+      const ctx = await browserZ3();
+      const res = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
+      if (!formula) game().patch({ verdicts: res.verdicts, pitfallMessage: res.pitfall?.message ?? null });
+      return res;
+    } catch (e) {
+      caption(`The solver could not start: ${(e as Error).message}`, 'fail');
+      return null;
+    } finally {
+      clearTimeout(tapTimer);
+      if (tapping) gsap.to(handState, { tap: 0, duration: 0.2 });
+      if (!formula) game().patch({ checking: false });
+    }
+  },
+
+  /** Play the hand's demonstration of one counterexample. */
+  async playCounterexample(cex: Counterexample, opts: { prefix?: string; extra?: string } = {}) {
+    const tok = begin();
+    const L = lvl();
+    game().patch({ busy: true, lastFailure: cex, running: false });
+    frogWorld.clear('test');
+    frogWorld.frogs.forEach((f) => (f.red = false));
+    const x = Number(cex.state[L.view.x]);
+    const y = Number(cex.state[L.view.y]);
+    try {
+      if (handState.visible > 0.1) await handOut();
+      await focusState(cex.state, cex.far);
+      if (!tok.alive) return;
+      const prefix = opts.prefix ?? (cex.far ? 'Everything nearby looked fine — but far away: ' : '');
+      const broken = cex.broken ? ` \`${cex.broken}\` ${cex.rule === 'pres' ? 'no longer holds' : 'is false there'}.` : '';
+      let text = '';
+      if (cex.rule === 'init') {
+        frogWorld.clear('real');
+        await handIn(x + 0.4, y - 1.3, 1.6, { curl: 0.2 });
+        if (!tok.alive) return;
+        await pointAt(x, y);
+        const f = hatch(cex.state);
+        await sleep(450);
+        f.red = true;
+        game().patch({ selected: cex.state });
+        text = `${prefix}This frog starts at ${fmt(cex.state)} — outside your area.${broken}`;
+      } else {
+        const f = await placeTestFrog(tok, cex.state);
+        if (!f || !tok.alive) return;
+        game().patch({ selected: cex.state });
+        await sleep(380);
+        if (cex.rule === 'pres' && cex.next) {
+          await frogWorld.hopTo(L, f, cex.next, 0.55);
+          useGame.setState((g) => ({ landings: g.landings + 1 }));
+          game().patch({ selected: cex.next });
+          f.red = true;
+          if (!tok.alive) return;
+          await pointAt(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]));
+          text = `${prefix}From ${fmt(cex.state)}, one hop lands at ${fmt(cex.next)} — outside your area.${broken}`;
+        } else {
+          f.red = true;
+          await pointAt(x, y);
+          text = `${prefix}A frog that stops at ${fmt(cex.state)} doesn't meet the postcondition.`;
+        }
+      }
+      if (opts.extra) text += ` ${opts.extra}`;
+      caption(text, 'fail', { label: 'Replay', onClick: () => void director.playCounterexample(cex, opts) });
+      await sleep(600);
+      if (tok.alive) await handOut();
+    } finally {
+      if (tok.alive) game().patch({ busy: false });
+    }
+  },
+
+  async playShrug(text: string) {
+    const tok = begin();
+    game().patch({ busy: true });
+    try {
+      const t = cameraRig.target();
+      await handIn(t.x, -t.z, 2.2, { curl: 0.05, point: 0, tilt: -0.2 });
+      if (!tok.alive) return;
+      await tween(handState, { shrug: 1, duration: 0.25 });
+      await sleep(1300);
+      await tween(handState, { shrug: 0, duration: 0.25 });
+      caption(text, 'muted');
+      await handOut();
+    } finally {
+      if (tok.alive) game().patch({ busy: false });
+    }
+  },
+
+  /** Success: the hand scatters frogs everywhere on the area. */
+  async playRain() {
+    const tok = begin();
+    const L = lvl();
+    game().patch({ busy: true, running: false });
+    frogWorld.clear();
+    try {
+      const t0 = cameraRig.target();
+      await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
+      const w = sceneShared.win;
+      const inv = game().valid;
+      if (!w || !inv) return;
+      const t = cameraRig.target();
+      const tx = t.x;
+      const ty = -t.z;
+      const tiles: State[] = [];
+      for (let k = 0; k < w.area.length; k++) {
+        if (!w.area[k] || !w.exists[k]) continue;
+        const x = w.cx - w.R + (k % w.size);
+        const y = w.cy - w.R + Math.floor(k / w.size);
+        if (Math.hypot(x - tx, y - ty) > 16) continue;
+        tiles.push(toBig(tileState(L, x, y, game().pond)));
+      }
+      // shuffle and cap
+      for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+      }
+      const pick = tiles.slice(0, 160);
+      // hand sweeps across while sprinkling
+      Object.assign(handState, { x: tx - 9, y: 6, z: -ty + 2, curl: 0.55, tap: 0.6, point: 0, shrug: 0 });
+      void tween(handState, { visible: 1, duration: 0.3 });
+      void tween(handState, { x: tx + 9, z: -ty - 2, duration: 1.8, ease: 'sine.inOut' });
+      const frogs: FrogSim[] = [];
+      pick.forEach((s, i) => {
+        setTimeout(() => {
+          if (!tok.alive) return;
+          const f = frogWorld.add(L, 'test', s, { drop: { t0: now(), dur: 0.5 + Math.random() * 0.3, from: 5 + Math.random() * 2 } });
+          frogs.push(f);
+        }, (i / pick.length) * 1600 + Math.random() * 120);
+      });
+      await sleep(2400);
+      if (!tok.alive) return;
+      void handOut();
+      // Every frog on the continue region hops once — and lands on the area again.
+      const movers = frogs.filter((f) => running(L, f.state));
+      await Promise.all(movers.map((f) => frogWorld.hopTo(L, f, hop(L, f.state), 0.45)));
+      useGame.setState((g) => ({ landings: g.landings + 1 }));
+      void t0;
+    } finally {
+      if (tok.alive) game().patch({ busy: false });
+    }
+  },
+
+  /** Tutorial "why" beat: one real frog, slab after slab. */
+  async whyBeat(start: State, lines: { hop: string; stop: string }) {
+    const tok = begin();
+    const L = lvl();
+    game().patch({ busy: true });
+    frogWorld.clear();
+    try {
+      await focusState(start);
+      const f = hatch(start);
+      game().patch({ selected: start });
+      caption('It hatches on your area (Init).', 'info');
+      await sleep(1400);
+      let k = 0;
+      while (!f.stopped && k < 12 && tok.alive) {
+        const n = hop(L, f.state);
+        await frogWorld.hopTo(L, f, n, 0.5);
+        f.stopped = !running(L, n);
+        useGame.setState((g) => ({ landings: g.landings + 1 }));
+        game().patch({ selected: n });
+        caption(k === 0 ? lines.hop : `${lines.hop} Again — still on your area.`, 'info');
+        await sleep(900);
+        k++;
+      }
+      if (tok.alive) caption(lines.stop, 'info');
+    } finally {
+      if (tok.alive) game().patch({ busy: false });
+    }
+  },
+
+  async bridge() {
+    const tok = begin();
+    game().patch({ busy: true });
+    bridgeState.active = true;
+    bridgeState.t = 0;
+    try {
+      await cameraRig.lookAtTile(2, 1, 16, false);
+      caption('Remember the tutorial? Each row was one input n.', 'info');
+      await sleep(1800);
+      if (!tok.alive) return;
+      caption('Frogs never change rows — so each row is its own world. Let’s lift them apart.', 'info');
+      await tween(bridgeState, { t: 1, duration: 2.6, ease: 'power1.inOut' });
+      await sleep(900);
+    } finally {
+      bridgeState.active = false;
+      if (tok.alive) game().patch({ busy: false });
+    }
+  },
+
+  isInArea: inArea,
+  sleep,
+};
+
+// ---------------------------------------------------------------------------
+// Events (the tutorial listens to these)
+// ---------------------------------------------------------------------------
+
+type EventName = 'stepped' | 'runDone' | 'eggRun';
+const listeners = new Set<(e: EventName) => void>();
+export const events = {
+  emit(e: EventName) {
+    listeners.forEach((l) => l(e));
+  },
+  on(l: (e: EventName) => void) {
+    listeners.add(l);
+    return () => void listeners.delete(l);
+  },
+};
