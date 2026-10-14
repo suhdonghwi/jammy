@@ -129,7 +129,7 @@ function pose(f: FrogSim, t: number): Pose {
     // fall, then a short squash once on the ground
     const raw = (t - f.drop.t0) / f.drop.dur;
     const u = clamp01(raw);
-    h += f.drop.from * (1 - u * u);
+    h += f.drop.from * (1 - u * u) + (f.drop.arc ?? 0) * bump(u);
     if (raw >= 1 && !f.touched) {
       f.touched = true;
       dropLandings.push(f);

@@ -80,38 +80,35 @@ async function handOut() {
 }
 
 /**
- * The hand carries a test frog down and sets it on a tile. It holds the frog
- * from above: the palm rests just over the frog's head (taking any slab under
- * the tile into account), set slightly back so the fingers drape over the top
- * of the head instead of passing through the frog.
+ * The hand brings a test frog sitting in its cupped, upturned palm, lowers it
+ * straight down over the tile, then slips its palm away as the frog hops off.
  */
-const HOLD_ABOVE = 0.95; // hand height above the frog's feet (frog is ~0.53 tall)
-const HOLD_BACK = 0.4; // hand sits a little behind the frog
+const PALM_TOP = 0.125; // palm surface above the hand's origin when palm-up
+const SET_DOWN = 0.5; // palm surface height above the tile when releasing
 async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   const L = lvl();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
   const base = field.heightAt(x, y) * SLAB_H;
-  const carry = { h: 3.2 };
-  const f = frogWorld.add(L, 'test', s, { carried: carry.h });
   const p = above(x, y);
-  Object.assign(handState, { x: p.x + 1.2, y: base + carry.h + 5, z: p.z - 2.5, curl: 0.36, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.05 });
-  await tween(handState, { visible: 1, x: p.x, z: p.z - HOLD_BACK, y: base + carry.h + HOLD_ABOVE, duration: 0.6, ease: 'power3.out' });
+  // the frog rides on the palm: its height follows the hand
+  const f = frogWorld.add(L, 'test', s, { carried: 6 });
+  const follow = () => {
+    f.carried = handState.y + PALM_TOP - base;
+  };
+  Object.assign(handState, { x: p.x, y: base + 6, z: p.z, curl: 0.5, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.3, palmUp: 1, visible: 0 });
+  follow();
+  await tween(handState, { visible: 1, y: base + SET_DOWN - PALM_TOP + 0.6, duration: 0.65, ease: 'power3.out', onUpdate: follow });
   if (!tok.alive) return null;
-  await tween(carry, {
-    h: 0.55,
-    duration: 0.55,
-    ease: 'power2.inOut',
-    onUpdate: () => {
-      f.carried = carry.h;
-      handState.y = base + carry.h + HOLD_ABOVE;
-    },
-  });
+  await tween(handState, { y: base + SET_DOWN - PALM_TOP, duration: 0.35, ease: 'power2.inOut', onUpdate: follow });
   if (!tok.alive) return null;
-  // release
+  // release: the palm slides back out from under the frog as it hops down
   f.carried = undefined;
-  f.drop = { t0: now(), dur: 0.22, from: 0.55 };
-  await tween(handState, { curl: 0.1, y: base + 2.2, z: p.z - 1.2, duration: 0.45, ease: 'power2.out' });
+  f.drop = { t0: now(), dur: 0.42, from: SET_DOWN, arc: 0.22 };
+  void tween(handState, { z: p.z - 1.1, y: base + 1.0, curl: 0.15, duration: 0.3, ease: 'power2.in' });
+  await sleep(450);
+  if (!tok.alive) return null;
+  await tween(handState, { palmUp: 0, tilt: 0, y: base + 2.2, duration: 0.35, ease: 'power2.out' });
   return f;
 }
 
@@ -209,6 +206,7 @@ export const director = {
   reset() {
     begin();
     frogWorld.clear();
+    field.reset();
     Object.assign(handState, { visible: 0 });
     bridgeState.active = false;
     game().patch({ busy: false, running: false, selected: null, lastFailure: null, cinematic: false, failMark: null });
@@ -228,19 +226,26 @@ export const director = {
   },
 
   async step() {
-    if (game().busy) return;
+    const g = game();
+    if (g.busy || g.running || g.stepping) return;
     if (activeReal().length === 0 && !frogWorld.frogs.some((f) => f.kind === 'real')) {
       const eggs = eggStatesNear(1, 6);
       if (eggs.length) director.spawnReal(eggs[0]);
       return;
     }
-    await hopAllOnce();
+    // one hop at a time: overlapping hops would fight over the frog's position
+    game().patch({ stepping: true });
+    try {
+      await hopAllOnce();
+    } finally {
+      game().patch({ stepping: false });
+    }
     events.emit('stepped');
   },
 
   async run() {
     const g = game();
-    if (g.busy || g.running) return;
+    if (g.busy || g.running || g.stepping) return;
     const tok = begin();
     frogWorld.clear('test');
     game().patch({ failMark: null });
@@ -272,7 +277,7 @@ export const director = {
   /** Run a single egg's frog (clicking an egg). */
   async runEgg(s: State) {
     const g = game();
-    if (g.busy) return;
+    if (g.busy || g.stepping) return;
     const f = hatch(s);
     game().patch({ selected: s });
     await sleep(350);

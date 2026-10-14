@@ -89,6 +89,12 @@ export interface Game {
   pitfallMessage: string | null;
   /** A cinematic is playing; the level scene is hidden. */
   cinematic: boolean;
+  /** A single Step is animating. */
+  stepping: boolean;
+  /** Tutorial: the current step is waiting for the learner to press Check. */
+  awaitingCheck: boolean;
+  /** Tutorial: the UI element the caption is talking about. */
+  spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
   /** Where the last check failed (tile in the focused pond) and why. */
   failMark: { x: number; y: number; label: string; t0: number } | null;
 
@@ -131,6 +137,9 @@ export const useGame = create<Game>((set, get) => ({
   pitfallMessage: null,
   cinematic: false,
   failMark: null,
+  stepping: false,
+  awaitingCheck: false,
+  spotlight: null,
 
   openLevel(def, mode) {
     const level = compileLevel(def);
@@ -156,6 +165,9 @@ export const useGame = create<Game>((set, get) => ({
       pitfallMessage: null,
       elevating: false,
       failMark: null,
+      stepping: false,
+      awaitingCheck: false,
+      spotlight: null,
     });
   },
   backToMenu(view = 'home') {

@@ -54,7 +54,8 @@ export function Hand() {
     g.visible = h.visible > 0.01;
     const s = (0.25 + 0.75 * h.visible) * 0.95;
     g.scale.setScalar(s);
-    const bob = Math.sin(t * 1.7) * 0.035;
+    // hold steady while carrying a frog in the palm
+    const bob = Math.sin(t * 1.7) * 0.035 * (1 - h.palmUp);
     g.position.set(h.x, h.y + bob, h.z);
     const shrugWobble = Math.sin(t * 10) * 0.25 * h.shrug;
     // base yaw π: the hand reaches in from the far side, fingers toward the viewer

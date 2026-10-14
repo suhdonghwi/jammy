@@ -1,3 +1,4 @@
+import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
 import { CHAPTERS, levels } from '../levels/defs';
 import { useGame } from '../store/game';
 import { openLevel, openTutorial } from '../director/play';
@@ -14,11 +15,11 @@ export function HomeOverlay() {
           input.
         </p>
         <div className="home-buttons">
-          <button className="btn toy big primary" onClick={openTutorial}>
-            Tutorial
+          <button className="btn toy big primary icon-btn" onClick={openTutorial}>
+            <GraduationCap size={22} strokeWidth={2.2} /> Tutorial
           </button>
-          <button className="btn toy big" onClick={() => useGame.setState({ menuView: 'levels' })}>
-            Levels
+          <button className="btn toy big icon-btn" onClick={() => useGame.setState({ menuView: 'levels' })}>
+            <LayoutGrid size={22} strokeWidth={2.2} /> Levels
           </button>
         </div>
       </div>
@@ -32,8 +33,8 @@ function LevelPicker() {
     <div className="picker-backdrop">
       <div className="picker">
         <div className="picker-head">
-          <button className="btn ghost" onClick={() => useGame.setState({ menuView: 'home' })}>
-            ← Back
+          <button className="btn ghost icon-btn" onClick={() => useGame.setState({ menuView: 'home' })}>
+            <ArrowLeft size={16} strokeWidth={2.4} /> Back
           </button>
           <h2>Levels</h2>
           <span className="picker-spacer" />
@@ -82,8 +83,8 @@ export function RulesCard() {
           Frogs start on your area (1) and no hop can leave it (2), so they never leave — and when they stop, they stop on a goal
           (3).
         </p>
-        <button className="btn toy primary" onClick={close}>
-          Got it
+        <button className="btn toy primary icon-btn" onClick={close}>
+          <Check size={17} strokeWidth={2.6} /> Got it
         </button>
       </div>
     </div>

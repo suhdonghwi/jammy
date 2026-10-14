@@ -5,6 +5,27 @@ import { director } from '../director/director';
 import { goMenu, showHint } from '../director/play';
 import { tokenize } from '../lang/parser';
 import { useHover } from '../scene/hover';
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  CircleCheck,
+  CircleDashed,
+  CircleHelp,
+  CircleX,
+  Eraser,
+  Lightbulb,
+  LoaderCircle,
+  Pause,
+  Play,
+  RotateCcw,
+  StepForward,
+  Wand2,
+} from 'lucide-react';
 import { tileState } from '../scene/tiles';
 
 // ---------------------------------------------------------------------------
@@ -85,9 +106,10 @@ export function CodePanel() {
     () => highlightSource(level, { hopTick, hopDur, landTick, landGuard }),
     [level, hopTick, hopDur, landTick, landGuard],
   );
+  const spot = useGame((s) => s.spotlight);
   if (!reveal.code) return null;
   return (
-    <div className="card code-card">
+    <div className={`card code-card ${spot === 'code' ? 'spotlight' : ''}`}>
       <div className="card-label">Program</div>
       <pre className="code">{nodes}</pre>
       <div className={`debugger ${selected ? '' : 'empty'}`}>
@@ -114,19 +136,20 @@ export function TopBar() {
   const verdicts = useGame((s) => s.verdicts);
   const checking = useGame((s) => s.checking);
   const busy = useGame((s) => s.busy);
+  const spot = useGame((s) => s.spotlight);
   if (!level) return null;
   return (
     <div className="topbar">
       <div className="pill-group">
-        <button className="btn ghost" onClick={() => goMenu(mode === 'tutorial' ? 'home' : 'levels')}>
-          ← {mode === 'tutorial' ? 'Home' : 'Levels'}
+        <button className="btn ghost icon-btn" onClick={() => goMenu(mode === 'tutorial' ? 'home' : 'levels')}>
+          <ArrowLeft size={16} strokeWidth={2.4} /> {mode === 'tutorial' ? 'Home' : 'Levels'}
         </button>
         <div className="level-title">
           {mode === 'level' && <span className="level-id">{level.id}</span>}
           {level.title}
         </div>
       </div>
-      <div className="pill-group">
+      <div className={`pill-group ${spot === 'lights' ? 'spotlight' : ''}`}>
         {(['init', 'pres', 'exit'] as Rule[])
           .filter((r) => lights.includes(r))
           .map((r) => {
@@ -140,17 +163,25 @@ export function TopBar() {
                 title={v?.status === 'fail' ? 'Replay the counterexample' : RULE_NAMES[r]}
                 onClick={() => v?.status === 'fail' && void director.playCounterexample(v.cex)}
               >
-                <span className="dot" />
+                <LightIcon status={status} />
                 {RULE_NAMES[r]}
               </button>
             );
           })}
-        <button className="btn ghost" onClick={() => useGame.setState({ showRules: true })}>
-          Rules
+        <button className="btn ghost icon-btn" onClick={() => useGame.setState({ showRules: true })}>
+          <BookOpen size={16} strokeWidth={2.2} /> Rules
         </button>
       </div>
     </div>
   );
+}
+
+function LightIcon({ status }: { status: string }) {
+  if (status === 'pass') return <CircleCheck size={16} strokeWidth={2.4} />;
+  if (status === 'fail') return <CircleX size={16} strokeWidth={2.4} />;
+  if (status === 'undecided') return <CircleHelp size={16} strokeWidth={2.4} />;
+  if (status === 'checking') return <LoaderCircle size={16} strokeWidth={2.4} className="spin" />;
+  return <CircleDashed size={16} strokeWidth={2.2} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -165,14 +196,8 @@ export function HoverReadout() {
   const tile = useHover((s) => s.tile);
   if (!tile || !reveal.axes) return null;
   const s = tileState(level, tile[0], tile[1], pond);
-  if (!level.fast.pondReq(s)) {
-    return (
-      <div className="readout">
-        <span className="readout-vals">{level.names.map((n) => `${n} = ${s[n]}`).join(', ')}</span>
-        <span className="readout-note">not a possible state (precondition)</span>
-      </div>
-    );
-  }
+  // tiles outside the precondition's inputs don't exist — nothing to inspect
+  if (!level.fast.pondReq(s)) return null;
   const cont = level.fast.guard(s) === true;
   let next: string | null = null;
   if (cont) {
@@ -216,8 +241,10 @@ export function CaptionBar() {
         )}
       </div>
       {caption.action && (
-        <button className="btn toy primary small" onClick={caption.action.onClick}>
+        <button className="btn toy primary small icon-btn" onClick={caption.action.onClick}>
+          {caption.action.label === 'Replay' ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
           {caption.action.label}
+          {caption.action.label !== 'Replay' ? <ArrowRight size={15} strokeWidth={2.4} /> : null}
         </button>
       )}
     </div>
@@ -232,40 +259,46 @@ export function RunControls() {
   const reveal = useGame((s) => s.reveal);
   const runningNow = useGame((s) => s.running);
   const busy = useGame((s) => s.busy);
+  const stepping = useGame((s) => s.stepping);
   const mode = useGame((s) => s.mode);
   const hints = useGame((s) => s.hints);
   const showMe = useGame((s) => s.showMe);
+  const spot = useGame((s) => s.spotlight);
   return (
     <div className="run-controls">
       {reveal.run &&
         (runningNow ? (
-          <button className="btn" onClick={() => director.pause()}>
-            ❚❚ Pause
+          <button className="btn icon-btn" onClick={() => director.pause()}>
+            <Pause size={16} strokeWidth={2.4} /> Pause
           </button>
         ) : (
-          <button className="btn" disabled={busy} onClick={() => void director.run()}>
-            ▶ Run
+          <button className={`btn icon-btn ${spot === 'run' ? 'spotlight' : ''}`} disabled={busy || stepping} onClick={() => void director.run()}>
+            <Play size={16} strokeWidth={2.4} /> Run
           </button>
         ))}
       {reveal.step && (
-        <button className="btn" disabled={busy || runningNow} onClick={() => void director.step()}>
-          Step
+        <button
+          className={`btn icon-btn ${spot === 'step' ? 'spotlight' : ''}`}
+          disabled={busy || runningNow || stepping}
+          onClick={() => void director.step()}
+        >
+          <StepForward size={16} strokeWidth={2.4} /> Step
         </button>
       )}
       {reveal.run && (
-        <button className="btn ghost" disabled={busy} onClick={() => director.clearFrogs()}>
-          Clear
+        <button className="btn ghost icon-btn" disabled={busy} onClick={() => director.clearFrogs()}>
+          <Eraser size={16} strokeWidth={2.2} /> Clear
         </button>
       )}
       <span className="spacer" />
       {reveal.formula && hints.length > 0 && (
-        <button className="btn ghost" onClick={showHint}>
-          Hint
+        <button className="btn ghost icon-btn" onClick={showHint}>
+          <Lightbulb size={16} strokeWidth={2.2} /> Hint
         </button>
       )}
       {mode === 'tutorial' && showMe && reveal.formula && (
-        <button className="btn ghost" onClick={() => useGame.getState().setFormula(showMe)}>
-          Show me
+        <button className="btn ghost icon-btn" onClick={() => useGame.getState().setFormula(showMe)}>
+          <Wand2 size={16} strokeWidth={2.2} /> Show me
         </button>
       )}
     </div>
@@ -311,7 +344,7 @@ export function PondGauge() {
     <div className={`card gauge ${elevating ? 'moving' : ''}`}>
       <div className="card-label">Input</div>
       <button className="gauge-arrow" disabled={busy || !exists(pond + 1)} onClick={() => step(1)} title="Next input (PageUp or ])">
-        ▲
+        <ChevronUp size={18} strokeWidth={2.6} />
       </button>
       <div className="gauge-floors">
         {floors.map((p) => (
@@ -332,7 +365,7 @@ export function PondGauge() {
         ))}
       </div>
       <button className="gauge-arrow" disabled={busy || !exists(pond - 1)} onClick={() => step(-1)} title="Previous input (PageDown or [)">
-        ▼
+        <ChevronDown size={18} strokeWidth={2.6} />
       </button>
       <div className="gauge-hint">each input is its own pond</div>
     </div>
@@ -348,7 +381,7 @@ export function ElevatorToast() {
   if (!level?.pond || !elevating) return null;
   return (
     <div className="elevator-toast" key={pond}>
-      <span className="elevator-arrow">{dir > 0 ? '▲' : '▼'}</span>
+      <span className="elevator-arrow">{dir > 0 ? <ArrowUp size={22} strokeWidth={2.8} /> : <ArrowDown size={22} strokeWidth={2.8} />}</span>
       <span className="elevator-name">{level.pond}</span> = {pond}
     </div>
   );

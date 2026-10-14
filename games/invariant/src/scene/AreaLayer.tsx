@@ -75,6 +75,8 @@ uniform vec3 uTop, uSide, uStopTop, uHoverCol, uLabelOn;
 uniform vec2 uHover;
 uniform float uHoverOn;
 uniform float uDim;
+uniform float uStopAmt;
+uniform float uGoalAmt;
 ${GLSL_COMMON}
 ${GLSL_DIGITS}
 ${GLSL_GOAL}
@@ -86,16 +88,16 @@ void main() {
   float fwRing = fwidth(ringD);
   vec3 n = normalize(vN);
   float top = step(0.6, n.y);
-  bool stop = vFlags.x > 0.5;
+  bool stop = vFlags.x > 0.5 && uStopAmt > 0.002;
   vec3 col;
   if (top > 0.5) {
-    col = stop ? uStopTop : uTop;
+    col = uTop;
     if (stop) {
       float s = fract((vF.x - vF.y) * 4.0);
       float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
-      col = mix(col, col * 0.9, hatch);
+      col = mix(uTop, mix(uStopTop, uStopTop * 0.9, hatch), uStopAmt);
     }
-    if (vFlags.y > 0.5) col = drawGoal(col, vF, fwr, vTile);
+    if (stop && vFlags.y > 0.5 && uGoalAmt > 0.002) col = mix(col, drawGoal(col, vF, fwr, vTile), uGoalAmt);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
     float m = 0.0;
     if (t.y == 0) m = numberMask(vF, t.x);
@@ -166,9 +168,24 @@ vec3 slotNow() {
 }
 `;
 
+// Eggs pop in when revealed, rippling out from the centre of the view.
+const APPEAR_GLSL = /* glsl */ `
+uniform float uAppearT0;
+uniform vec2 uAppearCenter;
+float appearNow() {
+  float delay = min(length(aTile - uAppearCenter) * 0.035, 0.7);
+  float a = clamp((uTime - uAppearT0 - delay) / 0.38, 0.0, 1.0);
+  // ease out with a little overshoot
+  float c1 = 1.70158;
+  float c3 = c1 + 1.0;
+  return a <= 0.0 ? 0.0 : 1.0 + c3 * pow(a - 1.0, 3.0) + c1 * pow(a - 1.0, 2.0);
+}
+`;
+
 const eggVertex = /* glsl */ `
 ${HEIGHT_GLSL}
 ${SLOT_GLSL}
+${APPEAR_GLSL}
 attribute float aHide;
 varying vec3 vN;
 varying vec3 vWorld;
@@ -176,7 +193,7 @@ varying vec3 vLocal;
 void main() {
   float h = heightNow();
   vec3 sl = slotNow();
-  float s = (1.0 - aHide) * sl.z;
+  float s = (1.0 - aHide) * sl.z * appearNow();
   vec3 p = position * s;
   vec4 w = modelMatrix * vec4(p + vec3(aTile.x + sl.x, h * ${SLAB_H.toFixed(3)}, -aTile.y - sl.y), 1.0);
   vWorld = w.xyz;
@@ -305,7 +322,9 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
   const shadowBase = useMemo(() => new THREE.PlaneGeometry(1.45, 1.45).rotateX(-Math.PI / 2), []);
 
   const { geom, shadowGeom } = useMemo(() => {
-    const anims = [...field.anims.values()];
+    // version 0: this layer's area hasn't been computed yet — draw nothing
+    // (the shared field may still hold another scene's slabs for a frame)
+    const anims = version === 0 ? [] : [...field.anims.values()];
     const n = anims.length;
     const tile = new Float32Array(n * 2);
     const anim = new Float32Array(n * 3);
@@ -313,7 +332,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     anims.forEach((a, i) => {
       tile.set([a.x, a.y], i * 2);
       anim.set([a.from, a.to, a.t0], i * 3);
-      flags.set([showStop && a.stop ? 1 : 0, showGoal && a.goal ? 1 : 0], i * 2);
+      flags.set([a.stop ? 1 : 0, a.goal ? 1 : 0], i * 2);
     });
     const geom = new THREE.InstancedBufferGeometry().copy(base as unknown as THREE.InstancedBufferGeometry);
     geom.instanceCount = n;
@@ -326,7 +345,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     shadowGeom.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
     return { geom, shadowGeom };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version, showStop, showGoal, base, shadowBase]);
+  }, [version, base, shadowBase]);
   useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
 
   const material = useMemo(
@@ -345,6 +364,8 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
           uHover: { value: new THREE.Vector2() },
           uHoverOn: { value: 0 },
           uDim: { value: 0 },
+          uStopAmt: { value: showStop ? 1 : 0 },
+          uGoalAmt: { value: showGoal ? 1 : 0 },
           uDigits: { value: getDigitTexture() },
           ...fadeUniforms(),
         },
@@ -373,6 +394,9 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);
     const k = 1 - Math.exp(-dt * 8);
     material.uniforms.uDim.value += ((dim ? 0.55 : 0) - material.uniforms.uDim.value) * k;
+    const kr = 1 - Math.exp(-dt * 3.2);
+    material.uniforms.uStopAmt.value += ((showStop ? 1 : 0) - material.uniforms.uStopAmt.value) * kr;
+    material.uniforms.uGoalAmt.value += ((showGoal ? 1 : 0) - material.uniforms.uGoalAmt.value) * kr;
     updateFade(material.uniforms);
   });
   return (
@@ -457,7 +481,13 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
       new THREE.ShaderMaterial({
         vertexShader: eggVertex,
         fragmentShader: eggFragment,
-        uniforms: { uTime: { value: 0 }, uEgg: colorUniform('egg'), ...fadeUniforms() },
+        uniforms: {
+          uTime: { value: 0 },
+          uEgg: colorUniform('egg'),
+          uAppearT0: { value: clock.now() },
+          uAppearCenter: { value: new THREE.Vector2(win.cx, win.cy) },
+          ...fadeUniforms(),
+        },
       }),
     [],
   );
@@ -467,13 +497,14 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
         vertexShader: /* glsl */ `
           ${HEIGHT_GLSL}
           ${SLOT_GLSL}
+          ${APPEAR_GLSL}
           attribute float aHide;
           varying vec2 vUv;
           varying float vA;
           void main() {
             vUv = uv;
             vec3 sl = slotNow();
-            vA = (1.0 - aHide) * sl.z;
+            vA = (1.0 - aHide) * sl.z * clamp(appearNow(), 0.0, 1.0);
             vec4 w = modelMatrix * vec4(position * sl.z + vec3(aTile.x + sl.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.006, -aTile.y - sl.y), 1.0);
             gl_Position = projectionMatrix * viewMatrix * w;
           }`,
@@ -484,8 +515,9 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
           void main() { vec4 c = texture2D(uMap, vUv); gl_FragColor = vec4(c.rgb, c.a * 0.7 * vA); }`,
         transparent: true,
         depthWrite: false,
-        uniforms: { uTime: { value: 0 }, uMap: { value: getBlobTexture() } },
+        uniforms: { uTime: { value: 0 }, uMap: { value: getBlobTexture() }, uAppearT0: material.uniforms.uAppearT0, uAppearCenter: material.uniforms.uAppearCenter },
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   useFrame(() => {

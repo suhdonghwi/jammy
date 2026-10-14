@@ -17,7 +17,7 @@ export interface FrogSim {
   y: number;
   hop?: { fx: number; fy: number; tx: number; ty: number; t0: number; dur: number };
   /** Dropping from a height (placed by the hand). */
-  drop?: { t0: number; dur: number; from: number };
+  drop?: { t0: number; dur: number; from: number; arc?: number };
   /** Extra height while carried by the hand. */
   carried?: number;
   hatchT0?: number;

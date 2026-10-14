@@ -40,6 +40,7 @@ const fragment = /* glsl */ `
 uniform float uTime;
 uniform vec3 uColor;
 uniform vec3 uEvents[${MAX_EVENTS}];
+uniform float uAppearT0;
 varying float vV;
 varying vec3 vN;
 varying vec3 vWorld;
@@ -60,6 +61,8 @@ void main() {
     burst = max(burst, 1.0 - age / 0.9);
   }
   a += fall * 0.3 * burst;
+  // fade in when the goals are revealed
+  a *= smoothstep(0.0, 0.7, uTime - uAppearT0);
   vec3 col = mix(uColor, vec3(1.0, 0.93, 0.72), 0.25 + 0.4 * burst);
   gl_FragColor = vec4(col, min(a, 0.85));
   #include <colorspace_fragment>
@@ -110,6 +113,7 @@ export function GoalColumns({ level, pond, win, version }: { level: CompiledLeve
         uniforms: {
           uTime: { value: 0 },
           uColor: { value: new THREE.Color(COLORS.goal) },
+          uAppearT0: { value: clock.now() },
           uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
         },
       }),

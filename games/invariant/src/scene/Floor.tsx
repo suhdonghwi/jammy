@@ -41,7 +41,8 @@ ${GLSL_GOAL}
 ${GLSL_INT_HELPERS}
 ${levelGlsl(level)}
 
-bool stopAt(ivec3 t) { return uShowStop > 0.5 && L_exists(t) && L_stop(t); }
+// uShow* fade 0 → 1 when an element is revealed
+bool stopAt(ivec3 t) { return uShowStop > 0.002 && L_exists(t) && L_stop(t); }
 bool edgeBetween(ivec3 a, ivec3 b) { return L_exists(a) && L_exists(b) && stopAt(a) != stopAt(b); }
 
 void main() {
@@ -68,16 +69,16 @@ void main() {
     if (st) {
       float s = fract((f.x - f.y) * 4.0);
       float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
-      tcol = mix(uStop, uHatch, hatch * 0.55);
+      tcol = mix(uTile, mix(uStop, uHatch, hatch * 0.55), uShowStop);
     }
     bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
     if (onCross && !st) tcol = mix(tcol, uCross, 0.9);
-    if (st && uShowGoal > 0.5 && L_goal(t)) tcol = drawGoal(tcol, f, fwr, tc);
-    if (uShowAxes > 0.5) {
+    if (st && uShowGoal > 0.002 && L_goal(t)) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
+    if (uShowAxes > 0.002) {
       float m = 0.0;
       if (t.y == 0) m = numberMask(f, t.x);
       else if (t.x == 0) m = numberMask(f, t.y);
-      tcol = mix(tcol, uLabel, m * 0.9);
+      tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
     }
     col = mix(uGap, tcol, inside);
 
@@ -88,7 +89,7 @@ void main() {
   // Boundary between the continue and stop regions. Drawn from the grid lines
   // themselves (not per tile), so the line is continuous; segments extend by
   // their width past each end so corners close up.
-  if (uShowStop > 0.5) {
+  if (uShowStop > 0.002) {
     float w = 0.045;
     float line = 0.0;
     // nearest vertical grid line x = kx + 0.5, between tiles kx and kx + 1
@@ -113,11 +114,11 @@ void main() {
       edgeH = edgeBetween(ivec3(tx2, ky, uPond), ivec3(tx2, ky + 1, uPond));
     }
     if (edgeH) line = max(line, 1.0 - smoothstep(w - fw.y, w + fw.y, dy));
-    col = mix(col, uEdge, line);
+    col = mix(col, uEdge, line * uShowStop);
   }
 
   // hover cursor: a crisp rounded outline around the inspected tile
-  if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
+  if (ex && uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
     float a = 1.0 - smoothstep(-fwRing, fwRing, ringD);
     col = mix(col, uHoverCol, a);
   }
@@ -208,9 +209,8 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
 
   const u = material.uniforms;
   u.uPond.value = pond;
-  u.uShowStop.value = showStop ? 1 : 0;
-  u.uShowGoal.value = showGoal ? 1 : 0;
-  u.uShowAxes.value = showAxes ? 1 : 0;
+  const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
+  shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 
   const target = useRef(opacity);
   target.current = opacity;
@@ -229,6 +229,15 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     u.uTime.value = clock.now();
     goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.pond ? pond : undefined);
     u.uFade.value.set(R * 0.62, R);
+    // revealed elements fade in rather than popping
+    const kr = 1 - Math.exp(-dt * 3.2);
+    const towards = (cur: number, on: boolean) => {
+      const v = cur + ((on ? 1 : 0) - cur) * kr;
+      return Math.abs(v - (on ? 1 : 0)) < 0.003 ? (on ? 1 : 0) : v;
+    };
+    u.uShowStop.value = towards(u.uShowStop.value, shows.current.stop);
+    u.uShowGoal.value = towards(u.uShowGoal.value, shows.current.goal);
+    u.uShowAxes.value = towards(u.uShowAxes.value, shows.current.axes);
     if ((performance.now() - born.current) / 1000 >= fadeDelay) {
       const k = 1 - Math.exp(-dt * fadeSpeed);
       u.uOpacity.value += (target.current - u.uOpacity.value) * k;

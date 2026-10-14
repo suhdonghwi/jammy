@@ -740,10 +740,24 @@ code {
 .formula-row .btn:hover:not(:disabled) {
   background: #4a8cf7;
 }
+.formula {
+  position: relative;
+}
 .formula-error {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 14px;
+  max-width: calc(100% - 28px);
   font-size: 13px;
-  color: var(--red);
-  padding: 0 16px;
+  color: #b42318;
+  background: #fff1f0;
+  border: 1px solid rgba(229, 72, 77, 0.3);
+  padding: 6px 12px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  z-index: 3;
+  animation: rise 0.2s ease-out;
+  pointer-events: none;
 }
 .cm-error-mark {
   text-decoration: underline wavy var(--red);
@@ -920,5 +934,55 @@ code {
   }
   .gauge {
     width: 92px;
+  }
+}
+
+/* ---------- icons ---------- */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.icon-btn svg {
+  flex: none;
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.light svg {
+  flex: none;
+}
+.elevator-arrow {
+  display: inline-flex;
+}
+.gauge-arrow {
+  display: grid;
+  place-items: center;
+}
+
+/* ---------- tutorial spotlight: the thing the caption talks about ---------- */
+.spotlight {
+  position: relative;
+  z-index: 2;
+  animation: spotlight 1.6s ease-in-out infinite;
+}
+@keyframes spotlight {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(59, 130, 246, 0.55),
+      0 0 0 8px rgba(59, 130, 246, 0.12),
+      var(--shadow);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(59, 130, 246, 0.85),
+      0 0 0 13px rgba(59, 130, 246, 0.08),
+      var(--shadow);
   }
 }
