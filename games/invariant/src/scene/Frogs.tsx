@@ -160,6 +160,9 @@ function pose(f: FrogSim, t: number): Pose {
   return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, roll: 0 };
 }
 
+/** The tile a frog is on, or is landing on. */
+const tileOf = (f: FrogSim) => (f.hop ? `${f.hop.tx},${f.hop.ty}` : `${f.x},${f.y}`);
+
 export function Frogs() {
   const body = useRef<THREE.InstancedMesh>(null);
   const shadows = useRef<THREE.InstancedMesh>(null);
@@ -185,12 +188,14 @@ export function Frogs() {
     const sh = shadows.current;
     if (!b || !sh) return;
     const t = now();
-    // which frogs have settled on which tile (for slot layout)
+    // Which frogs share which tile (for slot layout). A hopping frog already
+    // counts on the tile it is landing on, so the frogs there make room while
+    // it is in the air and it touches down straight into its own slot.
     const visible = frogWorld.frogs.filter((f) => !hasPonds || f.pond === pond);
     const groups = new Map<string, FrogSim[]>();
     for (const f of visible) {
-      if (f.hop || f.carried !== undefined || f.drop) continue;
-      const key = `${f.x},${f.y}`;
+      if (f.carried !== undefined) continue;
+      const key = tileOf(f);
       const g = groups.get(key);
       if (g) g.push(f);
       else groups.set(key, [f]);
@@ -203,7 +208,8 @@ export function Frogs() {
     }
     let n = 0;
     const list: FrogSim[] = [];
-    const k = 1 - Math.exp(-Math.min(0.1, t - (lastT.current ?? t)) * 11);
+    const dt = Math.min(0.1, t - (lastT.current ?? t));
+    const k = 1 - Math.exp(-dt * 11);
     lastT.current = t;
     let badges = 0;
     for (const f of visible) {
@@ -211,8 +217,8 @@ export function Frogs() {
       const p = pose(f, t);
       // slot within a shared tile; glide toward it so nothing pops
       let target = { dx: 0, dy: 0, scale: 1 };
-      if (!f.hop && f.carried === undefined && !f.drop) {
-        const key = `${f.x},${f.y}`;
+      if (f.carried === undefined) {
+        const key = tileOf(f);
         const g = groups.get(key)!;
         const count = g.length + (occupancy.eggs.has(key) ? 1 : 0);
         target = slotFor(g.indexOf(f), count);
@@ -225,9 +231,12 @@ export function Frogs() {
         f.oy = target.dy;
         f.os = target.scale;
       } else {
-        f.ox += (target.dx - f.ox) * k;
-        f.oy! += (target.dy - f.oy!) * k;
-        f.os! += (target.scale - f.os!) * k;
+        // in the air: arrive at the slot exactly on landing; otherwise glide
+        const left = f.hop ? f.hop.t0 + f.hop.dur - t : 0;
+        const kk = left > 0 ? Math.min(1, dt / left) : k;
+        f.ox += (target.dx - f.ox) * kk;
+        f.oy! += (target.dy - f.oy!) * kk;
+        f.os! += (target.scale - f.os!) * kk;
       }
       const os = f.os!;
       const px = p.x + f.ox;
