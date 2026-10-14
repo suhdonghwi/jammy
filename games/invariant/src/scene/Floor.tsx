@@ -92,9 +92,11 @@ void main() {
   if (uShowStop > 0.002) {
     float w = 0.045;
     float line = 0.0;
-    // Near a grid vertex where the boundary turns, follow a quarter-circle arc
-    // (radius RC) instead of a sharp corner.
-    const float RC = 0.09;
+    // Near a grid vertex where the boundary turns, follow a quarter-circle arc.
+    // RC = 0.15 makes the arc concentric with the inner tile's rounded corner
+    // (tile half-size 0.45, corner radius 0.1), so the line hugs that corner
+    // with the same thin margin as along straight edges.
+    const float RC = 0.15;
     vec2 V = floor(p) + 0.5;
     vec2 local = p - V;
     ivec3 cSW = ivec3(int(floor(p.x)), int(floor(p.y)), uPond);
