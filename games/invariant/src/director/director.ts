@@ -187,18 +187,28 @@ function activeReal(): FrogSim[] {
   return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.stopped && (!L.pond || f.pond === pond));
 }
 
+/**
+ * One hop for every moving frog. `stepping` stays on while they are in the
+ * air, so nothing else (Step, Run, an egg) can start hops that would fight
+ * over the same frogs — e.g. Step pressed right after Pause.
+ */
 async function hopAllOnce(dur = 0.42): Promise<number> {
   const L = lvl();
   const frogs = activeReal();
   if (frogs.length === 0) return 0;
-  await Promise.all(
-    frogs.map((f) => {
-      const n = hop(L, f.state);
-      return frogWorld.hopTo(L, f, n, dur).then(() => {
-        f.stopped = !running(L, n);
-      });
-    }),
-  );
+  game().patch({ stepping: true });
+  try {
+    await Promise.all(
+      frogs.map((f) => {
+        const n = hop(L, f.state);
+        return frogWorld.hopTo(L, f, n, dur).then(() => {
+          f.stopped = !running(L, n);
+        });
+      }),
+    );
+  } finally {
+    game().patch({ stepping: false });
+  }
   const sel = game().selected;
   if (frogs.length === 1 || sel) game().patch({ selected: frogs[0].state });
   return frogs.length;
@@ -239,13 +249,7 @@ export const director = {
       if (eggs.length) director.spawnReal(eggs[0]);
       return;
     }
-    // one hop at a time: overlapping hops would fight over the frog's position
-    game().patch({ stepping: true });
-    try {
-      await hopAllOnce();
-    } finally {
-      game().patch({ stepping: false });
-    }
+    await hopAllOnce();
     events.emit('stepped');
   },
 
@@ -255,7 +259,8 @@ export const director = {
     if (g.mode === 'tutorial' && !g.tutorialAllow.run) return;
     const tok = begin();
     frogWorld.clear('test');
-    game().patch({ failMark: null });
+    // running from the first moment (Step is disabled while eggs hatch)
+    game().patch({ failMark: null, running: true });
     gsap.to(handState, { visible: 0, duration: 0.3 });
     if (activeReal().length === 0) {
       frogWorld.clear('real');
@@ -263,7 +268,6 @@ export const director = {
       eggs.forEach((s, i) => setTimeout(() => tok.alive && hatch(s), i * 6));
       await sleep(Math.min(900, 300 + eggs.length * 6));
     }
-    game().patch({ running: true });
     let beats = 0;
     while (tok.alive && game().running && beats < 80) {
       const n = await hopAllOnce(0.34);
@@ -288,15 +292,22 @@ export const director = {
     if (g.busy || g.stepping) return;
     const f = hatch(s);
     game().patch({ selected: s });
-    await sleep(350);
-    const L = lvl();
-    let k = 0;
-    while (!f.stopped && k < 60 && frogWorld.frogs.includes(f)) {
-      const n = hop(L, f.state);
-      await frogWorld.hopTo(L, f, n, 0.36);
-      f.stopped = !running(L, n);
-      if (game().selected) game().patch({ selected: n });
-      k++;
+    // during a run, the run moves the new frog along with the others
+    if (g.running) return;
+    game().patch({ stepping: true });
+    try {
+      await sleep(350);
+      const L = lvl();
+      let k = 0;
+      while (!f.stopped && k < 60 && frogWorld.frogs.includes(f)) {
+        const n = hop(L, f.state);
+        await frogWorld.hopTo(L, f, n, 0.36);
+        f.stopped = !running(L, n);
+        if (game().selected) game().patch({ selected: n });
+        k++;
+      }
+    } finally {
+      game().patch({ stepping: false });
     }
     events.emit('eggRun');
   },
