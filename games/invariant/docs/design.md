@@ -2,7 +2,7 @@
 
 > An interactive, visual website that teaches programmers what **loop invariants** are — by drawing an area that frogs can never hop out of.
 
-Status: draft v1 · Last updated: 2026-10-15
+Status: v1 implemented · Last updated: 2026-10-15
 
 ---
 
@@ -416,7 +416,7 @@ The counter (§8).
 | # | Program | Invariant | Lesson | Pitfall |
 |---|---|---|---|---|
 | 3-1 | **Absolute value by walking** — `input a; var x = a; var y = 0; while (x != 0) { if (x > 0) { x = x - 1; } else { x = x + 1; } y = y + 1; } ensures y == abs(a);` | `y + abs(x) == abs(a)` | Positive-`x` frogs hop left, negative-`x` frogs hop right; ponds for negative `a` exist; stop region is a single line | `y == a - x` → ✅ for the `x > 0` branch, ❌ Preservation for any frog taking the `else` branch (e.g. `a = 0, x = -1, y = 1`) |
-| 3-2 | *Open* | | | |
+| 3-2 | **Even Out** — `var x, y; requires x >= 0 && y >= 0; while (x != y) { if (x > y) { x = x - 1; } else { y = y - 1; } } ensures x == y && x >= 0;` | `x >= 0 && y >= 0` | Keeping one variable in range needs a fact about the other | `x >= 0` → ❌ Preservation: a test frog at `x = 0, y = -1` steps `x` to `-1` |
 
 ### v2 (postponed)
 
@@ -489,8 +489,22 @@ scripts/
 
 **Open:**
 
-- Level 3-2 (a second branch level).
-- Exact color palette (frog green, test-frog hue, area accent, failure red).
 - Hover-to-highlight a conjunct's region inside the single text box — interaction details.
-- Box-search bounds and Z3 timeouts — tune after S1.
 - Domain name.
+
+---
+
+## 13. Implementation notes (v1)
+
+Where the build differs from the plan above, and why:
+
+| Plan | Implemented | Why |
+|---|---|---|
+| Lezer grammar for programs and formulas | Hand-written recursive-descent parser (`src/lang/parser.ts`); CodeMirror uses a small `StreamLanguage` for highlighting | Precise, friendly error messages with spans; one parser feeds the interpreter, Z3, and rendering |
+| Formula → GLSL slabs | Formula compiled to a fast JS function, evaluated over a tile window that follows the camera (size grows with zoom); instanced meshes with a per-instance height attribute | Exact integer semantics everywhere, no shader overflow; a window of up to 141×141 tiles plus fog reads as endless |
+| Z3 in our own Web Worker | Z3's async API on the main thread | z3-solver already runs `check()` on Emscripten worker threads; the page stays responsive |
+| Spikes S1/S2 | Skipped | Verified during implementation: Z3 runs in the browser (dev and production builds) and every level's solution is proved in < 100 ms in Node |
+
+**Palette:** tiles `#fbfbfa` on background `#e9ebef` (gaps read as grid lines); stop tiles `#d9dce2`; area slabs `#7fb2f0` (stop-region slabs `#a3b7cf`, so the stop region stays readable on top of the area); real frogs `#5fbf4a`; test frogs `#b48cf0`; failures `#ef4f4f`.
+
+**Counterexample ranking (box search):** nearest pond first, then smallest `|x| + |y|`, then closest to the camera. Z3 counterexamples come from growing bounds (±8, ±64, ±1024, then unbounded, then `QF_NIA`).
