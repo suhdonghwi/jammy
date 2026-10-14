@@ -41,6 +41,8 @@ export const occupancy = {
   frogs: new Map<string, number>(),
   /** Unhatched eggs on screen (tile keys), published by the egg renderer. */
   eggs: new Set<string>(),
+  /** Where each egg sits within its tile, so a hatching frog starts there. */
+  eggSlots: new Map<string, Slot>(),
   /** Bumps whenever `frogs` changes. */
   version: 0,
   signature: '',

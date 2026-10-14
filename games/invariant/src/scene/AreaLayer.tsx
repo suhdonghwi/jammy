@@ -12,7 +12,7 @@ import { useGame } from '../store/game';
 import { hover } from './hover';
 import { frogWorld } from './frogSim';
 import { eggsNear, tileState } from './tiles';
-import { occupancy, slotFor } from './occupancy';
+import { occupancy, slotFor, type Slot } from './occupancy';
 import { goalEvents } from './goalEvents';
 import { GoalColumns } from './GoalColumns';
 
@@ -142,7 +142,7 @@ void main() {
 // Eggs
 // ---------------------------------------------------------------------------
 
-function eggGeometry() {
+export function eggGeometry() {
   const pts: THREE.Vector2[] = [];
   const N = 22;
   for (let i = 0; i <= N; i++) {
@@ -437,6 +437,7 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
     const slotAnim = new Float32Array(n * 3);
     const now = clock.now();
     const visibleEggs = new Set<string>();
+    const eggSlots = new Map<string, Slot>();
     eggs.forEach(([x, y], i) => {
       const key = `${x},${y}`;
       tile.set([x, y], i * 2);
@@ -460,10 +461,12 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
             : { fx: at.x, fy: at.y, fs: at.s, tx: target.dx, ty: target.dy, ts: target.scale, t0: now };
       }
       slots.current.set(key, cur);
+      eggSlots.set(key, { dx: cur.tx, dy: cur.ty, scale: cur.ts });
       slot.set([cur.fx, cur.fy, cur.tx, cur.ty], i * 4);
       slotAnim.set([cur.fs, cur.ts, cur.t0], i * 3);
     });
     occupancy.eggs = visibleEggs;
+    occupancy.eggSlots = eggSlots;
     const geom = new THREE.InstancedBufferGeometry().copy(base as unknown as THREE.InstancedBufferGeometry);
     geom.instanceCount = n;
     geom.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));

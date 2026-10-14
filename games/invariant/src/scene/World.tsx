@@ -7,6 +7,7 @@ import { POND_SPACING } from './constants';
 import { Floor } from './Floor';
 import { AreaLayer } from './AreaLayer';
 import { Frogs } from './Frogs';
+import { HatchShells } from './Hatch';
 import { Hand } from './Hand';
 import { HoverPreview } from './HoverPreview';
 import { HomeScene } from './HomeScene';
@@ -151,6 +152,7 @@ function LevelScene() {
           showArea={reveal.formula}
         />
         <Frogs />
+        <HatchShells />
         {reveal.hover && <HoverPreview />}
         <FailMarker />
         <Callouts />

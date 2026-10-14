@@ -11,6 +11,7 @@ import { frogWorld, now, type FrogSim } from '../scene/frogSim';
 import { handState } from '../scene/handState';
 import { field } from '../scene/field';
 import { occupancy } from '../scene/occupancy';
+import { HATCH_EMERGE, hatchFx } from '../scene/Hatch';
 import { SLAB_H } from '../scene/constants';
 import { areaNear, eggsNear, tileState } from '../scene/tiles';
 import { bridgeState } from '../scene/Bridge';
@@ -175,8 +176,11 @@ function hatch(s: State): FrogSim {
   const L = lvl();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
+  // the egg cracks open and the frog climbs out from where the egg sat
+  const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
+  hatchFx.push({ x, y, pond: L.pond ? Number(s[L.pond]) : undefined, dx: slot.dx, dy: slot.dy, s: slot.scale });
   frogWorld.markHatched(x, y);
-  const f = frogWorld.add(L, 'real', s, { hatchT0: now() });
+  const f = frogWorld.add(L, 'real', s, { hatchT0: now() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
   f.stopped = !running(L, s);
   return f;
 }
@@ -222,6 +226,7 @@ export const director = {
     frogWorld.clear();
     field.reset();
     occupancy.eggs = new Set();
+    hatchFx.clear();
     Object.assign(handState, { visible: 0 });
     bridgeState.active = false;
     game().patch({ busy: false, running: false, selected: null, lastFailure: null, cinematic: false, failMark: null });
@@ -266,7 +271,7 @@ export const director = {
       frogWorld.clear('real');
       const eggs = eggStatesNear(140, Math.max(8, Math.min(22, cameraRig.distance() * 0.9)));
       eggs.forEach((s, i) => setTimeout(() => tok.alive && hatch(s), i * 6));
-      await sleep(Math.min(900, 300 + eggs.length * 6));
+      await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
     }
     let beats = 0;
     while (tok.alive && game().running && beats < 80) {

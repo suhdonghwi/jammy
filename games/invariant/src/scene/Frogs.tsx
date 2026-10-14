@@ -177,6 +177,8 @@ function pose(f: FrogSim, t: number): Pose {
     const raw = (t - f.hatchT0) / 0.45;
     // invisible until it hatches, then pops out with a little overshoot
     s = raw <= 0 ? 0 : raw >= 1 ? 1 : 0.15 + 0.85 * (1 - Math.pow(1 - raw, 3)) + Math.sin(raw * Math.PI) * 0.12;
+    // climbs up out of the shell and drops onto the tile
+    h += 0.16 * bump(raw);
   }
   const sy = (1 + squash + breath) * s;
   const sx = (1 - squash * 0.45 - breath * 0.5) * s;
