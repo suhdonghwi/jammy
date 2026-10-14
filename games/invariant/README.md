@@ -12,22 +12,22 @@ See [docs/design.md](docs/design.md) for the full design.
 ## Running
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 The solver (Z3 compiled to WebAssembly) needs a cross-origin isolated page, so the dev and preview servers send
 `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. Any production host must send
-the same headers. `npm install` copies Z3's browser build into `public/z3/`.
+the same headers. `pnpm install` copies Z3's browser build into `public/z3/`.
 
 ## Scripts
 
 | Script | What it does |
 |---|---|
-| `npm run dev` | Dev server |
-| `npm test` | Unit tests (parser, types, integer semantics, box search) |
-| `npm run validate` | Proves every level's solutions with Z3, checks every pitfall fails the intended rule, and checks real frogs terminate |
-| `npm run build` | Typecheck + production build |
+| `pnpm dev` | Dev server |
+| `pnpm test` | Unit tests (parser, types, integer semantics, box search) |
+| `pnpm validate` | Proves every level's solutions with Z3, checks every pitfall fails the intended rule, and checks real frogs terminate |
+| `pnpm build` | Typecheck + production build |
 
 ## Layout
 

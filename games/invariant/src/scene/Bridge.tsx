@@ -1,53 +1,66 @@
-import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { COLORS, POND_SPACING, TILE } from './constants';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { COLORS, TILE } from './constants';
+import { frogGeometry, frogMaterial } from './models';
 
 /**
- * "Rows lift into ponds": the tutorial's (i, n) grid, where every row is one
- * input, lifts row by row into stacked layers.
+ * "Rows lift into ponds": the tutorial's (i, n) grid — one row per input n —
+ * lifts row by row into a stack of floors.
  */
 export const bridgeState = { active: false, t: 0 };
 
-const ROWS = 6;
-const COLS = 9;
+const ROWS = 5;
+const COLS = 8;
+const LIFT = 1.9;
 
 export function BridgeCinematic() {
-  const group = useRef<THREE.Group>(null);
   const rows = useRef<(THREE.Group | null)[]>([]);
-  const [active, setActive] = useState(false);
+  const plates = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
+  const assets = useMemo(() => {
+    const tile = new RoundedBoxGeometry(TILE, 0.08, TILE, 2, 0.03);
+    const white = new THREE.MeshStandardMaterial({ color: COLORS.tile, roughness: 0.8 });
+    const gray = new THREE.MeshStandardMaterial({ color: COLORS.stopTile, roughness: 0.8 });
+    const frogMat = frogMaterial();
+    const frog = frogGeometry();
+    return { tile, white, gray, frogMat, frog };
+  }, []);
+
   useFrame(() => {
-    const g = group.current;
-    if (!g) return;
-    if (active !== bridgeState.active) setActive(bridgeState.active);
-    g.visible = bridgeState.active;
-    if (!bridgeState.active) return;
+    const t = bridgeState.t;
     rows.current.forEach((r, n) => {
       if (!r) return;
-      // stagger: row n starts a little later
-      const u = THREE.MathUtils.clamp(bridgeState.t * 1.5 - n * 0.1, 0, 1);
+      const u = THREE.MathUtils.clamp(t * 1.5 - n * 0.1, 0, 1);
       const e = u * u * (3 - 2 * u);
-      // rows slide to the same depth and lift into a stack, each becoming a sheet
-      r.position.set(0, e * n * POND_SPACING * 0.45, -n * (1 - e) - e * 2.5);
-      r.scale.set(1, 1, 1 + e * 3.2);
+      // every row slides to the same depth and lifts to its own floor
+      r.position.set(0, e * n * LIFT, -n * (1 - e) - e * 2);
+      const p = plates.current[n];
+      if (p) p.opacity = e * 0.85;
+      const plate = r.children[0];
+      if (plate) plate.scale.set(1, 1, 1 + e * 5);
     });
   });
+
   return (
-    <group ref={group} visible={false}>
+    <group>
       {Array.from({ length: ROWS }, (_, n) => (
         <group key={n} ref={(el) => void (rows.current[n] = el)}>
+          <mesh position={[1.5, -0.06, 0]}>
+            <boxGeometry args={[COLS + 0.5, 0.04, 1.1]} />
+            <meshStandardMaterial
+              ref={(m) => void (plates.current[n] = m)}
+              color="#f3f6fa"
+              transparent
+              opacity={0}
+              roughness={0.9}
+            />
+          </mesh>
           {Array.from({ length: COLS }, (_, i) => (
-            <mesh key={i} position={[i - 2, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-              <planeGeometry args={[TILE, TILE]} />
-              <meshStandardMaterial color={i >= n ? COLORS.stopTile : COLORS.tile} transparent opacity={0.95} />
-            </mesh>
+            <mesh key={i} geometry={assets.tile} material={i - 2 >= n ? assets.gray : assets.white} position={[i - 2, 0, 0]} />
           ))}
-          {active && (
-            <Html position={[-3.4, 0.05, 0]} center style={{ pointerEvents: 'none' }}>
-              <div className="pond-label">n = {n}</div>
-            </Html>
-          )}
+          {/* each row's frog sits on its goal, i = n */}
+          <mesh geometry={assets.frog} material={assets.frogMat} position={[n, 0.05, 0]} />
         </group>
       ))}
     </group>

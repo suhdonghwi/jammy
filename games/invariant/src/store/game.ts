@@ -3,7 +3,6 @@ import type { State } from '../lang/ast';
 import type { Formula } from '../checker/check';
 import type { Counterexample, Verdicts } from '../checker/types';
 import { compileFormula, compileLevel, type CompiledLevel, type FormulaResult, type LevelDef, type Rule } from '../levels/level';
-import { loadProgress, saveProgress, type Progress } from './progress';
 
 export interface Reveal {
   code: boolean;
@@ -55,6 +54,11 @@ export interface Caption {
 
 export interface Game {
   mode: 'menu' | 'level' | 'tutorial';
+  /** On the home screen: the title, or the level picker. */
+  menuView: 'home' | 'levels';
+  /** The camera is riding between ponds (and in which direction). */
+  elevating: boolean;
+  elevatorDir: number;
   level: CompiledLevel | null;
   pond: number;
   formulaText: string;
@@ -78,25 +82,24 @@ export interface Game {
   hintsShown: number;
   showMe: string | null;
   showRules: boolean;
-  cleared: boolean;
   pitfallMessage: string | null;
   /** A cinematic is playing; the level scene is hidden. */
   cinematic: boolean;
-  progress: Progress;
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
-  backToMenu(): void;
+  backToMenu(view?: 'home' | 'levels'): void;
   setFormula(text: string): void;
   setPond(p: number): void;
   setCaption(c: Caption | null): void;
   setReveal(r: Partial<Reveal>): void;
   patch(p: Partial<Game>): void;
-  markCleared(id: string): void;
-  markTutorialDone(): void;
 }
 
 export const useGame = create<Game>((set, get) => ({
   mode: 'menu',
+  menuView: 'home',
+  elevating: false,
+  elevatorDir: 1,
   level: null,
   pond: 0,
   formulaText: '',
@@ -116,14 +119,11 @@ export const useGame = create<Game>((set, get) => ({
   hintsShown: 0,
   showMe: null,
   showRules: false,
-  cleared: false,
   pitfallMessage: null,
   cinematic: false,
-  progress: loadProgress(),
 
   openLevel(def, mode) {
     const level = compileLevel(def);
-    const saved = mode === 'level' ? get().progress.formulas[def.id] ?? '' : '';
     set({
       mode,
       level,
@@ -143,16 +143,15 @@ export const useGame = create<Game>((set, get) => ({
       hints: def.hints ?? [],
       hintsShown: 0,
       showMe: null,
-      cleared: get().progress.cleared.includes(def.id),
       pitfallMessage: null,
+      elevating: false,
     });
-    if (saved) get().setFormula(saved);
   },
-  backToMenu() {
-    set({ mode: 'menu', level: null, caption: null, running: false, busy: false });
+  backToMenu(view = 'home') {
+    set({ mode: 'menu', menuView: view, level: null, caption: null, running: false, busy: false });
   },
   setFormula(text) {
-    const { level, progress, mode } = get();
+    const { level } = get();
     if (!level) return;
     if (text.trim() === '') {
       set({ formulaText: text, formula: null, valid: null, verdicts: {} });
@@ -166,11 +165,6 @@ export const useGame = create<Game>((set, get) => ({
       verdicts: {},
       pitfallMessage: null,
     });
-    if (mode === 'level') {
-      const p = { ...progress, formulas: { ...progress.formulas, [level.id]: text } };
-      saveProgress(p);
-      set({ progress: p });
-    }
   },
   setPond(p) {
     set({ pond: p });
@@ -183,18 +177,6 @@ export const useGame = create<Game>((set, get) => ({
   },
   patch(p) {
     set(p);
-  },
-  markCleared(id) {
-    const progress = get().progress;
-    if (progress.cleared.includes(id)) return;
-    const p = { ...progress, cleared: [...progress.cleared, id] };
-    saveProgress(p);
-    set({ progress: p });
-  },
-  markTutorialDone() {
-    const p = { ...get().progress, tutorialDone: true };
-    saveProgress(p);
-    set({ progress: p });
   },
 }));
 

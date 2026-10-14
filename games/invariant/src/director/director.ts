@@ -9,7 +9,7 @@ import { game, useGame, type CaptionTone } from '../store/game';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, now, type FrogSim } from '../scene/frogSim';
 import { handState } from '../scene/handState';
-import { sceneShared, tileState, windowIndex } from '../scene/tiles';
+import { areaNear, eggsNear, tileState } from '../scene/tiles';
 import { bridgeState } from '../scene/Bridge';
 
 // ---------------------------------------------------------------------------
@@ -63,13 +63,13 @@ function above(x: number, y: number) {
 async function handIn(x: number, y: number, h = 1.8, pose: Partial<typeof handState> = {}) {
   const p = above(x, y);
   if (handState.visible < 0.05) {
-    Object.assign(handState, { x: p.x + 1.5, y: h + 5, z: p.z + 3, curl: 0.25, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0 });
+    Object.assign(handState, { x: p.x + 1.5, y: h + 5, z: p.z - 3, curl: 0.25, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0 });
   }
   await tween(handState, { visible: 1, x: p.x, y: h, z: p.z, duration: 0.7, ease: 'power3.out', ...pose });
 }
 
 async function handOut() {
-  await tween(handState, { visible: 0, y: handState.y + 4, z: handState.z + 2, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0, duration: 0.6, ease: 'power2.in' });
+  await tween(handState, { visible: 0, y: handState.y + 4, z: handState.z - 2, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0, palmUp: 0, duration: 0.6, ease: 'power2.in' });
 }
 
 /** The hand carries a test frog down and sets it on a tile. */
@@ -80,9 +80,9 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   const carry = { h: 3.2 };
   const f = frogWorld.add(L, 'test', s, { carried: carry.h });
   const p = above(x, y);
-  Object.assign(handState, { x: p.x + 1.2, y: carry.h + 5, z: p.z + 2.5, curl: 0.8, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.35 });
+  Object.assign(handState, { x: p.x + 1.2, y: carry.h + 5, z: p.z - 2.5, curl: 0.8, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.35 });
   await Promise.all([
-    tween(handState, { visible: 1, x: p.x, z: p.z + 0.15, y: carry.h + 0.55, duration: 0.6, ease: 'power3.out' }),
+    tween(handState, { visible: 1, x: p.x, z: p.z - 0.15, y: carry.h + 0.55, duration: 0.6, ease: 'power3.out' }),
   ]);
   if (!tok.alive) return null;
   await tween(carry, {
@@ -98,7 +98,7 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   // release
   f.carried = undefined;
   f.drop = { t0: now(), dur: 0.22, from: 0.55 };
-  await tween(handState, { curl: 0.1, y: 2.2, z: p.z + 1.2, duration: 0.45, ease: 'power2.out' });
+  await tween(handState, { curl: 0.1, y: 2.2, z: p.z - 1.2, duration: 0.45, ease: 'power2.out' });
   return f;
 }
 
@@ -107,7 +107,7 @@ async function pointAt(x: number, y: number) {
   const p = above(x, y);
   await tween(handState, {
     visible: 1, x: p.x + 1.05, y: 0.95, z: p.z - 0.15,
-    point: 1, curl: 0.2, tilt: 0.25, yaw: 1.45,
+    point: 1, curl: 0.2, tilt: 0.25, yaw: -1.45,
     duration: 0.5, ease: 'power2.out',
   });
   await tween(handState, { x: p.x + 0.9, duration: 0.18, yoyo: true, repeat: 3, ease: 'sine.inOut' });
@@ -125,7 +125,8 @@ async function focusState(s: State, far = false) {
     const p = Number(s[L.pond]);
     if (p !== game().pond) {
       game().setPond(p);
-      await sleep(450);
+      await sleep(80);
+      while (game().elevating) await sleep(60);
     }
   }
   if (far) {
@@ -144,31 +145,23 @@ async function focusState(s: State, far = false) {
 // ---------------------------------------------------------------------------
 
 function eggStatesNear(maxCount: number, radius: number): State[] {
-  const w = sceneShared.win;
   const L = lvl();
-  if (!w) return [];
   const t = cameraRig.target();
   const tx = t.x;
   const ty = -t.z;
-  const out: { s: State; d: number }[] = [];
-  for (let k = 0; k < w.egg.length; k++) {
-    if (!w.egg[k]) continue;
-    const x = w.cx - w.R + (k % w.size);
-    const y = w.cy - w.R + Math.floor(k / w.size);
-    const d = Math.hypot(x - tx, y - ty);
-    if (d > radius) continue;
-    if (frogWorld.hatched.has(`${x},${y}`)) continue;
-    out.push({ s: toBig(tileState(L, x, y, game().pond)), d });
-  }
-  out.sort((a, b) => a.d - b.d);
-  return out.slice(0, maxCount).map((o) => o.s);
+  const R = Math.ceil(radius);
+  return eggsNear(L, game().pond, Math.round(tx), Math.round(ty), R)
+    .filter(([x, y]) => !frogWorld.hatched.has(`${x},${y}`) && Math.hypot(x - tx, y - ty) <= radius)
+    .sort((a, b) => Math.hypot(a[0] - tx, a[1] - ty) - Math.hypot(b[0] - tx, b[1] - ty))
+    .slice(0, maxCount)
+    .map(([x, y]) => toBig(tileState(L, x, y, game().pond)));
 }
 
 function hatch(s: State): FrogSim {
   const L = lvl();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
-  frogWorld.hatched.add(`${x},${y}`);
+  frogWorld.markHatched(x, y);
   const f = frogWorld.add(L, 'real', s, { hatchT0: now() });
   f.stopped = !running(L, s);
   return f;
@@ -285,10 +278,9 @@ export const director = {
 
   clickTile(x: number, y: number) {
     const g = game();
-    const w = sceneShared.win;
-    if (g.busy || !w || !g.reveal.eggs) return;
-    const k = windowIndex(w, x, y);
-    if (k < 0 || !w.egg[k] || frogWorld.hatched.has(`${x},${y}`)) {
+    if (g.busy || !g.reveal.eggs) return;
+    const isEgg = eggsNear(lvl(), g.pond, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
+    if (!isEgg || frogWorld.hatched.has(`${x},${y}`)) {
       game().patch({ selected: null });
       return;
     }
@@ -387,11 +379,12 @@ export const director = {
     game().patch({ busy: true });
     try {
       const t = cameraRig.target();
-      await handIn(t.x, -t.z, 2.2, { curl: 0.05, point: 0, tilt: -0.2 });
+      await handIn(t.x + 0.5, -t.z + 1.5, 2.0, { curl: 0.05, point: 0, tilt: 0.2 });
       if (!tok.alive) return;
-      await tween(handState, { shrug: 1, duration: 0.25 });
+      await tween(handState, { palmUp: 1, curl: 0.15, duration: 0.35, ease: 'back.out(1.6)' });
+      await tween(handState, { shrug: 1, duration: 0.2 });
       await sleep(1300);
-      await tween(handState, { shrug: 0, duration: 0.25 });
+      await tween(handState, { shrug: 0, palmUp: 0, duration: 0.3 });
       caption(text, 'muted');
       await handOut();
     } finally {
@@ -408,20 +401,14 @@ export const director = {
     try {
       const t0 = cameraRig.target();
       await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
-      const w = sceneShared.win;
       const inv = game().valid;
-      if (!w || !inv) return;
+      if (!inv) return;
       const t = cameraRig.target();
       const tx = t.x;
       const ty = -t.z;
-      const tiles: State[] = [];
-      for (let k = 0; k < w.area.length; k++) {
-        if (!w.area[k] || !w.exists[k]) continue;
-        const x = w.cx - w.R + (k % w.size);
-        const y = w.cy - w.R + Math.floor(k / w.size);
-        if (Math.hypot(x - tx, y - ty) > 16) continue;
-        tiles.push(toBig(tileState(L, x, y, game().pond)));
-      }
+      const tiles: State[] = areaNear(L, game().pond, inv.fast, Math.round(tx), Math.round(ty), 16)
+        .filter(([x, y]) => Math.hypot(x - tx, y - ty) <= 15)
+        .map(([x, y]) => toBig(tileState(L, x, y, game().pond)));
       // shuffle and cap
       for (let i = tiles.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -429,7 +416,7 @@ export const director = {
       }
       const pick = tiles.slice(0, 160);
       // hand sweeps across while sprinkling
-      Object.assign(handState, { x: tx - 9, y: 6, z: -ty + 2, curl: 0.55, tap: 0.6, point: 0, shrug: 0 });
+      Object.assign(handState, { x: tx - 9, y: 5, z: -ty + 2, curl: 0.55, tap: 0.6, point: 0, shrug: 0, palmUp: 0, yaw: 0 });
       void tween(handState, { visible: 1, duration: 0.3 });
       void tween(handState, { x: tx + 9, z: -ty - 2, duration: 1.8, ease: 'sine.inOut' });
       const frogs: FrogSim[] = [];

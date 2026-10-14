@@ -1,15 +1,16 @@
 import { useEffect } from 'react';
 import { World } from './scene/World';
 import { useGame } from './store/game';
-import { CaptionBar, CodePanel, PondSlider, RunControls, TopBar } from './ui/Panels';
+import { CaptionBar, CodePanel, ElevatorToast, HoverReadout, PondGauge, RunControls, TopBar } from './ui/Hud';
 import { FormulaBox } from './ui/FormulaBox';
-import { Menu, RulesCard } from './ui/Menu';
+import { HomeOverlay, RulesCard } from './ui/Home';
 import { browserZ3 } from './checker/z3-browser';
 
 export function App() {
   const mode = useGame((s) => s.mode);
   const level = useGame((s) => s.level);
   const reveal = useGame((s) => s.reveal);
+  const cinematic = useGame((s) => s.cinematic);
 
   // Warm up the solver in the background so the first Check is quick.
   useEffect(() => {
@@ -22,14 +23,17 @@ export function App() {
       <div className="world">
         <World />
       </div>
-      {mode === 'menu' && <Menu />}
+      {mode === 'menu' && <HomeOverlay />}
       {mode !== 'menu' && level && (
         <div className="hud">
           <TopBar />
           <div className="hud-middle">
-            <CodePanel />
-            <span className="spacer" />
-            <PondSlider />
+            {!cinematic && <CodePanel />}
+            <div className="hud-center">
+              {!cinematic && <HoverReadout />}
+              <ElevatorToast />
+            </div>
+            {!cinematic && <PondGauge />}
           </div>
           <div className="hud-bottom">
             <CaptionBar />

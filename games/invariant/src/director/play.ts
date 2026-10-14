@@ -23,10 +23,10 @@ export function openTutorial() {
   startTutorial();
 }
 
-export function goMenu() {
+export function goMenu(view: 'home' | 'levels' = 'home') {
   stopTutorial();
   director.reset();
-  game().backToMenu();
+  game().backToMenu(view);
 }
 
 export function nextLevelDef(id: string): LevelDef | null {
@@ -65,14 +65,12 @@ export async function check() {
     return;
   }
   const level = g.level;
-  game().markCleared(level.id);
-  game().patch({ cleared: true });
   await director.playRain();
   const next = nextLevelDef(level.id);
   game().setCaption({
     text: 'Proved. Every frog, everywhere you claimed — for every input.',
     tone: 'success',
-    action: next ? { label: `Next: ${next.title} →`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: goMenu },
+    action: next ? { label: `Next: ${next.title} →`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
   });
 }
 

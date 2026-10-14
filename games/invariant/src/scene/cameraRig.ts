@@ -1,16 +1,18 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { tileToWorld } from './constants';
+import { tileToWorld } from './tiles';
 
 type Controls = CameraControls;
 
 let controls: Controls | null = null;
 const tmp = new THREE.Vector3();
 
-/** Fixed viewing angle: slightly isometric, looking "north". */
-export const VIEW = { polar: 0.95, azimuth: 0.32 };
+/** Default viewing angle: looking "north", slightly from the right, fairly top-down. */
+export const VIEW = { polar: 0.8, azimuth: 0.26 };
 
 export const cameraRig = {
+  /** World y of the focused pond's floor. */
+  layerY: 0,
   debug() {
     if (!controls) return null;
     const t = controls.getTarget(new THREE.Vector3());
@@ -29,11 +31,11 @@ export const cameraRig = {
   distance(): number {
     return controls ? controls.distance : 14;
   },
-  /** Glide so the given tile is centered. */
+  /** Glide so the given tile (in the focused pond) is centered. */
   async lookAtTile(x: number, y: number, distance?: number, smooth = true) {
     if (!controls) return;
     const [wx, wz] = tileToWorld(x, y);
-    const moves: Promise<void>[] = [controls.moveTo(wx, 0, wz, smooth)];
+    const moves: Promise<void>[] = [controls.moveTo(wx, this.layerY, wz, smooth)];
     if (distance !== undefined) moves.push(controls.dollyTo(distance, smooth));
     await Promise.all(moves);
   },

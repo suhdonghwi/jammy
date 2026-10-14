@@ -1,51 +1,25 @@
 import { CameraControls } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import { Canvas } from '@react-three/fiber';
+import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../store/game';
 import { cameraRig, VIEW } from './cameraRig';
-import { COLORS } from './constants';
+import { POND_SPACING } from './constants';
+import { Floor } from './Floor';
+import { AreaLayer } from './AreaLayer';
 import { Frogs } from './Frogs';
 import { Hand } from './Hand';
 import { HoverPreview } from './HoverPreview';
-import { PondLayer } from './PondLayer';
-import { FocusedLayer, PondStack } from './PondStack';
+import { HomeScene } from './HomeScene';
 import { BridgeCinematic } from './Bridge';
+import { director } from '../director/director';
+import { useHover } from './hover';
 
-function FogAndLight() {
-  const scene = useThree((s) => s.scene);
-  const light = useRef<THREE.DirectionalLight>(null);
-  useEffect(() => {
-    scene.fog = new THREE.Fog(COLORS.background, 20, 40);
-  }, [scene]);
-  useFrame(() => {
-    const d = cameraRig.distance();
-    const fog = scene.fog as THREE.Fog | null;
-    if (fog) {
-      fog.near = d * 0.85;
-      fog.far = d * 1.6;
-    }
-    const l = light.current;
-    if (l) {
-      const t = cameraRig.target();
-      l.position.set(t.x + 5, 14, t.z + 7);
-      l.target.position.set(t.x, 0, t.z);
-      l.target.updateMatrixWorld();
-      const ext = Math.min(40, Math.max(14, d * 0.9));
-      const cam = l.shadow.camera;
-      if (cam.right !== ext) {
-        cam.left = -ext;
-        cam.right = ext;
-        cam.top = ext;
-        cam.bottom = -ext;
-        cam.updateProjectionMatrix();
-      }
-    }
-  });
+function Lights() {
   return (
     <>
-      <hemisphereLight args={['#ffffff', '#d5dae3', 1.9]} />
-      <directionalLight ref={light} intensity={1.1} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-radius={6} />
+      <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
+      <directionalLight position={[4, 10, 6]} intensity={1.6} />
+      <directionalLight position={[-6, 4, -4]} intensity={0.35} />
     </>
   );
 }
@@ -56,14 +30,10 @@ function Controls() {
     cameraRig.attach(ref.current);
     const c = ref.current;
     if (c) {
-      c.mouseButtons.left = 2; // TRUCK (pan)
+      // pan along the ground like a map; right-drag rotates
+      c.mouseButtons.left = 4; // SCREEN_PAN
       c.mouseButtons.right = 1; // ROTATE
-      c.touches.one = 128; // TOUCH_TRUCK
-      // Pan like a map: dragging moves along the ground, never up or down.
-      c.verticalDragToForward = true;
-      c.setBoundary(new THREE.Box3(new THREE.Vector3(-1e5, 0, -1e5), new THREE.Vector3(1e5, 0, 1e5)));
-      c.boundaryFriction = 0;
-      c.rotateTo(VIEW.azimuth, VIEW.polar, false);
+      c.touches.one = 256; // TOUCH_SCREEN_PAN
     }
     return () => cameraRig.attach(null);
   }, []);
@@ -71,57 +41,141 @@ function Controls() {
     <CameraControls
       ref={ref}
       makeDefault
-      minDistance={5}
-      maxDistance={70}
-      minPolarAngle={0.3}
-      maxPolarAngle={1.2}
-      minAzimuthAngle={-1}
-      maxAzimuthAngle={1.4}
+      minDistance={6}
+      maxDistance={60}
+      minPolarAngle={0.25}
+      maxPolarAngle={1.15}
       dollySpeed={0.6}
-      smoothTime={0.45}
-      draggingSmoothTime={0.12}
+      smoothTime={0.42}
+      draggingSmoothTime={0.1}
     />
   );
 }
 
-function LevelScene() {
+/**
+ * Ponds are stacked like floors of a building at y = n × spacing. Changing n
+ * moves only the camera — up or down the stack — while the old floor fades out
+ * and the new one fades in. Nothing else moves.
+ */
+function useElevator() {
   const level = useGame((s) => s.level);
-  const cinematic = useGame((s) => s.cinematic);
+  const pond = useGame((s) => s.pond);
+  const hasPonds = !!level?.pond;
+  const layerY = hasPonds ? pond * POND_SPACING : 0;
+  const [leaving, setLeaving] = useState<number[]>([]);
+  const prev = useRef<{ level: typeof level; pond: number } | null>(null);
+
   useEffect(() => {
+    cameraRig.layerY = layerY;
+    const p = prev.current;
+    prev.current = { level, pond };
     if (!level) return;
-    const cam = level.camera ?? { x: 0, y: 0 };
-    void cameraRig.resetAngle(false);
-    void cameraRig.lookAtTile(cam.x, cam.y, cam.distance ?? 14, false);
-  }, [level]);
-  if (!level) return null;
+    const c = cameraRig.controls;
+    if (!p || p.level !== level || !hasPonds) {
+      // fresh level: place the camera without animation
+      const cam = level.camera ?? { x: 0, y: 0 };
+      void c?.rotateTo(VIEW.azimuth, VIEW.polar, false);
+      void cameraRig.lookAtTile(cam.x, cam.y, (cam.distance ?? 15) * 1.2, false);
+      setLeaving([]);
+      return;
+    }
+    if (p.pond === pond) return;
+    setLeaving((l) => [...l.filter((q) => q !== pond), p.pond]);
+    const t = cameraRig.target();
+    useGame.setState({ elevating: true, elevatorDir: Math.sign(pond - p.pond) });
+    // Ride straight up or down: the old floor fades away at once, the new
+    // floor fades in as the camera arrives.
+    void (async () => {
+      await c?.moveTo(t.x, layerY, t.z, true);
+      useGame.setState({ elevating: false });
+    })();
+    const timer = setTimeout(() => setLeaving((l) => l.filter((q) => q !== p.pond)), 1200);
+    return () => clearTimeout(timer);
+  }, [level, pond, layerY, hasPonds]);
+
+  return { layerY, leaving };
+}
+
+function LevelScene() {
+  const level = useGame((s) => s.level)!;
+  const pond = useGame((s) => s.pond);
+  const reveal = useGame((s) => s.reveal);
+  const valid = useGame((s) => s.valid);
+  const formula = useGame((s) => s.formula);
+  const cinematic = useGame((s) => s.cinematic);
+  const { layerY, leaving } = useElevator();
+  useEffect(() => useHover.setState({ tile: null }), [level, pond]);
+
   if (cinematic) return <BridgeCinematic />;
   return (
     <>
-      <FocusedLayer>
-        <PondLayer />
+      <Floor
+        key={`floor-${pond}`}
+        level={level}
+        pond={pond}
+        y={layerY}
+        opacity={1}
+        initialOpacity={leaving.length ? 0 : 1}
+        fadeSpeed={leaving.length ? 3.5 : 5}
+        fadeDelay={leaving.length ? 0.35 : 0}
+        interactive
+        showStop={reveal.stop}
+        showGoal={reveal.goals}
+        showAxes={reveal.axes}
+        onTile={(x, y) => director.clickTile(x, y)}
+      />
+      {leaving.map((p) => (
+        <Floor
+          key={`floor-${p}`}
+          level={level}
+          pond={p}
+          y={p * POND_SPACING}
+          opacity={0}
+          initialOpacity={1}
+          fadeSpeed={6}
+          showStop={reveal.stop}
+          showGoal={reveal.goals}
+          showAxes={reveal.axes}
+        />
+      ))}
+      <group position={[0, layerY, 0]}>
+        <AreaLayer
+          level={level}
+          pond={pond}
+          inv={valid?.fast ?? null}
+          dim={formula !== null && !formula.ok}
+          showStop={reveal.stop}
+          showGoal={reveal.goals}
+          showEggs={reveal.eggs}
+          showArea={reveal.formula}
+        />
         <Frogs />
-        <HoverPreview />
-      </FocusedLayer>
-      {level.pond && <PondStack />}
-      <Hand />
+        {reveal.hover && <HoverPreview />}
+        <Hand />
+      </group>
     </>
   );
+}
+
+function SceneSwitch() {
+  const mode = useGame((s) => s.mode);
+  const level = useGame((s) => s.level);
+  if (mode === 'menu' || !level) return <HomeScene />;
+  return <LevelScene />;
 }
 
 export function World() {
   return (
     <Canvas
-      shadows="soft"
       flat
-      dpr={[1, 2]}
-      camera={{ position: [3, 10, 12], fov: 38, near: 0.1, far: 400 }}
-      gl={{ antialias: true }}
+      dpr={[1, 1.75]}
+      camera={{ position: [3, 10, 12], fov: 36, near: 0.1, far: 500 }}
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       onPointerMissed={() => useGame.getState().patch({ selected: null })}
     >
-      <color attach="background" args={[COLORS.background]} />
-      <FogAndLight />
+      <Lights />
       <Controls />
-      <LevelScene />
+      <SceneSwitch />
     </Canvas>
   );
 }

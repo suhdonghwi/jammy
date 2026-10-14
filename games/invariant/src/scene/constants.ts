@@ -1,33 +1,43 @@
-// Visual constants. Everything the level fixes is grayscale; only the
-// learner's area uses the accent color and height. Red is for failures only.
+import * as THREE from 'three';
+
+// Visual language: everything the level fixes is quiet grayscale; the learner's
+// area is the only saturated surface (blue slabs). Goals are amber, real frogs
+// green, test frogs violet, failures red.
 
 export const COLORS = {
-  background: '#e9ebef',
-  tile: '#fbfbfa',
-  stopTile: '#d9dce2',
-  stopLine: '#9aa1ad',
-  goal: '#5b6472',
-  slab: '#7fb2f0',
-  slabStop: '#a3b7cf',
-  egg: '#f3ead2',
-  frog: '#5fbf4a',
-  testFrog: '#b48cf0',
-  fail: '#ef4f4f',
-  hand: '#f4f1ec',
-  axis: '#b9bfca',
-  ghost: '#8a93a3',
-  sheet: '#ffffff',
+  horizon: '#e8ecf2',
+  gap: '#d3d9e2',
+  void: '#e6eaf0',
+  tile: '#ffffff',
+  stopTile: '#eef0f4',
+  stopHatch: '#dde2ea',
+  stopEdge: '#6f7b8f',
+  hover: '#2f6fe0',
+  cross: '#eaf1fd',
+  slabTop: '#5c9df5',
+  slabSide: '#3a78d8',
+  slabStopTop: '#93b2dc',
+  goal: '#efa52b',
+  egg: '#f8efd9',
+  frog: '#52c24a',
+  testFrog: '#a77df2',
+  fail: '#f04f55',
+  glove: '#ffffff',
+  outline: '#2a3142',
+  label: '#9aa4b4',
+  labelStrong: '#5d6878',
 };
 
-export const SLAB_H = 0.22;
-export const TILE = 0.94;
-export const POND_SPACING = 3.2;
+export const SLAB_H = 0.24;
+export const TILE = 0.9;
+export const POND_SPACING = 6;
 
-/** Tile (X, Y) → world position. +Y goes away from the camera. */
-export function tileToWorld(x: number, y: number): [number, number] {
-  return [x, -y];
-}
+export const color = (c: string) => new THREE.Color(c);
 
-export function worldToTile(wx: number, wz: number): [number, number] {
-  return [Math.round(wx), Math.round(-wz)];
-}
+export const clock = {
+  /** Seconds since start — used by GPU-side animations. */
+  t0: performance.now(),
+  now() {
+    return (performance.now() - this.t0) / 1000;
+  },
+};

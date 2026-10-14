@@ -33,7 +33,13 @@ class FrogWorld {
   private nextId = 1;
   /** Egg tiles that have hatched (key "x,y"); their eggs are hidden. */
   hatched = new Set<string>();
+  hatchVersion = 0;
   version = 0;
+
+  markHatched(x: number, y: number) {
+    this.hatched.add(`${x},${y}`);
+    this.hatchVersion++;
+  }
 
   add(level: CompiledLevel, kind: FrogKind, state: State, opts: Partial<FrogSim> = {}): FrogSim {
     const f: FrogSim = {
@@ -60,7 +66,10 @@ class FrogWorld {
 
   clear(kind?: FrogKind) {
     this.frogs = kind ? this.frogs.filter((f) => f.kind !== kind) : [];
-    if (!kind || kind === 'real') this.hatched.clear();
+    if ((!kind || kind === 'real') && this.hatched.size) {
+      this.hatched.clear();
+      this.hatchVersion++;
+    }
     this.version++;
   }
 

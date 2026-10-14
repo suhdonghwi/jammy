@@ -134,7 +134,7 @@ async function script(gen: number) {
   g().setReveal({ stop: true, hover: true });
   await waitNext(
     gen,
-    'Here `i < n` is false, so the loop ends and the frog stops. Gray tiles are where the loop stops. Hover any tile to preview where a frog there would hop.',
+    'Here `i < n` is false, so the loop ends and the frog stops. Tiles with gray stripes are where the loop stops. Hover any tile to preview where a frog there would hop.',
   );
 
   director.clearFrogs();
@@ -142,7 +142,7 @@ async function script(gen: number) {
   await waitNext(gen, 'Where can frogs start? Anywhere the precondition allows: i starts at 0, and n can be any number ≥ 0. Each egg is one possible input.');
 
   g().setReveal({ goals: true, run: true });
-  say('What we want when the loop ends: `i == n`. Goal tiles are marked with rings. Press Run.');
+  say('What we want when the loop ends: `i == n`. Goals are the amber rings. Press Run.');
   await waitEvent(gen, 'runDone');
   await waitNext(gen, 'Every frog stopped on a goal. Looks correct!');
 
@@ -271,7 +271,6 @@ async function script(gen: number) {
     'Every egg starts on your area, no hop leaves it, and every frog that stops on it is on a goal. That area is a loop invariant — and you just proved the loop correct for every n.',
     'Finish',
   );
-  g().markTutorialDone();
   useGame.setState({ showRules: true });
   const { openLevel } = await import('../director/play');
   guard(gen);
