@@ -10,8 +10,8 @@ import { MAX_EVENTS } from './shaders';
 import { tileState } from './tiles';
 
 // A faint column of light over every goal pool, like a checkpoint pad: brighter
-// at its edges and fading upward, with a few soft motes drifting up inside it.
-// When a frog lands on a goal, its motes rise faster and brighter for a moment.
+// at its edges and fading upward, with tiny flame-like sparks rising quickly
+// inside it. When a frog lands on a goal, its sparks flare up for a moment.
 
 const vertex = /* glsl */ `
 attribute vec2 aTile;
@@ -66,7 +66,7 @@ void main() {
 }
 `;
 
-const MOTES = 6;
+const MOTES = 16;
 
 const moteVertex = /* glsl */ `
 attribute vec2 aTile;
@@ -77,6 +77,7 @@ uniform float uScale;
 uniform vec3 uEvents[${MAX_EVENTS}];
 varying float vAlpha;
 varying float vCore;
+varying float vLife;
 float heightNow() {
   float u = clamp((uTime - aAnim.z) / ${RISE_DUR.toFixed(3)}, 0.0, 1.0);
   u = u * u * (3.0 - 2.0 * u);
@@ -94,16 +95,21 @@ void main() {
   }
   float s1 = aSeed.x;
   float s2 = aSeed.y;
-  float life = fract(uTime * (0.16 + 0.08 * s2) + s1);
-  // drift: slow rise, a gentle sway, inside the column
-  float rad = 0.2 * sqrt(s2);
-  float ang = s1 * 37.0 + life * 1.5;
-  vec3 p = vec3(cos(ang) * rad + 0.025 * sin(life * 9.0 + s2 * 7.0), 0.03 + life * 0.72, sin(ang) * rad);
-  // during a burst, every mote is pushed upward
-  p.y += burst * burst * 0.25 * (0.5 + s2);
-  vAlpha = sin(3.14159 * life) * (0.75 + 0.25 * burst);
-  vCore = 0.6 + 0.4 * burst;
-  float size = (0.075 + 0.03 * s2) * (1.0 + 0.5 * burst);
+  // short, quick lives — like sparks leaving a flame
+  float speed = (1.05 + 0.7 * s2) * (1.0 + 0.9 * burst);
+  float life = fract(uTime * speed + s1);
+  float rad = 0.16 * sqrt(fract(s2 * 7.13 + s1 * 3.1));
+  float ang = s1 * 53.0 + s2 * 11.0;
+  float rise = (0.5 + 0.25 * s2) * (1.0 + 0.4 * burst);
+  vec3 p = vec3(cos(ang) * rad, 0.02 + rise * life, sin(ang) * rad);
+  // flicker sideways as they rise, drawing in a little toward the centre
+  p.x += 0.022 * sin(life * 22.0 + s1 * 40.0) * life;
+  p.z += 0.022 * cos(life * 19.0 + s2 * 40.0) * life;
+  p.xz *= 1.0 - 0.35 * life;
+  vLife = life;
+  vAlpha = min(1.0, smoothstep(0.0, 0.08, life) * pow(1.0 - life, 1.1) * 1.25);
+  vCore = 0.0;
+  float size = (0.042 + 0.016 * s2) * (1.0 - 0.4 * life) * (1.0 + 0.35 * burst);
   vec4 mv = modelViewMatrix * vec4(p + vec3(aTile.x, heightNow(), -aTile.y), 1.0);
   gl_Position = projectionMatrix * mv;
   gl_PointSize = size * uScale / -mv.z;
@@ -111,15 +117,21 @@ void main() {
 `;
 
 const moteFragment = /* glsl */ `
-uniform vec3 uColor;
 varying float vAlpha;
 varying float vCore;
+varying float vLife;
 void main() {
+  // a small teardrop: narrow, pointed at the top
   vec2 c = gl_PointCoord * 2.0 - 1.0;
-  float d = dot(c, c);
+  float taper = mix(1.0, 0.35, clamp(-c.y * 0.5 + 0.5, 0.0, 1.0));
+  float d = (c.x * c.x) / (0.3 * taper * taper) + c.y * c.y;
   if (d > 1.0) discard;
-  float soft = exp(-d * 2.2);
-  vec3 col = mix(uColor, vec3(1.0, 0.98, 0.9), exp(-d * 8.0) * vCore);
+  float soft = 1.0 - smoothstep(0.55, 1.0, d);
+  // yellow when born, deepening to orange as it rises (saturated, to read on white)
+  vec3 hot = vec3(1.0, 0.8, 0.16);
+  vec3 warm = vec3(1.0, 0.45, 0.08);
+  vec3 col = mix(hot, warm, smoothstep(0.15, 0.8, vLife));
+  col = mix(col, vec3(1.0, 0.95, 0.75), (1.0 - smoothstep(0.0, 0.25, d)) * 0.35);
   gl_FragColor = vec4(col, soft * vAlpha);
   #include <colorspace_fragment>
 }
@@ -207,7 +219,6 @@ export function GoalColumns({ level, pond, win, version }: { level: CompiledLeve
         uniforms: {
           uTime: { value: 0 },
           uScale: { value: 800 },
-          uColor: { value: new THREE.Color(COLORS.goal) },
           uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
         },
       }),
