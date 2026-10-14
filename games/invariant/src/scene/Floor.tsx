@@ -94,7 +94,7 @@ void main() {
     float line = 0.0;
     // Near a grid vertex where the boundary turns, follow a quarter-circle arc
     // (radius RC) instead of a sharp corner.
-    const float RC = 0.24;
+    const float RC = 0.09;
     vec2 V = floor(p) + 0.5;
     vec2 local = p - V;
     ivec3 cSW = ivec3(int(floor(p.x)), int(floor(p.y)), uPond);
