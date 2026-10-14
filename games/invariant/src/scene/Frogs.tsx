@@ -89,6 +89,8 @@ const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 // Hop timeline (fractions of the hop): crouch on the spot, fly, absorb the landing.
 const CROUCH = 0.18;
 const LAND = 0.84;
+/** A turn on the spot (seconds). */
+const TURN_DUR = 0.2;
 
 /**
  * Every term below is continuous: each effect is a bump that starts and ends at
@@ -104,9 +106,26 @@ function pose(f: FrogSim, t: number): Pose {
   let squash = 0; // + stretch, − squash
   let pitch = 0;
 
-  // turn smoothly toward the next hop (or the viewer, once stopped)
-  const rate = f.hop ? 16 : 7;
-  f.yaw += angleDelta(f.yaw, f.face) * (1 - Math.exp(-dt * rate));
+  // Facing. A sitting frog whose next hop goes another way turns with a tiny
+  // hop on the spot; small corrections (and turns mid-air) just ease in.
+  const off = angleDelta(f.yaw, f.face);
+  if (!f.turn && !f.hop && !f.drop && f.carried === undefined && Math.abs(off) > 0.35) {
+    f.turn = { t0: t, from: f.yaw, delta: off };
+  }
+  if (f.turn && (f.hop || Math.abs(angleDelta(f.turn.from + f.turn.delta, f.face)) > 0.35)) {
+    // interrupted by a hop, or the target moved: fall back to easing
+    f.turn = undefined;
+  }
+  let turnLift = 0;
+  if (f.turn) {
+    const u = clamp01((t - f.turn.t0) / TURN_DUR);
+    const e = u * u * (3 - 2 * u);
+    f.yaw = f.turn.from + f.turn.delta * e;
+    turnLift = bump(u);
+    if (u >= 1) f.turn = undefined;
+  } else {
+    f.yaw += off * (1 - Math.exp(-dt * 16));
+  }
 
   if (f.hop) {
     const u = clamp01((t - f.hop.t0) / f.hop.dur);
@@ -124,6 +143,10 @@ function pose(f: FrogSim, t: number): Pose {
     squash = -0.2 * bump(crouch) + 0.14 * bump(fly) - 0.17 * bump(land);
     // nose up while rising, nose down while falling — zero at take-off and touch-down
     pitch = -0.3 * Math.sin(2 * Math.PI * fly) * Math.min(1, dist);
+  }
+  if (turnLift > 0) {
+    h += 0.09 * turnLift;
+    squash += 0.06 * turnLift;
   }
   if (f.drop) {
     // fall, then a short squash once on the ground

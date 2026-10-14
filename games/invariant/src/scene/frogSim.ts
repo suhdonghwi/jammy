@@ -31,6 +31,8 @@ export interface FrogSim {
   face: number;
   /** Smoothed current facing. */
   yaw: number;
+  /** A quick turn on the spot, with a tiny hop, when the next hop goes another way. */
+  turn?: { t0: number; from: number; delta: number };
   lastT?: number;
   /** Smoothed slot offset/scale when sharing a tile. */
   ox?: number;
@@ -45,9 +47,9 @@ export const now = () => performance.now() / 1000;
 /** Facing toward tile (tx, ty) from (fx, fy); 0 faces the viewer. */
 export const yawToward = (fx: number, fy: number, tx: number, ty: number) => Math.atan2(tx - fx, -(ty - fy));
 
-/** Frogs know where they'll hop next — face that way; once stopped, look at the viewer. */
+/** Frogs know where they'll hop next and face that way; a stopped frog keeps its facing. */
 function facingFor(level: CompiledLevel, s: State, fallback: number): number {
-  if (!holds(level.guard, s)) return 0;
+  if (!holds(level.guard, s)) return fallback;
   const n = step(level.program.loop.body, s);
   const fx = Number(s[level.view.x]);
   const fy = Number(s[level.view.y]);
@@ -148,7 +150,7 @@ class FrogWorld {
         f.x = tx;
         f.y = ty;
         f.hop = undefined;
-        // look ahead to the next hop (or at the viewer, if the loop is done)
+        // look ahead to the next hop (a stopped frog keeps looking the way it came)
         f.face = facingFor(level, next, f.face);
         if (!quiet) announceLand(holds(level.guard, next));
         if (!holds(level.guard, next) && holds(level.post, next)) goalEvents.push(tx, ty, f.pond);
