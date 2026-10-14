@@ -264,6 +264,8 @@ export function RunControls() {
   const hints = useGame((s) => s.hints);
   const showMe = useGame((s) => s.showMe);
   const spot = useGame((s) => s.spotlight);
+  const allow = useGame((s) => s.tutorialAllow);
+  const tut = mode === 'tutorial';
   return (
     <div className="run-controls">
       {reveal.run &&
@@ -272,20 +274,24 @@ export function RunControls() {
             <Pause size={16} strokeWidth={2.4} /> Pause
           </button>
         ) : (
-          <button className={`btn icon-btn ${spot === 'run' ? 'spotlight' : ''}`} disabled={busy || stepping} onClick={() => void director.run()}>
+          <button
+            className={`btn icon-btn ${spot === 'run' ? 'spotlight' : ''}`}
+            disabled={busy || stepping || (tut && !allow.run)}
+            onClick={() => void director.run()}
+          >
             <Play size={16} strokeWidth={2.4} /> Run
           </button>
         ))}
       {reveal.step && (
         <button
           className={`btn icon-btn ${spot === 'step' ? 'spotlight' : ''}`}
-          disabled={busy || runningNow || stepping}
+          disabled={busy || runningNow || stepping || (tut && !allow.step)}
           onClick={() => void director.step()}
         >
           <StepForward size={16} strokeWidth={2.4} /> Step
         </button>
       )}
-      {reveal.run && (
+      {reveal.run && !tut && (
         <button className="btn ghost icon-btn" disabled={busy} onClick={() => director.clearFrogs()}>
           <Eraser size={16} strokeWidth={2.2} /> Clear
         </button>

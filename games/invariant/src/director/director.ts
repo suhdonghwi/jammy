@@ -227,9 +227,10 @@ export const director = {
     return f;
   },
 
-  async step() {
+  async step(scripted = false) {
     const g = game();
     if (g.busy || g.running || g.stepping) return;
+    if (!scripted && g.mode === 'tutorial' && !g.tutorialAllow.step) return;
     if (activeReal().length === 0 && !frogWorld.frogs.some((f) => f.kind === 'real')) {
       const eggs = eggStatesNear(1, 6);
       if (eggs.length) director.spawnReal(eggs[0]);
@@ -248,6 +249,7 @@ export const director = {
   async run() {
     const g = game();
     if (g.busy || g.running || g.stepping) return;
+    if (g.mode === 'tutorial' && !g.tutorialAllow.run) return;
     const tok = begin();
     frogWorld.clear('test');
     game().patch({ failMark: null });
@@ -268,7 +270,8 @@ export const director = {
     }
     if (tok.alive) {
       game().patch({ running: false });
-      events.emit('runDone');
+      // only a run where every frog has stopped counts as done (not a pause)
+      if (activeReal().length === 0) events.emit('runDone');
     }
   },
 
@@ -298,6 +301,7 @@ export const director = {
   clickTile(x: number, y: number) {
     const g = game();
     if (g.busy || !g.reveal.eggs) return;
+    if (g.mode === 'tutorial' && !g.tutorialAllow.eggs) return;
     const isEgg = eggsNear(lvl(), g.pond, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
     if (!isEgg || frogWorld.hatched.has(`${x},${y}`)) {
       game().patch({ selected: null });

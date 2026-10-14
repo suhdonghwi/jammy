@@ -93,6 +93,8 @@ export interface Game {
   stepping: boolean;
   /** Tutorial: the current step is waiting for the learner to press Check. */
   awaitingCheck: boolean;
+  /** Tutorial: which controls the current beat lets the learner use. */
+  tutorialAllow: { step: boolean; run: boolean; eggs: boolean };
   /** Tutorial: the UI element the caption is talking about. */
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
   /** Where the last check failed (tile in the focused pond) and why. */
@@ -139,6 +141,7 @@ export const useGame = create<Game>((set, get) => ({
   failMark: null,
   stepping: false,
   awaitingCheck: false,
+  tutorialAllow: { step: false, run: false, eggs: false },
   spotlight: null,
 
   openLevel(def, mode) {
@@ -167,6 +170,7 @@ export const useGame = create<Game>((set, get) => ({
       failMark: null,
       stepping: false,
       awaitingCheck: false,
+      tutorialAllow: { step: false, run: false, eggs: false },
       spotlight: null,
     });
   },
