@@ -5,7 +5,7 @@ import { useGame } from '../store/game';
 import { COLORS, SLAB_H } from './constants';
 import { field } from './field';
 import { frogWorld, now, type FrogSim } from './frogSim';
-import { frogGeometry, frogMaterial, outlineMaterial } from './models';
+import { frogGeometry, frogMaterial } from './models';
 import { getBlobTexture } from './shaders';
 
 const MAX_FROGS = 400;
@@ -19,7 +19,6 @@ const C = {
 };
 
 const baseAt = (x: number, y: number) => field.heightAt(x, y) * SLAB_H;
-const easeInOut = (u: number) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
 
 interface Pose {
   x: number;
@@ -42,6 +41,18 @@ const angleDelta = (a: number, b: number) => {
   return d;
 };
 
+/** A bump that is 0 at both ends of [0, 1] and 1 in the middle. */
+const bump = (u: number) => (u <= 0 || u >= 1 ? 0 : Math.sin(Math.PI * u));
+const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
+
+// Hop timeline (fractions of the hop): crouch on the spot, fly, absorb the landing.
+const CROUCH = 0.18;
+const LAND = 0.84;
+
+/**
+ * Every term below is continuous: each effect is a bump that starts and ends at
+ * zero, so nothing pops at the start or end of a hop, or between its phases.
+ */
 function pose(f: FrogSim, t: number): Pose {
   const dt = f.lastT === undefined ? 0 : Math.min(0.1, t - f.lastT);
   f.lastT = t;
@@ -49,70 +60,57 @@ function pose(f: FrogSim, t: number): Pose {
   let ty = f.y;
   let h = baseAt(x, ty);
   let ground = h;
-  let sy = 1;
-  let sx = 1;
+  let squash = 0; // + stretch, − squash
   let pitch = 0;
-  let roll = 0;
 
-  // Turn smoothly toward where the frog is going (or toward the viewer once
-  // it has stopped). Turning is quick while hopping, unhurried while sitting.
-  const target = f.face;
-  const rate = f.hop ? 18 : 7;
-  f.yaw += angleDelta(f.yaw, target) * (1 - Math.exp(-dt * rate));
+  // turn smoothly toward the next hop (or the viewer, once stopped)
+  const rate = f.hop ? 16 : 7;
+  f.yaw += angleDelta(f.yaw, f.face) * (1 - Math.exp(-dt * rate));
 
   if (f.hop) {
-    const u = Math.min(1, (t - f.hop.t0) / f.hop.dur);
-    const e = easeInOut(u);
+    const u = clamp01((t - f.hop.t0) / f.hop.dur);
+    const crouch = clamp01(u / CROUCH);
+    const fly = clamp01((u - CROUCH) / (LAND - CROUCH));
+    const land = clamp01((u - LAND) / (1 - LAND));
+    const e = fly * fly * (3 - 2 * fly);
     x = f.hop.fx + (f.hop.tx - f.hop.fx) * e;
     ty = f.hop.fy + (f.hop.ty - f.hop.fy) * e;
     const h0 = baseAt(f.hop.fx, f.hop.fy);
     const h1 = baseAt(f.hop.tx, f.hop.ty);
     const dist = Math.hypot(f.hop.tx - f.hop.fx, f.hop.ty - f.hop.fy);
-    h = h0 + (h1 - h0) * u + Math.sin(Math.PI * u) * (0.42 + 0.16 * dist);
+    h = h0 + (h1 - h0) * e + bump(fly) * (0.38 + 0.16 * dist);
     ground = baseAt(x, ty);
-    // crouch before take-off, stretch in the air, squash on landing
-    const s =
-      u < 0.12
-        ? -Math.sin((u / 0.12) * Math.PI) * 0.24
-        : u > 0.88
-          ? -Math.sin(((u - 0.88) / 0.12) * Math.PI) * 0.2
-          : Math.sin(Math.PI * u) * 0.16;
-    sy = 1 + s;
-    sx = 1 - s * 0.45;
-    // nose up on the way up, nose down coming in
-    pitch = -Math.cos(Math.PI * u) * 0.32 * Math.min(1, dist);
-    // lean into turns
-    roll = angleDelta(f.yaw, target) * -0.35;
-  } else {
-    sy = 1 + 0.025 * Math.sin(t * 2.4 + f.phase);
-    sx = 1 - 0.012 * Math.sin(t * 2.4 + f.phase);
+    squash = -0.2 * bump(crouch) + 0.14 * bump(fly) - 0.17 * bump(land);
+    // nose up while rising, nose down while falling — zero at take-off and touch-down
+    pitch = -0.3 * Math.sin(2 * Math.PI * fly) * Math.min(1, dist);
   }
   if (f.drop) {
-    const u = Math.min(1, (t - f.drop.t0) / f.drop.dur);
+    // fall, then a short squash once on the ground
+    const raw = (t - f.drop.t0) / f.drop.dur;
+    const u = clamp01(raw);
     h += f.drop.from * (1 - u * u);
-    if (u > 0.85) {
-      sy *= 0.8;
-      sx *= 1.1;
-    }
-    if (u >= 1) f.drop = undefined;
+    squash += -0.2 * bump(clamp01((raw - 1) / 0.3));
+    if (raw >= 1.3) f.drop = undefined;
   }
   if (f.carried !== undefined) h += f.carried;
+  // gentle breathing, always on, so it never switches abruptly
+  const breath = 0.022 * Math.sin(t * 2.4 + f.phase);
   let s = 1;
   if (f.hatchT0 !== undefined) {
     const raw = (t - f.hatchT0) / 0.45;
     // invisible until it hatches, then pops out with a little overshoot
     s = raw <= 0 ? 0 : raw >= 1 ? 1 : 0.15 + 0.85 * (1 - Math.pow(1 - raw, 3)) + Math.sin(raw * Math.PI) * 0.12;
   }
-  return { x, y: h, z: -ty, ground, sx: sx * s, sy: sy * s, yaw: f.yaw, pitch, roll };
+  const sy = (1 + squash + breath) * s;
+  const sx = (1 - squash * 0.45 - breath * 0.5) * s;
+  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, roll: 0 };
 }
 
 export function Frogs() {
   const body = useRef<THREE.InstancedMesh>(null);
-  const outline = useRef<THREE.InstancedMesh>(null);
   const shadows = useRef<THREE.InstancedMesh>(null);
   const geom = useMemo(() => frogGeometry(), []);
   const mat = useMemo(() => frogMaterial(), []);
-  const outMat = useMemo(() => outlineMaterial(0.011), []);
   const shadowGeom = useMemo(() => new THREE.PlaneGeometry(0.62, 0.62).rotateX(-Math.PI / 2), []);
   const shadowMat = useMemo(
     () => new THREE.MeshBasicMaterial({ map: getBlobTexture(), transparent: true, depthWrite: false }),
@@ -123,15 +121,13 @@ export function Frogs() {
   const visibleList = useRef<FrogSim[]>([]);
   // nothing renders until the first frame has placed every instance
   useLayoutEffect(() => {
-    for (const r of [body, outline, shadows]) if (r.current) r.current.count = 0;
+    for (const r of [body, shadows]) if (r.current) r.current.count = 0;
   }, []);
 
   useFrame(() => {
     const b = body.current;
-    const o = outline.current;
     const sh = shadows.current;
-    if (!b || !o || !sh) return;
-    if (o.instanceMatrix !== b.instanceMatrix) o.instanceMatrix = b.instanceMatrix;
+    if (!b || !sh) return;
     const t = now();
     let n = 0;
     const list: FrogSim[] = [];
@@ -158,7 +154,7 @@ export function Frogs() {
       n++;
     }
     visibleList.current = list;
-    b.count = o.count = sh.count = n;
+    b.count = sh.count = n;
     b.instanceMatrix.needsUpdate = true;
     sh.instanceMatrix.needsUpdate = true;
     if (b.instanceColor) b.instanceColor.needsUpdate = true;
@@ -173,7 +169,6 @@ export function Frogs() {
   return (
     <group>
       <instancedMesh ref={shadows} args={[shadowGeom, shadowMat, MAX_FROGS]} frustumCulled={false} renderOrder={3} />
-      <instancedMesh ref={outline} args={[geom, outMat, MAX_FROGS]} frustumCulled={false} />
       <instancedMesh ref={body} args={[geom, mat, MAX_FROGS]} frustumCulled={false} onClick={onClick} />
     </group>
   );

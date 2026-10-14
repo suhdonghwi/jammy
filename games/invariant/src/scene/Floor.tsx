@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
 import { GLSL_INT_HELPERS, levelGlsl } from './glsl';
-import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL } from './shaders';
+import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, tileSeed } from './shaders';
+import { clock } from './constants';
 import { cameraRig } from './cameraRig';
 import { hover } from './hover';
 import { field } from './field';
@@ -36,6 +37,7 @@ uniform vec3 uGap, uVoid, uTile, uStop, uHatch, uEdge, uHoverCol, uCross, uLabel
 ${GLSL_COMMON}
 ${GLSL_DIGITS}
 ${GLSL_GOAL}
+${tileSeed}
 ${GLSL_INT_HELPERS}
 ${levelGlsl(level)}
 
@@ -68,7 +70,7 @@ void main() {
     }
     bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
     if (onCross && !st) tcol = mix(tcol, uCross, 0.9);
-    if (st && uShowGoal > 0.5 && L_goal(t)) tcol = drawGoal(tcol, f, fwr);
+    if (st && uShowGoal > 0.5 && L_goal(t)) tcol = drawGoal(tcol, f, fwr, tileSeed(tc));
     if (uShowAxes > 0.5) {
       float m = 0.0;
       if (t.y == 0) m = numberMask(f, t.x);
@@ -166,6 +168,8 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
         uShowAxes: { value: showAxes ? 1 : 0 },
         uDigits: { value: getDigitTexture() },
         uGoal: colorUniform('goal'),
+        uGoalGlow: colorUniform('goalGlow'),
+        uTime: { value: 0 },
         uGap: colorUniform('gap'),
         uVoid: colorUniform('void'),
         uTile: colorUniform('tile'),
@@ -202,6 +206,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     const R = Math.max(26, d * 2.6);
     m.scale.setScalar(R * 2.2);
     u.uCenter.value.set(t.x, t.z);
+    u.uTime.value = clock.now();
     u.uFade.value.set(R * 0.62, R);
     if ((performance.now() - born.current) / 1000 >= fadeDelay) {
       const k = 1 - Math.exp(-dt * fadeSpeed);

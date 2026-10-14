@@ -55,25 +55,40 @@ float sdStar5(vec2 p, float r, float rf) {
   float h = clamp(dot(p, ba) / dot(ba, ba), 0.0, r);
   return length(p - ba * h) * sign(p.y * ba.x - p.x * ba.y);
 }
-// fwr: screen-space derivative of length(f), taken outside any branch
-vec3 drawGoal(vec3 col, vec2 f, float fwr) {
+uniform vec3 uGoalGlow;
+uniform float uTime;
+// fwr: screen-space derivative of length(f), taken outside any branch.
+// seed: per-tile value so neighbouring goals don't pulse in lockstep.
+vec3 drawGoal(vec3 col, vec2 f, float fwr, float seed) {
   float aa = fwr * 1.3;
   float r = length(f);
-  // soft glow under the coin
-  col = mix(col, uGoal, (1.0 - smoothstep(0.2, 0.42, r)) * 0.22);
-  // coin body: lighter toward the top-left, like it's lit
-  float coin = 1.0 - smoothstep(0.3 - aa, 0.3 + aa, r);
-  vec3 gold = mix(uGoal * 1.12, uGoal * 0.9, clamp(0.5 + (f.y - f.x) * -1.1, 0.0, 1.0));
+  float pulse = 0.5 + 0.5 * sin(uTime * 2.1 + seed * 6.283);
+  // warm glow spreading over the tile, breathing slowly
+  float glow = pow(1.0 - smoothstep(0.08, 0.5, r), 1.6);
+  col = mix(col, uGoalGlow, glow * (0.55 + 0.35 * pulse));
+  // a soft bright ring of light that swells with the pulse
+  float halo = exp(-pow((r - (0.33 + 0.03 * pulse)) / 0.045, 2.0));
+  col = mix(col, vec3(1.0, 0.93, 0.7), halo * (0.35 + 0.35 * pulse));
+  // the coin, lit from the top-left
+  float coin = 1.0 - smoothstep(0.27 - aa, 0.27 + aa, r);
+  vec3 gold = mix(uGoal * 1.15, uGoal * 0.88, clamp(0.5 - (f.y - f.x) * 1.1, 0.0, 1.0));
   col = mix(col, gold, coin);
-  // darker rim
-  float rim = 1.0 - smoothstep(0.022 - aa, 0.022 + aa, abs(r - 0.272));
-  col = mix(col, uGoal * 0.72, rim * coin);
-  // white star
-  float st = sdStar5(f * vec2(1.0, 1.0) + vec2(0.0, 0.012), 0.165, 0.46);
+  float rim = 1.0 - smoothstep(0.02 - aa, 0.02 + aa, abs(r - 0.245));
+  col = mix(col, uGoal * 0.74, rim * coin);
+  // a sheen that sweeps across the coin now and then
+  float sweep = fract(uTime * 0.28 + seed) * 2.2 - 1.1;
+  float sheen = 1.0 - smoothstep(0.0, 0.07, abs((f.x + f.y) * 0.707 - sweep));
+  col = mix(col, vec3(1.0, 0.98, 0.9), sheen * coin * 0.55);
+  // white star, breathing a little with the glow
+  float st = sdStar5(f + vec2(0.0, 0.01), 0.15 + 0.01 * pulse, 0.46);
   float star = 1.0 - smoothstep(-aa, aa, st);
   col = mix(col, vec3(1.0, 0.99, 0.95), star);
   return col;
 }
+`;
+
+export const tileSeed = /* glsl */ `
+float tileSeed(vec2 t) { return fract(sin(dot(t, vec2(12.9898, 78.233))) * 43758.5453); }
 `;
 
 let digitTexture: THREE.CanvasTexture | null = null;

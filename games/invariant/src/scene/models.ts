@@ -17,33 +17,30 @@ function tag(g: THREE.BufferGeometry, part: number): THREE.BufferGeometry {
   return geo;
 }
 
-const sphere = (r: number, w = 28, h = 20) => new THREE.SphereGeometry(r, w, h);
+/** Low-poly sphere (faceted look comes from the material's flat shading). */
+const lp = (r: number, w = 9, h = 7) => new THREE.SphereGeometry(r, w, h);
 
 export function frogGeometry(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
   const add = (g: THREE.BufferGeometry, p: number) => parts.push(tag(g, p));
 
-  // one soft, squat body
-  add(sphere(0.27, 40, 28).scale(1.12, 0.78, 1.0).translate(0, 0.2, 0), PART.body);
+  // A slim frog sitting up: leaning body, a wide head, eyes on top.
+  add(lp(0.15, 9, 7).scale(1.0, 1.3, 1.0).rotateX(-0.42).translate(0, 0.18, -0.03), PART.body);
+  add(lp(0.115, 8, 6).scale(0.9, 1.1, 0.5).rotateX(-0.42).translate(0, 0.17, 0.06), PART.belly);
+  add(lp(0.14, 10, 7).scale(1.2, 0.72, 1.0).translate(0, 0.32, 0.06), PART.body);
   for (const s of [-1, 1]) {
-    // eyes sit on top, in little body-colored bumps
-    add(sphere(0.1, 28, 20).translate(s * 0.13, 0.35, 0.05), PART.body);
-    add(sphere(0.082, 28, 20).translate(s * 0.135, 0.375, 0.09), PART.sclera);
-    add(sphere(0.046, 20, 14).scale(1, 1.1, 0.6).translate(s * 0.138, 0.38, 0.158), PART.pupil);
-    add(sphere(0.016, 10, 8).translate(s * 0.122, 0.405, 0.183), PART.shine);
-    add(sphere(0.034, 16, 10).scale(1.4, 0.75, 0.35).translate(s * 0.17, 0.245, 0.205), PART.cheek);
-    // two little front feet
-    add(sphere(0.06, 18, 12).scale(1.25, 0.42, 1.15).translate(s * 0.13, 0.025, 0.2), PART.body);
+    add(lp(0.062, 8, 6).translate(s * 0.1, 0.39, 0.06), PART.body);
+    add(lp(0.052, 10, 8).translate(s * 0.105, 0.405, 0.09), PART.sclera);
+    add(lp(0.028, 8, 6).scale(1, 1.15, 0.7).translate(s * 0.11, 0.41, 0.133), PART.pupil);
+    // folded back legs and long feet
+    add(lp(0.1, 8, 6).scale(0.5, 0.75, 1.25).translate(s * 0.135, 0.09, -0.06), PART.body);
+    add(lp(0.06, 8, 4).scale(0.95, 0.3, 1.55).translate(s * 0.15, 0.016, 0.05), PART.body);
+    // thin front arms
+    add(new THREE.CylinderGeometry(0.026, 0.032, 0.14, 6).rotateX(0.2).translate(s * 0.078, 0.08, 0.1), PART.body);
+    add(lp(0.034, 7, 4).scale(1.3, 0.4, 1.2).translate(s * 0.08, 0.012, 0.125), PART.body);
   }
-  // smile
-  const arc = Math.PI * 0.6;
-  const mouth = new THREE.TorusGeometry(0.07, 0.0095, 8, 28, arc);
-  mouth.rotateZ(-Math.PI / 2 - arc / 2);
-  mouth.rotateX(-0.3);
-  mouth.translate(0, 0.275, 0.243);
-  add(mouth, PART.mouth);
-
   const merged = mergeGeometries(parts)!;
+  merged.scale(1.15, 1.15, 1.15);
   merged.computeBoundingSphere();
   return merged;
 }
@@ -52,7 +49,8 @@ export function frogGeometry(): THREE.BufferGeometry {
 export function frogMaterial(opts: { ghost?: boolean; tint?: string } = {}): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    roughness: 0.42,
+    flatShading: true,
+    roughness: 0.5,
     metalness: 0,
     transparent: !!opts.ghost,
     opacity: opts.ghost ? 0.4 : 1,

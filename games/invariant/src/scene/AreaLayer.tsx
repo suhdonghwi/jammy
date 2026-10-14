@@ -7,7 +7,7 @@ import type { FastFn } from '../lang/eval';
 import { clock, SLAB_H, TILE } from './constants';
 import { field, RISE_DUR, type TileFlags } from './field';
 import { cameraRig } from './cameraRig';
-import { colorUniform, getBlobTexture, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL } from './shaders';
+import { colorUniform, getBlobTexture, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, tileSeed } from './shaders';
 import { hover } from './hover';
 import { frogWorld } from './frogSim';
 import { eggsNear, tileState } from './tiles';
@@ -74,6 +74,7 @@ uniform float uDim;
 ${GLSL_COMMON}
 ${GLSL_DIGITS}
 ${GLSL_GOAL}
+${tileSeed}
 ${FADE_GLSL}
 void main() {
   vec2 fw = fwidth(vF);
@@ -91,7 +92,7 @@ void main() {
       float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
       col = mix(col, col * 0.9, hatch);
     }
-    if (vFlags.y > 0.5) col = drawGoal(col, vF, fwr);
+    if (vFlags.y > 0.5) col = drawGoal(col, vF, fwr, tileSeed(vTile));
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
     float m = 0.0;
     if (t.y == 0) m = numberMask(vF, t.x);
@@ -273,7 +274,6 @@ export function AreaLayer({ level, pond, inv, dim, showStop, showGoal, showEggs,
     <group>
       <Slabs version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
       {showEggs && <Eggs level={level} pond={pond} win={win} version={version} />}
-      {showGoal && <GoalFlags level={level} pond={pond} win={win} version={version} />}
     </group>
   );
 }
@@ -322,6 +322,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
           uSide: colorUniform('slabSide'),
           uStopTop: colorUniform('slabStopTop'),
           uGoal: colorUniform('goal'),
+          uGoalGlow: colorUniform('goalGlow'),
           uHoverCol: colorUniform('hover'),
           uLabelOn: { value: new THREE.Color('#ffffff') },
           uHover: { value: new THREE.Vector2() },
@@ -448,153 +449,3 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
 }
 
 
-// ---------------------------------------------------------------------------
-// Goal flags: a little waving flag on every goal tile (stop region ∧ postcondition).
-// ---------------------------------------------------------------------------
-
-function flagGeometry(): THREE.BufferGeometry {
-  const pos: number[] = [];
-  const part: number[] = [];
-  const wave: number[] = [];
-  const nrm: number[] = [];
-  const push = (g: THREE.BufferGeometry, p: number) => {
-    const ng = g.index ? g.toNonIndexed() : g;
-    const a = ng.attributes.position.array as ArrayLike<number>;
-    const n = ng.attributes.normal.array as ArrayLike<number>;
-    for (let i = 0; i < a.length; i += 3) {
-      pos.push(a[i], a[i + 1], a[i + 2]);
-      nrm.push(n[i], n[i + 1], n[i + 2]);
-      part.push(p);
-      wave.push(0);
-    }
-  };
-  push(new THREE.CylinderGeometry(0.016, 0.02, 0.5, 10).translate(0, 0.25, 0), 0);
-  push(new THREE.SphereGeometry(0.035, 12, 8).translate(0, 0.51, 0), 1);
-  // pennant: a triangle subdivided along its length so it can wave
-  const N = 10;
-  const L = 0.24;
-  for (let i = 0; i < N; i++) {
-    const a = i / N;
-    const b = (i + 1) / N;
-    const yt = (u: number) => 0.49 - u * 0.075;
-    const yb = (u: number) => 0.33 + u * 0.075;
-    const quad = [
-      [a * L, yt(a), a],
-      [a * L, yb(a), a],
-      [b * L, yb(b), b],
-      [a * L, yt(a), a],
-      [b * L, yb(b), b],
-      [b * L, yt(b), b],
-    ];
-    for (const [x, y, w] of quad) {
-      pos.push(x, y, 0);
-      nrm.push(0, 0, 1);
-      part.push(2);
-      wave.push(w);
-    }
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
-  g.setAttribute('aPart', new THREE.Float32BufferAttribute(part, 1));
-  g.setAttribute('aWave', new THREE.Float32BufferAttribute(wave, 1));
-  return g;
-}
-
-const flagVertex = /* glsl */ `
-${HEIGHT_GLSL}
-attribute float aPart;
-attribute float aWave;
-varying vec3 vN;
-varying vec3 vWorld;
-varying float vPart;
-varying float vWaveShade;
-void main() {
-  vec3 p = position;
-  float phase = aTile.x * 1.7 + aTile.y * 2.3;
-  float w = sin(uTime * 4.2 - aWave * 3.2 + phase);
-  p.z += w * 0.045 * aWave;
-  p.y += cos(uTime * 4.2 - aWave * 3.2 + phase) * 0.01 * aWave;
-  vWaveShade = w * aWave;
-  // pole stands at the tile's back-left corner
-  vec3 off = vec3(aTile.x - 0.3, heightNow() * ${SLAB_H.toFixed(3)}, -aTile.y - 0.3);
-  vec4 world = modelMatrix * vec4(p + off, 1.0);
-  vWorld = world.xyz;
-  vN = normalize(mat3(modelMatrix) * normal);
-  vPart = aPart;
-  gl_Position = projectionMatrix * viewMatrix * world;
-}
-`;
-const flagFragment = /* glsl */ `
-precision highp float;
-varying vec3 vN;
-varying vec3 vWorld;
-varying float vPart;
-varying float vWaveShade;
-uniform vec3 uPole, uFlag, uKnob;
-${GLSL_COMMON}
-${FADE_GLSL}
-void main() {
-  vec3 col;
-  if (vPart < 0.5) col = shadeLit(uPole, normalize(vN));
-  else if (vPart < 1.5) col = shadeLit(uKnob, normalize(vN));
-  else col = uFlag * (0.92 + 0.14 * vWaveShade) * (gl_FrontFacing ? 1.0 : 0.86);
-  col = applyFade(col, vWorld);
-  gl_FragColor = vec4(col, 1.0);
-  #include <colorspace_fragment>
-}
-`;
-
-export function GoalFlags({ level, pond, win, version }: { level: CompiledLevel; pond: number; win: { cx: number; cy: number; R: number }; version: number }) {
-  const base = useMemo(() => flagGeometry(), []);
-  const tiles = useMemo(() => {
-    const out: [number, number][] = [];
-    const f = level.fast;
-    const R = Math.min(win.R, 26);
-    for (let y = win.cy - R; y <= win.cy + R; y++) {
-      for (let x = win.cx - R; x <= win.cx + R; x++) {
-        const s = tileState(level, x, y, pond);
-        if (f.pondReq(s) && f.guard(s) !== true && f.post(s) === true) out.push([x, y]);
-      }
-    }
-    return out;
-  }, [level, pond, win]);
-  const geom = useMemo(() => {
-    const n = tiles.length;
-    const tile = new Float32Array(n * 2);
-    const anim = new Float32Array(n * 3);
-    tiles.forEach(([x, y], i) => {
-      tile.set([x, y], i * 2);
-      const a = field.anims.get(`${x},${y}`);
-      anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
-    });
-    const g = new THREE.InstancedBufferGeometry().copy(base as unknown as THREE.InstancedBufferGeometry);
-    g.instanceCount = n;
-    g.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));
-    g.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
-    return g;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tiles, version, base]);
-  useEffect(() => () => geom.dispose(), [geom]);
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: flagVertex,
-        fragmentShader: flagFragment,
-        side: THREE.DoubleSide,
-        uniforms: {
-          uTime: { value: 0 },
-          uPole: { value: new THREE.Color('#7d879a') },
-          uFlag: { value: new THREE.Color('#ff7f2a') },
-          uKnob: colorUniform('goal'),
-          ...fadeUniforms(),
-        },
-      }),
-    [],
-  );
-  useFrame(() => {
-    material.uniforms.uTime.value = clock.now();
-    updateFade(material.uniforms);
-  });
-  return <mesh geometry={geom} material={material} frustumCulled={false} />;
-}

@@ -18,6 +18,7 @@ export const COLORS = {
   slabSide: '#3a78d8',
   slabStopTop: '#93b2dc',
   goal: '#f2a91f',
+  goalGlow: '#ffc94d',
   egg: '#f8efd9',
   frog: '#52c24a',
   testFrog: '#a77df2',
