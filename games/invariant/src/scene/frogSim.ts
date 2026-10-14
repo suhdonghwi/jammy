@@ -22,7 +22,6 @@ export interface FrogSim {
   carried?: number;
   hatchT0?: number;
   stopped: boolean;
-  red: boolean;
   /** Idle animation phase. */
   phase: number;
   /** Where the frog wants to face (radians): its next hop, or the viewer once stopped. */
@@ -109,7 +108,6 @@ class FrogWorld {
       x: Number(state[level.view.x]),
       y: Number(state[level.view.y]),
       stopped: false,
-      red: false,
       phase: Math.random() * 10,
       face,
       yaw: face,

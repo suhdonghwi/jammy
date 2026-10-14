@@ -46,6 +46,11 @@ function caption(text: string, tone: CaptionTone = 'info', action?: { label: str
 
 const fmt = (s: State) => `(${showState(lvl(), s)})`;
 
+/** Mark the tile where a check failed, with a short reason. */
+function markFailure(x: number, y: number, label: string) {
+  game().patch({ failMark: { x, y, label, t0: performance.now() } });
+}
+
 function inArea(s: State): boolean {
   const v = game().valid;
   return !!v && holds(v.expr, s);
@@ -198,13 +203,13 @@ export const director = {
     frogWorld.clear();
     Object.assign(handState, { visible: 0 });
     bridgeState.active = false;
-    game().patch({ busy: false, running: false, selected: null, lastFailure: null, cinematic: false });
+    game().patch({ busy: false, running: false, selected: null, lastFailure: null, cinematic: false, failMark: null });
   },
 
   clearFrogs() {
     begin();
     frogWorld.clear();
-    game().patch({ running: false, selected: null });
+    game().patch({ running: false, selected: null, failMark: null });
   },
 
   /** Hatch one real frog (tutorial beat 1). */
@@ -230,6 +235,7 @@ export const director = {
     if (g.busy || g.running) return;
     const tok = begin();
     frogWorld.clear('test');
+    game().patch({ failMark: null });
     gsap.to(handState, { visible: 0, duration: 0.3 });
     if (activeReal().length === 0) {
       frogWorld.clear('real');
@@ -298,7 +304,7 @@ export const director = {
     const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, pondR: 20, pond: g.pond };
     const keep = { ...game().verdicts };
     for (const r of rules) delete keep[r];
-    if (!formula) game().patch({ checking: true, verdicts: keep });
+    if (!formula) game().patch({ checking: true, verdicts: keep, failMark: null });
     let tapping = false;
     const tapTimer = setTimeout(() => {
       tapping = true;
@@ -324,7 +330,7 @@ export const director = {
   async playCounterexample(cex: Counterexample, opts: { prefix?: string; extra?: string } = {}) {
     const tok = begin();
     const L = lvl();
-    game().patch({ busy: true, lastFailure: cex, running: false });
+    game().patch({ busy: true, lastFailure: cex, running: false, failMark: null });
     frogWorld.clear();
     const x = Number(cex.state[L.view.x]);
     const y = Number(cex.state[L.view.y]);
@@ -341,7 +347,8 @@ export const director = {
         await pointAt(x, y);
         const f = hatch(cex.state);
         await sleep(450);
-        f.red = true;
+        void f;
+        markFailure(x, y, 'starts outside your area');
         game().patch({ selected: cex.state });
         text = `${prefix}This frog starts at ${fmt(cex.state)} — outside your area.${broken}`;
       } else {
@@ -352,12 +359,12 @@ export const director = {
         if (cex.rule === 'pres' && cex.next) {
           await frogWorld.hopTo(L, f, cex.next, 0.55);
           game().patch({ selected: cex.next });
-          f.red = true;
+          markFailure(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]), 'lands outside your area');
           if (!tok.alive) return;
           await pointAt(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]));
           text = `${prefix}From ${fmt(cex.state)}, one hop lands at ${fmt(cex.next)} — outside your area.${broken}`;
         } else {
-          f.red = true;
+          markFailure(x, y, 'stops, but not on a goal');
           await pointAt(x, y);
           text = `${prefix}A frog that stops at ${fmt(cex.state)} doesn't meet the postcondition.`;
         }

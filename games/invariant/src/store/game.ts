@@ -89,6 +89,8 @@ export interface Game {
   pitfallMessage: string | null;
   /** A cinematic is playing; the level scene is hidden. */
   cinematic: boolean;
+  /** Where the last check failed (tile in the focused pond) and why. */
+  failMark: { x: number; y: number; label: string; t0: number } | null;
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
   backToMenu(view?: 'home' | 'levels'): void;
@@ -128,6 +130,7 @@ export const useGame = create<Game>((set, get) => ({
   showRules: false,
   pitfallMessage: null,
   cinematic: false,
+  failMark: null,
 
   openLevel(def, mode) {
     const level = compileLevel(def);
@@ -152,6 +155,7 @@ export const useGame = create<Game>((set, get) => ({
       showMe: null,
       pitfallMessage: null,
       elevating: false,
+      failMark: null,
     });
   },
   backToMenu(view = 'home') {
@@ -161,7 +165,7 @@ export const useGame = create<Game>((set, get) => ({
     const { level } = get();
     if (!level) return;
     if (text.trim() === '') {
-      set({ formulaText: text, formula: null, valid: null, verdicts: {} });
+      set({ formulaText: text, formula: null, valid: null, verdicts: {}, failMark: null });
       return;
     }
     const formula = compileFormula(level, text);
@@ -171,6 +175,7 @@ export const useGame = create<Game>((set, get) => ({
       valid: formula.ok ? { expr: formula.expr, fast: formula.fast, text } : get().valid,
       verdicts: {},
       pitfallMessage: null,
+      failMark: null,
     });
   },
   setPond(p) {

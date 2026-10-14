@@ -57,7 +57,6 @@ const col = new THREE.Color();
 const C = {
   real: new THREE.Color(COLORS.frog),
   test: new THREE.Color(COLORS.testFrog),
-  fail: new THREE.Color(COLORS.fail),
 };
 
 const baseAt = (x: number, y: number) => field.heightAt(x, y) * SLAB_H;
@@ -229,7 +228,7 @@ export function Frogs() {
       dummy.scale.set(p.sx * os, p.sy * os, p.sx * os);
       dummy.updateMatrix();
       b.setMatrixAt(n, dummy.matrix);
-      col.copy(f.red ? C.fail : f.kind === 'real' ? C.real : C.test);
+      col.copy(f.kind === 'real' ? C.real : C.test);
       b.setColorAt(n, col);
       // the shadow shrinks as the frog rises
       const air = Math.max(0, p.y - p.ground);

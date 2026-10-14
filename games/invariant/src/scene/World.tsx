@@ -13,6 +13,7 @@ import { HomeScene } from './HomeScene';
 import { BridgeCinematic } from './Bridge';
 import { director } from '../director/director';
 import { useHover } from './hover';
+import { FailMarker } from './FailMarker';
 
 function Lights() {
   return (
@@ -151,6 +152,7 @@ function LevelScene() {
         />
         <Frogs />
         {reveal.hover && <HoverPreview />}
+        <FailMarker />
         <Hand />
       </group>
     </>
