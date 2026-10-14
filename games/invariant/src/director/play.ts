@@ -71,7 +71,7 @@ export async function check() {
   game().setCaption({
     text: 'Proved. Every frog, everywhere you claimed — for every input.',
     tone: 'success',
-    action: next ? { label: `Next: ${next.title} →`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
+    action: next ? { label: `Next: ${next.title}`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
   });
 }
 
