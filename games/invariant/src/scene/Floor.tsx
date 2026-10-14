@@ -54,6 +54,8 @@ void main() {
 
   // derivatives are taken up front (uniform control flow)
   vec2 fw = fwidth(f);
+  vec3 Vw = normalize(cameraPosition - vWorld);
+  vec3 viewTile = vec3(Vw.x, Vw.y, -Vw.z);
   float fwr = fwidth(length(f));
   float ringD = abs(sdRoundBox(f, vec2(0.47), 0.13)) - 0.035;
   float fwRing = fwidth(ringD);
@@ -72,7 +74,7 @@ void main() {
     }
     bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
     if (onCross && !st) tcol = mix(tcol, uCross, 0.9);
-    if (st && uShowGoal > 0.5 && L_goal(t)) tcol = drawGoal(tcol, f, fwr, tileSeed(tc));
+    if (st && uShowGoal > 0.5 && L_goal(t)) tcol = drawGoal(tcol, f, fwr, tileSeed(tc), tc, viewTile);
     if (uShowAxes > 0.5) {
       float m = 0.0;
       if (t.y == 0) m = numberMask(f, t.x);
@@ -80,7 +82,6 @@ void main() {
       tcol = mix(tcol, uLabel, m * 0.9);
     }
     col = mix(uGap, tcol, inside);
-    if (uShowGoal > 0.5) col = landingRipples(col, p);
 
     // boundary between the continue and stop regions, drawn in the gap
     if (uShowStop > 0.5) {

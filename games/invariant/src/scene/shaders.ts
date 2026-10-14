@@ -41,13 +41,13 @@ float numberMask(vec2 f, int v) {
 `;
 
 /**
- * Goal tiles — styles being explored (switchable in the HUD):
- *   0 ripple — pulse rings expanding from a bright centre (+ a light beam in 3D)
- *   1 calm   — one slow thin ring now and then, a small dot
- *   2 halo   — a still amber ring with a faint breathing glow
- *   3 well   — a softly recessed amber pool, completely still
- * Styles 1–3 stay quiet until a frog lands on a goal: then a water-like
- * ripple spreads from it (see landingRipples).
+ * Goal tiles — a pool of amber water set into the surface. Variants being
+ * explored (switchable in the HUD):
+ *   0 well    — a flat recessed pool (painted inner shadow and lit rim)
+ *   1 deep    — a real-looking round hole: parallax into the surface, inner wall, water at the bottom
+ *   2 basin   — the same, but a rounded square following the tile
+ *   3 shimmer — the flat well with a slow, faint caustic shimmer
+ * When a frog lands on a goal, rings spread on the water's surface.
  */
 export const MAX_EVENTS = 24;
 export const GLSL_GOAL = /* glsl */ `
@@ -56,75 +56,92 @@ uniform vec3 uGoalGlow;
 uniform float uTime;
 uniform int uGoalStyle;
 uniform vec3 uEvents[${MAX_EVENTS}];
-// fwr: screen-space derivative of length(f), taken outside any branch.
-// seed: per-tile value so neighbouring goals don't move in lockstep.
-vec3 drawGoal(vec3 col, vec2 f, float fwr, float seed) {
-  float aa = fwr * 1.3;
-  float r = length(f);
-  if (uGoalStyle == 0) {
-    for (int k = 0; k < 3; k++) {
-      float ph = fract(uTime * 0.55 + float(k) / 3.0 + seed);
-      float rr = 0.1 + ph * 0.36;
-      float ring = exp(-pow((r - rr) / 0.018, 2.0)) * (1.0 - ph) * (1.0 - ph);
-      col = mix(col, uGoal, ring * 0.95);
-    }
-    col = mix(col, uGoalGlow, (1.0 - smoothstep(0.0, 0.3, r)) * 0.45);
-    float dotm = 1.0 - smoothstep(0.1 - aa, 0.1 + aa, r);
-    col = mix(col, mix(vec3(1.0, 0.96, 0.85), uGoal, 0.35), dotm);
-  } else if (uGoalStyle == 1) {
-    // one slow, thin ring every few seconds
-    float ph = fract(uTime / 3.4 + seed);
-    float rr = 0.09 + ph * 0.33;
-    float ring = exp(-pow((r - rr) / 0.012, 2.0)) * pow(1.0 - ph, 1.5);
-    col = mix(col, uGoal, ring * 0.55);
-    col = mix(col, uGoalGlow, (1.0 - smoothstep(0.0, 0.26, r)) * 0.18);
-    float dotm = 1.0 - smoothstep(0.075 - aa, 0.075 + aa, r);
-    col = mix(col, uGoal, dotm * 0.9);
-  } else if (uGoalStyle == 2) {
-    // still ring, faint breathing glow
-    float breath = 0.5 + 0.5 * sin(uTime * 1.3 + seed * 6.283);
-    col = mix(col, uGoalGlow, (1.0 - smoothstep(0.0, 0.3, r)) * (0.16 + 0.1 * breath));
-    float ring = 1.0 - smoothstep(0.016 - aa, 0.016 + aa, abs(r - 0.27));
-    col = mix(col, uGoal, ring * 0.9);
-    float dotm = 1.0 - smoothstep(0.06 - aa, 0.06 + aa, r);
-    col = mix(col, uGoal, dotm * 0.85);
-  } else {
-    // recessed pool: darker toward the top edge (inner shadow), lit rim at the bottom
-    float pool = 1.0 - smoothstep(0.3 - aa, 0.3 + aa, r);
-    vec2 n = r > 0.0 ? f / r : vec2(0.0);
-    float shade = smoothstep(0.12, 0.3, r) * dot(n, vec2(0.0, 1.0));
-    vec3 water = mix(uGoalGlow, uGoal, 0.35 + 0.35 * smoothstep(0.0, 0.3, r));
-    water *= 1.0 - 0.18 * max(shade, 0.0);
-    col = mix(col, water, pool);
-    float lit = (1.0 - smoothstep(0.012 - aa, 0.012 + aa, abs(r - 0.3))) * max(-dot(n, vec2(0.0, 1.0)), 0.0);
-    col = mix(col, vec3(1.0, 0.97, 0.9), lit * 0.9);
-    float dark = (1.0 - smoothstep(0.012 - aa, 0.012 + aa, abs(r - 0.3))) * max(dot(n, vec2(0.0, 1.0)), 0.0);
-    col = mix(col, uGoal * 0.7, dark * 0.6);
-  }
-  return col;
-}
-// Water-like rings spreading from where frogs landed on goals (p in tile space).
-vec3 landingRipples(vec3 col, vec2 p) {
-  if (uGoalStyle == 0) return col;
+
+// rings on the water from recent landings (p in tile space)
+float rippleAt(vec2 p) {
+  float acc = 0.0;
   for (int i = 0; i < ${MAX_EVENTS}; i++) {
     vec3 e = uEvents[i];
     float age = uTime - e.z;
     if (age < 0.0 || age > 1.6) continue;
     float d = length(p - e.xy);
     for (int k = 0; k < 2; k++) {
-      float a = age - float(k) * 0.28;
+      float a = age - float(k) * 0.3;
       if (a < 0.0) continue;
-      float rr = 0.12 + a * 0.95;
-      float fade = pow(max(0.0, 1.0 - a / 1.3), 1.6);
-      float ring = exp(-pow((d - rr) / 0.03, 2.0)) * fade;
-      col = mix(col, uGoal, ring * (k == 0 ? 0.75 : 0.45));
+      float rr = 0.03 + a * 0.5;
+      float fade = pow(max(0.0, 1.0 - a / 1.25), 1.5);
+      acc = max(acc, exp(-pow((d - rr) / 0.022, 2.0)) * fade * (k == 0 ? 1.0 : 0.6));
     }
   }
+  return acc;
+}
+
+vec3 waterAt(vec2 fb, vec2 tc, float seed, float R) {
+  float r = length(fb);
+  vec3 c = mix(uGoalGlow, uGoal, 0.3 + 0.45 * smoothstep(0.0, R, r));
+  if (uGoalStyle == 3) {
+    float w = sin(fb.x * 21.0 + uTime * 0.9 + seed * 6.0) * sin(fb.y * 18.0 - uTime * 0.7 + seed * 3.0);
+    float w2 = sin((fb.x + fb.y) * 15.0 - uTime * 0.6);
+    c = mix(c, vec3(1.0, 0.95, 0.8), smoothstep(0.55, 1.0, w * 0.7 + w2 * 0.3) * 0.22);
+  }
+  c = mix(c, vec3(1.0, 0.97, 0.88), rippleAt(tc + fb) * 0.8);
+  return c;
+}
+
+float holeSd(vec2 q) {
+  return uGoalStyle == 2 ? sdRoundBox(q, vec2(0.34), 0.13) : length(q) - 0.3;
+}
+
+// f: tile-local coords; fwr/fwd: derivatives taken outside any branch;
+// tc: tile centre; V: direction to the camera in tile space (x, up, y).
+vec3 drawGoal(vec3 col, vec2 f, float fwr, float seed, vec2 tc, vec3 V) {
+  float aa = fwr * 1.3;
+  if (uGoalStyle == 0 || uGoalStyle == 3) {
+    float r = length(f);
+    float pool = 1.0 - smoothstep(0.3 - aa, 0.3 + aa, r);
+    vec2 n = r > 0.0 ? f / r : vec2(0.0);
+    float shade = smoothstep(0.12, 0.3, r) * dot(n, vec2(0.0, 1.0));
+    vec3 water = waterAt(f, tc, seed, 0.3) * (1.0 - 0.18 * max(shade, 0.0));
+    col = mix(col, water, pool);
+    float edge = 1.0 - smoothstep(0.012 - aa, 0.012 + aa, abs(r - 0.3));
+    col = mix(col, vec3(1.0, 0.97, 0.9), edge * max(-dot(n, vec2(0.0, 1.0)), 0.0) * 0.9);
+    col = mix(col, uGoal * 0.7, edge * max(dot(n, vec2(0.0, 1.0)), 0.0) * 0.6);
+    return col;
+  }
+  // a hole with depth: follow the view ray down into the surface
+  float sd0 = holeSd(f);
+  float inside = 1.0 - smoothstep(-aa, aa, sd0);
+  float D = 0.2;
+  vec2 off = -vec2(V.x, V.z) * (D / max(V.y, 0.25));
+  vec3 hole;
+  if (holeSd(f + off) < 0.0) {
+    // the ray reaches the water at the bottom
+    hole = waterAt(f + off, tc, seed, 0.3) * 0.94;
+  } else {
+    // the ray hits the inner wall: find how deep
+    float lo = 0.0;
+    float hi = 1.0;
+    for (int i = 0; i < 6; i++) {
+      float m = (lo + hi) * 0.5;
+      if (holeSd(f + m * off) < 0.0) lo = m;
+      else hi = m;
+    }
+    vec2 wp = f + lo * off;
+    vec2 g = vec2(holeSd(wp + vec2(0.01, 0.0)) - holeSd(wp - vec2(0.01, 0.0)), holeSd(wp + vec2(0.0, 0.01)) - holeSd(wp - vec2(0.0, 0.01)));
+    vec2 nrm = normalize(g + 1e-6);
+    float lit = 0.5 + 0.5 * dot(-nrm, normalize(vec2(-0.55, 0.85)));
+    // the wall is the surrounding surface, darker the deeper it goes
+    hole = col * mix(0.95, 0.62, lo) * (0.82 + 0.22 * lit);
+  }
+  // a thin lit lip along the rim
+  float lip = (1.0 - smoothstep(0.0, 0.025 + aa, abs(sd0))) * 0.55;
+  col = mix(col, hole, inside);
+  col = mix(col, vec3(1.0), lip * (1.0 - inside * 0.4));
   return col;
 }
 `;
 
-export const GOAL_STYLES = ['ripple', 'calm', 'halo', 'well'] as const;
+export const GOAL_STYLES = ['well', 'deep', 'basin', 'shimmer'] as const;
 export type GoalStyle = (typeof GOAL_STYLES)[number];
 
 export function goalUniforms(): Record<string, THREE.IUniform> {

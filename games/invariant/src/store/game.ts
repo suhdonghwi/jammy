@@ -90,7 +90,7 @@ export interface Game {
   /** A cinematic is playing; the level scene is hidden. */
   cinematic: boolean;
   /** Goal visual being explored. */
-  goalStyle: 'ripple' | 'calm' | 'halo' | 'well';
+  goalStyle: 'well' | 'deep' | 'basin' | 'shimmer';
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
   backToMenu(view?: 'home' | 'levels'): void;
@@ -130,7 +130,7 @@ export const useGame = create<Game>((set, get) => ({
   showRules: false,
   pitfallMessage: null,
   cinematic: false,
-  goalStyle: 'calm',
+  goalStyle: 'deep',
 
   openLevel(def, mode) {
     const level = compileLevel(def);

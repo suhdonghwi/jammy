@@ -13,7 +13,6 @@ import { hover } from './hover';
 import { frogWorld } from './frogSim';
 import { eggsNear, tileState } from './tiles';
 import { occupancy, slotFor } from './occupancy';
-import { GoalFX } from './GoalFX';
 import { goalEvents } from './goalEvents';
 
 const HEIGHT_GLSL = /* glsl */ `
@@ -96,13 +95,15 @@ void main() {
       float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
       col = mix(col, col * 0.9, hatch);
     }
-    if (vFlags.y > 0.5) col = drawGoal(col, vF, fwr, tileSeed(vTile));
+    if (vFlags.y > 0.5) {
+      vec3 Vw = normalize(cameraPosition - vWorld);
+      col = drawGoal(col, vF, fwr, tileSeed(vTile), vTile, vec3(Vw.x, Vw.y, -Vw.z));
+    }
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
     float m = 0.0;
     if (t.y == 0) m = numberMask(vF, t.x);
     else if (t.x == 0) m = numberMask(vF, t.y);
     col = mix(col, uLabelOn, m * 0.85);
-    col = landingRipples(col, vTile + vF);
     if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
       col = mix(col, vec3(1.0), (1.0 - smoothstep(-fwRing, fwRing, ringD)) * 0.95);
     }
@@ -293,7 +294,6 @@ export function AreaLayer({ level, pond, inv, dim, showStop, showGoal, showEggs,
     <group>
       <Slabs version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
       {showEggs && <Eggs level={level} pond={pond} win={win} version={version} />}
-      {showGoal && <GoalFX level={level} pond={pond} win={win} version={version} />}
     </group>
   );
 }

@@ -358,11 +358,11 @@ export function ElevatorToast() {
 /** Temporary: compare goal styles while we explore. */
 function GoalStylePicker() {
   const style = useGame((s) => s.goalStyle);
-  const options: { id: 'ripple' | 'calm' | 'halo' | 'well'; label: string }[] = [
-    { id: 'ripple', label: 'Ripple' },
-    { id: 'calm', label: 'Calm' },
-    { id: 'halo', label: 'Halo' },
+  const options: { id: 'well' | 'deep' | 'basin' | 'shimmer'; label: string }[] = [
     { id: 'well', label: 'Well' },
+    { id: 'deep', label: 'Deep' },
+    { id: 'basin', label: 'Basin' },
+    { id: 'shimmer', label: 'Shimmer' },
   ];
   return (
     <div className="pill-group style-picker" title="Exploring goal styles">
