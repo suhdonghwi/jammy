@@ -10,6 +10,8 @@ import { useGame } from './store/game';
 import { openLevel, openTutorial, check } from './director/play';
 import { allLevels } from './levels/defs';
 import { director } from './director/director';
+import { frogWorld } from './scene/frogSim';
+import { handState } from './scene/handState';
 
 if (import.meta.env.DEV) {
   Object.assign(window, {
@@ -18,6 +20,8 @@ if (import.meta.env.DEV) {
     __open: (id: string) => (id === 'tutorial' ? openTutorial() : openLevel(allLevels.find((l) => l.id === id)!)),
     __check: check,
     __director: director,
+    __frogs: frogWorld,
+    __hand: handState,
   });
 }
 

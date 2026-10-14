@@ -9,6 +9,8 @@ import { game, type CaptionTone } from '../store/game';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, now, type FrogSim } from '../scene/frogSim';
 import { handState } from '../scene/handState';
+import { field } from '../scene/field';
+import { SLAB_H } from '../scene/constants';
 import { areaNear, eggsNear, tileState } from '../scene/tiles';
 import { bridgeState } from '../scene/Bridge';
 
@@ -77,18 +79,24 @@ async function handOut() {
   await tween(handState, { visible: 0, y: handState.y + 4, z: handState.z - 2, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0, palmUp: 0, duration: 0.6, ease: 'power2.in' });
 }
 
-/** The hand carries a test frog down and sets it on a tile. */
+/**
+ * The hand carries a test frog down and sets it on a tile. It holds the frog
+ * from above: the palm rests just over the frog's head (taking any slab under
+ * the tile into account), set slightly back so the fingers drape over the top
+ * of the head instead of passing through the frog.
+ */
+const HOLD_ABOVE = 0.95; // hand height above the frog's feet (frog is ~0.53 tall)
+const HOLD_BACK = 0.4; // hand sits a little behind the frog
 async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   const L = lvl();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
+  const base = field.heightAt(x, y) * SLAB_H;
   const carry = { h: 3.2 };
   const f = frogWorld.add(L, 'test', s, { carried: carry.h });
   const p = above(x, y);
-  Object.assign(handState, { x: p.x + 1.2, y: carry.h + 5, z: p.z - 2.5, curl: 0.8, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.35 });
-  await Promise.all([
-    tween(handState, { visible: 1, x: p.x, z: p.z - 0.15, y: carry.h + 0.55, duration: 0.6, ease: 'power3.out' }),
-  ]);
+  Object.assign(handState, { x: p.x + 1.2, y: base + carry.h + 5, z: p.z - 2.5, curl: 0.36, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.05 });
+  await tween(handState, { visible: 1, x: p.x, z: p.z - HOLD_BACK, y: base + carry.h + HOLD_ABOVE, duration: 0.6, ease: 'power3.out' });
   if (!tok.alive) return null;
   await tween(carry, {
     h: 0.55,
@@ -96,14 +104,14 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
     ease: 'power2.inOut',
     onUpdate: () => {
       f.carried = carry.h;
-      handState.y = carry.h + 0.55;
+      handState.y = base + carry.h + HOLD_ABOVE;
     },
   });
   if (!tok.alive) return null;
   // release
   f.carried = undefined;
   f.drop = { t0: now(), dur: 0.22, from: 0.55 };
-  await tween(handState, { curl: 0.1, y: 2.2, z: p.z - 1.2, duration: 0.45, ease: 'power2.out' });
+  await tween(handState, { curl: 0.1, y: base + 2.2, z: p.z - 1.2, duration: 0.45, ease: 'power2.out' });
   return f;
 }
 
