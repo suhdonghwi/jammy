@@ -453,10 +453,29 @@ code {
 .tok-op {
   color: #66708a;
 }
+.code-line {
+  display: flex;
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+.code-ln {
+  flex: none;
+  width: 2ch;
+  margin-right: 12px;
+  text-align: right;
+  color: #b8bfcc;
+  user-select: none;
+}
 .loop-header {
   border-radius: 6px;
-  padding: 1px 3px;
-  margin: -1px -3px;
+}
+.loop-body.first {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+.loop-body.last {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
 }
 .loop-header.check-true {
   animation: check-true 0.9s ease-out;
@@ -466,11 +485,6 @@ code {
 }
 .loop-header.check-mixed {
   animation: check-mixed 0.9s ease-out;
-}
-.loop-body {
-  border-radius: 6px;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
 }
 .loop-body.running {
   animation-name: body-run;

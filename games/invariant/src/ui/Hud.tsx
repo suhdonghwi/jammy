@@ -43,22 +43,15 @@ interface Beat {
 }
 
 /**
- * Syntax-highlighted program. While frogs hop, the loop body lights up (that is
- * what a hop runs); when they land, the condition flashes green (keep looping)
- * or amber (stop).
+ * Syntax-highlighted program, one row per line with line numbers. While frogs
+ * hop, the loop body's lines light up (that is what a hop runs); when they
+ * land, the condition's line flashes green (keep looping) or amber (stop).
+ * Highlights cover whole rows, so they all share the same width.
  */
 function highlightSource(level: CompiledLevel, beat: Beat) {
   const src = level.program.source;
   const header = level.program.loop.headerSpan;
   const stmts = level.program.loop.body;
-  const lineStart = (i: number) => src.lastIndexOf('\n', i - 1) + 1;
-  const lineEnd = (i: number) => {
-    const k = src.indexOf('\n', i);
-    return k < 0 ? src.length : k;
-  };
-  const body = stmts.length
-    ? { from: lineStart(stmts[0].span.from), to: lineEnd(stmts[stmts.length - 1].span.to) }
-    : { from: header.to, to: header.to };
   const toks = tokenize(src).filter((t) => t.kind !== 'eof');
   const piece = (from: number, to: number, keyBase: string): React.ReactNode[] => {
     const out: React.ReactNode[] = [];
@@ -77,21 +70,36 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
     if (to > p) out.push(<Fragment key={`${keyBase}end`}>{src.slice(p, to)}</Fragment>);
     return out;
   };
-  return [
-    ...piece(0, header.from, 'a'),
-    <span key={`hdr${beat.landTick}`} className={`loop-header ${beat.landTick > 0 ? `check-${beat.landGuard}` : ''}`}>
-      {piece(header.from, header.to, 'h')}
-    </span>,
-    ...piece(header.to, body.from, 'm'),
-    <span
-      key={`body${beat.hopTick}`}
-      className={`loop-body ${beat.hopTick > 0 ? 'running' : ''}`}
-      style={{ animationDuration: `${Math.max(0.3, beat.hopDur + 0.15)}s` }}
-    >
-      {piece(body.from, body.to, 'b')}
-    </span>,
-    ...piece(body.to, src.length, 'c'),
-  ];
+  const lines: { from: number; to: number }[] = [];
+  for (let from = 0; ; ) {
+    const k = src.indexOf('\n', from);
+    lines.push({ from, to: k < 0 ? src.length : k });
+    if (k < 0) break;
+    from = k + 1;
+  }
+  const lineOf = (pos: number) => lines.findIndex((l) => pos >= l.from && pos <= l.to);
+  const headerLine = lineOf(header.from);
+  const bodyFirst = stmts.length ? lineOf(stmts[0].span.from) : -1;
+  const bodyLast = stmts.length ? lineOf(stmts[stmts.length - 1].span.to) : -2;
+  return lines.map((l, i) => {
+    let cls = 'code-line';
+    let key = `l${i}`;
+    let style: React.CSSProperties | undefined;
+    if (i === headerLine) {
+      cls += ` loop-header${beat.landTick > 0 ? ` check-${beat.landGuard}` : ''}`;
+      key += `h${beat.landTick}`;
+    } else if (i >= bodyFirst && i <= bodyLast) {
+      cls += ` loop-body${beat.hopTick > 0 ? ' running' : ''}${i === bodyFirst ? ' first' : ''}${i === bodyLast ? ' last' : ''}`;
+      key += `b${beat.hopTick}`;
+      style = { animationDuration: `${Math.max(0.3, beat.hopDur + 0.15)}s` };
+    }
+    return (
+      <div key={key} className={cls} style={style}>
+        <span className="code-ln">{i + 1}</span>
+        <span className="code-text">{piece(l.from, l.to, `l${i}`)}</span>
+      </div>
+    );
+  });
 }
 
 export function CodePanel() {
