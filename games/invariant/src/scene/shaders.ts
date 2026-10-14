@@ -49,6 +49,8 @@ export const MAX_EVENTS = 24;
 export const GLSL_GOAL = /* glsl */ `
 uniform vec3 uGoal;
 uniform vec3 uGoalGlow;
+uniform vec3 uPoolLight;
+uniform vec3 uPoolDeep;
 uniform float uTime;
 uniform vec3 uEvents[${MAX_EVENTS}];
 
@@ -78,9 +80,8 @@ vec3 drawGoal(vec3 col, vec2 f, float fwr, vec2 tc) {
   float r = length(f);
   float pool = 1.0 - smoothstep(0.3 - aa, 0.3 + aa, r);
   vec2 n = r > 0.0 ? f / r : vec2(0.0);
-  // soft water, blended with the surface so it doesn't shout
-  vec3 water = mix(uGoalGlow, uGoal, 0.25 + 0.35 * smoothstep(0.0, 0.3, r));
-  water = mix(col, water, 0.62);
+  // solid water in a soft, pale amber
+  vec3 water = mix(uPoolLight, uPoolDeep, smoothstep(0.0, 0.3, r));
   // inner shadow toward the far rim, as if the pool is set into the tile
   float shade = smoothstep(0.12, 0.3, r) * max(dot(n, vec2(0.0, 1.0)), 0.0);
   water *= 1.0 - 0.12 * shade;
@@ -97,6 +98,8 @@ export function goalUniforms(): Record<string, THREE.IUniform> {
   return {
     uGoal: { value: new THREE.Color(COLORS.goal) },
     uGoalGlow: { value: new THREE.Color(COLORS.goalGlow) },
+    uPoolLight: { value: new THREE.Color(COLORS.poolLight) },
+    uPoolDeep: { value: new THREE.Color(COLORS.poolDeep) },
     uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
   };
 }

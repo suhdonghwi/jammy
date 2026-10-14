@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
@@ -10,8 +10,8 @@ import { MAX_EVENTS } from './shaders';
 import { tileState } from './tiles';
 
 // A faint column of light over every goal pool, like a checkpoint pad: brighter
-// at its edges, fading upward, with one slow ring drifting up it now and then.
-// When a frog lands on a goal, a bright ring shoots up that goal's column.
+// at its edges and fading upward, with a few soft motes drifting up inside it.
+// When a frog lands on a goal, its motes rise faster and brighter for a moment.
 
 const vertex = /* glsl */ `
 attribute vec2 aTile;
@@ -49,25 +49,78 @@ void main() {
   // hologram look: the column is clearest where it's seen edge-on
   float edge = pow(1.0 - abs(dot(normalize(vN), V)), 1.5);
   float fall = pow(1.0 - vV, 2.4);
-  float seed = fract(sin(dot(vTile, vec2(12.9898, 78.233))) * 43758.5453);
   float a = fall * 0.16 * (0.55 + 0.6 * edge);
-  // one slow ring drifting up
-  float ph = fract(uTime / 2.8 + seed);
-  float ring = exp(-pow((vV - ph) / 0.035, 2.0)) * pow(1.0 - ph, 1.4) * (0.22 + 0.25 * edge);
-  // a bright ring shoots up when a frog lands here
+  // the column glows brighter for a moment when a frog lands here
   float burst = 0.0;
   for (int i = 0; i < ${MAX_EVENTS}; i++) {
     vec3 e = uEvents[i];
     float age = uTime - e.z;
     if (age < 0.0 || age > 0.9) continue;
     if (abs(e.x - vTile.x) > 0.5 || abs(e.y - vTile.y) > 0.5) continue;
-    float v = age * 1.4;
-    burst = max(burst, exp(-pow((vV - v) / 0.045, 2.0)) * (1.0 - age / 0.9));
-    a += fall * 0.18 * (1.0 - age / 0.9);
+    burst = max(burst, 1.0 - age / 0.9);
   }
-  a += ring + burst * 0.75;
-  vec3 col = mix(uColor, vec3(1.0, 0.92, 0.7), 0.35 + burst * 0.5);
+  a += fall * 0.16 * burst;
+  vec3 col = mix(uColor, vec3(1.0, 0.92, 0.7), 0.35 + burst * 0.3);
   gl_FragColor = vec4(col, min(a, 0.9));
+  #include <colorspace_fragment>
+}
+`;
+
+const MOTES = 6;
+
+const moteVertex = /* glsl */ `
+attribute vec2 aTile;
+attribute vec3 aAnim;
+attribute vec2 aSeed;
+uniform float uTime;
+uniform float uScale;
+uniform vec3 uEvents[${MAX_EVENTS}];
+varying float vAlpha;
+varying float vCore;
+float heightNow() {
+  float u = clamp((uTime - aAnim.z) / ${RISE_DUR.toFixed(3)}, 0.0, 1.0);
+  u = u * u * (3.0 - 2.0 * u);
+  return mix(aAnim.x, aAnim.y, u) * ${SLAB_H.toFixed(3)};
+}
+void main() {
+  // a frog just landed here? motes rise faster and brighter for a moment
+  float burst = 0.0;
+  for (int i = 0; i < ${MAX_EVENTS}; i++) {
+    vec3 e = uEvents[i];
+    float age = uTime - e.z;
+    if (age < 0.0 || age > 1.2) continue;
+    if (abs(e.x - aTile.x) > 0.5 || abs(e.y - aTile.y) > 0.5) continue;
+    burst = max(burst, 1.0 - age / 1.2);
+  }
+  float s1 = aSeed.x;
+  float s2 = aSeed.y;
+  float life = fract(uTime * (0.16 + 0.08 * s2) + s1);
+  // drift: slow rise, a gentle sway, inside the column
+  float rad = 0.2 * sqrt(s2);
+  float ang = s1 * 37.0 + life * 1.5;
+  vec3 p = vec3(cos(ang) * rad + 0.025 * sin(life * 9.0 + s2 * 7.0), 0.03 + life * 0.72, sin(ang) * rad);
+  // during a burst, every mote is pushed upward
+  p.y += burst * burst * 0.25 * (0.5 + s2);
+  vAlpha = sin(3.14159 * life) * (0.75 + 0.25 * burst);
+  vCore = 0.6 + 0.4 * burst;
+  float size = (0.075 + 0.03 * s2) * (1.0 + 0.5 * burst);
+  vec4 mv = modelViewMatrix * vec4(p + vec3(aTile.x, heightNow(), -aTile.y), 1.0);
+  gl_Position = projectionMatrix * mv;
+  gl_PointSize = size * uScale / -mv.z;
+}
+`;
+
+const moteFragment = /* glsl */ `
+uniform vec3 uColor;
+varying float vAlpha;
+varying float vCore;
+void main() {
+  vec2 c = gl_PointCoord * 2.0 - 1.0;
+  float d = dot(c, c);
+  if (d > 1.0) discard;
+  float soft = exp(-d * 2.2);
+  vec3 col = mix(uColor, vec3(1.0, 0.98, 0.9), exp(-d * 8.0) * vCore);
+  gl_FragColor = vec4(col, soft * vAlpha);
   #include <colorspace_fragment>
 }
 `;
@@ -121,10 +174,64 @@ export function GoalColumns({ level, pond, win, version }: { level: CompiledLeve
       }),
     [],
   );
+  const motes = useMemo(() => {
+    const n = tiles.length * MOTES;
+    const tile = new Float32Array(n * 2);
+    const anim = new Float32Array(n * 3);
+    const seed = new Float32Array(n * 2);
+    let k = 0;
+    for (const [x, y] of tiles) {
+      const a = field.anims.get(`${x},${y}`);
+      for (let j = 0; j < MOTES; j++, k++) {
+        tile.set([x, y], k * 2);
+        anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], k * 3);
+        seed.set([(j + Math.random() * 0.6) / MOTES, Math.random()], k * 2);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    g.setAttribute('aTile', new THREE.BufferAttribute(tile, 2));
+    g.setAttribute('aAnim', new THREE.BufferAttribute(anim, 3));
+    g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 2));
+    return g;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiles, version]);
+  useEffect(() => () => motes.dispose(), [motes]);
+  const moteMat = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: moteVertex,
+        fragmentShader: moteFragment,
+        transparent: true,
+        depthWrite: false,
+        uniforms: {
+          uTime: { value: 0 },
+          uScale: { value: 800 },
+          uColor: { value: new THREE.Color(COLORS.goal) },
+          uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
+        },
+      }),
+    [],
+  );
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const size = useMemo(() => new THREE.Vector2(), []);
+
   useFrame(() => {
-    material.uniforms.uTime.value = clock.now();
+    const t = clock.now();
+    material.uniforms.uTime.value = t;
+    moteMat.uniforms.uTime.value = t;
     const g = useGame.getState();
-    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.pond ? g.pond : undefined);
+    const pondKey = g.level?.pond ? g.pond : undefined;
+    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], pondKey);
+    goalEvents.fill(moteMat.uniforms.uEvents.value as THREE.Vector3[], pondKey);
+    gl.getDrawingBufferSize(size);
+    moteMat.uniforms.uScale.value = (size.y * camera.projectionMatrix.elements[5]) / 2;
   });
-  return <mesh geometry={geom} material={material} frustumCulled={false} renderOrder={6} />;
+  return (
+    <>
+      <mesh geometry={geom} material={material} frustumCulled={false} renderOrder={6} />
+      <points geometry={motes} material={moteMat} frustumCulled={false} renderOrder={7} />
+    </>
+  );
 }
