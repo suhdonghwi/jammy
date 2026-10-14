@@ -63,13 +63,13 @@ function above(x: number, y: number) {
 async function handIn(x: number, y: number, h = 1.8, pose: Partial<typeof handState> = {}) {
   const p = above(x, y);
   if (handState.visible < 0.05) {
-    Object.assign(handState, { x: p.x + 1.5, y: h + 5, z: p.z + 3, curl: 0.25, point: 0, shrug: 0, tap: 0 });
+    Object.assign(handState, { x: p.x + 1.5, y: h + 5, z: p.z + 3, curl: 0.25, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0 });
   }
   await tween(handState, { visible: 1, x: p.x, y: h, z: p.z, duration: 0.7, ease: 'power3.out', ...pose });
 }
 
 async function handOut() {
-  await tween(handState, { visible: 0, y: handState.y + 4, z: handState.z + 2, point: 0, shrug: 0, tap: 0, duration: 0.6, ease: 'power2.in' });
+  await tween(handState, { visible: 0, y: handState.y + 4, z: handState.z + 2, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0, duration: 0.6, ease: 'power2.in' });
 }
 
 /** The hand carries a test frog down and sets it on a tile. */
@@ -80,7 +80,7 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   const carry = { h: 3.2 };
   const f = frogWorld.add(L, 'test', s, { carried: carry.h });
   const p = above(x, y);
-  Object.assign(handState, { x: p.x + 1.2, y: carry.h + 5, z: p.z + 2.5, curl: 0.8, point: 0, shrug: 0, tap: 0 });
+  Object.assign(handState, { x: p.x + 1.2, y: carry.h + 5, z: p.z + 2.5, curl: 0.8, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.35 });
   await Promise.all([
     tween(handState, { visible: 1, x: p.x, z: p.z + 0.15, y: carry.h + 0.55, duration: 0.6, ease: 'power3.out' }),
   ]);
@@ -102,10 +102,15 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   return f;
 }
 
+/** Point at a tile from its right side, so the hand never hides the frog. */
 async function pointAt(x: number, y: number) {
   const p = above(x, y);
-  await tween(handState, { visible: 1, x: p.x + 0.35, y: 1.25, z: p.z + 1.25, point: 1, curl: 0.2, tilt: 0.25, duration: 0.5, ease: 'power2.out' });
-  await tween(handState, { y: 1.05, duration: 0.18, yoyo: true, repeat: 3, ease: 'sine.inOut' });
+  await tween(handState, {
+    visible: 1, x: p.x + 1.05, y: 0.95, z: p.z - 0.15,
+    point: 1, curl: 0.2, tilt: 0.25, yaw: 1.45,
+    duration: 0.5, ease: 'power2.out',
+  });
+  await tween(handState, { x: p.x + 0.9, duration: 0.18, yoyo: true, repeat: 3, ease: 'sine.inOut' });
 }
 
 // ---------------------------------------------------------------------------
@@ -201,7 +206,7 @@ export const director = {
     frogWorld.clear();
     Object.assign(handState, { visible: 0 });
     bridgeState.active = false;
-    game().patch({ busy: false, running: false, selected: null, lastFailure: null });
+    game().patch({ busy: false, running: false, selected: null, lastFailure: null, cinematic: false });
   },
 
   clearFrogs() {
@@ -243,10 +248,10 @@ export const director = {
     game().patch({ running: true });
     let beats = 0;
     while (tok.alive && game().running && beats < 80) {
-      const n = await hopAllOnce();
+      const n = await hopAllOnce(0.34);
       if (n === 0) break;
       beats++;
-      await sleep(140);
+      await sleep(90);
     }
     if (tok.alive) {
       game().patch({ running: false });
@@ -301,7 +306,9 @@ export const director = {
     if (!formula && g.formula && !g.formula.ok) return null;
     const t = cameraRig.target();
     const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, pondR: 20, pond: g.pond };
-    if (!formula) game().patch({ checking: true, verdicts: {} });
+    const keep = { ...game().verdicts };
+    for (const r of rules) delete keep[r];
+    if (!formula) game().patch({ checking: true, verdicts: keep });
     let tapping = false;
     const tapTimer = setTimeout(() => {
       tapping = true;
@@ -311,7 +318,7 @@ export const director = {
     try {
       const ctx = await browserZ3();
       const res = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
-      if (!formula) game().patch({ verdicts: res.verdicts, pitfallMessage: res.pitfall?.message ?? null });
+      if (!formula) game().patch({ verdicts: { ...keep, ...res.verdicts }, pitfallMessage: res.pitfall?.message ?? null });
       return res;
     } catch (e) {
       caption(`The solver could not start: ${(e as Error).message}`, 'fail');
@@ -328,8 +335,7 @@ export const director = {
     const tok = begin();
     const L = lvl();
     game().patch({ busy: true, lastFailure: cex, running: false });
-    frogWorld.clear('test');
-    frogWorld.frogs.forEach((f) => (f.red = false));
+    frogWorld.clear();
     const x = Number(cex.state[L.view.x]);
     const y = Number(cex.state[L.view.y]);
     try {
@@ -340,7 +346,6 @@ export const director = {
       const broken = cex.broken ? ` \`${cex.broken}\` ${cex.rule === 'pres' ? 'no longer holds' : 'is false there'}.` : '';
       let text = '';
       if (cex.rule === 'init') {
-        frogWorld.clear('real');
         await handIn(x + 0.4, y - 1.3, 1.6, { curl: 0.2 });
         if (!tok.alive) return;
         await pointAt(x, y);
@@ -398,7 +403,7 @@ export const director = {
   async playRain() {
     const tok = begin();
     const L = lvl();
-    game().patch({ busy: true, running: false });
+    game().patch({ busy: true, running: false, selected: null });
     frogWorld.clear();
     try {
       const t0 = cameraRig.target();
@@ -479,20 +484,30 @@ export const director = {
 
   async bridge() {
     const tok = begin();
-    game().patch({ busy: true });
+    game().patch({ busy: true, cinematic: true });
     bridgeState.active = true;
     bridgeState.t = 0;
     try {
-      await cameraRig.lookAtTile(2, 1, 16, false);
+      await cameraRig.resetAngle(false);
+      await cameraRig.lookAtTile(2, 2.5, 16, false);
       caption('Remember the tutorial? Each row was one input n.', 'info');
-      await sleep(1800);
+      await sleep(2000);
       if (!tok.alive) return;
       caption('Frogs never change rows — so each row is its own world. Let’s lift them apart.', 'info');
-      await tween(bridgeState, { t: 1, duration: 2.6, ease: 'power1.inOut' });
-      await sleep(900);
+      void cameraRig.controls?.rotateTo(0.55, 1.22, true);
+      void cameraRig.lookAtTile(2, 2.5, 19);
+      await tween(bridgeState, { t: 1, duration: 3, ease: 'power1.inOut' });
+      caption('From now on, each input is its own pond, stacked on top of each other.', 'info');
+      await sleep(1600);
     } finally {
       bridgeState.active = false;
-      if (tok.alive) game().patch({ busy: false });
+      game().patch({ cinematic: false });
+      if (tok.alive) {
+        game().patch({ busy: false });
+        const cam = lvl().camera ?? { x: 0, y: 0 };
+        void cameraRig.resetAngle();
+        await cameraRig.lookAtTile(cam.x, cam.y, cam.distance ?? 14);
+      }
     }
   },
 

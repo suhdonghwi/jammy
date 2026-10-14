@@ -80,6 +80,8 @@ export interface Game {
   showRules: boolean;
   cleared: boolean;
   pitfallMessage: string | null;
+  /** A cinematic is playing; the level scene is hidden. */
+  cinematic: boolean;
   progress: Progress;
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
@@ -116,6 +118,7 @@ export const useGame = create<Game>((set, get) => ({
   showRules: false,
   cleared: false,
   pitfallMessage: null,
+  cinematic: false,
   progress: loadProgress(),
 
   openLevel(def, mode) {

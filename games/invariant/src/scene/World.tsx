@@ -86,6 +86,7 @@ function Controls() {
 
 function LevelScene() {
   const level = useGame((s) => s.level);
+  const cinematic = useGame((s) => s.cinematic);
   useEffect(() => {
     if (!level) return;
     const cam = level.camera ?? { x: 0, y: 0 };
@@ -93,6 +94,7 @@ function LevelScene() {
     void cameraRig.lookAtTile(cam.x, cam.y, cam.distance ?? 14, false);
   }, [level]);
   if (!level) return null;
+  if (cinematic) return <BridgeCinematic />;
   return (
     <>
       <FocusedLayer>
@@ -102,7 +104,6 @@ function LevelScene() {
       </FocusedLayer>
       {level.pond && <PondStack />}
       <Hand />
-      <BridgeCinematic />
     </>
   );
 }

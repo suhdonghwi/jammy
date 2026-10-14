@@ -67,9 +67,14 @@ export function PondLayer() {
 
   return (
     <group>
+      {/* backing: tile gaps read as grid lines, and lower ponds never show through */}
+      <mesh position={[data.cx, -0.01, -data.cy]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[data.size + 40, data.size + 40]} />
+        <meshBasicMaterial color={COLORS.background} />
+      </mesh>
       <Floor data={data} showStop={reveal.stop} />
       {reveal.stop && <StopEdges data={data} />}
-      <Slabs data={data} heights={heightsRef.current!} visible={showSlabs} dim={dim} />
+      <Slabs data={data} heights={heightsRef.current!} visible={showSlabs} dim={dim} showStop={reveal.stop} />
       {reveal.goals && <Goals data={data} />}
       {reveal.eggs && <Eggs data={data} />}
       {reveal.axes && <AxisNumbers data={data} xName={level.view.x} yName={level.view.y} />}
@@ -113,14 +118,13 @@ function Floor({ data, showStop }: { data: WindowData; showStop: boolean }) {
   );
 }
 
-/** Thin line where the continue region meets the stop region. */
+/** Thin line where the continue region meets the stop region; rides on top of slabs. */
 function StopEdges({ data }: { data: WindowData }) {
   const ref = useRef<THREE.InstancedMesh>(null);
-  const geom = useMemo(() => new THREE.BoxGeometry(1, 0.012, 0.045), []);
+  const geom = useMemo(() => new THREE.BoxGeometry(1, 0.012, 0.05), []);
   const max = data.size * data.size * 2;
-  useEffect(() => {
-    const m = ref.current!;
-    let n = 0;
+  const edges = useMemo(() => {
+    const out: { k: number; q: number; x: number; y: number; vertical: boolean }[] = [];
     const at = (i: number, j: number) => (i < 0 || j < 0 || i >= data.size || j >= data.size ? -1 : j * data.size + i);
     for (let j = 0; j < data.size; j++) {
       for (let i = 0; i < data.size; i++) {
@@ -137,17 +141,26 @@ function StopEdges({ data }: { data: WindowData }) {
         for (const [ni, nj, ex, ey, vertical] of nbrs) {
           const q = at(ni, nj);
           if (q < 0 || !data.exists[q] || data.stop[q]) continue;
-          dummy.position.set(ex, 0.004, -ey);
-          dummy.rotation.set(0, vertical ? Math.PI / 2 : 0, 0);
-          dummy.updateMatrix();
-          m.setMatrixAt(n++, dummy.matrix);
+          out.push({ k, q, x: ex, y: ey, vertical });
         }
       }
     }
-    dummy.rotation.set(0, 0, 0);
-    m.count = n;
-    m.instanceMatrix.needsUpdate = true;
+    return out;
   }, [data]);
+  useFrame(() => {
+    const m = ref.current;
+    const h = sceneShared.heights;
+    if (!m || !h || sceneShared.win !== data) return;
+    edges.forEach((e, n) => {
+      dummy.position.set(e.x, Math.max(h[e.k], h[e.q]) + 0.006, -e.y);
+      dummy.rotation.set(0, e.vertical ? Math.PI / 2 : 0, 0);
+      dummy.updateMatrix();
+      m.setMatrixAt(n, dummy.matrix);
+    });
+    dummy.rotation.set(0, 0, 0);
+    m.count = edges.length;
+    m.instanceMatrix.needsUpdate = true;
+  });
   return (
     <instancedMesh key={max} ref={ref} args={[geom, undefined, max]} frustumCulled={false}>
       <meshBasicMaterial color={COLORS.stopLine} />
@@ -160,8 +173,8 @@ function makeSlabGeometry() {
   g.translate(0, 0.5, 0);
   const n = g.attributes.normal;
   const colors = new Float32Array(n.count * 3);
-  const top = new THREE.Color(COLORS.slab);
-  const side = new THREE.Color(COLORS.slabSide);
+  const top = new THREE.Color(1, 1, 1);
+  const side = new THREE.Color(0.76, 0.78, 0.82);
   for (let i = 0; i < n.count; i++) {
     const c = n.getY(i) > 0.5 ? top : side;
     colors.set([c.r, c.g, c.b], i * 3);
@@ -170,7 +183,19 @@ function makeSlabGeometry() {
   return g;
 }
 
-function Slabs({ data, heights, visible, dim }: { data: WindowData; heights: Float32Array; visible: boolean; dim: boolean }) {
+function Slabs({
+  data,
+  heights,
+  visible,
+  dim,
+  showStop,
+}: {
+  data: WindowData;
+  heights: Float32Array;
+  visible: boolean;
+  dim: boolean;
+  showStop: boolean;
+}) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const max = data.size * data.size;
   const geom = useMemo(() => {
@@ -202,10 +227,13 @@ function Slabs({ data, heights, visible, dim }: { data: WindowData; heights: Flo
       dummy.position.set(data.cx - data.R + i, 0, -(data.cy - data.R + j));
       dummy.updateMatrix();
       m.setMatrixAt(k, dummy.matrix);
+      // slabs in the stop region are a grayer blue, so the loop's stop region stays readable
+      m.setColorAt(k, tmpColor.set(showStop && data.stop[k] ? COLORS.slabStop : COLORS.slab));
     }
     m.count = max;
     m.instanceMatrix.needsUpdate = true;
-  }, [data, max]);
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }, [data, max, showStop]);
   useFrame((_, dt) => {
     const attr = geom.getAttribute('aH') as THREE.InstancedBufferAttribute;
     const arr = attr.array as Float32Array;

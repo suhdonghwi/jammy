@@ -4,8 +4,17 @@ import { App } from './App';
 import './styles.css';
 import { cameraRig } from './scene/cameraRig';
 import { useGame } from './store/game';
+import { openLevel, openTutorial, check } from './director/play';
+import { allLevels } from './levels/defs';
 
-if (import.meta.env.DEV) Object.assign(window, { __rig: cameraRig, __game: useGame });
+if (import.meta.env.DEV) {
+  Object.assign(window, {
+    __rig: cameraRig,
+    __game: useGame,
+    __open: (id: string) => (id === 'tutorial' ? openTutorial() : openLevel(allLevels.find((l) => l.id === id)!)),
+    __check: check,
+  });
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

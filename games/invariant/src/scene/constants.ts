@@ -8,7 +8,7 @@ export const COLORS = {
   stopLine: '#9aa1ad',
   goal: '#5b6472',
   slab: '#7fb2f0',
-  slabSide: '#5d95d9',
+  slabStop: '#a3b7cf',
   egg: '#f3ead2',
   frog: '#5fbf4a',
   testFrog: '#b48cf0',

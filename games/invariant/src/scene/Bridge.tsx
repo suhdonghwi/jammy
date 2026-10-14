@@ -26,10 +26,11 @@ export function BridgeCinematic() {
     rows.current.forEach((r, n) => {
       if (!r) return;
       // stagger: row n starts a little later
-      const u = THREE.MathUtils.clamp(bridgeState.t * 1.6 - n * 0.12, 0, 1);
+      const u = THREE.MathUtils.clamp(bridgeState.t * 1.5 - n * 0.1, 0, 1);
       const e = u * u * (3 - 2 * u);
-      r.position.set(0, e * n * POND_SPACING * 0.6, -n * (1 - e) - e * 2);
-      r.scale.set(1, 1, 1 + e * 7);
+      // rows slide to the same depth and lift into a stack, each becoming a sheet
+      r.position.set(0, e * n * POND_SPACING * 0.45, -n * (1 - e) - e * 2.5);
+      r.scale.set(1, 1, 1 + e * 3.2);
     });
   });
   return (

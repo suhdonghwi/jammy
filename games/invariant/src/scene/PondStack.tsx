@@ -34,7 +34,7 @@ export function PondStack() {
   const range = level.ponds!;
   const ponds = useMemo(() => {
     const out: number[] = [];
-    for (let p = Math.max(range.min, pond - 5); p <= Math.min(range.max, pond + 5); p++) {
+    for (let p = Math.max(range.min, pond - 2); p <= Math.min(range.max, pond + 4); p++) {
       if (level.fast.pondReq({ [level.pond!]: p, [level.view.x]: 0, [level.view.y]: 0 })) out.push(p);
     }
     return out;
@@ -50,13 +50,13 @@ export function PondStack() {
   return (
     <group ref={group}>
       {ponds.map((p) => (
-        <Sheet key={p} p={p} name={level.pond!} focused={p === pond} />
+        <Sheet key={p} p={p} name={level.pond!} focused={p === pond} focusedP={pond} />
       ))}
     </group>
   );
 }
 
-function Sheet({ p, name, focused }: { p: number; name: string; focused: boolean }) {
+function Sheet({ p, name, focused, focusedP }: { p: number; name: string; focused: boolean; focusedP: number }) {
   const ref = useRef<THREE.Group>(null);
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
   useFrame(() => {
@@ -65,7 +65,7 @@ function Sheet({ p, name, focused }: { p: number; name: string; focused: boolean
     const offset = p - stackAnim.focus;
     g.position.y = offset * POND_SPACING - 0.03;
     if (matRef.current) {
-      const target = focused ? 0 : offset > 0 ? 0.1 / offset : 0.55 / (1 + Math.abs(offset) * 0.6);
+      const target = focused ? 0 : offset > 0 ? 0.16 / offset : 0.5;
       matRef.current.opacity += (target - matRef.current.opacity) * 0.15;
     }
   });
@@ -75,11 +75,13 @@ function Sheet({ p, name, focused }: { p: number; name: string; focused: boolean
         <planeGeometry args={[34, 34]} />
         <meshBasicMaterial ref={matRef} color={COLORS.sheet} transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
-      <Html position={[-12, 0.05, 6]} center style={{ pointerEvents: 'none' }} zIndexRange={[5, 0]}>
-        <div className={`pond-label ${focused ? 'focused' : ''}`}>
-          {name} = {p}
-        </div>
-      </Html>
+      {p >= focusedP && (
+        <Html position={[-6.5, 0.05, 3.5]} center style={{ pointerEvents: 'none' }} zIndexRange={[5, 0]}>
+          <div className={`pond-label ${focused ? 'focused' : ''}`}>
+            {name} = {p}
+          </div>
+        </Html>
+      )}
     </group>
   );
 }

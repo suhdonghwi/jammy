@@ -20,9 +20,10 @@ export function Hand() {
     if (!g || !inner.current) return;
     const t = clock.elapsedTime;
     g.visible = h.visible > 0.01;
-    const s = 0.2 + 0.8 * h.visible;
+    const s = (0.2 + 0.8 * h.visible) * 0.78;
     g.scale.setScalar(s);
     g.position.set(h.x, h.y + Math.sin(t * 1.6) * 0.04, h.z);
+    inner.current.rotation.order = 'YXZ';
     inner.current.rotation.set(-0.35 + h.tilt, h.yaw, Math.sin(t * 9) * 0.22 * h.shrug);
     inner.current.position.y = Math.abs(Math.sin(t * 9)) * 0.15 * h.shrug;
     fingers.current.forEach((f, i) => {
