@@ -42,6 +42,7 @@ ${GLSL_INT_HELPERS}
 ${levelGlsl(level)}
 
 bool stopAt(ivec3 t) { return uShowStop > 0.5 && L_exists(t) && L_stop(t); }
+bool edgeBetween(ivec3 a, ivec3 b) { return L_exists(a) && L_exists(b) && stopAt(a) != stopAt(b); }
 
 void main() {
   vec2 p = vec2(vWorld.x, -vWorld.z);
@@ -51,7 +52,8 @@ void main() {
   bool ex = L_exists(t);
 
   // derivatives are taken up front (uniform control flow)
-  vec2 fw = fwidth(f);
+  // derivatives of the continuous coordinate (f jumps at tile borders)
+  vec2 fw = fwidth(p);
   float fwr = fwidth(length(f));
   float ringD = abs(sdRoundBox(f, vec2(0.47), 0.13)) - 0.035;
   float fwRing = fwidth(ringD);
@@ -79,20 +81,39 @@ void main() {
     }
     col = mix(uGap, tcol, inside);
 
-    // boundary between the continue and stop regions, drawn in the gap
-    if (uShowStop > 0.5) {
-      float w = 0.045;
-      if (f.x > 0.3 && st != stopAt(t + ivec3(1, 0, 0)) && L_exists(t + ivec3(1, 0, 0)))
-        col = mix(col, uEdge, 1.0 - smoothstep(w - fw.x, w + fw.x, abs(f.x - 0.5)));
-      if (f.x < -0.3 && st != stopAt(t - ivec3(1, 0, 0)) && L_exists(t - ivec3(1, 0, 0)))
-        col = mix(col, uEdge, 1.0 - smoothstep(w - fw.x, w + fw.x, abs(f.x + 0.5)));
-      if (f.y > 0.3 && st != stopAt(t + ivec3(0, 1, 0)) && L_exists(t + ivec3(0, 1, 0)))
-        col = mix(col, uEdge, 1.0 - smoothstep(w - fw.y, w + fw.y, abs(f.y - 0.5)));
-      if (f.y < -0.3 && st != stopAt(t - ivec3(0, 1, 0)) && L_exists(t - ivec3(0, 1, 0)))
-        col = mix(col, uEdge, 1.0 - smoothstep(w - fw.y, w + fw.y, abs(f.y + 0.5)));
-    }
   } else {
     col = uVoid;
+  }
+
+  // Boundary between the continue and stop regions. Drawn from the grid lines
+  // themselves (not per tile), so the line is continuous; segments extend by
+  // their width past each end so corners close up.
+  if (uShowStop > 0.5) {
+    float w = 0.045;
+    float line = 0.0;
+    // nearest vertical grid line x = kx + 0.5, between tiles kx and kx + 1
+    int kx = int(floor(p.x));
+    float dx = abs(p.x - (float(kx) + 0.5));
+    int ty = int(floor(p.y + 0.5));
+    float fy = p.y - float(ty);
+    bool edgeV = edgeBetween(ivec3(kx, ty, uPond), ivec3(kx + 1, ty, uPond));
+    if (!edgeV && abs(fy) > 0.5 - w) {
+      int ty2 = ty + (fy > 0.0 ? 1 : -1);
+      edgeV = edgeBetween(ivec3(kx, ty2, uPond), ivec3(kx + 1, ty2, uPond));
+    }
+    if (edgeV) line = max(line, 1.0 - smoothstep(w - fw.x, w + fw.x, dx));
+    // nearest horizontal grid line y = ky + 0.5, between tiles ky and ky + 1
+    int ky = int(floor(p.y));
+    float dy = abs(p.y - (float(ky) + 0.5));
+    int tx = int(floor(p.x + 0.5));
+    float fx = p.x - float(tx);
+    bool edgeH = edgeBetween(ivec3(tx, ky, uPond), ivec3(tx, ky + 1, uPond));
+    if (!edgeH && abs(fx) > 0.5 - w) {
+      int tx2 = tx + (fx > 0.0 ? 1 : -1);
+      edgeH = edgeBetween(ivec3(tx2, ky, uPond), ivec3(tx2, ky + 1, uPond));
+    }
+    if (edgeH) line = max(line, 1.0 - smoothstep(w - fw.y, w + fw.y, dy));
+    col = mix(col, uEdge, line);
   }
 
   // hover cursor: a crisp rounded outline around the inspected tile
