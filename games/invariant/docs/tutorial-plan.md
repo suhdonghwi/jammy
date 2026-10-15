@@ -360,12 +360,10 @@ Scene and HUD:
   tints the row and the column of numbers as a soft band, and each axis's
   name is written where its numbers are, in the corner of the tile before the
   0, so the row reads "i → 0 1 2 3" and the column "n ↑ 0 1 2 3". Like the
-  numbers it hides nothing. The hovered tile also gets a small compass of
-  its own ("i →" along its near edge, an arrow over "n" by its left
-  edge), so the directions can be read anywhere on the plane. Lines
-  were tried and collided with the stop boundary, which runs in the same
-  tile gaps; chips covered tiles, and chips that followed the camera were
-  distracting. On in levels too.
+  numbers it hides nothing. Lines were tried and collided with the stop
+  boundary, which runs in the same tile gaps; chips covered tiles; chips that
+  followed the camera were distracting; a per-tile compass on hover was
+  fiddly. On in levels too.
 - **Ghost assert line** in the code panel: a reveal flag `assert` draws
   `assert(???);` as the loop body's first line, dimmed; from 1.10 on, `???` is
   replaced by the current formula text (so the code panel and the box always
