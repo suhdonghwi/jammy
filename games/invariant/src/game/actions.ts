@@ -1,9 +1,7 @@
 import { sfx } from '../audio/sfx';
-import { compareToModel, type ModelMatch } from '../checker/check';
-import { browserZ3 } from '../checker/z3-browser';
 import { resetLevel } from '../director/frogs';
 import { playCounterexample, playRain, playShrug, runChecker } from '../director/verdicts';
-import { t } from '../i18n/i18n';
+import { listNames, t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
 import { RULES, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
@@ -87,21 +85,17 @@ export async function check() {
     await playShrug(`${t().level.undecided}${tip}`);
     return;
   }
-  // compared while the frogs rain, so the caption doesn't wait on it
   const level = g.level;
   markCleared(level.id);
-  const match = browserZ3()
-    .then((ctx) => compareToModel(ctx, level, g.valid!))
-    .catch((): ModelMatch => 'unknown');
+  const others = otherAnswers(level.solutions, g.formulaText);
   await playRain();
-  const model = modelNote(level.solutions[0], await match);
   sfx.cleared();
   // left for another level (or the menu) while it rained
   if (useGame.getState().level !== level) return;
   const next = levels[levels.findIndex((l) => l.id === level.id) + 1];
   useGame.setState({
     caption: {
-      text: `${t().level.proved}\n\n${model}`,
+      text: others ? `${t().level.proved}\n\n${others}` : t().level.proved,
       tone: 'success',
       action: next
         ? { label: t().level.next(localizeLevel(next).title), onClick: () => openLevel(next) }
@@ -110,17 +104,9 @@ export async function check() {
   });
 }
 
-/** A line about the model answer for the success caption. */
-function modelNote(model: string, match: ModelMatch): string {
-  const m = `\`${model}\``;
-  switch (match) {
-    case 'typed':
-      return 'That’s exactly the model answer.';
-    case 'same':
-      return `The model answer, ${m}, is the same area written another way.`;
-    case 'different':
-      return `The model answer is ${m} — a different area. Both pass all three rules, so both prove the goal: a loop can have more than one invariant.`;
-    case 'unknown':
-      return `The model answer: ${m}.`;
-  }
+/** The success caption's line listing the level's other known answers (all but the one typed, if it was one); none left, no line. */
+function otherAnswers(solutions: string[], typed: string): string | null {
+  const squash = (s: string) => s.replace(/\s+/g, '');
+  const rest = solutions.filter((s) => squash(s) !== squash(typed));
+  return rest.length ? t().level.otherAnswers(listNames(rest.map((s) => `\`${s}\``))) : null;
 }

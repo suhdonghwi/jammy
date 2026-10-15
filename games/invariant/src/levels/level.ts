@@ -23,7 +23,7 @@ export interface LevelDef {
   source: string;
   /** Which variables go on the plane's axes. A leftover input becomes the plane slider: one plane per value. */
   view: { x: string; y: string };
-  /** Known-good areas; the first is the model answer, shown once the learner proves a different formula. */
+  /** Known-good areas; after a proof, the success caption lists them (all but the one typed). */
   solutions: string[];
   pitfalls?: Pitfall[];
   /** Caption shown when the level opens. */

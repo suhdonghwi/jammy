@@ -3,7 +3,7 @@ import type { Expr } from '../lang/ast';
 import type { FastFn } from '../lang/eval';
 import { compileFormula, RULES, type CompiledLevel, type Pitfall, type Rule } from '../levels/level';
 import { boxSearch, sameOnBox, type Box } from './box';
-import { cexFromModel, equivalent, ruleQuery, sameArea, solve } from './smt';
+import { cexFromModel, equivalent, ruleQuery, solve } from './smt';
 import type { RuleVerdict, Verdicts } from './types';
 
 // Checking an area against the three rules.
@@ -82,20 +82,4 @@ export async function checkFormula(
     }
   }
   return { verdicts, pitfall };
-}
-
-/**
- * How a proved area compares with the level's model answer (its first
- * solution): typed the same, the same area written another way, a different
- * area that also works, or (the solver gave up) unknown.
- */
-export type ModelMatch = 'typed' | 'same' | 'different' | 'unknown';
-
-export async function compareToModel(ctx: Context<'main'>, level: CompiledLevel, inv: Formula, timeout = 2000): Promise<ModelMatch> {
-  const squash = (t: string) => t.replace(/\s+/g, '');
-  if (squash(inv.text) === squash(level.solutions[0])) return 'typed';
-  const model = compileFormula(level, level.solutions[0]);
-  if (!model.ok) return 'unknown';
-  const same = await sameArea(ctx, level, inv.expr, model.expr, timeout);
-  return same === undefined ? 'unknown' : same ? 'same' : 'different';
 }
