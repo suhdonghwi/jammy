@@ -75,7 +75,7 @@ function useFrogBuddy() {
 const dummy = new THREE.Object3D();
 
 /** The frog beside the title. `peek`: it hides behind something and only looks over the top. */
-function FrogBuddy({ x, y, z = 0.2, peek = false, scale = BUDDY, duckDepth = 0.62 }: { x: number; y: number; z?: number; peek?: boolean; scale?: number; duckDepth?: number }) {
+function FrogBuddy({ x, y, z = 0.2, peek = false, scale = BUDDY }: { x: number; y: number; z?: number; peek?: boolean; scale?: number }) {
   const mesh = useFrogBuddy();
   const look = useRef(0);
   const target = useRef(0);
@@ -95,14 +95,8 @@ function FrogBuddy({ x, y, z = 0.2, peek = false, scale = BUDDY, duckDepth = 0.6
     let hop = 0;
     let crouch = 0;
     if (peek) {
-      // mostly peeking over the edge with a gentle bob; now and then it
-      // ducks out of sight and pops back up
-      const c = (t + 2) % 6;
-      const duck = c < 4.4 ? 0 : c < 4.75 ? (c - 4.4) / 0.35 : c < 5.2 ? 1 : c < 5.55 ? 1 - (c - 5.2) / 0.35 : 0;
-      const pop = c > 5.2 && c < 5.75 ? Math.sin(((c - 5.2) / 0.55) * Math.PI) : 0;
-      // ducking only as far as the letters cover it (its feet stay above the baseline)
-      lift = 0.03 * Math.sin(t * 1.7) * (1 - duck) - duckDepth * duck * duck * (3 - 2 * duck) + 0.07 * pop;
-      hop = pop;
+      // it just stays there, peeking (breathing and glancing around)
+      lift = 0;
     } else {
       // a happy hop every few seconds
       const u = ((t + 1.2) % 4.2) / 0.6;
@@ -151,28 +145,29 @@ function TitleScene({ font, style }: { font: opentype.Font; style: TitleStyle })
   const { camera, size } = useThree();
   const group = useRef<THREE.Group>(null);
 
-  // fit the content into the canvas, left-aligned
+  // Fit the content into the canvas with a gentle perspective lens straight in
+  // front of it: the letters face the viewer, and their sides show just a
+  // little toward the edges, so they read as 3D without any tilt.
   useFrame(({ clock }) => {
     const pad = 0.15;
     const W = L.right - L.left + pad * 2;
     const H = L.top - L.bottom + pad * 2;
-    const cam = camera as THREE.OrthographicCamera;
-    cam.zoom = Math.min(size.width / W, size.height / H);
-    cam.position.set(L.left - pad + size.width / cam.zoom / 2, (L.top + L.bottom) / 2, 20);
+    const cam = camera as THREE.PerspectiveCamera;
+    const half = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    const dist = Math.max(H, W / (size.width / size.height)) / (2 * half);
+    cam.position.set((L.left + L.right) / 2, (L.top + L.bottom) / 2, dist + 0.3);
+    cam.lookAt((L.left + L.right) / 2, (L.top + L.bottom) / 2, 0);
     cam.updateProjectionMatrix();
-    // a slow sway so the depth reads
     if (group.current) {
-      // standing letters face the viewer squarely (looked at a touch from above,
-      // so their depth still reads); the other styles sway a little
+      // the other styles sway a little and tip toward the viewer
       group.current.rotation.y = style === 'standing' ? 0 : 0.16 + Math.sin(clock.elapsedTime * 0.5) * 0.05;
-      // platforms tip toward the viewer a little, so their tops read as slabs
-      group.current.rotation.x = style === 'platforms' ? 0.32 : style === 'standing' ? 0.16 : 0.06;
+      group.current.rotation.x = style === 'platforms' ? 0.32 : style === 'standing' ? 0 : 0.06;
     }
   });
 
   const blue = { face: COLORS.slabTop, side: COLORS.slabSide };
   // a deeper green than the frog itself, so the frog peeking over it stands out
-  const green = { face: '#3fae37', side: '#2b7d25' };
+  const green = { face: '#46b83e', side: '#2f8a29' };
   const white = { face: '#ffffff', side: '#d9e2f0' };
   const c1 = style === 'plaque' ? white : blue;
   const c2 = style === 'plaque' ? { face: '#eaffd9', side: '#bfe6a8' } : green;
@@ -193,7 +188,7 @@ function TitleScene({ font, style }: { font: opentype.Font; style: TitleStyle })
       ) : (
         style === 'standing' ? (
           // behind the "o", only its head showing over the top
-          <FrogBuddy x={L.buddyX} y={L.oTop - 0.4} z={-0.7} peek scale={1.45} duckDepth={0.3} />
+          <FrogBuddy x={L.buddyX} y={L.oTop - 0.4} z={-0.7} peek scale={1.45} />
         ) : (
           <FrogBuddy x={L.buddyX} y={0.0} />
         )
@@ -213,10 +208,12 @@ export function Title3D({ style }: { style: TitleStyle }) {
   return (
     <div className="title3d" style={{ aspectRatio: aspect }}>
       {font && (
-        <Canvas flat orthographic dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 20], zoom: 60, near: 0.1, far: 100 }}>
+        <Canvas flat dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: 18, near: 0.1, far: 200 }}>
           <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
           <directionalLight position={[4, 10, 6]} intensity={1.6} color="#ffffff" />
           <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
+          {/* the letters face the viewer, so light them from the front too */}
+          <directionalLight position={[1, 2, 10]} intensity={1.1} color="#ffffff" />
           <TitleScene font={font} style={style} />
         </Canvas>
       )}

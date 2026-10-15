@@ -4,7 +4,7 @@ import { create } from 'zustand';
 // scene. The choice is remembered per browser; ?home=<id> picks one directly.
 
 export const HOME_DRAFTS = [
-  { id: 'a', name: 'Mini level', note: 'Standing 3D title; on the right, eggs hatch and frogs hop to the goals of the tutorial level.' },
+  { id: 'a', name: 'Loop', note: 'A frog peeks over the 3D title; frogs hop round a rectangle of slabs.' },
   { id: 'b', name: 'Platforms', note: 'Title words on area slabs; a close-up of a goal corner.' },
   { id: 'c', name: 'Plaque', note: 'Title on a blue sign the frog peeks over; a wider view of many frogs reaching the goals.' },
   { id: 'd', name: 'Before', note: 'The previous Editorial draft, for comparison.' },

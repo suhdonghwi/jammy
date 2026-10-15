@@ -1,5 +1,6 @@
 import { useHomeDraft } from '../home/drafts';
 import { EditorialHome } from './home/Editorial';
+import { LoopArea } from './home/LoopArea';
 import { MiniLevel } from './home/MiniLevel';
 
 // The home screen's 3D scene, in whichever draft is being tried out.
@@ -14,6 +15,6 @@ export function HomeScene() {
     case 'd':
       return <EditorialHome key="d" />;
     default:
-      return <MiniLevel key="a" framing="simple" shift={1.25} />;
+      return <LoopArea key="a" />;
   }
 }
