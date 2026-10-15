@@ -256,6 +256,8 @@ export const STEPS: Step[] = [
           prepare: async () => {
             resetFrogs();
             await cameraRig.lookAtTile(4, 14, 55);
+            // a fast Next may have moved on during the glide: a stale allow() would lock the next step's box
+            guard(gen);
             allow({ eggs: true });
           },
         },
@@ -275,6 +277,7 @@ export const STEPS: Step[] = [
           prepare: async () => {
             resetFrogs();
             await cameraRig.lookAtTile(2, 2, 15.6);
+            guard(gen);
             useGame.getState().setReveal({ assert: true, lights: ALL });
           },
           settle: 500,
@@ -364,6 +367,7 @@ export const STEPS: Step[] = [
         prepare: async () => {
           resetFrogs();
           await cameraRig.lookAtTile(1.5, 3, 12);
+          guard(gen);
           hatchFrog(st(0, 3));
           await sleep(600);
         },

@@ -86,7 +86,10 @@ agree. `pnpm validate` and the tests are the safety net.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
   formula, camera), so Back and skip-ahead can rebuild any step instantly. A
   step runs under a generation number and calls `guard(gen)` after every
-  `await`; stopping or rewinding the tutorial aborts the old generation.
+  `await`, inside a beat's `prepare` too (a fast Next skips ahead while a
+  camera glide is still playing, and whatever the old step does after that
+  glide would land on the new step); stopping or rewinding the tutorial aborts
+  the old generation.
 - The tutorial reacts to the learner through events (`stepped`, `runDone`),
   through Check and through caption buttons; it never polls.
 - **A stage accepts any formula.** `stage()` in `tutorial/script.ts` waits for
