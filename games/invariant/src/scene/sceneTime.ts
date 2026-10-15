@@ -11,12 +11,12 @@ let hiddenSince: number | null = typeof document !== 'undefined' && document.hid
 let pausedTotal = 0;
 
 /** Milliseconds of scene time: like performance.now(), but frozen while the page is hidden. */
-export function sceneMs(): number {
+function sceneMs(): number {
   const t = performance.now();
   return t - pausedTotal - (hiddenSince === null ? 0 : t - hiddenSince);
 }
 
-/** Seconds of scene time. */
+/** Seconds of scene time: what everything in the scene is timed by. */
 export const sceneNow = () => sceneMs() / 1000;
 
 type Timer = { due: number; fn: () => void; handle: number | null };

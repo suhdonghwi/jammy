@@ -1,6 +1,6 @@
 import { allLevels, levels } from '../levels/defs';
 import { RULES, type LevelDef } from '../levels/level';
-import { game, useGame } from '../store/game';
+import { useGame } from '../store/game';
 import { frogWorld } from '../scene/frogSim';
 import { director } from './director';
 import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';
@@ -8,25 +8,25 @@ import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial
 export function openLevel(def: LevelDef) {
   stopTutorial();
   director.reset();
-  game().openLevel(def, 'level');
+  useGame.getState().openLevel(def, 'level');
   if (def.bridge) {
     void (async () => {
       await director.bridge();
-      game().setCaption(def.intro ? { text: def.intro, tone: 'info' } : null);
+      useGame.setState({ caption: def.intro ? { text: def.intro, tone: 'info' } : null });
     })();
   }
 }
 
 export function openTutorial() {
   director.reset();
-  game().openLevel(allLevels[0], 'tutorial');
+  useGame.getState().openLevel(allLevels[0], 'tutorial');
   startTutorial();
 }
 
 export function goMenu(view: 'home' | 'levels' = 'home') {
   stopTutorial();
   director.reset();
-  game().backToMenu(view);
+  useGame.getState().backToMenu(view);
 }
 
 function nextLevelDef(id: string): LevelDef | null {
@@ -35,7 +35,7 @@ function nextLevelDef(id: string): LevelDef | null {
 }
 
 export async function check() {
-  const g = game();
+  const g = useGame.getState();
   if (g.busy || g.checking || !g.level) return;
   if (g.mode === 'tutorial') {
     tutorialCheck();
@@ -47,7 +47,7 @@ export async function check() {
     return;
   }
   frogWorld.clear('test');
-  g.setCaption({ text: 'Checking…', tone: 'muted' });
+  useGame.setState({ caption: { text: 'Checking…', tone: 'muted' } });
   const res = await director.runChecker(RULES);
   if (!res) return;
   const failure = RULES.map((r) => res.verdicts[r]).find((v) => v?.status === 'fail');
@@ -64,9 +64,9 @@ export async function check() {
   const level = g.level;
   await director.playRain();
   const next = nextLevelDef(level.id);
-  game().setCaption({
+  useGame.setState({ caption: {
     text: 'Proved. Every frog, everywhere you claimed — for every input.',
     tone: 'success',
     action: next ? { label: `Next: ${next.title}`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
-  });
+  } });
 }

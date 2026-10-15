@@ -7,14 +7,14 @@ import { COLORS, SLAB_H } from '../constants';
 import { field } from '../field';
 import { Floor } from '../Floor';
 import { Frogs } from '../Frogs';
-import { frogWorld, now, yawToward } from '../frogSim';
+import { frogWorld, yawToward } from '../frogSim';
 import { HATCH_EMERGE, HatchShells, hatchFx } from '../Hatch';
 import { GoalColumns } from '../GoalColumns';
 import { goalEvents } from '../goalEvents';
 import { eggGeometry, Slabs } from '../AreaLayer';
 import { useArea } from './common';
 import { DIAGONAL } from './decor';
-import { after } from '../sceneTime';
+import { after, sceneNow } from '../sceneTime';
 
 // The home screen's scene, in the counter program's world: striped tiles below
 // a diagonal of goal pools (where the loop would stop), and above it a ring of
@@ -67,7 +67,7 @@ function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
   }, [geom, mat]);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   useFrame(() => {
-    const t = now();
+    const t = sceneNow();
     let n = 0;
     for (const e of eggs.current) {
       if (t < e.appear || t >= e.hatch || n >= 16) continue;
@@ -104,7 +104,7 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
     const pos = Array.from({ length: FROGS }, (_, j) => Math.floor((j * path.length) / FROGS));
     // On arrival each frog starts as an egg on its tile: the egg pops up,
     // then (one after another) wobbles, cracks and the frog climbs out.
-    const t0 = now();
+    const t0 = sceneNow();
     const timers: (() => void)[] = [];
     eggs.current = [];
     const frogs = pos.map((k, j) => {
@@ -124,7 +124,7 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
     // a beat in scene time, so a hidden page doesn't pile up hops
     const beat = () => {
       timers.push(after(BEAT, beat));
-      if (now() < lastOut) return;
+      if (sceneNow() < lastOut) return;
       frogs.forEach((f, j) => {
         pos[j] = (pos[j] + 1) % path.length;
         const [x, y] = path[pos[j]];
@@ -171,7 +171,7 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
   // fresh page load put the camera there right away (no default-camera frame).
   const { camera, size } = useThree();
   useLayoutEffect(() => {
-    const t = now();
+    const t = sceneNow();
     pose(t, size.width / size.height);
     const c = cameraRig.controls;
     if (firstArrival) {
@@ -194,7 +194,7 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
   useFrame(({ size, camera }) => {
     if (mode !== 'menu' || !intro.current) return;
     const c = cameraRig.controls;
-    const t = now();
+    const t = sceneNow();
     pose(t, size.width / size.height);
     const u = Math.min(1, (t - intro.current.t0) / INTRO_SECONDS);
     // ease in and out, so the glide neither jerks off nor stops dead

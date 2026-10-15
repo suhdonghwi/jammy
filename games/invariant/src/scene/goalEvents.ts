@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { clock } from './constants';
+import { sceneNow } from './sceneTime';
 import { MAX_EVENTS } from './shaders';
 
 // Frogs arriving on a goal send out a ripple. The floor and slab shaders read
@@ -16,7 +16,7 @@ const events: GoalEvent[] = [];
 
 export const goalEvents = {
   push(x: number, y: number, pond: number | undefined) {
-    const t = clock.now();
+    const t = sceneNow();
     // several frogs landing on the same goal at once make one ripple
     if (events.some((e) => e.x === x && e.y === y && e.pond === pond && t - e.t < 0.15)) return;
     events.push({ x, y, pond, t });

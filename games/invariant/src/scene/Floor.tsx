@@ -4,13 +4,12 @@ import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
 import { GLSL_INT_HELPERS, levelGlsl } from './glsl';
 import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, goalUniforms } from './shaders';
-import { clock } from './constants';
 import { cameraRig } from './cameraRig';
 import { hover } from './hover';
 import { field } from './field';
 import { goalEvents } from './goalEvents';
 import { SLAB_H } from './constants';
-import { sceneMs } from './sceneTime';
+import { sceneNow } from './sceneTime';
 
 const vertex = /* glsl */ `
 varying vec3 vWorld;
@@ -258,7 +257,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
 
   const target = useRef(opacity);
   target.current = opacity;
-  const born = useRef(sceneMs());
+  const born = useRef(sceneNow());
 
   useFrame((_, frameDt) => {
     // the first frame after the page was hidden carries the whole gap: don't let fades jump
@@ -272,7 +271,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     const R = Math.max(26, d * 2.6);
     m.scale.setScalar(R * 2.2);
     u.uCenter.value.set(t.x, t.z);
-    u.uTime.value = clock.now();
+    u.uTime.value = sceneNow();
     u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.pond ? pond : undefined);
     u.uFade.value.set(R * 0.62, R);
     // revealed elements fade in rather than popping
@@ -284,7 +283,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     u.uShowStop.value = towards(u.uShowStop.value, shows.current.stop);
     u.uShowGoal.value = towards(u.uShowGoal.value, shows.current.goal);
     u.uShowAxes.value = towards(u.uShowAxes.value, shows.current.axes);
-    if ((sceneMs() - born.current) / 1000 >= fadeDelay) {
+    if (sceneNow() - born.current >= fadeDelay) {
       const k = 1 - Math.exp(-dt * fadeSpeed);
       u.uOpacity.value += (target.current - u.uOpacity.value) * k;
       if (Math.abs(target.current - u.uOpacity.value) < 0.002) u.uOpacity.value = target.current;

@@ -390,7 +390,7 @@ export function PondGauge() {
   const step = (d: number) => {
     let p = pond + d;
     while (ponds && p >= ponds.min && p <= ponds.max && !exists(p)) p += d;
-    if (exists(p)) useGame.getState().setPond(p);
+    if (exists(p)) useGame.setState({ pond: p });
   };
   useEffect(() => {
     if (!level.pond) return;
@@ -422,7 +422,7 @@ export function PondGauge() {
             key={p}
             className={`gauge-floor ${p === pond ? 'current' : ''}`}
             disabled={busy || !exists(p)}
-            onClick={() => exists(p) && useGame.getState().setPond(p)}
+            onClick={() => exists(p) && useGame.setState({ pond: p })}
           >
             {exists(p) ? (
               <>

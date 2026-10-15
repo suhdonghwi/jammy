@@ -4,12 +4,13 @@ import * as THREE from 'three';
 import { useGame } from '../store/game';
 import { COLORS, SLAB_H } from './constants';
 import { field } from './field';
-import { frogWorld, now, type FrogSim } from './frogSim';
+import { frogWorld, type FrogSim } from './frogSim';
 import { frogGeometry, frogMaterial } from './models';
 import { getBlobTexture } from './shaders';
 import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
 import { goalEvents } from './goalEvents';
 import { toNum } from '../levels/level';
+import { sceneNow } from './sceneTime';
 
 const MAX_FROGS = 400;
 const BADGES = 24;
@@ -292,7 +293,7 @@ export function Frogs() {
     const b = body.current;
     const sh = shadows.current;
     if (!b || !sh) return;
-    const t = now();
+    const t = sceneNow();
     // Which frogs share which tile (for slot layout). A hopping frog already
     // counts on the tile it is landing on, so the frogs there make room while
     // it is in the air and it touches down straight into its own slot.
@@ -375,7 +376,7 @@ export function Frogs() {
       for (const f of dropLandings) {
         if (level.fast.guard(toNum(f.state)) !== true && level.fast.post(toNum(f.state)) === true) {
           goalEvents.push(f.x, f.y, f.pond);
-          f.cheerT0 = now();
+          f.cheerT0 = sceneNow();
         }
       }
     }
@@ -394,7 +395,7 @@ export function Frogs() {
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     const f = e.instanceId !== undefined ? visibleList.current[e.instanceId] : undefined;
-    if (f) useGame.getState().patch({ selected: f.state });
+    if (f) useGame.setState({ selected: f.state });
   };
 
   return (

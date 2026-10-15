@@ -183,7 +183,7 @@ export function World() {
       dpr={[1, 1.75]}
       camera={{ position: [3, 10, 12], fov: 36, near: 0.1, far: 500 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      onPointerMissed={() => useGame.getState().patch({ selected: null })}
+      onPointerMissed={() => useGame.setState({ selected: null })}
     >
       <Lights />
       <Controls />

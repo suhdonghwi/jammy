@@ -1,4 +1,4 @@
-import { clock } from './constants';
+import { sceneNow } from './sceneTime';
 
 // Animated heights of the area's slabs, per tile. Slabs rise and sink on the
 // GPU from (from, to, t0); the same function gives frogs and eggs their base
@@ -37,7 +37,7 @@ class AreaField {
   }
 
   /** 0..1 slab height at a tile right now. */
-  heightAt(x: number, y: number, t = clock.now()): number {
+  heightAt(x: number, y: number, t = sceneNow()): number {
     const a = this.anims.get(key(Math.round(x), Math.round(y)));
     return a ? animValue(a, t) : 0;
   }
@@ -47,7 +47,7 @@ class AreaField {
    * new tiles rise and removed tiles sink; otherwise they appear instantly.
    */
   update(tiles: TileFlags[], animate: boolean) {
-    const now = clock.now();
+    const now = sceneNow();
     const next = new Map<string, SlabAnim>();
     for (const tile of tiles) {
       const k = key(tile.x, tile.y);
@@ -70,7 +70,7 @@ class AreaField {
 
   /** Drop slabs that have finished sinking. Returns true if anything changed. */
   prune(): boolean {
-    const now = clock.now();
+    const now = sceneNow();
     let changed = false;
     for (const [k, a] of this.anims) {
       if (a.to === 0 && now - a.t0 > RISE_DUR) {

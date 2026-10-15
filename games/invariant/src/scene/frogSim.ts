@@ -46,9 +46,6 @@ export interface FrogSim {
   touched?: boolean;
 }
 
-/** Scene time in seconds (paused while the page is hidden). */
-export const now = sceneNow;
-
 /** Facing toward tile (tx, ty) from (fx, fy); 0 faces the viewer. */
 export const yawToward = (fx: number, fy: number, tx: number, ty: number) => Math.atan2(tx - fx, -(ty - fy));
 
@@ -143,7 +140,7 @@ class FrogWorld {
     const tx = Number(next[level.view.x]);
     const ty = Number(next[level.view.y]);
     if (tx !== f.x || ty !== f.y) f.face = yawToward(f.x, f.y, tx, ty);
-    f.hop = { fx: f.x, fy: f.y, tx, ty, t0: now(), dur };
+    f.hop = { fx: f.x, fy: f.y, tx, ty, t0: sceneNow(), dur };
     const batch = quiet ? null : joinHopBatch(dur);
     return new Promise((res) =>
       after(dur * 1000, () => {
@@ -155,7 +152,7 @@ class FrogWorld {
         if (batch) landInBatch(batch, holds(level.guard, next));
         if (!holds(level.guard, next) && holds(level.post, next)) {
           goalEvents.push(tx, ty, f.pond);
-          f.cheerT0 = now();
+          f.cheerT0 = sceneNow();
         }
         res();
       }),

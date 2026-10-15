@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { CompiledLevel } from '../levels/level';
 import type { FastFn } from '../lang/eval';
-import { clock, SLAB_H, TILE } from './constants';
+import { SLAB_H, TILE } from './constants';
 import { field, RISE_DUR, type TileFlags } from './field';
 import { cameraRig } from './cameraRig';
 import { colorUniform, getBlobTexture, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, goalUniforms } from './shaders';
@@ -15,7 +15,7 @@ import { eggsNear, tileState } from './tiles';
 import { occupancy, slotFor, type Slot } from './occupancy';
 import { goalEvents } from './goalEvents';
 import { GoalColumns } from './GoalColumns';
-import { after } from './sceneTime';
+import { after, sceneNow } from './sceneTime';
 
 const HEIGHT_GLSL = /* glsl */ `
 attribute vec2 aTile;
@@ -388,7 +388,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
   useFrame((_, frameDt) => {
     // the first frame after the page was hidden carries the whole gap: don't let fades jump
     const dt = Math.min(frameDt, 0.1);
-    const t = clock.now();
+    const t = sceneNow();
     material.uniforms.uTime.value = t;
     shadowMat.uniforms.uTime.value = t;
     const g = useGame.getState();
@@ -439,7 +439,7 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
     const hide = new Float32Array(n);
     const slot = new Float32Array(n * 4);
     const slotAnim = new Float32Array(n * 3);
-    const now = clock.now();
+    const now = sceneNow();
     const visibleEggs = new Set<string>();
     const eggSlots = new Map<string, Slot>();
     eggs.forEach(([x, y], i) => {
@@ -498,7 +498,7 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
         uniforms: {
           uTime: { value: 0 },
           uEgg: colorUniform('egg'),
-          uAppearT0: { value: clock.now() },
+          uAppearT0: { value: sceneNow() },
           uAppearCenter: { value: new THREE.Vector2(win.cx, win.cy) },
           ...fadeUniforms(),
         },
@@ -535,7 +535,7 @@ function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond: numbe
     [],
   );
   useFrame(() => {
-    const t = clock.now();
+    const t = sceneNow();
     material.uniforms.uTime.value = t;
     shadowMat.uniforms.uTime.value = t;
     updateFade(material.uniforms);

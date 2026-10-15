@@ -3,11 +3,12 @@ import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
 import { useGame } from '../store/game';
-import { clock, COLORS, SLAB_H } from './constants';
+import { COLORS, SLAB_H } from './constants';
 import { field, RISE_DUR } from './field';
 import { goalEvents } from './goalEvents';
 import { MAX_EVENTS } from './shaders';
 import { tileState } from './tiles';
+import { sceneNow } from './sceneTime';
 
 // A column of warm light over every goal pool, like a checkpoint pad: clearest
 // at its edges and fading upward. When a frog lands on a goal, its column
@@ -136,14 +137,14 @@ export function GoalColumns({
         uniforms: {
           uTime: { value: 0 },
           uColor: { value: new THREE.Color(COLORS.goal) },
-          uAppearT0: { value: clock.now() },
+          uAppearT0: { value: sceneNow() },
           uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
         },
       }),
     [],
   );
   useFrame(() => {
-    material.uniforms.uTime.value = clock.now();
+    material.uniforms.uTime.value = sceneNow();
     const g = useGame.getState();
     goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.pond ? g.pond : undefined);
   });

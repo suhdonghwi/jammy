@@ -115,10 +115,7 @@ export interface Game {
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
   backToMenu(view?: 'home' | 'levels'): void;
   setFormula(text: string): void;
-  setPond(p: number): void;
-  setCaption(c: Caption | null): void;
   setReveal(r: Partial<Reveal>): void;
-  patch(p: Partial<Game>): void;
 }
 
 export const useGame = create<Game>((set, get) => ({
@@ -209,21 +206,11 @@ export const useGame = create<Game>((set, get) => ({
       failMark: null,
     });
   },
-  setPond(p) {
-    set({ pond: p });
-  },
-  setCaption(c) {
-    set({ caption: c });
-  },
   setReveal(r) {
     set({ reveal: { ...get().reveal, ...r } });
   },
-  patch(p) {
-    set(p);
-  },
 }));
 
-export const game = () => useGame.getState();
 
 /**
  * A Next button for a step that isn't ready yet (its scene is still playing).

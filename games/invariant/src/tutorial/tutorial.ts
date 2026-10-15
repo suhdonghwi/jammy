@@ -1,6 +1,6 @@
 import { show } from '../lang/ast';
 import { compileFormula, type Rule } from '../levels/level';
-import { earlyNextAction, EMPTY_REVEAL, game, useGame, type Game, type Reveal } from '../store/game';
+import { earlyNextAction, EMPTY_REVEAL, useGame, type Game, type Reveal } from '../store/game';
 import { director, events } from '../director/director';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogSim';
@@ -38,8 +38,8 @@ let captionShownAt = 0;
 
 function say(text: string, spot: Spot = null, tone: 'info' | 'fail' | 'success' | 'muted' = 'info', reserve?: string) {
   captionShownAt = performance.now();
-  game().setCaption({ text, tone, action: reserve ? earlyNextAction(reserve) : undefined });
-  game().patch({ spotlight: spot });
+  useGame.setState({ caption: { text, tone, action: reserve ? earlyNextAction(reserve) : undefined } });
+  useGame.setState({ spotlight: spot });
 }
 
 /** Show a caption with a button and wait for it. */
@@ -47,19 +47,19 @@ function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone
   return new Promise((resolve, reject) => {
     // the guard counts from when this caption (and its button) first appeared,
     // not from the invisible moment the button becomes ready
-    const shownAt = game().caption?.text === text ? captionShownAt : performance.now();
+    const shownAt = useGame.getState().caption?.text === text ? captionShownAt : performance.now();
     pendingNext = () => {
       // a fast double click must not also press the next caption's button
       if (performance.now() - shownAt < 120) return;
       pendingNext = null;
-      game().patch({ spotlight: null, nextAction: null });
+      useGame.setState({ spotlight: null, nextAction: null });
       if (gen !== generation) reject(new Aborted());
       else resolve();
     };
-    const secondary = game().caption?.text === text ? game().caption?.secondary : undefined;
+    const secondary = useGame.getState().caption?.text === text ? useGame.getState().caption?.secondary : undefined;
     const action = { label, onClick: () => pendingNext?.() };
-    game().setCaption({ text, tone, action, secondary });
-    game().patch({ spotlight: spot, nextAction: action });
+    useGame.setState({ caption: { text, tone, action, secondary } });
+    useGame.setState({ spotlight: spot, nextAction: action });
   });
 }
 
@@ -90,7 +90,7 @@ function allow(a: Partial<Game['tutorialAllow']>) {
 
 /** Keep the caption currently shown (e.g. a counterexample) until Next. */
 function holdCaption(gen: number, label = 'Next'): Promise<void> {
-  const c = game().caption;
+  const c = useGame.getState().caption;
   return next(gen, c?.text ?? '', label, null, (c?.tone as 'info' | 'fail' | 'success') ?? 'info');
 }
 
@@ -111,7 +111,7 @@ function waitEvent(gen: number, name: 'stepped' | 'runDone', until?: () => boole
 }
 
 function normalize(text: string): string | null {
-  const level = game().level;
+  const level = useGame.getState().level;
   if (!level) return null;
   const f = compileFormula(level, text);
   return f.ok ? show(f.expr) : null;
@@ -119,7 +119,7 @@ function normalize(text: string): string | null {
 
 /** Called by the Check button in tutorial mode. */
 export function tutorialCheck() {
-  const g = game();
+  const g = useGame.getState();
   if (!pendingCheck || !expected) return;
   if (g.formula && !g.formula.ok) {
     useGame.setState((st) => ({ errorNudge: st.errorNudge + 1 }));
@@ -127,11 +127,11 @@ export function tutorialCheck() {
   }
   const got = normalize(g.formulaText);
   if (!got || !expected.accepted.includes(got)) {
-    g.setCaption({
+    useGame.setState({ caption: {
       text: `For this step, type exactly \`${expected.display}\` — press Tab to fill it in.`,
       tone: 'fail',
-    });
-    g.patch({ spotlight: 'formula' });
+    } });
+    useGame.setState({ spotlight: 'formula' });
     return;
   }
   pendingCheck();
@@ -151,7 +151,7 @@ async function attempt(gen: number, formula: string, alternatives: string[], rul
     display: formula,
     accepted: [formula, ...alternatives].map((t) => normalize(t)).filter((t): t is string => !!t),
   };
-  game().patch({ suggestion: formula, callouts: [] });
+  useGame.setState({ suggestion: formula, callouts: [] });
   for (;;) {
     await new Promise<void>((resolve, reject) => {
       pendingCheck = () => {
@@ -162,14 +162,14 @@ async function attempt(gen: number, formula: string, alternatives: string[], rul
       };
       useGame.setState({ awaitingCheck: true });
     });
-    game().patch({ spotlight: null });
+    useGame.setState({ spotlight: null });
     frogWorld.clear('test');
     say('Checking…', null, 'muted');
     const res = await director.runChecker(rules);
     guard(gen);
     if (res) {
       expected = null;
-      game().patch({ suggestion: null });
+      useGame.setState({ suggestion: null });
       return res;
     }
   }
@@ -214,9 +214,9 @@ const STEPS: Step[] = [
     run: (gen) =>
       beat(gen, 'This frog is a **program state**. It sits at `i = 0, n = 3`: its position on the plane *is* its values.', {
         prepare: async () => {
-          game().setReveal({ axes: true });
+          useGame.getState().setReveal({ axes: true });
           // the frog's own tag shows its values (and animates them as it hops)
-          game().patch({ frogTags: true });
+          useGame.setState({ frogTags: true });
           director.spawnReal(st(0, 3));
           await director.sleep(600);
         },
@@ -227,13 +227,13 @@ const STEPS: Step[] = [
     run: (gen) =>
       beat(gen, 'Here is the **program**. The loop runs its body again and again while `i < n`.', {
         spot: 'code',
-        prepare: () => game().setReveal({ code: true }),
+        prepare: () => useGame.getState().setReveal({ code: true }),
       }),
   },
   {
     scene: { reveal: { axes: true, code: true }, frogs: [[0, 3]], tags: true },
     run: async (gen) => {
-      game().setReveal({ step: true });
+      useGame.getState().setReveal({ step: true });
       allow({ step: true });
       say('Press **Step** to run the loop body once.', 'step');
       await waitEvent(gen, 'stepped');
@@ -249,7 +249,7 @@ const STEPS: Step[] = [
         gen,
         'Now `i < n` is false (`3 < 3`), so the loop ends and the frog **stops**.\n\n- Striped tiles are where the loop stops.\n- Hover over any tile to preview where a frog there would hop.',
         {
-          prepare: () => game().setReveal({ stop: true, hover: true }),
+          prepare: () => useGame.getState().setReveal({ stop: true, hover: true }),
           settle: 1000,
           callouts: [{ x: 3, y: 3, text: 'stops: 3 < 3 is false', tone: 'info' }],
         },
@@ -262,8 +262,8 @@ const STEPS: Step[] = [
         callouts: [{ x: 0, y: 2, text: 'egg: input n = 2', tone: 'info' }],
         prepare: () => {
           director.clearFrogs();
-          game().patch({ frogTags: false });
-          game().setReveal({ eggs: true });
+          useGame.setState({ frogTags: false });
+          useGame.getState().setReveal({ eggs: true });
         },
         settle: 1100,
       }),
@@ -273,14 +273,14 @@ const STEPS: Step[] = [
     run: (gen) =>
       beat(gen, 'What we want when the loop ends: `i == n`.\n\nThe amber pools are the **goals**. Every frog should finish on one.', {
         callouts: [{ x: 2, y: 2, text: 'goal: i == n', tone: 'info' }],
-        prepare: () => game().setReveal({ goals: true }),
+        prepare: () => useGame.getState().setReveal({ goals: true }),
         settle: 1000,
       }),
   },
   {
     scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true } },
     run: async (gen) => {
-      game().setReveal({ run: true });
+      useGame.getState().setReveal({ run: true });
       useGame.setState({ callouts: [] });
       allow({ run: true });
       say('Press **Run** to hatch every egg and run all the frogs at once.', 'run');
@@ -317,7 +317,7 @@ const STEPS: Step[] = [
           prepare: async () => {
             director.clearFrogs();
             await cameraRig.lookAtTile(2, 2, 15.6);
-            game().setReveal({ formula: true, lights: ['init'] });
+            useGame.getState().setReveal({ formula: true, lights: ['init'] });
           },
           settle: 500,
         },
@@ -344,7 +344,7 @@ const STEPS: Step[] = [
     run: (gen) =>
       beat(gen, '**Rule 1 · Init:** every egg must sit on your area.\n\nOnly the egg at `n = 0` was on `i == n`.', {
         spot: 'lights',
-        prepare: () => game().patch({ failMark: null }),
+        prepare: () => useGame.setState({ failMark: null }),
         callouts: [{ x: 0, y: 0, text: 'on your area', tone: 'good' }],
       }),
   },
@@ -352,7 +352,7 @@ const STEPS: Step[] = [
   {
     scene: { reveal: { ...BASE, lights: ['init'] }, formula: 'i == n', camera: [2, 2, 15.6] },
     run: async (gen) => {
-      game().setReveal({ lights: ['init', 'pres'] });
+      useGame.getState().setReveal({ lights: ['init', 'pres'] });
       say('A frog is either at the start, or done.\n\nType `i == 0 || i == n`, then **Check**.', 'check');
       const res = await attempt(gen, 'i == 0 || i == n', ['i == n || i == 0'], ['init', 'pres']);
       const cex = failureOf(res, 'pres');
@@ -415,7 +415,7 @@ const STEPS: Step[] = [
   {
     scene: { reveal: { ...BASE, lights: ['init', 'pres'] }, formula: 'i >= 0', camera: [1.5, 3, 12] },
     run: async (gen) => {
-      game().setReveal({ lights: ['init', 'pres', 'exit'] });
+      useGame.getState().setReveal({ lights: ['init', 'pres', 'exit'] });
       useGame.setState({ callouts: [] });
       director.clearFrogs();
       say('**Rule 3 · Exit:** a frog that stops on your area must be on a goal. Let’s check it.', 'lights');
@@ -477,7 +477,7 @@ const TUTORIAL_CAMERA: [number, number, number] = [2, 2, 13];
 function restore(gen: number, scene: Scene) {
   director.interrupt();
   allow({});
-  game().patch({
+  useGame.setState({
     reveal: { ...EMPTY_REVEAL, ...scene.reveal },
     frogTags: !!scene.tags,
     callouts: [],
@@ -485,7 +485,7 @@ function restore(gen: number, scene: Scene) {
     suggestion: null,
     awaitingCheck: false,
   });
-  game().setFormula(scene.formula ?? '');
+  useGame.getState().setFormula(scene.formula ?? '');
   // instant: frogs are simply put back, and the camera glides back while the
   // step's caption is already showing
   for (const [i, n] of scene.frogs ?? []) director.placeReal(st(i, n));
@@ -508,7 +508,7 @@ export function startTutorial(from = 0, rewound = false) {
     }
     for (let i = from; i < STEPS.length; i++) {
       stepIndex = i;
-      game().patch({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
+      useGame.setState({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
       await STEPS[i].run(gen);
       guard(gen);
     }

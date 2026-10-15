@@ -5,9 +5,9 @@ import { checkFormula, type CheckResult, type Formula } from '../checker/check';
 import type { Counterexample } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
 import { hop, RULES, running, showState, toBig, type CompiledLevel, type Rule } from '../levels/level';
-import { earlyNextAction, game, type CaptionTone } from '../store/game';
+import { earlyNextAction, useGame, type CaptionTone } from '../store/game';
 import { cameraRig } from '../scene/cameraRig';
-import { frogWorld, now, type FrogSim } from '../scene/frogSim';
+import { frogWorld, type FrogSim } from '../scene/frogSim';
 import { handState } from '../scene/handState';
 import { field } from '../scene/field';
 import { occupancy } from '../scene/occupancy';
@@ -15,7 +15,7 @@ import { HATCH_EMERGE, hatchFx } from '../scene/Hatch';
 import { SLAB_H } from '../scene/constants';
 import { areaNear, eggsNear, tileState } from '../scene/tiles';
 import { bridgeState } from '../scene/Bridge';
-import { after, sceneSleep } from '../scene/sceneTime';
+import { after, sceneNow, sceneSleep } from '../scene/sceneTime';
 
 // ---------------------------------------------------------------------------
 // Sequencing: every sequence gets a token; starting a new one cancels the old.
@@ -43,10 +43,10 @@ function tween(target: object, vars: gsap.TweenVars): Promise<void> {
   });
 }
 
-const lvl = (): CompiledLevel => game().level!;
+const lvl = (): CompiledLevel => useGame.getState().level!;
 
 function caption(text: string, tone: CaptionTone = 'info', action?: { label: string; onClick: () => void }) {
-  game().setCaption({ text, tone, action });
+  useGame.setState({ caption: { text, tone, action } });
 }
 
 /** A state as inline code in captions, e.g. `n = 0, i = 1`. */
@@ -54,7 +54,7 @@ const fmt = (s: State) => '`' + showState(lvl(), s) + '`';
 
 /** Mark the tile where a check failed, with a short reason. */
 function markFailure(x: number, y: number, label: string) {
-  game().patch({ failMark: { x, y, label, t0: performance.now() } });
+  useGame.setState({ failMark: { x, y, label, t0: performance.now() } });
 }
 
 // ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   // the frog hops forward and down onto the tile, clearing the fingertips
   f.carried = undefined;
   f.carryOff = undefined;
-  f.drop = { t0: now(), dur: 0.5, from: SET_DOWN, arc: 0.32, dx: 0, dy: BEHIND };
+  f.drop = { t0: sceneNow(), dur: 0.5, from: SET_DOWN, arc: 0.32, dx: 0, dy: BEHIND };
   await sleep(380);
   if (!tok.alive) return null;
   await tween(handState, { palmUp: 0, tilt: 0, curl: 0.15, y: base + 2.2, z: -y - BEHIND - 0.8, duration: 0.45, ease: 'power2.inOut' });
@@ -145,10 +145,10 @@ async function focusState(s: State, far = false) {
   const y = Number(s[L.view.y]);
   if (L.pond) {
     const p = Number(s[L.pond]);
-    if (p !== game().pond) {
-      game().setPond(p);
+    if (p !== useGame.getState().pond) {
+      useGame.setState({ pond: p });
       await sleep(80);
-      while (game().elevating) await sleep(60);
+      while (useGame.getState().elevating) await sleep(60);
     }
   }
   if (far) {
@@ -172,11 +172,11 @@ function eggStatesNear(maxCount: number, radius: number): State[] {
   const tx = t.x;
   const ty = -t.z;
   const R = Math.ceil(radius);
-  return eggsNear(L, game().pond, Math.round(tx), Math.round(ty), R)
+  return eggsNear(L, useGame.getState().pond, Math.round(tx), Math.round(ty), R)
     .filter(([x, y]) => !frogWorld.hatched.has(`${x},${y}`) && Math.hypot(x - tx, y - ty) <= radius)
     .sort((a, b) => Math.hypot(a[0] - tx, a[1] - ty) - Math.hypot(b[0] - tx, b[1] - ty))
     .slice(0, maxCount)
-    .map(([x, y]) => toBig(tileState(L, x, y, game().pond)));
+    .map(([x, y]) => toBig(tileState(L, x, y, useGame.getState().pond)));
 }
 
 function hatch(s: State): FrogSim {
@@ -187,14 +187,14 @@ function hatch(s: State): FrogSim {
   const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
   hatchFx.push({ x, y, pond: L.pond ? Number(s[L.pond]) : undefined, dx: slot.dx, dy: slot.dy, s: slot.scale });
   frogWorld.markHatched(x, y);
-  const f = frogWorld.add(L, 'real', s, { hatchT0: now() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
+  const f = frogWorld.add(L, 'real', s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
   f.stopped = !running(L, s);
   return f;
 }
 
 function activeReal(): FrogSim[] {
   const L = lvl();
-  const pond = game().pond;
+  const pond = useGame.getState().pond;
   return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.stopped && (!L.pond || f.pond === pond));
 }
 
@@ -207,7 +207,7 @@ async function hopAllOnce(dur = 0.42): Promise<number> {
   const L = lvl();
   const frogs = activeReal();
   if (frogs.length === 0) return 0;
-  game().patch({ stepping: true });
+  useGame.setState({ stepping: true });
   try {
     await Promise.all(
       frogs.map((f) => {
@@ -218,10 +218,10 @@ async function hopAllOnce(dur = 0.42): Promise<number> {
       }),
     );
   } finally {
-    game().patch({ stepping: false });
+    useGame.setState({ stepping: false });
   }
-  const sel = game().selected;
-  if (frogs.length === 1 || sel) game().patch({ selected: frogs[0].state });
+  const sel = useGame.getState().selected;
+  if (frogs.length === 1 || sel) useGame.setState({ selected: frogs[0].state });
   return frogs.length;
 }
 
@@ -236,7 +236,7 @@ export const director = {
     hatchFx.clear();
     Object.assign(handState, { visible: 0 });
     bridgeState.active = false;
-    game().patch({ busy: false, running: false, selected: null, cinematic: false, failMark: null });
+    useGame.setState({ busy: false, running: false, selected: null, cinematic: false, failMark: null });
   },
 
   /**
@@ -249,13 +249,13 @@ export const director = {
     occupancy.eggs = new Set();
     hatchFx.clear();
     Object.assign(handState, { visible: 0 });
-    game().patch({ busy: false, running: false, stepping: false, checking: false, selected: null, failMark: null });
+    useGame.setState({ busy: false, running: false, stepping: false, checking: false, selected: null, failMark: null });
   },
 
   clearFrogs() {
     begin();
     frogWorld.clear();
-    game().patch({ running: false, selected: null, failMark: null });
+    useGame.setState({ running: false, selected: null, failMark: null });
   },
 
   /** Put a real frog straight on its tile (no hatching): rebuilding a scene. */
@@ -264,19 +264,19 @@ export const director = {
     frogWorld.markHatched(Number(s[L.view.x]), Number(s[L.view.y]));
     const f = frogWorld.add(L, 'real', s);
     f.stopped = !running(L, s);
-    game().patch({ selected: s });
+    useGame.setState({ selected: s });
     return f;
   },
 
   /** Hatch one real frog (tutorial beat 1). */
   spawnReal(s: State): FrogSim {
     const f = hatch(s);
-    game().patch({ selected: s });
+    useGame.setState({ selected: s });
     return f;
   },
 
   async step(scripted = false) {
-    const g = game();
+    const g = useGame.getState();
     if (g.busy || g.running || g.stepping) return;
     if (!scripted && g.mode === 'tutorial' && !g.tutorialAllow.step) return;
     if (activeReal().length === 0 && !frogWorld.frogs.some((f) => f.kind === 'real')) {
@@ -289,13 +289,13 @@ export const director = {
   },
 
   async run() {
-    const g = game();
+    const g = useGame.getState();
     if (g.busy || g.running || g.stepping) return;
     if (g.mode === 'tutorial' && !g.tutorialAllow.run) return;
     const tok = begin();
     frogWorld.clear('test');
     // running from the first moment (Step is disabled while eggs hatch)
-    game().patch({ failMark: null, running: true });
+    useGame.setState({ failMark: null, running: true });
     gsap.to(handState, { visible: 0, duration: 0.3 });
     if (activeReal().length === 0) {
       frogWorld.clear('real');
@@ -304,32 +304,32 @@ export const director = {
       await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
     }
     let beats = 0;
-    while (tok.alive && game().running && beats < 80) {
+    while (tok.alive && useGame.getState().running && beats < 80) {
       const n = await hopAllOnce(0.34);
       if (n === 0) break;
       beats++;
       await sleep(90);
     }
     if (tok.alive) {
-      game().patch({ running: false });
+      useGame.setState({ running: false });
       // only a run where every frog has stopped counts as done (not a pause)
       if (activeReal().length === 0) events.emit('runDone');
     }
   },
 
   pause() {
-    game().patch({ running: false });
+    useGame.setState({ running: false });
   },
 
   /** Run a single egg's frog (clicking an egg). */
   async runEgg(s: State) {
-    const g = game();
+    const g = useGame.getState();
     if (g.busy || g.stepping) return;
     const f = hatch(s);
-    game().patch({ selected: s });
+    useGame.setState({ selected: s });
     // during a run, the run moves the new frog along with the others
     if (g.running) return;
-    game().patch({ stepping: true });
+    useGame.setState({ stepping: true });
     try {
       await sleep(350);
       const L = lvl();
@@ -338,21 +338,21 @@ export const director = {
         const n = hop(L, f.state);
         await frogWorld.hopTo(L, f, n, 0.36);
         f.stopped = !running(L, n);
-        if (game().selected) game().patch({ selected: n });
+        if (useGame.getState().selected) useGame.setState({ selected: n });
         k++;
       }
     } finally {
-      game().patch({ stepping: false });
+      useGame.setState({ stepping: false });
     }
   },
 
   clickTile(x: number, y: number) {
-    const g = game();
+    const g = useGame.getState();
     if (g.busy || !g.reveal.eggs) return;
     if (g.mode === 'tutorial' && !g.tutorialAllow.eggs) return;
     const isEgg = eggsNear(lvl(), g.pond, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
     if (!isEgg || frogWorld.hatched.has(`${x},${y}`)) {
-      game().patch({ selected: null });
+      useGame.setState({ selected: null });
       return;
     }
     void director.runEgg(toBig(tileState(lvl(), x, y, g.pond)));
@@ -363,15 +363,15 @@ export const director = {
   // -------------------------------------------------------------------------
 
   async runChecker(rules: Rule[] = RULES, formula?: Formula): Promise<CheckResult | null> {
-    const g = game();
+    const g = useGame.getState();
     const inv = formula ?? g.valid;
     if (!g.level || !inv) return null;
     if (!formula && g.formula && !g.formula.ok) return null;
     const t = cameraRig.target();
     const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, pondR: 20, pond: g.pond };
-    const keep = { ...game().verdicts };
+    const keep = { ...g.verdicts };
     for (const r of rules) delete keep[r];
-    if (!formula) game().patch({ checking: true, verdicts: keep, failMark: null });
+    if (!formula) useGame.setState({ checking: true, verdicts: keep, failMark: null });
     let tapping = false;
     const tapTimer = setTimeout(() => {
       tapping = true;
@@ -381,7 +381,7 @@ export const director = {
     try {
       const ctx = await browserZ3();
       const res = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
-      if (!formula) game().patch({ verdicts: { ...keep, ...res.verdicts }, pitfallMessage: res.pitfall?.message ?? null });
+      if (!formula) useGame.setState({ verdicts: { ...keep, ...res.verdicts }, pitfallMessage: res.pitfall?.message ?? null });
       return res;
     } catch (e) {
       caption(`The solver could not start: ${(e as Error).message}`, 'fail');
@@ -389,7 +389,7 @@ export const director = {
     } finally {
       clearTimeout(tapTimer);
       if (tapping) gsap.to(handState, { tap: 0, duration: 0.2 });
-      if (!formula) game().patch({ checking: false });
+      if (!formula) useGame.setState({ checking: false });
     }
   },
 
@@ -397,7 +397,7 @@ export const director = {
   async playCounterexample(cex: Counterexample, opts: { prefix?: string; extra?: string; reserveNext?: boolean } = {}) {
     const tok = begin();
     const L = lvl();
-    game().patch({ busy: true, running: false, failMark: null });
+    useGame.setState({ busy: true, running: false, failMark: null });
     frogWorld.clear();
     const x = Number(cex.state[L.view.x]);
     const y = Number(cex.state[L.view.y]);
@@ -415,16 +415,16 @@ export const director = {
         hatch(cex.state);
         await sleep(450);
         markFailure(x, y, 'starts outside your area');
-        game().patch({ selected: cex.state });
+        useGame.setState({ selected: cex.state });
         text = `${prefix}This frog starts at ${fmt(cex.state)} — outside your area.${broken}`;
       } else {
         const f = await placeTestFrog(tok, cex.state);
         if (!f || !tok.alive) return;
-        game().patch({ selected: cex.state });
+        useGame.setState({ selected: cex.state });
         await sleep(380);
         if (cex.rule === 'pres' && cex.next) {
           await frogWorld.hopTo(L, f, cex.next, 0.55);
-          game().patch({ selected: cex.next });
+          useGame.setState({ selected: cex.next });
           markFailure(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]), 'lands outside your area');
           if (!tok.alive) return;
           await pointAt(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]));
@@ -440,24 +440,24 @@ export const director = {
       if (opts.reserveNext) {
         // The tutorial adds Next here: if it's already waiting (this is a replay),
         // keep its live button; otherwise show one that skips ahead if pressed early.
-        const waiting = game().nextAction;
-        game().setCaption({
+        const waiting = useGame.getState().nextAction;
+        useGame.setState({ caption: {
           text,
           tone: 'fail',
           action: waiting ?? earlyNextAction(),
           secondary: replay,
-        });
+        } });
       } else caption(text, 'fail', replay);
       await sleep(600);
       if (tok.alive) await handOut();
     } finally {
-      if (tok.alive) game().patch({ busy: false });
+      if (tok.alive) useGame.setState({ busy: false });
     }
   },
 
   async playShrug(text: string) {
     const tok = begin();
-    game().patch({ busy: true });
+    useGame.setState({ busy: true });
     try {
       const t = cameraRig.target();
       await handIn(t.x + 0.5, -t.z + 1.5, 2.0, { curl: 0.05, point: 0, tilt: 0.2 });
@@ -469,7 +469,7 @@ export const director = {
       caption(text, 'muted');
       await handOut();
     } finally {
-      if (tok.alive) game().patch({ busy: false });
+      if (tok.alive) useGame.setState({ busy: false });
     }
   },
 
@@ -477,18 +477,18 @@ export const director = {
   async playRain() {
     const tok = begin();
     const L = lvl();
-    game().patch({ busy: true, running: false, selected: null });
+    useGame.setState({ busy: true, running: false, selected: null });
     frogWorld.clear();
     try {
       await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
-      const inv = game().valid;
+      const inv = useGame.getState().valid;
       if (!inv) return;
       const t = cameraRig.target();
       const tx = t.x;
       const ty = -t.z;
-      const tiles: State[] = areaNear(L, game().pond, inv.fast, Math.round(tx), Math.round(ty), 16)
+      const tiles: State[] = areaNear(L, useGame.getState().pond, inv.fast, Math.round(tx), Math.round(ty), 16)
         .filter(([x, y]) => Math.hypot(x - tx, y - ty) <= 15)
-        .map(([x, y]) => toBig(tileState(L, x, y, game().pond)));
+        .map(([x, y]) => toBig(tileState(L, x, y, useGame.getState().pond)));
       // shuffle and cap
       for (let i = tiles.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -503,7 +503,7 @@ export const director = {
       pick.forEach((s, i) => {
         after((i / pick.length) * 1600 + Math.random() * 120, () => {
           if (!tok.alive) return;
-          const f = frogWorld.add(L, 'test', s, { drop: { t0: now(), dur: 0.5 + Math.random() * 0.3, from: 5 + Math.random() * 2 } });
+          const f = frogWorld.add(L, 'test', s, { drop: { t0: sceneNow(), dur: 0.5 + Math.random() * 0.3, from: 5 + Math.random() * 2 } });
           frogs.push(f);
         });
       });
@@ -514,13 +514,13 @@ export const director = {
       const movers = frogs.filter((f) => running(L, f.state));
       await Promise.all(movers.map((f) => frogWorld.hopTo(L, f, hop(L, f.state), 0.45)));
     } finally {
-      if (tok.alive) game().patch({ busy: false });
+      if (tok.alive) useGame.setState({ busy: false });
     }
   },
 
   async bridge() {
     const tok = begin();
-    game().patch({ busy: true, cinematic: true });
+    useGame.setState({ busy: true, cinematic: true });
     bridgeState.active = true;
     bridgeState.t = 0;
     try {
@@ -537,9 +537,9 @@ export const director = {
       await sleep(1600);
     } finally {
       bridgeState.active = false;
-      game().patch({ cinematic: false });
+      useGame.setState({ cinematic: false });
       if (tok.alive) {
-        game().patch({ busy: false });
+        useGame.setState({ busy: false });
         const cam = lvl().camera ?? { x: 0, y: 0 };
         void cameraRig.resetAngle();
         await cameraRig.lookAtTile(cam.x, cam.y, cam.distance ?? 14);

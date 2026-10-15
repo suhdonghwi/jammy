@@ -5,7 +5,7 @@ import { useGame } from '../store/game';
 import { SLAB_H } from './constants';
 import { eggGeometry } from './AreaLayer';
 import { field } from './field';
-import { now } from './frogSim';
+import { sceneNow } from './sceneTime';
 import { colorUniform, GLSL_COMMON } from './shaders';
 
 // Hatching: the egg wobbles, cracks along a zigzag, its cap pops off and
@@ -37,7 +37,7 @@ const active: HatchFx[] = [];
 
 export const hatchFx = {
   push(fx: Omit<HatchFx, 't0' | 'dir'>) {
-    active.push({ ...fx, t0: now(), dir: Math.random() * Math.PI * 2 });
+    active.push({ ...fx, t0: sceneNow(), dir: Math.random() * Math.PI * 2 });
     if (active.length > MAX) active.shift();
   },
   clear() {
@@ -115,7 +115,7 @@ export function HatchShells() {
     const a = cup.current;
     const b = cap.current;
     if (!a || !b) return;
-    const t = now();
+    const t = sceneNow();
     while (active.length && t - active[0].t0 > HATCH_WOBBLE + Math.max(CAP_LIFE, CUP_LIFE)) active.shift();
     let na = 0;
     let nb = 0;

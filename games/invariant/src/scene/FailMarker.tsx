@@ -7,7 +7,7 @@ import { COLORS, SLAB_H } from "./constants";
 import { field } from "./field";
 import { frogWorld, type FrogSim } from "./frogSim";
 import { SceneTag, type TagTone } from "./SceneTag";
-import { sceneMs } from './sceneTime';
+import { sceneNow } from './sceneTime';
 
 // Where a check failed: a pulsing red outline and wash on the tile, and a small
 // tag above it saying what went wrong. Frogs keep their own colours.
@@ -61,7 +61,7 @@ export function TileTag({
   const group = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
   const washRef = useRef<THREE.Mesh>(null);
-  const t0 = useRef(sceneMs());
+  const t0 = useRef(sceneNow());
   const leftAt = useRef<number | null>(null);
   const geoms = useMemo(() => {
     const outer = roundedRect(1.0, 0.17);
@@ -77,7 +77,7 @@ export function TileTag({
   useFrame(() => {
     const g = group.current;
     if (!g) return;
-    const t = (sceneMs() - t0.current) / 1000;
+    const t = sceneNow() - t0.current;
     const base = field.heightAt(x, y) * SLAB_H;
     g.position.set(x, base + 0.012, -y);
     if (leaving && leftAt.current === null) leftAt.current = performance.now();

@@ -1,5 +1,3 @@
-import { sceneNow } from './sceneTime';
-
 // Visual language: everything the level fixes is quiet grayscale; the learner's
 // area is the only saturated surface (blue slabs). Goals are amber, real frogs
 // green, test frogs violet, failures red.
@@ -32,11 +30,3 @@ export const COLORS = {
 export const SLAB_H = 0.24;
 export const TILE = 0.9;
 export const POND_SPACING = 6;
-
-export const clock = {
-  /** Seconds since start, in scene time (paused while the page is hidden) — used by GPU-side animations. */
-  t0: sceneNow(),
-  now() {
-    return sceneNow() - this.t0;
-  },
-};
