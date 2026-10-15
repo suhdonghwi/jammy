@@ -5,7 +5,10 @@ game is, see [design.md](design.md); for how it should feel, see
 [experience.md](experience.md).
 
 Stack: Vite, React, TypeScript, react-three-fiber (three.js) with drei,
-zustand, GSAP, CodeMirror 6, Tailwind CSS v4, z3-solver (WebAssembly).
+zustand, GSAP, Tailwind CSS v4, z3-solver (WebAssembly). The area box is a
+plain textarea over a coloured copy of its text; the 3D title's letter
+outlines are read from the font at build time (`scripts/title-glyphs.ts`); the
+Korean fonts are subsets made by `pnpm fonts`.
 
 ## Layout
 
@@ -14,7 +17,8 @@ src/
   main.tsx, App.tsx   entry point and the page's top-level layout
   lang/        parser, type checker, AST, interpreter, symbolic body execution
   checker/     box search (nice counterexamples) + Z3 (proofs), verdicts
-  levels/      the level format (level.ts) and every level (catalog.ts)
+  levels/      the level format (level.ts), every level (catalog.ts) and its Korean text (catalog.ko.ts)
+  i18n/        the language switch, and every other line the game says, in English (en.ts) and Korean (ko.ts)
   game/        the zustand store, and what the app's buttons do (actions.ts)
   director/    scripted sequences: the hand, Step/Run, check playback
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
@@ -22,13 +26,13 @@ src/
     floor/       the infinite floor, drawn per pixel from the level's formulas
     area/        the learner's slabs, eggs and goal columns
     frogs/       frog state, motion, rendering, hatching
-    hand/        the skeptical hand
+    hand/        the pointing hand that brings ghost frogs
     labels/      tags over tiles and frogs (callouts, failures, frog values)
     level/       a level's scene and hover preview
     home/        the home screen's scene
     shaders/     shared GLSL, and formulas → GLSL
   ui/          the DOM over the scene
-    hud/         level screen: top bar, code panel, caption, formula box, controls
+    hud/         level screen: top bar, code panel, inputs card, caption, formula box, controls
     home/        title (3D lettering), home copy, level list
     rules/       the rules card
   styles.css   Tailwind setup: design tokens, keyframes, the page, the spotlight
@@ -47,8 +51,19 @@ feeds:
 
 - an **exact interpreter** (BigInt) for frog hops, eggs and the box search;
 - **fast float functions** for building thousands of tiles per frame;
-- **Z3** for proofs;
-- **GLSL**, compiled into the floor shader (32-bit ints: visual only).
+- **Z3** for proofs: an array input is an uninterpreted function from index
+  to value (read as 0 outside its length), `forall`/`exists` are Z3's own
+  quantifiers. A bounded search (small values first, for small
+  counterexamples) unrolls the quantifiers into a quantifier-free query and
+  checks any model exactly before trusting it; the unbounded pass, which
+  proves, keeps the quantifiers. Z3's WebAssembly build has crashed on
+  quantified *model finding* under a timeout, so bounded passes never send it
+  a quantifier;
+- **GLSL**, compiled into the floor shader (32-bit ints: visual only). An
+  integer input is a uniform, an array input a uniform `int[MAX_LEN]` with
+  its length's uniform; a quantifier becomes a function with a loop that
+  stops after MAX_LEN + 1 steps. The inputs' part of the precondition is the
+  same for every tile, so it is one uniform set from the CPU.
 
 Change semantics (operators, division, types) in `lang/` and make every backend
 agree. `pnpm validate` and the tests are the safety net.
@@ -56,7 +71,9 @@ agree. `pnpm validate` and the tests are the safety net.
 ## State
 
 - **The store** (`game/store.ts`, zustand) holds what the UI and the sequences
-  share: mode, level, formula, verdicts, caption, reveal flags, tutorial state.
+  share: mode, level, the plane in view (`inputs`: the off-axis inputs'
+  values, with `planeKey` naming it for frogs and effects), formula, verdicts,
+  caption, reveal flags, tutorial state.
   Components read it with selectors; other code reads `useGame.getState()` and
   writes `useGame.setState()`. Store actions exist only where there is logic
   (opening a level, compiling a formula).
@@ -128,7 +145,8 @@ agree. `pnpm validate` and the tests are the safety net.
 Z3 runs as WebAssembly with threads, so the page must be **cross-origin
 isolated**: every host must send `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp`. Its browser build is copied into
-`public/z3/` on install, loaded lazily, and warmed up shortly after start.
+`public/z3/` on install and loaded lazily: it is warmed up once the player
+opens the level list or a level, never on the home screen alone.
 
 ## Conventions
 

@@ -4,13 +4,14 @@ An interactive, visual website that teaches programmers what loop invariants are
 
 - Each tile on an endless white plane is one program state; a **frog** hops once per loop iteration.
 - You write a formula for an **area** (the loop invariant); tiles inside it rise as slabs.
-- A skeptical **hand** checks three rules — Initialization, Maintenance, Termination — and places a frog that breaks your area when one fails.
-- Inputs that never change (like `n`) become **planes**, one per value, picked with a slider.
+- **Check** tests three rules — Initialization, Maintenance, Termination — and, when one fails, shows a see-through **ghost frog** that breaks your area.
+- Inputs that never change (like `n`, or an array `A`) become **planes**, one per value, picked in the inputs card under the code.
+- Read-only arrays: `A[k]`, and `forall` / `exists` over a range of cells, with Z3 proving the quantified rules.
+- In English and Korean (한국어), switched on the home screen.
 
 Docs:
 
-- [docs/design.md](docs/design.md) — what the game teaches and the rules of its world
-- [docs/tutorial-plan.md](docs/tutorial-plan.md) — the tutorial's script, vocabulary and the overhaul it is getting
+- [docs/design.md](docs/design.md) — what the game teaches, the rules of its world, and the tutorial's vocabulary
 - [docs/experience.md](docs/experience.md) — how the interface should look, move and respond
 - [docs/architecture.md](docs/architecture.md) — how the code is organised, and the rules that keep it working
 

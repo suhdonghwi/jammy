@@ -37,7 +37,7 @@ behind many small decisions; keep them when changing or adding UI.
 - **Visible, not loud.** A goal landing should be noticed (a ripple, a flash, the
   pool's light column brightening) without becoming a splash.
 - **Things come from somewhere.** Frogs climb out of their egg, from where the
-  egg sat; test frogs arrive in the hand's palm; the hand points at the thing
+  egg sat; ghost frogs arrive in the hand's palm; the hand points at the thing
   itself.
 - **The scene pauses when the page is hidden** and carries on where it was. All
   scene timing runs on scene time (see architecture.md), never the wall clock.
@@ -85,8 +85,9 @@ behind many small decisions; keep them when changing or adding UI.
   adds the sentence under the stage's ask, and the button goes. In levels the
   Hint button stays: it shows the first hint in the caption, with "Another
   hint" for the next; pressed again later, it brings back the ones asked for.
-- **Predict before you see.** Before the hand demos a pitfall, the caption asks
-  Passes or Fails. Never scored; it only makes the learner commit.
+- **Predict before you see.** Before a pitfall is demonstrated, the caption
+  asks a yes-or-no question about it. Never scored; it only makes the learner
+  commit.
 - **Spotlight** whatever the caption is talking about.
 - A very fast double click must not press two buttons.
 
