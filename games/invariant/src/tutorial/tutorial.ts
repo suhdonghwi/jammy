@@ -192,9 +192,10 @@ async function script(gen: number) {
 
   // ---------------- Act 1: The world ----------------
   await beat(gen, 'This frog is a program state. It sits at `i = 0, n = 3` — its position on the plane is its values.', {
-    callouts: [{ x: 0, y: 3, text: 'i = 0, n = 3', tone: 'info' }],
     prepare: async () => {
       g().setReveal({ axes: true });
+      // the frog's own tag shows its values (and animates them as it hops)
+      g().patch({ frogTags: true });
       director.spawnReal(st(0, 3));
       await director.sleep(600);
     },
@@ -207,7 +208,6 @@ async function script(gen: number) {
 
   g().setReveal({ step: true });
   allow({ step: true });
-  g().patch({ frogTags: true });
   say('Press Step to run the loop body once.', 'step');
   await waitEvent(gen, 'stepped');
   say('One hop = one run of the loop body: `i` went from `0` to `1`. Keep pressing Step until the frog stops.', 'step');

@@ -1078,30 +1078,35 @@ code {
 
 /* ---------- tutorial: variable tag over a frog ---------- */
 .frog-tag {
-  padding: 4px 10px;
+  /* same look as the in-scene callouts (FailMarker.tsx TileTag) */
+  position: relative;
+  padding: 4px 13px 5px;
   border-radius: 999px;
-  background: rgba(28, 35, 51, 0.88);
+  background: #2b3445;
   color: #fff;
-  font-family: var(--mono);
-  font-size: 13px;
+  font-family: var(--display);
+  font-size: 15px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  box-shadow: var(--shadow);
   animation: fade 0.3s ease-out;
   transition:
     opacity 0.25s ease,
     transform 0.25s ease;
 }
+.frog-tag::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-bottom: 0;
+  border-top-color: #2b3445;
+}
 .frog-tag.covered {
   opacity: 0;
   transform: translateY(4px) scale(0.9);
-}
-.frog-tag-sep {
-  margin-right: 0.6ch;
-  color: #9aa4b4;
-}
-.frog-tag-name {
-  color: #b7c9ff;
 }
 /* old and new values share one cell, so the tag never changes width mid-swap */
 .frog-tag-val {

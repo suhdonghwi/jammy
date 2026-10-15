@@ -39,7 +39,7 @@ function FrogTag({ frog, level }: { frog: FrogSim; level: CompiledLevel }) {
   useFrame(() => {
     const g = group.current;
     const p = frog.drawn;
-    if (g && p) g.position.set(p.x, p.ground + 0.92, p.z);
+    if (g && p) g.position.set(p.x, p.ground + 0.98, p.z);
     if (!frog.hop && frog.state !== shown) setShown(frog.state);
     // step aside for a callout or failure tag on the same tile (they sit in the same spot)
     const { callouts, failMark } = useGame.getState();
@@ -51,12 +51,12 @@ function FrogTag({ frog, level }: { frog: FrogSim; level: CompiledLevel }) {
     <group ref={group}>
       <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={box} className="frog-tag">
-          {level.names
+          {[level.view.x, level.view.y, ...level.names.filter((n) => n !== level.view.x && n !== level.view.y)]
             .filter((n) => n in shown)
             .map((n, i) => (
               <span key={n} className="frog-tag-var">
-                {i > 0 && <span className="frog-tag-sep">,</span>}
-                <span className="frog-tag-name">{n}</span> = <Value value={String(shown[n])} />
+                {i > 0 && ', '}
+                {n} = <Value value={String(shown[n])} />
               </span>
             ))}
         </div>
