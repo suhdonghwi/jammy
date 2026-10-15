@@ -1,4 +1,5 @@
 import gsap from 'gsap';
+import { sfx } from '../audio/sfx';
 import { checkFormula, type CheckResult } from '../checker/check';
 import type { Counterexample } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
@@ -24,6 +25,7 @@ const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
 /** Mark the tile where a check failed, with a short reason. */
 function markFailure(x: number, y: number, label: string) {
   useGame.setState({ failMark: { x, y, label, t0: sceneNow() } });
+  sfx.fail();
 }
 
 /** Bring state s into view: switch to its plane, then glide (or, when it is far away, fly) over to it. */
@@ -70,6 +72,8 @@ export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | n
   }, 350);
   try {
     const ctx = await browserZ3();
+    // each proved rule chimes as its light turns on, a little higher each time
+    rules.filter((r) => res.verdicts[r]?.status === 'pass').forEach((_, i) => after(i * 130, () => sfx.pass(i)));
     const res = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
     useGame.setState({ verdicts: { ...keep, ...res.verdicts }, pitfallMessage: res.pitfall?.message ?? null });
     return res;

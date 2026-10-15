@@ -8,11 +8,12 @@ import { groupName, localizeLevel } from '../../levels/localize';
 import { button } from '../classes';
 import { usePresence } from '../presence';
 import { LangSwitch } from './LangSwitch';
+import { SoundToggle } from './SoundToggle';
 import { Title3D } from './title/Title3D';
 import { useCompactHome } from './useCompactHome';
 
 // The home screen over the 3D scene: the title, a line about the game, the way
-// in, the level list, and in the corner, the language.
+// in, the level list, and in the corner, the sound and the language.
 
 export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
@@ -36,6 +37,7 @@ export function HomeOverlay() {
       </div>
       {picker.mounted && <LevelPicker leaving={picker.leaving} instant={instant} />}
       <div className="fixed top-4 right-4 flex animate-[fade_0.4s_ease-out_both] items-center gap-2">
+        <SoundToggle />
         <LangSwitch />
       </div>
     </>

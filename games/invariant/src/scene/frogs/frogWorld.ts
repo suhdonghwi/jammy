@@ -1,3 +1,4 @@
+import { sfx } from '../../audio/sfx';
 import type { State } from '../../lang/ast';
 import { holds, step } from '../../lang/eval';
 import type { CompiledLevel } from '../../levels/level';
@@ -122,6 +123,7 @@ class FrogWorld {
         if (batch) landInBatch(batch, holds(level.guard, next));
         if (!holds(level.guard, next) && holds(level.post, next)) {
           goalEvents.push(tx, ty, f.plane);
+          if (!quiet) sfx.goal();
           f.cheerT0 = sceneNow();
         }
         res();

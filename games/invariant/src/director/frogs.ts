@@ -1,4 +1,5 @@
 import gsap from 'gsap';
+import { sfx } from '../audio/sfx';
 import { useGame } from '../game/store';
 import type { State } from '../lang/ast';
 import { hop, running, startView, toBig } from '../levels/level';
@@ -50,6 +51,7 @@ export function hatch(s: State): FrogSim {
   const y = Number(s[L.view.y]);
   const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
   hatchFx.push({ x, y, plane: L.plane ? Number(s[L.plane]) : undefined, dx: slot.dx, dy: slot.dy, s: slot.scale });
+  sfx.hatch();
   frogWorld.markHatched(x, y);
   const f = frogWorld.add(L, 'real', s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
   f.stopped = !running(L, s);

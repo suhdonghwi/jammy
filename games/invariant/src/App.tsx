@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { browserZ3 } from './checker/z3-browser';
 import { useGame } from './game/store';
 import { World } from './scene/World';
@@ -8,6 +8,10 @@ import { RulesCard } from './ui/rules/RulesCard';
 import { SyntaxCard } from './ui/rules/SyntaxCard';
 
 // The page: the 3D world behind everything, and the home screen or the level's HUD over it.
+
+/** The sound lab (`?sfx-lab`), in development only: it isn't in the built game. */
+const SfxLab = import.meta.env.DEV ? lazy(() => import('./ui/dev/SfxLab').then((m) => ({ default: m.SfxLab }))) : null;
+const showLab = import.meta.env.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).has('sfx-lab');
 
 export function App() {
   const mode = useGame((s) => s.mode);
@@ -29,6 +33,11 @@ export function App() {
       {mode !== 'menu' && level && <Hud />}
       <RulesCard />
       <SyntaxCard />
+      {SfxLab && showLab && (
+        <Suspense fallback={null}>
+          <SfxLab />
+        </Suspense>
+      )}
     </div>
   );
 }

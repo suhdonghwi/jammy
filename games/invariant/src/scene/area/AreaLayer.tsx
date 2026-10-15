@@ -1,5 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
+import { sfx } from '../../audio/sfx';
 import type { FastFn } from '../../lang/eval';
 import type { CompiledLevel } from '../../levels/level';
 import { cameraRig } from '../cameraRig';
@@ -71,7 +72,8 @@ export function AreaLayer({ level, plane, inv, dim, showStop, showGoal, showEggs
         }
       }
     }
-    field.update(tiles, animate);
+    const moved = field.update(tiles, animate);
+    sfx.slabs(moved.rose, moved.sank);
     setVersion((v) => v + 1);
     return after(RISE_DUR * 1000 + 60, () => field.prune() && setVersion((v) => v + 1));
   }, [level, plane, inv, win, showArea]);

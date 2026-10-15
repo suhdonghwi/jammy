@@ -1,3 +1,4 @@
+import { sfx } from '../audio/sfx';
 import { compareToModel, type ModelMatch } from '../checker/check';
 import { browserZ3 } from '../checker/z3-browser';
 import { resetLevel } from '../director/frogs';
@@ -92,6 +93,7 @@ export async function check() {
     .catch((): ModelMatch => 'unknown');
   await playRain();
   const model = modelNote(level.solutions[0], await match);
+  sfx.cleared();
   // left for another level (or the menu) while it rained
   if (useGame.getState().level !== level) return;
   const next = levels[levels.findIndex((l) => l.id === level.id) + 1];

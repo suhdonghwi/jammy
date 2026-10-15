@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { sfx } from '../../audio/sfx';
 import { useGame } from '../../game/store';
 import { toNum } from '../../levels/level';
 import { COLORS } from '../constants';
@@ -97,7 +98,10 @@ export function Frogs() {
     for (const f of visible) {
       if (n >= MAX_FROGS) break;
       const p = pose(f, t);
-      if (p.landed) dropLandings.push(f);
+      if (p.landed) {
+        dropLandings.push(f);
+        sfx.touch();
+      }
       // slot within a shared tile; glide toward it so nothing pops
       let target = { dx: 0, dy: 0, scale: 1 };
       if (f.carried === undefined) {
@@ -158,6 +162,7 @@ export function Frogs() {
       for (const f of dropLandings) {
         if (level.fast.guard(toNum(f.state)) !== true && level.fast.post(toNum(f.state)) === true) {
           goalEvents.push(f.x, f.y, f.plane);
+          sfx.goal();
           f.cheerT0 = sceneNow();
         }
       }

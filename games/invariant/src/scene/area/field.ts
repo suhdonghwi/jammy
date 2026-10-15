@@ -5,7 +5,8 @@ import { smoothstep } from '../easing';
 // GPU from (from, to, t0); the same function gives frogs and eggs their base
 // height on the CPU, so everything stays in sync without per-frame loops.
 
-export const RISE_DUR = 0.42;
+/** Seconds a slab takes to rise or sink: about as long as its sound (rise.m4a, sink.m4a). */
+export const RISE_DUR = 0.26;
 
 export interface TileFlags {
   x: number;
@@ -45,8 +46,11 @@ class AreaField {
   /**
    * Set the area to exactly `tiles` (within the window). With `animate`,
    * new tiles rise and removed tiles sink; otherwise they appear instantly.
+   * Returns how many started rising and sinking.
    */
-  update(tiles: TileFlags[], animate: boolean) {
+  update(tiles: TileFlags[], animate: boolean): { rose: number; sank: number } {
+    let rose = 0;
+    let sank = 0;
     const now = sceneNow();
     const next = new Map<string, SlabAnim>();
     for (const tile of tiles) {
@@ -54,18 +58,23 @@ class AreaField {
       const cur = this.anims.get(k);
       if (cur && cur.to === 1) next.set(k, { ...cur, ...tile });
       else if (!animate) next.set(k, { ...tile, from: 1, to: 1, t0: 0 });
-      else next.set(k, { ...tile, from: cur ? animValue(cur, now) : 0, to: 1, t0: now });
+      else {
+        next.set(k, { ...tile, from: cur ? animValue(cur, now) : 0, to: 1, t0: now });
+        rose++;
+      }
     }
     if (animate) {
       for (const [k, cur] of this.anims) {
         if (next.has(k)) continue;
         const h = animValue(cur, now);
         if (h < 0.002) continue;
+        if (cur.to !== 0) sank++;
         next.set(k, cur.to === 0 ? cur : { ...cur, from: h, to: 0, t0: now });
       }
     }
     this.anims = next;
     this.version++;
+    return { rose, sank };
   }
 
   /** Drop slabs that have finished sinking. Returns true if anything changed. */
