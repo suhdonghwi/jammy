@@ -12,8 +12,9 @@ export const CARD_LABEL = 'mb-1.5 font-display text-xs font-semibold uppercase t
 type Variant = 'plain' | 'quiet' | 'glass' | 'toy' | 'primary' | 'check';
 type Size = 'sm' | 'md' | 'lg' | 'icon' | 'none';
 
+// opacity is in the transition too, so enabling a greyed button fades it in rather than snapping
 const BASE =
-  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-display leading-tight tracking-[0.01em] cursor-pointer transition-[translate,background-color,box-shadow,color] duration-150 disabled:cursor-default disabled:opacity-40 [&_svg]:shrink-0';
+  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-display leading-tight tracking-[0.01em] cursor-pointer transition-[translate,background-color,box-shadow,color,opacity] duration-150 disabled:cursor-default disabled:opacity-40 [&_svg]:shrink-0';
 
 const VARIANTS: Record<Variant, string> = {
   plain: 'border border-line bg-white text-ink enabled:hover:bg-sky enabled:active:translate-y-px',
