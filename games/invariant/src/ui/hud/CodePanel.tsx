@@ -2,20 +2,14 @@ import { ChevronDown } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
-import { BUILTINS, KEYWORDS, tokenize } from '../../lang/parser';
+import { tokenize } from '../../lang/parser';
 import type { CompiledLevel } from '../../levels/level';
+import { tokenClass } from '../codeColors';
 import { CARD, CARD_LABEL } from '../classes';
 
 // The program, with the loop lighting up as frogs hop and a ghost `assert(?)`
 // line standing for the invariant at the top of the loop. On phones it folds
 // away to its title, so it doesn't hide the scene.
-
-const TOKEN = {
-  keyword: 'font-semibold text-[#7c4ddb]',
-  name: 'text-[#1f63c4]',
-  num: 'text-[#c06a00]',
-  op: 'text-muted',
-};
 
 /** The loop condition's flash when frogs land: keep looping, stop, or some of each. */
 const LANDED = {
@@ -52,7 +46,7 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
     toks.forEach((t, i) => {
       if (t.span.from < from || t.span.to > to) return;
       if (t.span.from > p) out.push(<Fragment key={`${keyBase}g${i}`}>{src.slice(p, t.span.from)}</Fragment>);
-      const cls = t.kind === 'num' ? TOKEN.num : t.kind === 'ident' ? (KEYWORDS.has(t.text) || BUILTINS.has(t.text) ? TOKEN.keyword : TOKEN.name) : TOKEN.op;
+      const cls = tokenClass(t);
       out.push(
         <span key={`${keyBase}t${i}`} className={cls}>
           {t.text}
