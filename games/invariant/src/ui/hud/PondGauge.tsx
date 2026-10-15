@@ -7,7 +7,7 @@ import { usePresence } from '../presence';
 // Levels with a leftover input stack one pond per value, like floors of a
 // building: an elevator panel to ride between them, and a toast while riding.
 
-const ARROW = 'grid cursor-pointer place-items-center rounded-xl bg-brand-soft py-1.5 text-brand disabled:cursor-default disabled:opacity-35';
+const ARROW = 'grid cursor-pointer place-items-center rounded-xl bg-brand-soft py-1.5 text-brand transition-opacity duration-150 disabled:cursor-default disabled:opacity-35';
 
 export function PondGauge() {
   const level = useGame((s) => s.level)!;
