@@ -251,6 +251,19 @@ export const director = {
     game().patch({ busy: false, running: false, selected: null, lastFailure: null, cinematic: false, failMark: null });
   },
 
+  /**
+   * Stop whatever is playing (hand, checks, hatching) and clear frogs and
+   * markers, keeping the level itself: the tutorial uses this to rewind a step.
+   */
+  interrupt() {
+    begin();
+    frogWorld.clear();
+    occupancy.eggs = new Set();
+    hatchFx.clear();
+    Object.assign(handState, { visible: 0 });
+    game().patch({ busy: false, running: false, stepping: false, checking: false, selected: null, lastFailure: null, failMark: null });
+  },
+
   clearFrogs() {
     begin();
     frogWorld.clear();

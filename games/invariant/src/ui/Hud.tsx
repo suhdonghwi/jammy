@@ -274,6 +274,7 @@ export function CaptionBar() {
   // when the caption goes away, the last one fades out
   const { value: caption, leaving } = useLingering(useGame((s) => s.caption));
   const pitfall = useGame((s) => s.pitfallMessage);
+  const back = useGame((s) => (s.mode === 'tutorial' ? s.back : null));
   if (!caption) return null;
   return (
     <div className={`caption ${caption.tone} ${leaving ? 'leaving' : ''}`} key={caption.text}>
@@ -285,8 +286,15 @@ export function CaptionBar() {
           </div>
         )}
       </div>
-      {(caption.secondary || caption.action) && (
+      {(caption.secondary || caption.action || back) && (
         <div className="caption-actions">
+          {/* tutorial: back to the previous step (left), then the step's own buttons */}
+          {back && (
+            <button className="btn ghost small icon-btn caption-back" onClick={back}>
+              <ArrowLeft size={15} strokeWidth={2.4} /> Back
+            </button>
+          )}
+          <span className="spacer" />
           {caption.secondary && (
             <button className="btn ghost small icon-btn" onClick={caption.secondary.onClick}>
               <RotateCcw size={15} strokeWidth={2.4} />

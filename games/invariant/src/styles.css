@@ -699,6 +699,13 @@ code {
   gap: 6px;
   flex: none;
 }
+.caption-actions .spacer {
+  flex: 1;
+}
+/* Back sits flush with the text's left edge */
+.caption-back {
+  margin-left: -10px;
+}
 /* inline code (states, formulas) never breaks across lines */
 .caption-text code {
   white-space: nowrap;
