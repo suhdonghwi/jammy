@@ -62,7 +62,7 @@ function HeroCopy({ behind }: { behind: boolean }) {
         <span className="sr-only">Invariant Frog</span>
         <Title3D />
       </h1>
-      <p className="mb-6.5 text-lg leading-[1.55] text-muted max-sm:text-base">Draw an area no frog can hop out of. Then convince a skeptical hand it holds for every input.</p>
+      <p className="mb-6.5 text-lg leading-[1.55] text-muted max-sm:text-base">How do you know if your loop is correct for every input? Let's find that out, with frogs.</p>
       <HomeButtons />
     </div>
   );
