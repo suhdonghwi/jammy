@@ -1028,6 +1028,12 @@ code {
 .icon-btn svg {
   flex: none;
 }
+/* an icon-only button: a circle as tall as the text buttons */
+.btn.round-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
 .spin {
   animation: spin 0.9s linear infinite;
 }

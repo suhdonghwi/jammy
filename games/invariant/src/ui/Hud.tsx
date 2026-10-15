@@ -149,8 +149,14 @@ export function TopBar() {
   return (
     <div className="topbar">
       <div className="pill-group">
-        <button className="btn ghost icon-btn" onClick={() => goMenu(mode === 'tutorial' ? 'home' : 'levels')}>
-          <ArrowLeft size={16} strokeWidth={2.4} /> {mode === 'tutorial' ? 'Home' : 'Levels'}
+        {/* just an arrow: the level's name is what this pill is about */}
+        <button
+          className="btn ghost icon-btn round-btn"
+          title={mode === 'tutorial' ? 'Home' : 'All levels'}
+          aria-label={mode === 'tutorial' ? 'Home' : 'All levels'}
+          onClick={() => goMenu(mode === 'tutorial' ? 'home' : 'levels')}
+        >
+          <ArrowLeft size={17} strokeWidth={2.4} />
         </button>
         <div className="level-title">
           {mode === 'level' && <span className="level-id">{level.id}</span>}
