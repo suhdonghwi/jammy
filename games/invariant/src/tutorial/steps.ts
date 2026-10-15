@@ -59,20 +59,29 @@ const upTo = (r: Rule): Rule[] => ALL.slice(0, ALL.indexOf(r) + 1);
 /** The learner's area, as inline code. */
 const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
-/** A stage's pitfall for a rule: the hand's demo, with a prediction first; skipped if the learner already saw that rule fail. */
-async function witness(gen: number, rule: Rule, pitfall: string, question: string, explain: string, extra?: string) {
+/**
+ * A rule's failure, witnessed: if the learner already saw it on an area of
+ * their own, the rule is simply named; otherwise the hand demos the stage's
+ * pitfall after the learner predicts the outcome.
+ */
+async function witness(
+  gen: number,
+  rule: Rule,
+  pitfall: string,
+  o: { question: string; afterDemo: string; afterOwn: string; extra?: string },
+) {
   if (!witnessed.has(rule)) {
-    const guess = await choose(gen, `Your area passes. Before we go on, the hand will try \`${pitfall}\`. ${question}`, [
+    const guess = await choose(gen, `Your area passes. Before we go on, the hand will try \`${pitfall}\`. ${o.question}`, [
       { key: 'pass', label: 'Passes' },
       { key: 'fail', label: 'Fails' },
     ]);
     guard(gen);
-    await demo(gen, pitfall, upTo(rule), extra);
+    await demo(gen, pitfall, upTo(rule), o.extra);
     guard(gen);
     const verdict = guess === 'fail' ? 'Right: it fails.' : 'Not quite: it fails.';
-    await beat(gen, `${verdict} ${explain}`, { spot: 'lights' });
+    await beat(gen, `${verdict} ${o.afterDemo}`, { spot: 'lights' });
   } else {
-    await beat(gen, explain, { spot: 'lights' });
+    await beat(gen, o.afterOwn, { spot: 'lights' });
   }
 }
 
@@ -272,13 +281,11 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: { ...DRAW, awake: ['init'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
-      witness(
-        gen,
-        'init',
-        'i == n',
-        'Does every egg sit on it?',
-        `**Rule 1 · Init** (initialization): every egg sits on your area. \`i == n\` only covers the egg at \`n = 0\`; yours, ${mine()}, covers them all.`,
-      ),
+      witness(gen, 'init', 'i == n', {
+        question: 'Does every egg sit on it?',
+        afterDemo: `**Rule 1 · Init** (initialization): every egg sits on your area. \`i == n\` only covers the egg at \`n = 0\`; yours, ${mine()}, covers them all.`,
+        afterOwn: `**Rule 1 · Init** (initialization): every egg sits on your area. Your first try missed one; ${mine()} covers them all.`,
+      }),
   },
   // 2.2 stage 2: every hop
   {
@@ -300,14 +307,14 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: { ...DRAW, awake: ['init', 'pres'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
-      witness(
-        gen,
-        'pres',
-        'i == 0 || i == n',
-        'Does every hop from it land on it?',
-        '**Rule 2 · Preservation**: a frog on your area that hops lands on your area. Frogs pass through the tiles in between!\n\nThe hand may start its purple **test frog** on *any* tile of your area, not only ones a real run reaches. Your area is a claim, and the hand tests the claim.',
-        'The purple frog is a **test frog**: a state the hand imagines, not a real run.',
-      ),
+      witness(gen, 'pres', 'i == 0 || i == n', {
+        question: 'Does every hop from it land on it?',
+        afterDemo:
+          '**Rule 2 · Preservation**: a frog on your area that hops lands on your area. Frogs pass through the tiles in between!\n\nThe hand may start its purple **test frog** on *any* tile of your area, not only ones a real run reaches. Your area is a claim, and the hand tests the claim.',
+        afterOwn:
+          '**Rule 2 · Preservation**: a frog on your area that hops lands on your area.\n\nThe hand may start its purple **test frog** on *any* tile of your area, not only ones a real run reaches. Your area is a claim, and the hand tests the claim.',
+        extra: 'The purple frog is a **test frog**: a state the hand imagines, not a real run.',
+      }),
   },
   // 2.3 follow one frog: Init
   {
@@ -375,14 +382,13 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
-      witness(
-        gen,
-        'exit',
-        'i >= 0',
-        'Does it pass all three?',
-        '**Rule 3 · Exit**: a frog that stops on your area is on a goal. `i >= 0` is a true invariant — every run really does keep `i ≥ 0` — but too weak to prove the goal.',
-        OBJECTION,
-      ),
+      witness(gen, 'exit', 'i >= 0', {
+        question: 'Does it pass all three?',
+        afterDemo:
+          '**Rule 3 · Exit**: a frog that stops on your area is on a goal. `i >= 0` is a true invariant — every run really does keep `i ≥ 0` — but too weak to prove the goal.',
+        afterOwn: `**Rule 3 · Exit**: a frog that stops on your area is on a goal. Your earlier area was a true invariant, but too weak to prove the goal; ${mine()} is strong enough.`,
+        extra: OBJECTION,
+      }),
   },
   // 2.5 too small, too large
   {
@@ -395,7 +401,7 @@ export const STEPS: Step[] = [
           spot: 'lights',
           callouts: [
             { x: 0, y: 2, text: 'too small: egg outside', tone: 'info' },
-            { x: 1, y: 0, text: 'too large: stops off a goal', tone: 'info' },
+            { x: 3, y: 2, text: 'too large: stops off a goal', tone: 'info' },
           ],
         },
       ),

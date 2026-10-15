@@ -264,8 +264,10 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
         guard(gen);
         continue;
       }
+      // the stage's frogs (a counterexample's, say) go; the learner's area stays
+      frogWorld.clear();
       allow({});
-      useGame.setState({ hint: null });
+      useGame.setState({ hint: null, selected: null });
       return res;
     }
     o.onFail?.(failing);

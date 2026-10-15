@@ -350,8 +350,8 @@ Scene and HUD:
   replaced by the current formula text (so the code panel and the box always
   agree). Levels show it too once the formula box is open.
 - **Rule lights** get a third look besides shown/hidden: *dim* (revealed but
-  not yet checked in the tutorial, greyed and without an icon) and *awake*
-  (the current stage's rule and all earlier ones, as today). `reveal.lights`
+  not yet checked in the tutorial, greyed) and *awake* (the current stage's
+  rule and all earlier ones, as today). `reveal.lights`
   stays the list of visible lights; a new `reveal.awake` lists the awake ones.
   Levels show all three awake, as today.
 - **Test-frog callout** the first time a purple frog appears in the tutorial.
