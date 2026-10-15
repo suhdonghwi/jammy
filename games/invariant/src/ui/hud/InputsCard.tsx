@@ -50,7 +50,8 @@ export function InputsCard() {
     useGame.setState({ inputs: next });
   };
   return (
-    <div className={`${CARD} flex animate-slide-in flex-col px-4 pt-3.25 pb-3 max-md:p-2.5 ${busy ? 'opacity-60' : ''}`}>
+    // data-frame: on phones the scene centres itself below this card, not below the code alone (scene/PhoneFraming)
+    <div data-frame="top" className={`${CARD} flex shrink-0 animate-slide-in flex-col px-4 pt-3.25 pb-3 max-md:p-2.5 ${busy ? 'opacity-60' : ''}`}>
       <div className={CARD_LABEL}>{tr.inputs.title}</div>
       <div className="flex flex-col gap-1.5">
         {rows.map((name) => (

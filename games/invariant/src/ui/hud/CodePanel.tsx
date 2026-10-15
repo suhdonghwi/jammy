@@ -148,7 +148,13 @@ export function CodePanel() {
         {tr.code.title}
         <ChevronDown size={14} strokeWidth={2.6} className={`transition-transform duration-200 sm:hidden ${open ? 'rotate-180' : ''}`} />
       </button>
-      <pre className={`-mx-2 m-0 min-h-0 overflow-auto ${open ? '' : 'max-sm:hidden'} px-2 font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]`}>{nodes}</pre>
+      {/* the scroll area runs to the card's edges (the card's padding is inside it, matching the classes above), so a
+          scrolling program clips at the rounded edge, with its scrollbar along it, not at a line floating above it */}
+      <pre
+        className={`m-0 -mx-4 -mb-3 min-h-0 overflow-auto rounded-b-2xl px-4 pb-3 max-md:-mx-2.5 max-md:-mb-2.5 max-md:px-2.5 max-md:pb-2.5 ${open ? '' : 'max-sm:hidden'} font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]`}
+      >
+        {nodes}
+      </pre>
     </div>
   );
 }

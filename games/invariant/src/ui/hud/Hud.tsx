@@ -17,8 +17,9 @@ export function Hud() {
     <div className="pointer-events-none fixed inset-0 flex flex-col gap-3 px-4 pt-3.5 pb-4 *:pointer-events-auto">
       <TopBar />
       <div className="pointer-events-none! relative flex min-h-0 flex-1 items-start gap-3 *:pointer-events-auto">
-        {/* the code, with its inputs right under it */}
-        <div className="pointer-events-none! flex min-h-0 max-w-105 flex-col gap-3 *:pointer-events-auto max-md:max-w-52">
+        {/* the code, with its inputs right under it; no taller than the room above the caption, so on a phone the code
+            scrolls inside its card rather than pushing the inputs under the caption */}
+        <div className="pointer-events-none! flex max-h-full min-h-0 max-w-105 flex-col gap-3 *:pointer-events-auto max-md:max-w-64">
           <CodePanel />
           <InputsCard key={levelId} />
         </div>
