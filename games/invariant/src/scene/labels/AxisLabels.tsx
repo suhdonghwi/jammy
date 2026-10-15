@@ -22,6 +22,10 @@ const COLOR = '#6b7689';
 const COMPASS_SIZE = 0.19;
 const COMPASS_COLOR = '#3f4a60';
 const COMPASS_INSET = 0.33;
+/** Where the compass's left-edge labels start (the text box of "i →" at the near edge starts here too). */
+const COMPASS_EDGE = 0.33 + COMPASS_SIZE / 2;
+/** Half the width of a label's text box, to place it by its left edge. */
+const edgeHalf = (text: string) => (COMPASS_SIZE * cached(text, COMPASS_COLOR).aspect) / 2;
 /** The digits' corner: their box starts at (-0.41, -0.42) in tile coordinates. */
 const CORNER = { x: -0.41, y: -0.42 };
 
@@ -69,8 +73,9 @@ export function AxisLabels() {
       {tile && (
         <>
           <FloorText at={[tile[0], tile[1] - COMPASS_INSET]} text={`${x} →`} size={COMPASS_SIZE} color={COMPASS_COLOR} />
-          <FloorText at={[tile[0] - COMPASS_INSET + 0.06, tile[1] + 0.11]} text="↑" size={COMPASS_SIZE} color={COMPASS_COLOR} />
-          <FloorText at={[tile[0] - COMPASS_INSET + 0.06, tile[1] - 0.1]} text={y} size={COMPASS_SIZE} color={COMPASS_COLOR} />
+          {/* narrow glyphs: placed by their left edge, as close to the tile's edge as "i →" is to the near one */}
+          <FloorText at={[tile[0] - COMPASS_EDGE + edgeHalf('↑'), tile[1] + 0.11]} text="↑" size={COMPASS_SIZE} color={COMPASS_COLOR} />
+          <FloorText at={[tile[0] - COMPASS_EDGE + edgeHalf(y), tile[1] - 0.1]} text={y} size={COMPASS_SIZE} color={COMPASS_COLOR} />
         </>
       )}
     </>
