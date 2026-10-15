@@ -842,7 +842,7 @@ code {
   flex: 1;
 }
 /* These sit right on the scene, where a faint wash vanishes: a grey glass pill
-   (not white like Run/Step), with muted text, so it shows but reads as secondary. */
+   (not white like Run/Step, e.g. Reset), with muted text, so it shows but reads as secondary. */
 .run-controls .btn.ghost {
   background: rgba(196, 205, 220, 0.5);
   border-color: transparent;

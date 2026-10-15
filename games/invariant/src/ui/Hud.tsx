@@ -17,7 +17,6 @@ import {
   CircleDashed,
   CircleHelp,
   CircleX,
-  Eraser,
   LoaderCircle,
   Pause,
   Play,
@@ -356,8 +355,8 @@ export function RunControls() {
         </button>
       )}
       {reveal.run && !tut && (
-        <button className="btn ghost icon-btn" disabled={busy} onClick={() => director.clearFrogs()}>
-          <Eraser size={16} strokeWidth={2.2} /> Clear
+        <button className="btn ghost icon-btn" disabled={busy} title="Put every frog back in its egg (your area stays)" onClick={() => director.clearFrogs()}>
+          <RotateCcw size={16} strokeWidth={2.2} /> Reset
         </button>
       )}
       <span className="spacer" />
