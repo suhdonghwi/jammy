@@ -1,5 +1,6 @@
 // Z3 for Node (tests and the level validator).
 import { init, type Context } from 'z3-solver';
+import { guardDecRefs } from './z3-guard';
 
 let api: Awaited<ReturnType<typeof init>> | null = null;
 let ctx: Context<'main'> | null = null;
@@ -7,6 +8,7 @@ let ctx: Context<'main'> | null = null;
 export async function nodeZ3(): Promise<Context<'main'>> {
   if (!ctx) {
     api = await init();
+    guardDecRefs(api.Z3);
     ctx = api.Context('main');
   }
   return ctx;

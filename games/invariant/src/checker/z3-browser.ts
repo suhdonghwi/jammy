@@ -1,4 +1,5 @@
 import type { Context } from 'z3-solver';
+import { guardDecRefs } from './z3-guard';
 
 // Z3's Emscripten build must be loaded as a classic script (its thread workers
 // re-load it by URL), and threads need a cross-origin isolated page.
@@ -25,6 +26,7 @@ export function browserZ3(): Promise<Context<'main'>> {
       await loadScript(`${import.meta.env.BASE_URL}z3/z3-built.js`);
       const { init } = await import('z3-solver');
       const api = await init();
+      guardDecRefs(api.Z3);
       return api.Context('main');
     })();
     pending.catch(() => {

@@ -4,6 +4,7 @@ import { holds } from '../lang/eval';
 import { hop, MAX_LEN, startState, type CompiledLevel, type Rule } from '../levels/level';
 import { brokenConjunct } from './box';
 import type { Counterexample } from './types';
+import { whileSolving } from './z3-guard';
 
 // Rules and formulas as Z3 queries: proving rules, finding counterexamples
 // anywhere, and checking two formulas are equivalent. An array input is an
@@ -190,7 +191,7 @@ export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], quer
     solver.set('timeout', opts.timeout);
     solver.add(toZ3(ctx, form, env) as Bool<'main'>);
     bound(solver);
-    const r = await solver.check();
+    const r = await whileSolving(() => solver.check());
     if (r === 'sat') return { kind: 'sat', state: readModel(solver.model()) };
     return { kind: r === 'unsat' ? 'unsat' : 'unknown' };
   };
