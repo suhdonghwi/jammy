@@ -1,7 +1,10 @@
 import type { LevelDef } from './level';
 
 // Every level, in order (the tutorial's program first), getting harder from
-// first to last; the level list shows them in three tiers of difficulty.
+// first to last; the level list shows them in four tiers of difficulty. Each
+// level adds one new thing: a new mechanic (an input to change, `if`,
+// products, arrays) on content the learner can already do, or new content on
+// known mechanics.
 
 export const tutorialLevel: LevelDef = {
   id: 'tutorial',
@@ -544,6 +547,182 @@ ensures r * r <= n && n < (r + 1) * (r + 1);`,
           'Your area can be exactly the other half of the goal.',
         ],
         camera: { x: 2, y: 5, distance: 16 },
+      },
+    ],
+  },
+  {
+    name: 'Arrays',
+    levels: [
+      {
+        id: 'biggest-so-far',
+        title: 'Biggest So Far',
+        source: `input n;
+input A[n];
+requires n >= 1;
+
+var i = 1;
+var m = A[0];
+while (i < n) {
+  if (A[i] > m) {
+    m = A[i];
+  }
+  i = i + 1;
+}
+
+ensures forall 0 <= k < n: A[k] <= m;`,
+        view: { x: 'i', y: 'm' },
+        start: { A: [3, 1, 4, 1, 5] },
+        dice: { A: { length: [1, 7], values: [0, 9] } },
+        solutions: ['forall 0 <= k < i: A[k] <= m', 'i <= n && forall 0 <= k < i: A[k] <= m', '1 <= i <= n && forall 0 <= k < i: A[k] <= m'],
+        pitfalls: [
+          {
+            formula: 'forall 0 <= k < n: A[k] <= m',
+            message: 'That is the goal itself. At the start `m` is only `A[0]`: the cells from `i` on haven’t been looked at yet.',
+          },
+          { formula: 'm >= A[0]', message: '`m` has seen every cell before `i`, not only the first one.' },
+          { formula: 'i <= n', message: 'That fences `i`, but says nothing about `m`.' },
+        ],
+        intro:
+          'The largest cell of `A`: walk `i` along the array, keeping the biggest so far in `m`. `A` is in the inputs card — type cells in, or roll the dice. A cell beyond the end of `A` reads as `0`.',
+        hints: [
+          'Step a frog and watch `m`. After each hop, which cells of `A` is `m` already at least as big as?',
+          'The goal talks about every cell before `n`. While the loop runs, `m` only answers for the cells before `i`.',
+          'Take the goal and put `i` where `n` is.',
+        ],
+        camera: { x: 3, y: 4, distance: 15 },
+      },
+      {
+        id: 'find-it',
+        title: 'Find It',
+        source: `input n;
+input A[n];
+input x;
+requires n >= 0;
+
+var i = 0;
+while (i < n && A[i] != x) {
+  i = i + 1;
+}
+
+ensures 0 <= i <= n;
+ensures forall 0 <= k < i: A[k] != x;
+ensures i == n || A[i] == x;`,
+        view: { x: 'i', y: 'x' },
+        start: { A: [2, 5, 1, 4] },
+        dice: { A: { length: [1, 7], values: [0, 9] } },
+        solutions: ['0 <= i <= n && forall 0 <= k < i: A[k] != x', '0 <= i && i <= n && (forall 0 <= k < i: A[k] != x)'],
+        pitfalls: [
+          {
+            formula: '0 <= i <= n',
+            message: 'The fence is right — but a frog that stops at `i = n` claims `x` is nowhere in `A`, and your area never says the cells before `i` were checked.',
+          },
+          { formula: 'forall 0 <= k < i: A[k] != x', message: 'That is the fact about the cells — but nothing keeps a ghost frog from stopping past `n`.' },
+          { formula: 'i == n || A[i] == x', message: 'That is where the loop stops, not what holds while it runs.' },
+        ],
+        intro:
+          'Look for `x` in `A`: walk `i` along until a cell equals `x` or the array ends. `x` is on the vertical axis, so each row is one value to look for.',
+        hints: [
+          'Hover over the tiles where the loop stops: for each `x`, where are they, and which of them are goals?',
+          'A real frog at `i` has looked at every cell before `i` and found no `x` there. `forall` says that.',
+          'Fence `i` between `0` and `n`, and add the `forall` about the cells before `i`.',
+        ],
+        camera: { x: 2, y: 3, distance: 14 },
+      },
+      {
+        id: 'one-of-them',
+        title: 'One of Them',
+        source: `input n;
+input A[n];
+requires n >= 1;
+
+var i = 1;
+var m = A[0];
+while (i < n) {
+  if (A[i] > m) {
+    m = A[i];
+  }
+  i = i + 1;
+}
+
+ensures forall 0 <= k < n: A[k] <= m;
+ensures exists 0 <= k < n: A[k] == m;`,
+        view: { x: 'i', y: 'm' },
+        start: { A: [3, 1, 4, 1, 5] },
+        dice: { A: { length: [1, 7], values: [0, 9] } },
+        solutions: [
+          'i <= n && forall 0 <= k < i: A[k] <= m && exists 0 <= k < i: A[k] == m',
+          '1 <= i <= n && (forall 0 <= k < i: A[k] <= m) && (exists 0 <= k < i: A[k] == m)',
+        ],
+        pitfalls: [
+          {
+            formula: 'forall 0 <= k < i: A[k] <= m',
+            message: 'Biggest So Far’s answer says `m` is big enough, but not that `m` is one of the cells: a frog with `m = 100` sits on your area.',
+          },
+          {
+            formula: 'forall 0 <= k < i: A[k] <= m && exists 0 <= k < i: A[k] == m',
+            message: 'Beyond the end of `A` every cell reads as `0`, so a ghost frog past `n` can claim `m = 0` is one of them. Keep `i` inside the array.',
+          },
+          { formula: 'i <= n && exists 0 <= k < i: A[k] == m', message: '`m` is one of the cells — but is it the biggest? Keep Biggest So Far’s `forall` too.' },
+        ],
+        intro: 'Biggest So Far again, but now the goal also wants `m` to be one of the cells. There is a word for “some cell”: `exists`.',
+        hints: [
+          'Biggest So Far’s area passes two rules here. Check it, and see which rule fails.',
+          '`m` must be one of the cells seen so far: some `k` before `i` has `A[k] == m`. That is `exists`.',
+          'Three facts: a fence on `i`, the `forall` from before, and an `exists` for the cell `m` came from.',
+        ],
+        camera: { x: 3, y: 4, distance: 15 },
+      },
+      {
+        id: 'sorted-search',
+        title: 'Sorted Search',
+        source: `input n;
+input A[n];
+input x;
+requires n >= 0;
+requires forall 0 <= j <= k < n: A[j] <= A[k];
+
+var lo = 0;
+var hi = n;
+while (lo < hi) {
+  if (A[(lo + hi) / 2] < x) {
+    lo = (lo + hi) / 2 + 1;
+  } else {
+    hi = (lo + hi) / 2;
+  }
+}
+
+ensures 0 <= lo <= n;
+ensures forall 0 <= k < lo: A[k] < x;
+ensures forall lo <= k < n: A[k] >= x;`,
+        view: { x: 'lo', y: 'hi' },
+        start: { A: [1, 3, 4, 4, 8, 9], x: 4 },
+        dice: { A: { length: [1, 8], values: [0, 9], sorted: true } },
+        solutions: [
+          '0 <= lo <= hi <= n && forall 0 <= k < lo: A[k] < x && forall hi <= k < n: A[k] >= x',
+          '0 <= lo && lo <= hi && hi <= n && (forall 0 <= k < lo: A[k] < x) && (forall hi <= k < n: A[k] >= x)',
+        ],
+        pitfalls: [
+          {
+            formula: '0 <= lo <= hi <= n',
+            message: 'The fences are right. But when the ends meet, why is every cell left of `lo` below `x`? Your area has to say so.',
+          },
+          {
+            formula: 'forall 0 <= k < lo: A[k] < x && forall hi <= k < n: A[k] >= x',
+            message: 'The two `forall`s are right — but without `0 <= lo <= hi <= n`, a ghost frog can start with the ends crossed or outside the array.',
+          },
+          {
+            formula: '0 <= lo <= hi <= n && forall 0 <= k < lo: A[k] < x',
+            message: 'Half of it: the cells from `hi` on need the mirror fact.',
+          },
+        ],
+        intro:
+          'Binary search on a sorted `A`: halve the gap between `lo` and `hi` until it closes. The precondition’s `forall` says `A` is sorted, so the dice only roll sorted arrays.',
+        hints: [
+          'Step a frog on a few arrays. After each hop, which cells are known to be below `x`? Which are known to be `x` or more?',
+          'Everything before `lo` is below `x`; everything from `hi` on is `x` or more. And the ends stay in order: `0 <= lo <= hi <= n`.',
+          'Two `forall`s, one for each side, plus the chain of fences.',
+        ],
+        camera: { x: 3, y: 4, distance: 15 },
       },
     ],
   },

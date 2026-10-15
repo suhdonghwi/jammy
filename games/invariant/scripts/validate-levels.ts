@@ -69,7 +69,10 @@ for (const id of Object.keys(levelsKo)) {
   if (!allLevels.some((l) => l.id === id)) fail(`catalog.ko.ts has text for unknown level '${id}'`);
 }
 
+// `pnpm validate find-it sorted-search` checks only those levels
+const only = process.argv.slice(2);
 for (const def of allLevels) {
+  if (only.length && !only.includes(def.id)) continue;
   console.log(`${def.id} ${def.title}`);
   checkKorean(def);
   let level: CompiledLevel;

@@ -162,6 +162,26 @@ The answer is the precondition. That is fine for the level that introduces
 `if`, as long as the intro says so: "The body has an `if` now. Your area must
 survive both branches — and here, the facts you start with are enough."
 
+## The Arrays tier (added later)
+
+Four levels after Square Root, each on a read-only array input (the design
+doc's *Planes and the inputs card* says why a read-only array fits the world).
+The one new thing each adds, in order:
+
+| # | Level | The one new thing | Answer (shape) | Pitfall (what it reuses) |
+|---|---|---|---|---|
+| 19 | Biggest So Far | `A[k]` and `forall`; the goal with `n` replaced by `i` | `forall 0 <= k < i: A[k] <= m` | the goal itself (fails Initialization) |
+| 20 | Find It | an input (`x`) on an axis; the array's end needs a fence | `0 <= i <= n && forall 0 <= k < i: A[k] != x` | the fence alone; the `forall` alone |
+| 21 | One of Them | `exists` for a witness; a ghost frog past the end sees zeros | `i <= n && forall … && exists 0 <= k < i: A[k] == m` | Biggest So Far's answer |
+| 22 | Sorted Search | binary search: two `forall`s and a chain of fences; sortedness written as `forall 0 <= j <= k < n: A[j] <= A[k]` so the solver needs no induction | `0 <= lo <= hi <= n && forall 0 <= k < lo: A[k] < x && forall hi <= k < n: A[k] >= x` | the fences alone; the `forall`s alone; one side only |
+
+Biggest So Far and One of Them share a program (the max of an array) with
+axes `(i, m)`: the area is the staircase of the array's running maximum, and
+rolling the dice reshapes it. Find It plots `x` on the vertical axis, so each
+row is one value to look for and the stop tiles scatter at `(k, A[k])`. Sorted
+Search plots `(lo, hi)`: one egg per plane at `(0, n)`, and the goal where the
+ends meet.
+
 ## Camera notes
 
 On the equation levels the area is a line or a curve, not a region, and the

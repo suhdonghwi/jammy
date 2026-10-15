@@ -45,4 +45,11 @@ describe('levels', () => {
     expect(c.maintenance).toBeDefined();
     expect(c.maintenance!.broken).toBe('x >= 0');
   });
+  it('biggest so far: the goal copied fails initialization on the array in view', () => {
+    const lvl = compileLevel(levels.find((l) => l.id === 'biggest-so-far')!);
+    const c = search(lvl, 'forall 0 <= k < n: A[k] <= m');
+    expect(c.initialization).toBeDefined();
+    expect(num(c.initialization!.state)).toMatchObject({ i: 1, m: 3 });
+    expect(search(lvl, 'forall 0 <= k < i: A[k] <= m')).toEqual({});
+  });
 });
