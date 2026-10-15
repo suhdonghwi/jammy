@@ -21,6 +21,9 @@ function exprToGlsl(e: Expr): string {
       const a = e.args.map(exprToGlsl);
       return `${e.fn}(${a.join(', ')})`;
     }
+    case 'index':
+    case 'quant':
+      throw new Error('the floor does not draw arrays yet');
     case 'ite':
       return `((${exprToGlsl(e.cond)}) ? (${exprToGlsl(e.then)}) : (${exprToGlsl(e.else)}))`;
     case 'binary': {

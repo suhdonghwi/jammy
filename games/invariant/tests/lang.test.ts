@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { show } from '../src/lang/ast';
-import { evaluate, euclidMod, floorDiv, step } from '../src/lang/eval';
+import { compileFast, evaluate, euclidMod, floorDiv, step } from '../src/lang/eval';
 import { LangError, parseFormula, parseProgram } from '../src/lang/parser';
-import { checkCondition, checkProgram } from '../src/lang/typecheck';
+import { checkCondition, checkProgram, intScope, type Scope } from '../src/lang/typecheck';
 
 describe('parser', () => {
   it('desugars chained comparisons', () => {
@@ -33,8 +33,49 @@ describe('parser', () => {
   });
 });
 
+describe('arrays and quantifiers', () => {
+  const scope: Scope = new Map([
+    ['A', 'array'],
+    ['n', 'int'],
+    ['i', 'int'],
+  ]);
+  const s = { A: [3n, 1n, 4n], n: 3n, i: 2n };
+  it('parses a range chain into bound names', () => {
+    expect(show(parseFormula('forall 0 <= j <= k < n: A[j] <= A[k]'))).toBe('forall 0 <= j <= k < n: A[j] <= A[k]');
+    expect(show(parseFormula('forall 0 <= k < i: A[k] <= 4 && i <= n'))).toBe('forall 0 <= k < i: A[k] <= 4 && i <= n');
+  });
+  it('reads cells, 0 outside the array', () => {
+    expect(evaluate(parseFormula('A[1] + A[7] + A[-1]'), s)).toBe(1n);
+    expect(compileFast(parseFormula('A[2] + A[3]'))({ A: [3, 1, 4], n: 3, i: 2 })).toBe(4);
+  });
+  it('evaluates forall and exists the same way exactly and fast', () => {
+    for (const f of ['forall 0 <= k < i: A[k] <= 3', 'forall 0 <= k < n: A[k] <= 3', 'exists 0 <= k < n: A[k] == 4', 'exists 0 <= k < i: A[k] == 4', 'forall 0 <= j <= k < n: A[j] <= A[k]', 'forall 0 <= j < k < 2: A[j] >= A[k]']) {
+      const e = parseFormula(f);
+      checkCondition(e, scope, f, 'an area');
+      expect(compileFast(e)({ A: [3, 1, 4], n: 3, i: 2 }), f).toBe(evaluate(e, s));
+    }
+    expect(evaluate(parseFormula('forall 0 <= k < i: A[k] <= 3'), s)).toBe(true);
+    expect(evaluate(parseFormula('forall 0 <= k < n: A[k] <= 3'), s)).toBe(false);
+    expect(evaluate(parseFormula('exists 0 <= k < i: A[k] == 4'), s)).toBe(false);
+    expect(evaluate(parseFormula('forall 0 <= j < k < 2: A[j] >= A[k]'), s)).toBe(true);
+  });
+  it('type-checks arrays', () => {
+    const bad = (src: string, re: RegExp) => expect(() => checkCondition(parseFormula(src), scope, src, 'an area')).toThrow(re);
+    bad('A > 0', /is an array/);
+    bad('n[0] > 0', /not an array/);
+    bad('forall 0 <= i < n: A[i] > 0', /already a name/);
+    bad('forall k: A[k] > 0', /needs a range/);
+  });
+  it('declares array inputs with a length declared first', () => {
+    const p = parseProgram(`input n; input A[n]; var i = 0; while (i < n) { i = i + 1; } ensures i == n;`);
+    checkProgram(p);
+    expect(p.arrays).toEqual({ A: 'n' });
+    expect(() => checkProgram(parseProgram(`input A[n]; input n; var i = 0; while (i < n) { i++; }`))).toThrow(/before the array/);
+  });
+});
+
 describe('types', () => {
-  const scope = new Set(['x', 'y']);
+  const scope = intScope(['x', 'y']);
   it('explains number-vs-condition', () => {
     const src = 'x + y';
     expect(() => checkCondition(parseFormula(src), scope, src, 'an area')).toThrow(/Did you mean `x \+ y == 0`/);

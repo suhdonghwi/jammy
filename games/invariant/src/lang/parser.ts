@@ -1,5 +1,5 @@
 import { t } from '../i18n/i18n';
-import { COMPARISON_OPS, spanOf, type BinOp, type BuiltinFn, type Expr, type Program, type Span, type Stmt, type VarDecl } from './ast';
+import { COMPARISON_OPS, spanOf, type BinOp, type BuiltinFn, type Expr, type InputDecl, type Program, type RangeOp, type Span, type Stmt, type VarDecl } from './ast';
 
 // Tokenizer and recursive-descent parser for programs and area formulas,
 // with friendly errors that point at a span of the source.
@@ -22,10 +22,10 @@ interface Token {
 
 const OPS = [
   '==', '!=', '<=', '>=', '&&', '||', '+=', '-=', '++', '--',
-  '<', '>', '+', '-', '*', '/', '%', '!', '=', '(', ')', '{', '}', ',', ';',
+  '<', '>', '+', '-', '*', '/', '%', '!', '=', '(', ')', '{', '}', '[', ']', ',', ';', ':',
 ];
 
-export const KEYWORDS: ReadonlySet<string> = new Set(['input', 'var', 'requires', 'ensures', 'while', 'if', 'else', 'true', 'false']);
+export const KEYWORDS: ReadonlySet<string> = new Set(['input', 'var', 'requires', 'ensures', 'while', 'if', 'else', 'true', 'false', 'forall', 'exists']);
 export const BUILTINS: ReadonlySet<string> = new Set<BuiltinFn>(['abs', 'min', 'max']);
 
 export function tokenize(src: string): Token[] {
@@ -178,8 +178,15 @@ class Parser {
         this.next();
         return { kind: 'bool', value: t.text === 'true', span: t.span };
       }
-      if (KEYWORDS.has(t.text)) throw new LangError(`'${t.text}' can't be used here`, t.span);
+      if (t.text === 'forall' || t.text === 'exists') return this.quantifier();
+      if (KEYWORDS.has(t.text)) throw new LangError(tr().notHere(t.text), t.span);
       this.next();
+      if (this.isOp('[')) {
+        this.next();
+        const index = this.expr();
+        const close = this.expectOp(']');
+        return { kind: 'index', array: t.text, index, span: { from: t.span.from, to: close.span.to } };
+      }
       if (this.isOp('(')) {
         if (!BUILTINS.has(t.text)) throw new LangError(tr().unknownFunction(t.text), t.span);
         this.next();
@@ -202,8 +209,35 @@ class Parser {
       const close = this.expectOp(')');
       return { ...e, span: { from: open.span.from, to: close.span.to } };
     }
-    if (t.kind === 'eof') throw new LangError('The formula ends too early', t.span);
-    throw new LangError(`Unexpected '${t.text}'`, t.span);
+    if (t.kind === 'eof') throw new LangError(tr().endsEarly, t.span);
+    throw new LangError(tr().unexpected(t.text), t.span);
+  }
+
+  /**
+   * `forall lo <= k < hi: body`: a chain of `<` / `<=` comparisons whose
+   * inner names are the bound names (`forall 0 <= j <= k < n: …` binds two),
+   * then a colon and a single comparison (parenthesise anything bigger).
+   */
+  quantifier(): Expr {
+    const kw = this.next();
+    const q = kw.text as 'forall' | 'exists';
+    const parts: Expr[] = [this.add()];
+    const ops: RangeOp[] = [];
+    while (this.isOp('<') || this.isOp('<=')) {
+      ops.push(this.next().text as RangeOp);
+      parts.push(this.add());
+    }
+    if (parts.length < 3) {
+      throw new LangError(tr().quantRange(q), { from: parts[0].span.from, to: parts[parts.length - 1].span.to });
+    }
+    const vars: string[] = [];
+    for (const p of parts.slice(1, -1)) {
+      if (p.kind !== 'var') throw new LangError(tr().quantName, p.span);
+      vars.push(p.name);
+    }
+    this.expectOp(':');
+    const body = this.cmp();
+    return { kind: 'quant', q, vars, ops, lo: parts[0], hi: parts[parts.length - 1], body, span: { from: kw.span.from, to: body.span.to } };
   }
 
   // ---- statements ----
@@ -257,17 +291,34 @@ class Parser {
 
   program(): Program {
     const inputs: string[] = [];
+    const inputDecls: InputDecl[] = [];
+    const arrays: Record<string, string> = {};
     const vars: VarDecl[] = [];
+    // `input n;` or `input A[n];` (an array whose length is the input `n`)
+    const input = () => {
+      const name = this.ident();
+      const decl: InputDecl = { name: name.text, span: name.span };
+      if (this.isOp('[')) {
+        this.next();
+        const len = this.ident();
+        const close = this.expectOp(']');
+        decl.length = len.text;
+        decl.span = { from: name.span.from, to: close.span.to };
+        arrays[name.text] = len.text;
+      }
+      inputs.push(name.text);
+      inputDecls.push(decl);
+    };
     const requires: Expr[] = [];
     const ensures: Expr[] = [];
     let loop: Program['loop'] | null = null;
     while (this.peek().kind !== 'eof') {
       if (this.isKw('input')) {
         this.next();
-        inputs.push(this.ident().text);
+        input();
         while (this.isOp(',')) {
           this.next();
-          inputs.push(this.ident().text);
+          input();
         }
         this.expectOp(';');
       } else if (this.isKw('var')) {
@@ -310,7 +361,7 @@ class Parser {
       }
     }
     if (!loop) throw new LangError('The program needs a while loop', { from: 0, to: 0 });
-    return { source: this.src, inputs, vars, requires, ensures, loop };
+    return { source: this.src, inputs, inputDecls, arrays, vars, requires, ensures, loop };
   }
 }
 

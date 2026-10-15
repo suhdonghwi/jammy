@@ -13,6 +13,8 @@ import { closeDialog, Dialog } from '../Dialog';
 export function SyntaxCard() {
   const level = useGame((s) => s.level);
   const [a, b] = level ? displayNames(level) : ['i', 'n'];
+  // array examples only in a level with an array, written with its own array and length
+  const arr = level ? Object.entries(level.arrays)[0] : undefined;
   const s = useT().syntax;
   return (
     <Dialog flag="showSyntax">
@@ -25,6 +27,12 @@ export function SyntaxCard() {
           code={[`${b} == 2 * ${a}`, `${a} + ${b} < 10`, `${b} - ${a} >= 1`, `(${a} + ${b}) % 2 == 0`, `${a} / 3 == 1`]}
         />
         <Row name={s.functions} code={[`abs(${a}) <= ${b}`, `min(${a}, ${b}) >= 0`, `max(${a}, ${b}) == ${b}`]} />
+        {arr && (
+          <Row
+            name={s.arrays}
+            code={[`${arr[0]}[${a}] == ${b}`, `forall 0 <= k < ${a}: ${arr[0]}[k] <= ${b}`, `exists 0 <= k < ${arr[1]}: ${arr[0]}[k] == ${b}`, `forall 0 <= j <= k < ${arr[1]}: ${arr[0]}[j] <= ${arr[0]}[k]`]}
+          />
+        )}
         <Row name={s.constants} code={['true', 'false']} />
       </div>
       <button className={button('primary')} onClick={() => closeDialog('showSyntax')}>

@@ -14,6 +14,15 @@ const fail = (msg: string) => {
   console.log(`  ✗ ${msg}`);
 };
 
+/** A few arrays of each small length: ascending, descending, and a couple of fixed patterns. */
+function sampleArrays(n: number): bigint[][] {
+  const up = Array.from({ length: n }, (_, k) => BigInt(k - 1));
+  const down = [...up].reverse();
+  const bumpy = Array.from({ length: n }, (_, k) => BigInt((k * 7) % 5 - 2));
+  const flat = Array.from({ length: n }, () => 2n);
+  return [up, down, bumpy, flat];
+}
+
 function sampleEggs(level: CompiledLevel): State[] {
   const eggs: State[] = [];
   const vals = Array.from({ length: 13 }, (_, k) => BigInt(k - 4));
@@ -23,7 +32,14 @@ function sampleEggs(level: CompiledLevel): State[] {
       if (isEgg(level, st)) eggs.push(st);
       return;
     }
-    for (const v of vals) go(k + 1, { ...s, [level.freeDims[k]]: v });
+    const d = level.freeDims[k];
+    const len = level.arrays[d];
+    if (len) {
+      // the array's length was chosen before it (its length input is declared first)
+      const n = Number(s[len]);
+      if (n < 0 || n > 6) return;
+      for (const a of sampleArrays(n)) go(k + 1, { ...s, [d]: a });
+    } else for (const v of vals) go(k + 1, { ...s, [d]: v });
   };
   go(0, {});
   return eggs;

@@ -10,7 +10,7 @@ const search = (lvl: ReturnType<typeof compileLevel>, f: string, b = box) => {
   if (!r.ok) throw r.error;
   return boxSearch(lvl, r, b);
 };
-const num = (s: Record<string, bigint>) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Number(v)]));
+const num = (s: Record<string, bigint | bigint[]>) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Array.isArray(v) ? v.map(Number) : Number(v)]));
 
 describe('tutorial counterexamples match the design', () => {
   it('A: i == n fails initialization at the egg (0, 1)', () => {

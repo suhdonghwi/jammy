@@ -1,11 +1,14 @@
 import { t } from '../i18n/i18n';
 import { conjuncts, freeVars, mk, subst, type Expr, type Program, type State } from '../lang/ast';
-import { compileFast, evaluate, holds, step, symbolicStep, type FastFn } from '../lang/eval';
+import { compileFast, evaluate, holds, step, symbolicStep, type FastFn, type FastState } from '../lang/eval';
 import { LangError, parseFormula, parseProgram } from '../lang/parser';
-import { checkCondition, checkProgram } from '../lang/typecheck';
+import { checkCondition, checkProgram, programScope, type Scope } from '../lang/typecheck';
 
 // The level format, compiling a level's program for play (exact and fast
 // evaluation), and helpers for program states.
+
+/** The longest array the game shows; proofs are not bounded by it. */
+export const MAX_LEN = 32;
 
 export type Rule = 'initialization' | 'maintenance' | 'termination';
 export const RULES: Rule[] = ['initialization', 'maintenance', 'termination'];
@@ -41,6 +44,9 @@ export interface CompiledLevel extends LevelDef {
   inputs: string[];
   vars: string[];
   names: string[];
+  scope: Scope;
+  /** Array inputs: name → the input that is its length. */
+  arrays: Record<string, string>;
   plane?: string;
   /** Inputs + variables without an initializer: what a start state is chosen from. */
   freeDims: string[];
@@ -70,9 +76,11 @@ export function compileLevel(def: LevelDef): CompiledLevel {
   const inputs = program.inputs;
   const vars = program.vars.map((v) => v.name);
   const names = [...inputs, ...vars];
+  const scope = programScope(program);
+  const arrays = program.arrays;
   const { x, y } = def.view;
   for (const a of [x, y]) {
-    if (!names.includes(a)) throw new Error(`[${def.id}] view axis '${a}' is not a variable`);
+    if (scope.get(a) !== 'int') throw new Error(`[${def.id}] view axis '${a}' is not an integer variable`);
   }
   const rest = names.filter((n) => n !== x && n !== y);
   if (rest.length > 1) throw new Error(`[${def.id}] at most one name may be off-axis`);
@@ -103,6 +111,8 @@ export function compileLevel(def: LevelDef): CompiledLevel {
     inputs,
     vars,
     names,
+    scope,
+    arrays,
     plane,
     freeDims,
     initExprs,
@@ -129,7 +139,7 @@ export type FormulaResult =
 export function compileFormula(level: CompiledLevel, text: string): FormulaResult {
   try {
     const expr = parseFormula(text);
-    checkCondition(expr, new Set(level.names), text, t().langErrors.anArea);
+    checkCondition(expr, level.scope, text, t().langErrors.anArea);
     return { ok: true, expr, fast: compileFast(expr), text };
   } catch (e) {
     if (e instanceof LangError) return { ok: false, error: e, text };
@@ -158,15 +168,21 @@ export function running(level: CompiledLevel, s: State): boolean {
   return holds(level.guard, s);
 }
 
-export function toNum(s: State): Record<string, number> {
-  const o: Record<string, number> = {};
-  for (const k in s) o[k] = Number(s[k]);
+export function toNum(s: State): FastState {
+  const o: FastState = {};
+  for (const k in s) {
+    const v = s[k];
+    o[k] = Array.isArray(v) ? v.map(Number) : Number(v);
+  }
   return o;
 }
 
-export function toBig(s: Record<string, number>): State {
+export function toBig(s: FastState): State {
   const o: State = {};
-  for (const k in s) o[k] = BigInt(Math.round(s[k]));
+  for (const k in s) {
+    const v = s[k];
+    o[k] = Array.isArray(v) ? v.map((x) => BigInt(Math.round(x))) : BigInt(Math.round(v));
+  }
   return o;
 }
 

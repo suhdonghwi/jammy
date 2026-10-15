@@ -2,15 +2,21 @@ import type { Expr, Program, Stmt } from './ast';
 import { t as messages } from '../i18n/i18n';
 import { LangError } from './parser';
 
-// Type checking: every name is an int; conditions must be true/false.
+// Type checking: a name is an int or an array input; conditions must be true/false.
 
 export type Type = 'int' | 'bool';
+
+/** What each name is: an integer, or an array (which is only ever indexed). */
+export type Scope = ReadonlyMap<string, 'int' | 'array'>;
+
+/** A scope where every name is an int. */
+export const intScope = (names: Iterable<string>): Scope => new Map([...names].map((n) => [n, 'int' as const]));
 
 const ARITH = new Set(['+', '-', '*', '/', '%']);
 const REL = new Set(['<', '<=', '>', '>=']);
 
-/** Type-check an expression; every name in `scope` is an int. */
-function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
+/** Type-check an expression. */
+function typeOf(e: Expr, scope: Scope, src: string): Type {
   const E = messages().langErrors;
   const text = (x: Expr) => src.slice(x.span.from, x.span.to);
   const want = (x: Expr, t: Type, ctx: string): void => {
@@ -22,17 +28,37 @@ function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
       );
     }
   };
+  const names = () => [...scope.keys()].join(', ');
   switch (e.kind) {
     case 'num':
       return 'int';
     case 'bool':
       return 'bool';
-    case 'var':
-      if (!scope.has(e.name)) {
-        const names = [...scope].join(', ');
-        throw new LangError(E.unknownName(e.name, names), e.span);
-      }
+    case 'var': {
+      const kind = scope.get(e.name);
+      if (!kind) throw new LangError(E.unknownName(e.name, names()), e.span);
+      if (kind === 'array') throw new LangError(E.isArray(e.name), e.span);
       return 'int';
+    }
+    case 'index': {
+      const kind = scope.get(e.array);
+      if (!kind) throw new LangError(E.unknownName(e.array, names()), e.span);
+      if (kind !== 'array') throw new LangError(E.notArray(e.array), e.span);
+      want(e.index, 'int', E.anIndex);
+      return 'int';
+    }
+    case 'quant': {
+      const inner = new Map(scope);
+      for (const v of e.vars) {
+        if (inner.has(v)) throw new LangError(E.nameTaken(v), e.span);
+        inner.set(v, 'int');
+      }
+      want(e.lo, 'int', E.aBound);
+      want(e.hi, 'int', E.aBound);
+      const got = typeOf(e.body, inner, src);
+      if (got !== 'bool') throw new LangError(E.needsCondition(text(e.body), e.q), e.body.span);
+      return 'bool';
+    }
     case 'unary':
       if (e.op === '-') {
         want(e.arg, 'int', "'-'");
@@ -81,13 +107,21 @@ function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
   }
 }
 
-export function checkCondition(e: Expr, scope: ReadonlySet<string>, src: string, what: string): void {
+export function checkCondition(e: Expr, scope: Scope, src: string, what: string): void {
   const E = messages().langErrors;
   const t = typeOf(e, scope, src);
   if (t !== 'bool') {
     const text = src.slice(e.span.from, e.span.to);
     throw new LangError(E.didYouMean(text, what), e.span);
   }
+}
+
+/** The names a program declares and what each is. */
+export function programScope(p: Program): Scope {
+  const scope = new Map<string, 'int' | 'array'>();
+  for (const d of p.inputDecls) scope.set(d.name, d.length ? 'array' : 'int');
+  for (const v of p.vars) scope.set(v.name, 'int');
+  return scope;
 }
 
 export function checkProgram(p: Program): void {
@@ -97,15 +131,23 @@ export function checkProgram(p: Program): void {
     if (names.has(n)) throw new LangError(`'${n}' is declared twice`, span);
     names.add(n);
   };
-  p.inputs.forEach((n) => declare(n));
-  const scope = new Set<string>(p.inputs);
+  const scope = new Map<string, 'int' | 'array'>();
+  for (const d of p.inputDecls) {
+    declare(d.name, d.span);
+    if (d.length) {
+      // the length is an input declared before the array, so the inputs card can show it under the array
+      if (scope.get(d.length) !== 'int') throw new LangError(`Declare the length '${d.length}' as an input before the array '${d.name}'`, d.span);
+      if (p.inputDecls.some((o) => o !== d && o.length === d.length)) throw new LangError(`'${d.length}' is already the length of another array`, d.span);
+    }
+    scope.set(d.name, d.length ? 'array' : 'int');
+  }
   for (const v of p.vars) {
     declare(v.name, v.span);
     if (v.init) {
       const t = typeOf(v.init, scope, src);
       if (t !== 'int') throw new LangError(`'${v.name}' must start as a number`, v.init.span);
     }
-    scope.add(v.name);
+    scope.set(v.name, 'int');
   }
   for (const r of p.requires) checkCondition(r, scope, src, 'requires');
   for (const r of p.ensures) checkCondition(r, scope, src, 'ensures');

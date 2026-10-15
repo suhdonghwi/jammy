@@ -3,7 +3,7 @@ import type { Expr } from '../lang/ast';
 import type { FastFn } from '../lang/eval';
 import { compileFormula, RULES, type CompiledLevel, type Pitfall, type Rule } from '../levels/level';
 import { boxSearch, sameOnBox, type Box } from './box';
-import { cexFromModel, equivalent, ruleQuery, solve } from './smt';
+import { breaksRule, cexFromModel, equivalent, ruleQuery, solve } from './smt';
 import type { RuleVerdict, Verdicts } from './types';
 
 // Checking an area against the three rules.
@@ -48,7 +48,7 @@ export async function checkFormula(
       continue;
     }
     const { dims, query } = ruleQuery(level, inv.expr, rule);
-    const r = await solve(ctx, dims, query, { timeout });
+    const r = await solve(ctx, level, dims, query, { timeout, verify: (s) => breaksRule(level, inv.expr, rule, s) });
     verdicts[rule] =
       r.kind === 'unsat'
         ? { status: 'pass', how: 'proved' }
