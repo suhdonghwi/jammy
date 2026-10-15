@@ -2,7 +2,7 @@ import { defineLevel, type LevelDef } from '../level';
 
 export const tutorialLevel = defineLevel({
   id: 'tutorial',
-  title: 'Tutorial · Counter',
+  title: 'Tutorial',
   chapter: 0,
   source: `input n;
 requires n >= 0;
