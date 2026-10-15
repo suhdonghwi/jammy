@@ -84,7 +84,9 @@ ${FADE_GLSL}
 void main() {
   vec2 fw = fwidth(vF);
   float fwr = fwidth(length(vF));
-  float ringD = abs(sdRoundBox(vF, vec2(0.42), 0.12)) - 0.03;
+  // hover outline: kept on the flat top (the 0.07 bevel starts at 0.38), with
+  // corners rounded to match, so it never runs onto the bevel and breaks up
+  float ringD = abs(sdRoundBox(vF, vec2(0.372), 0.1)) - 0.026;
   float fwRing = fwidth(ringD);
   vec3 n = normalize(vN);
   float top = step(0.6, n.y);
