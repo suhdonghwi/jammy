@@ -1,9 +1,10 @@
-import { Pause, Play, RotateCcw, StepForward, Wand2 } from 'lucide-react';
+import { Lightbulb, Pause, Play, RotateCcw, StepForward, Wand2 } from 'lucide-react';
 import { pauseRun, resetFrogs, runFrogs, stepFrogs } from '../../director/frogs';
 import { useGame } from '../../game/store';
+import { climbHint } from '../../tutorial/script';
 import { button } from '../classes';
 
-// Run / Pause, Step and Reset (and, in the tutorial, "Show me").
+// Run / Pause, Step and Reset (and, in the tutorial, the hint ladder).
 
 export function RunControls() {
   const reveal = useGame((s) => s.reveal);
@@ -11,7 +12,8 @@ export function RunControls() {
   const busy = useGame((s) => s.busy);
   const stepping = useGame((s) => s.stepping);
   const mode = useGame((s) => s.mode);
-  const suggestion = useGame((s) => s.suggestion);
+  const hint = useGame((s) => s.hint);
+  const awaitingCheck = useGame((s) => s.awaitingCheck);
   const spot = useGame((s) => s.spotlight);
   const allow = useGame((s) => s.tutorialAllow);
   const tut = mode === 'tutorial';
@@ -46,9 +48,11 @@ export function RunControls() {
         </button>
       )}
       <span className="flex-1" />
-      {tut && suggestion && reveal.formula && (
-        <button className={button('glass')} onClick={() => useGame.getState().setFormula(suggestion)}>
-          <Wand2 size={16} strokeWidth={2.2} /> Show me
+      {/* the hint ladder: a nudge, then a formula to try, then filling it in */}
+      {tut && hint && hint.rung < 3 && awaitingCheck && (
+        <button className={button('glass')} disabled={busy} onClick={climbHint}>
+          {hint.rung < 2 ? <Lightbulb size={16} strokeWidth={2.2} /> : <Wand2 size={16} strokeWidth={2.2} />}
+          {hint.rung === 0 ? 'Hint' : hint.rung === 1 ? 'Another hint' : 'Fill it in'}
         </button>
       )}
     </div>

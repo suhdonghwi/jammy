@@ -3,7 +3,7 @@ import { sleep } from '../director/sequence';
 import { EMPTY_REVEAL, useGame } from '../game/store';
 import { cameraRig } from '../scene/cameraRig';
 import { Aborted, allow, currentGeneration, guard, newGeneration } from './script';
-import { st, STEPS, type Scene } from './steps';
+import { learnerFormula, resetProgress, st, STEPS, type Scene } from './steps';
 
 // Running the tutorial: its steps in order, with Back (rewind a step) and
 // skipping ahead (Next pressed while a step is still playing).
@@ -23,11 +23,14 @@ function restore(gen: number, scene: Scene) {
     reveal: { ...EMPTY_REVEAL, ...scene.reveal },
     frogTags: !!scene.tags,
     callouts: [],
+    spotLines: [],
     spotlight: null,
-    suggestion: null,
+    hint: null,
     awaitingCheck: false,
+    verdicts: {},
+    pitfallMessage: null,
   });
-  useGame.getState().setFormula(scene.formula ?? '');
+  useGame.getState().setFormula(scene.formula === 'learner' ? learnerFormula : (scene.formula ?? ''));
   // instant: frogs are simply put back, and the camera glides back while the
   // step's caption is already showing
   for (const [i, n] of scene.frogs ?? []) placeFrog(st(i, n));
@@ -62,12 +65,22 @@ function play(from: number, rewound = false) {
 /** Start the tutorial from its first step; `finish` runs once the learner has gone through it all. */
 export function startTutorial(finish: () => void) {
   onFinish = finish;
+  resetProgress();
   play(0);
 }
 
 export function stopTutorial() {
   newGeneration();
-  useGame.setState({ awaitingCheck: false, spotlight: null, nextAction: null, back: null, skip: null, tutorialAllow: { step: false, run: false, eggs: false } });
+  useGame.setState({
+    awaitingCheck: false,
+    spotlight: null,
+    spotLines: [],
+    hint: null,
+    nextAction: null,
+    back: null,
+    skip: null,
+    tutorialAllow: { step: false, run: false, eggs: false, formula: false },
+  });
 }
 
 /** Next pressed while a step is still playing: go straight to the next step, its scene rebuilt at once. */

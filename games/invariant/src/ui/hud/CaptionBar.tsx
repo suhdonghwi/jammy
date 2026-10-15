@@ -33,7 +33,7 @@ export function CaptionBar() {
           </div>
         )}
       </div>
-      {(caption.secondary || caption.action || back) && (
+      {(caption.secondary || caption.action || caption.choices || back) && (
         <div className="flex items-center justify-end gap-1.5">
           {/* tutorial: back to the previous step (left), then the step's own buttons */}
           {back && (
@@ -42,6 +42,12 @@ export function CaptionBar() {
             </button>
           )}
           <span className="flex-1" />
+          {/* a question: its answers, side by side */}
+          {caption.choices?.map((c) => (
+            <button key={c.label} className={button('plain', 'sm')} onClick={c.onClick}>
+              {c.label}
+            </button>
+          ))}
           {caption.secondary && (
             <button className={button('quiet', 'sm')} onClick={caption.secondary.onClick}>
               <RotateCcw size={15} strokeWidth={2.4} />

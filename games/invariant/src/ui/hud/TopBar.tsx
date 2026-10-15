@@ -5,13 +5,15 @@ import { useGame } from '../../game/store';
 import { RULE_NAMES, RULES } from '../../levels/level';
 import { button } from '../classes';
 
-// The top bar: back, the level's name, the three rule lights (a failed one
-// replays its counterexample) and the rules card.
+// The top bar: back, the level's name, the three rule lights (dim until the
+// tutorial reaches them; a failed one replays its counterexample) and the
+// rules card.
 
 export function TopBar() {
   const level = useGame((s) => s.level);
   const mode = useGame((s) => s.mode);
   const lights = useGame((s) => s.reveal.lights);
+  const awake = useGame((s) => s.reveal.awake);
   const verdicts = useGame((s) => s.verdicts);
   const checking = useGame((s) => s.checking);
   const busy = useGame((s) => s.busy);
@@ -40,7 +42,7 @@ export function TopBar() {
           .filter((r) => lights.includes(r))
           .map((r) => {
             const v = verdicts[r];
-            const status: LightStatus = checking && !v ? 'checking' : (v?.status ?? 'idle');
+            const status: LightStatus = !awake.includes(r) ? 'dim' : checking && !v ? 'checking' : (v?.status ?? 'idle');
             return (
               <button
                 key={r}
@@ -62,12 +64,14 @@ export function TopBar() {
   );
 }
 
-type LightStatus = 'idle' | 'checking' | 'pass' | 'fail' | 'undecided';
+type LightStatus = 'dim' | 'idle' | 'checking' | 'pass' | 'fail' | 'undecided';
 
 /** A rounded bar of controls floating over the scene. */
 const PILLS = 'pointer-events-auto flex items-center gap-1.5 rounded-full border border-line bg-card p-1.25 shadow-card backdrop-blur-md';
 
 const LIGHT: Record<LightStatus, string> = {
+  // revealed, but its stage hasn't come yet
+  dim: 'text-faint opacity-60',
   idle: 'text-muted',
   checking: 'text-muted',
   pass: 'bg-pass-soft text-pass',

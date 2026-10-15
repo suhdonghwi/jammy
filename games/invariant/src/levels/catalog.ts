@@ -43,7 +43,7 @@ ensures i == 0;`,
     view: { x: 'i', y: 'n' },
     solutions: ['i >= 0', '0 <= i <= n'],
     pitfalls: [{ formula: 'i <= n', message: 'That bound held in the tutorial — but which way does this frog move?' }],
-    intro: 'Same idea as the tutorial — but this frog counts down. You are on your own now.',
+    intro: 'Same idea, but this frog counts down. Start with an area every egg sits on, and strengthen from there.',
     camera: { x: 2, y: 2, distance: 13 },
   },
   {

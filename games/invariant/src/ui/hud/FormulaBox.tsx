@@ -10,8 +10,8 @@ import { useGame } from '../../game/store';
 import { button } from '../classes';
 
 // The area formula: a one-line CodeMirror editor with highlighting, the
-// tutorial's suggested formula as placeholder text, errors once typing pauses,
-// and Check.
+// tutorial's hint formula as placeholder text, errors once typing pauses, and
+// Check.
 
 const exprLanguage = StreamLanguage.define<null>({
   token(stream) {
@@ -57,18 +57,24 @@ const errorField = StateField.define<DecorationSet>({
 
 const singleLine = EditorState.transactionFilter.of((tr) => (tr.newDoc.lines > 1 ? [] : tr));
 
-/** In the tutorial the area can only be edited while a step asks for it. */
-const isLocked = (g: { mode: string; awaitingCheck: boolean }) => g.mode === 'tutorial' && !g.awaitingCheck;
+/** In the tutorial the area can only be edited while a step allows it. */
+const isLocked = (g: { mode: string; tutorialAllow: { formula: boolean } }) => g.mode === 'tutorial' && !g.tutorialAllow.formula;
 const lockExt = (locked: boolean): Extension => [EditorState.readOnly.of(locked), EditorView.editable.of(!locked)];
-/** The suggested formula shows as placeholder text, with a hint that Tab fills it in. */
-const placeholderExt = (suggestion: string | null): Extension => placeholder(suggestion ? `${suggestion}   ⇥ Tab` : 'type a condition');
+/** The hint ladder's formula, once it has been climbed to (Tab fills it in). */
+const hintFormula = (g: { hint: { rung: number; formula: string } | null }) => (g.hint && g.hint.rung >= 2 ? g.hint.formula : null);
+/** The placeholder: the hint formula with a Tab reminder, or what a condition may mention. */
+function placeholderExt(hint: string | null, names: string[]): Extension {
+  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0] ?? '';
+  return placeholder(hint ? `${hint}   ⇥ Tab` : `a condition on ${list}`);
+}
 
 export function FormulaBox() {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const placeholderComp = useRef(new Compartment());
   const lockComp = useRef(new Compartment());
-  const suggestion = useGame((s) => s.suggestion);
+  const hint = useGame(hintFormula);
+  const names = useGame((s) => s.level?.names ?? []);
   const formula = useGame((s) => s.formula);
   const formulaText = useGame((s) => s.formulaText);
   const levelId = useGame((s) => s.level?.id);
@@ -76,7 +82,8 @@ export function FormulaBox() {
   const checking = useGame((s) => s.checking);
   const mode = useGame((s) => s.mode);
   const awaitingCheck = useGame((s) => s.awaitingCheck);
-  const locked = isLocked({ mode, awaitingCheck });
+  const allowFormula = useGame((s) => s.tutorialAllow.formula);
+  const locked = isLocked({ mode, tutorialAllow: { formula: allowFormula } });
   const spot = useGame((s) => s.spotlight);
   // errors appear only once typing pauses, so half-typed input doesn't flash errors
   const [settledError, setSettledError] = useState<{ message: string; span: { from: number; to: number } } | null>(null);
@@ -119,14 +126,14 @@ export function FormulaBox() {
           errorField,
           exprLanguage,
           syntaxHighlighting(highlight),
-          placeholderComp.current.of(placeholderExt(useGame.getState().suggestion)),
+          placeholderComp.current.of(placeholderExt(hintFormula(useGame.getState()), useGame.getState().level?.names ?? [])),
           lockComp.current.of(lockExt(isLocked(useGame.getState()))),
           keymap.of([
             { key: 'Enter', run: () => (void check(), true) },
             {
               key: 'Tab',
               run: (view) => {
-                const s = useGame.getState().suggestion;
+                const s = hintFormula(useGame.getState());
                 if (view.state.doc.length === 0 && s) {
                   view.dispatch({ changes: { from: 0, insert: s }, selection: { anchor: s.length } });
                   return true;
@@ -158,8 +165,8 @@ export function FormulaBox() {
   }, [locked]);
 
   useEffect(() => {
-    view.current?.dispatch({ effects: placeholderComp.current.reconfigure(placeholderExt(suggestion)) });
-  }, [suggestion]);
+    view.current?.dispatch({ effects: placeholderComp.current.reconfigure(placeholderExt(hint, names)) });
+  }, [hint, names]);
 
   // external text changes (level switch, "show me")
   useEffect(() => {

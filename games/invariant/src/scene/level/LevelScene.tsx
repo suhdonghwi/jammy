@@ -8,6 +8,7 @@ import { Frogs } from '../frogs/Frogs';
 import { HatchShells } from '../frogs/Hatch';
 import { Hand } from '../hand/Hand';
 import { useHover } from '../hover';
+import { AxisLabels } from '../labels/AxisLabels';
 import { Callouts } from '../labels/Callouts';
 import { FailMarker } from '../labels/FailMarker';
 import { FrogTags } from '../labels/FrogTags';
@@ -75,6 +76,7 @@ export function LevelScene() {
         {reveal.hover && <HoverPreview />}
         <FailMarker />
         <Callouts />
+        <AxisLabels />
         <Hand />
       </group>
     </>

@@ -16,7 +16,12 @@ export interface Reveal {
   run: boolean;
   step: boolean;
   formula: boolean;
+  /** The ghost `assert(…)` line at the top of the loop body. */
+  assert: boolean;
+  /** Rule lights shown in the top bar. */
   lights: Rule[];
+  /** Lights that are live (the tutorial shows the rest dim until their stage). */
+  awake: Rule[];
 }
 
 export const FULL_REVEAL: Reveal = {
@@ -29,7 +34,9 @@ export const FULL_REVEAL: Reveal = {
   run: true,
   step: true,
   formula: true,
+  assert: true,
   lights: ['init', 'pres', 'exit'],
+  awake: ['init', 'pres', 'exit'],
 };
 
 export const EMPTY_REVEAL: Reveal = {
@@ -42,7 +49,9 @@ export const EMPTY_REVEAL: Reveal = {
   run: false,
   step: false,
   formula: false,
+  assert: false,
   lights: [],
+  awake: [],
 };
 
 export type CaptionTone = 'info' | 'fail' | 'success' | 'muted';
@@ -54,6 +63,17 @@ export interface Caption {
   action?: { label: string; onClick: () => void };
   /** Optional quieter button next to it (e.g. Replay). */
   secondary?: { label: string; onClick: () => void };
+  /** A question: these buttons instead of a main one (the tutorial's predictions). */
+  choices?: { label: string; onClick: () => void }[];
+}
+
+/** The tutorial's hint ladder for the current stage: a nudge, then a formula to try, then filling it in. */
+export interface Hint {
+  /** Rungs climbed so far (0–3). */
+  rung: number;
+  ask: string;
+  nudge: string;
+  formula: string;
 }
 
 export interface Game {
@@ -84,8 +104,8 @@ export interface Game {
   /** Increments when frogs land (the loop condition is checked). */
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
-  /** Tutorial: the formula the current step asks for (Tab fills it in, "Show me" types it). */
-  suggestion: string | null;
+  /** Tutorial: the hint ladder while a stage waits for Check. */
+  hint: Hint | null;
   showRules: boolean;
   pitfallMessage: string | null;
   /** A cinematic is playing; the level scene is hidden. */
@@ -103,7 +123,9 @@ export interface Game {
   /** Tutorial: the Next action the script is currently waiting on (so replays can restore it). */
   nextAction: { label: string; onClick: () => void } | null;
   /** Tutorial: which controls the current beat lets the learner use. */
-  tutorialAllow: { step: boolean; run: boolean; eggs: boolean };
+  tutorialAllow: { step: boolean; run: boolean; eggs: boolean; formula: boolean };
+  /** Tutorial: program lines the caption is talking about (1-based). */
+  spotLines: number[];
   /** Tutorial: the UI element the caption is talking about. */
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
   /** Bumped when Check is pressed with an invalid formula (shows the inline error at once). */
@@ -140,7 +162,7 @@ export const useGame = create<Game>((set, get) => ({
   hopDur: 0.42,
   landTick: 0,
   landGuard: 'true',
-  suggestion: null,
+  hint: null,
   showRules: false,
   pitfallMessage: null,
   cinematic: false,
@@ -152,7 +174,8 @@ export const useGame = create<Game>((set, get) => ({
   back: null,
   skip: null,
   awaitingCheck: false,
-  tutorialAllow: { step: false, run: false, eggs: false },
+  tutorialAllow: { step: false, run: false, eggs: false, formula: false },
+  spotLines: [],
   nextAction: null,
   spotlight: null,
 
@@ -172,7 +195,7 @@ export const useGame = create<Game>((set, get) => ({
       caption: def.intro ? { text: def.intro, tone: 'info' } : null,
       reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
       selected: null,
-      suggestion: null,
+      hint: null,
       pitfallMessage: null,
       elevating: false,
       failMark: null,
@@ -182,7 +205,8 @@ export const useGame = create<Game>((set, get) => ({
       back: null,
       skip: null,
       awaitingCheck: false,
-      tutorialAllow: { step: false, run: false, eggs: false },
+      tutorialAllow: { step: false, run: false, eggs: false, formula: false },
+      spotLines: [],
       nextAction: null,
       spotlight: null,
     });

@@ -4,8 +4,9 @@ import { BUILTINS, KEYWORDS, tokenize } from '../../lang/parser';
 import { showState, type CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
 
-// The program, with the loop lighting up as frogs hop, and the selected frog's
-// values shown underneath like a debugger.
+// The program, with the loop lighting up as frogs hop, a ghost `assert` line
+// showing the area as the condition it is, and the selected frog's values
+// shown underneath like a debugger.
 
 const TOKEN = {
   keyword: 'font-semibold text-[#7c4ddb]',
@@ -26,6 +27,10 @@ interface Beat {
   hopDur: number;
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
+  /** The ghost assert line's condition (null: no assert line). */
+  assert: string | null;
+  /** Lines the tutorial's caption is talking about (1-based). */
+  spotLines: number[];
 }
 
 /**
@@ -67,7 +72,7 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   const headerLine = lineOf(header.from);
   const bodyFirst = stmts.length ? lineOf(stmts[0].span.from) : -1;
   const bodyLast = stmts.length ? lineOf(stmts[stmts.length - 1].span.to) : -2;
-  return lines.map((l, i) => {
+  const rows = lines.map((l, i) => {
     let cls = '-mx-2 flex px-2';
     let key = `l${i}`;
     let style: React.CSSProperties | undefined;
@@ -80,6 +85,7 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
       // as long as the hop itself
       if (beat.hopTick > 0) style = { animation: `body-run ${Math.max(0.3, beat.hopDur + 0.15)}s ease-out` };
     }
+    if (beat.spotLines.includes(i + 1)) cls += ' rounded-md bg-brand-soft';
     return (
       <div key={key} className={cls} style={style}>
         <span className="mr-3 w-[2ch] flex-none text-right text-[#b8bfcc] select-none">{i + 1}</span>
@@ -87,6 +93,20 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
       </div>
     );
   });
+  // the invariant, as the assert it stands for: a ghost line at the top of the loop body
+  if (beat.assert !== null && headerLine >= 0) {
+    const indent = stmts.length ? src.slice(lines[bodyFirst].from).match(/^\s*/)?.[0] ?? '  ' : '  ';
+    rows.splice(headerLine + 1, 0, (
+      <div key="assert" className="-mx-2 flex animate-fade px-2 text-faint">
+        <span className="mr-3 w-[2ch] flex-none select-none" />
+        <span>
+          {indent}
+          <span className="font-semibold">assert</span>({beat.assert});
+        </span>
+      </div>
+    ));
+  }
+  return rows;
 }
 
 export function CodePanel() {
@@ -97,9 +117,12 @@ export function CodePanel() {
   const landGuard = useGame((s) => s.landGuard);
   const selected = useGame((s) => s.selected);
   const reveal = useGame((s) => s.reveal);
+  const spotLines = useGame((s) => s.spotLines);
+  // the assert line shows the area once there is one to show, and ??? before
+  const assert = useGame((s) => (s.reveal.assert ? (s.reveal.formula && s.formulaText.trim() ? s.formulaText.trim() : '???') : null));
   const nodes = useMemo(
-    () => highlightSource(level, { hopTick, hopDur, landTick, landGuard }),
-    [level, hopTick, hopDur, landTick, landGuard],
+    () => highlightSource(level, { hopTick, hopDur, landTick, landGuard, assert, spotLines }),
+    [level, hopTick, hopDur, landTick, landGuard, assert, spotLines],
   );
   const spot = useGame((s) => s.spotlight);
   if (!reveal.code) return null;
