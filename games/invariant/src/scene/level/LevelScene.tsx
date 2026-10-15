@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { clickTile } from '../../director/frogs';
+import { clickTile, tileClickable } from '../../director/frogs';
 import { useGame } from '../../game/store';
 import { AreaLayer } from '../area/AreaLayer';
 import { POND_SPACING } from '../constants';
@@ -44,6 +44,7 @@ export function LevelScene() {
         showGoal={reveal.goals}
         showAxes={reveal.axes}
         onTile={clickTile}
+        clickable={tileClickable}
       />
       {leaving.map((p) => (
         <Floor

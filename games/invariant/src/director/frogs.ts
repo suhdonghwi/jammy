@@ -197,13 +197,18 @@ async function runEgg(s: State) {
   }
 }
 
+/** Would a click on this tile do something? It does on an unhatched egg, while eggs can be clicked. */
+export function tileClickable(x: number, y: number): boolean {
+  const g = useGame.getState();
+  if (g.busy || !g.reveal.eggs || !g.level) return false;
+  if (g.mode === 'tutorial' && !g.tutorialAllow.eggs) return false;
+  if (frogWorld.hatched.has(`${x},${y}`)) return false;
+  return eggsNear(g.level, g.pond, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
+}
+
 /** A click on the floor: an unhatched egg runs its frog. */
 export function clickTile(x: number, y: number) {
-  const g = useGame.getState();
-  if (g.busy || !g.reveal.eggs) return;
-  if (g.mode === 'tutorial' && !g.tutorialAllow.eggs) return;
-  const L = currentLevel();
-  const isEgg = eggsNear(L, g.pond, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
-  if (!isEgg || frogWorld.hatched.has(`${x},${y}`)) return;
-  void runEgg(toBig(tileState(L, x, y, g.pond)));
+  if (!tileClickable(x, y)) return;
+  const { level, pond } = useGame.getState();
+  void runEgg(toBig(tileState(level!, x, y, pond)));
 }

@@ -1,4 +1,4 @@
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../../levels/level';
@@ -50,10 +50,13 @@ export interface FloorProps {
   showGoal?: boolean;
   showAxes?: boolean;
   onTile?: (x: number, y: number) => void;
+  /** Whether a click on the tile would do something (the pointer cursor shows it). */
+  clickable?: (x: number, y: number) => boolean;
 }
 
-export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile }: FloorProps) {
+export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, clickable }: FloorProps) {
   const mesh = useRef<THREE.Mesh>(null);
+  const canvas = useThree((s) => s.gl.domElement);
   const material = useMemo(() => {
     return new THREE.ShaderMaterial({
       vertexShader: floorVertex,
@@ -128,8 +131,17 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
       u.uHover.value.set(hover.tile[0], hover.tile[1]);
       u.uHoverOn.value = 1;
     } else u.uHoverOn.value = 0;
+    // checked every frame: a tile stops being clickable while the pointer rests on it (its egg hatched, a run started)
+    if (interactive) {
+      const cursor = hover.tile && clickable?.(hover.tile[0], hover.tile[1]) ? 'pointer' : '';
+      if (canvas.style.cursor !== cursor) canvas.style.cursor = cursor;
+    }
     m.visible = u.uOpacity.value > 0.004;
   });
+
+  useEffect(() => {
+    if (interactive) return () => void (canvas.style.cursor = '');
+  }, [interactive, canvas]);
 
   const handlers = interactive
     ? {
