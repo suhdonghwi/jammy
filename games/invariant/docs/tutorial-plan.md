@@ -185,9 +185,9 @@ appear in the top bar, dim.
 **1.10 Draw before you check.** Formula box appears; Check stays disabled.
 
 > Type any condition on `i` and `n`. The tiles where it's true rise as
-> **slabs**. That is the `assert(?)` drawn on the plane. Try `i == 2` first,
-> then one or two of your own. **Syntax**, below the box, lists what you
-> can write.
+> **slabs**. That is the `assert(?)` drawn on the plane. Try something like
+> `i == 2`, `i % 2 == 0` or `i < n`. **Syntax**, below the box, lists what
+> you can write.
 
 Next appears after the first valid formula. Hover readout shows "in your
 area / outside your area" as today. No suggestion placeholder here; the
