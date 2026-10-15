@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
 import { CHAPTERS, levels } from '../levels/defs';
 import { useGame } from '../store/game';
@@ -10,14 +11,19 @@ export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
   const compact = useCompactHome();
   const picker = usePresence(view === 'levels');
+  // Arriving straight on the level list (back from a level), it is simply
+  // there; opened from the home screen, it fades in.
+  const [instant, setInstant] = useState(view === 'levels');
+  useEffect(() => {
+    if (view === 'home') setInstant(false);
+  }, [view]);
   return (
     <>
-      {view === 'home' && (
-        <div className={`home ${compact ? 'compact' : ''}`}>
-          <HeroCopy />
-        </div>
-      )}
-      {picker.mounted && <LevelPicker leaving={picker.leaving} />}
+      {/* the title and buttons stay, faded back behind the level list */}
+      <div className={`home ${compact ? 'compact' : ''} ${view === 'levels' ? 'behind' : ''}`}>
+        <HeroCopy />
+      </div>
+      {picker.mounted && <LevelPicker leaving={picker.leaving} instant={instant} />}
     </>
   );
 }
@@ -50,10 +56,10 @@ function HeroCopy() {
   );
 }
 
-function LevelPicker({ leaving }: { leaving: boolean }) {
+function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean }) {
   const chapters = [...new Set(levels.map((l) => l.chapter))];
   return (
-    <div className={`picker-backdrop ${leaving ? 'leaving' : ''}`}>
+    <div className={`picker-backdrop ${leaving ? 'leaving' : ''} ${instant ? 'instant' : ''}`}>
       <div className="picker">
         <div className="picker-head">
           <button className="btn ghost icon-btn" onClick={() => useGame.setState({ menuView: 'home' })}>

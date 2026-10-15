@@ -1300,6 +1300,21 @@ code {
     font-size: 16px;
   }
 }
+/* behind the level list: faded back, not gone */
+.home {
+  transition: opacity 0.25s ease;
+}
+.home.behind {
+  opacity: 0.35;
+}
+.home.behind .hero {
+  pointer-events: none;
+}
+/* the level list when arriving straight on it: simply there */
+.picker-backdrop.instant:not(.leaving),
+.picker-backdrop.instant:not(.leaving) .picker {
+  animation: none;
+}
 /* very small screens (narrow and short): no scene, the copy centred */
 .home.compact {
   justify-content: center;
