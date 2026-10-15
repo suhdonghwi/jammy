@@ -20,10 +20,11 @@ export function RunControls() {
   const tut = mode === 'tutorial';
   return (
     <div className="flex items-center gap-1.5">
+      {/* three alike buttons: their icons carry the colour that tells them apart */}
       {reveal.run &&
         (runningNow ? (
           <button className={button()} onClick={pauseRun}>
-            <Pause size={16} strokeWidth={2.4} /> Pause
+            <Pause size={16} strokeWidth={2.4} className="text-pass" /> Pause
           </button>
         ) : (
           <button
@@ -31,7 +32,7 @@ export function RunControls() {
             disabled={busy || stepping || (tut && !allow.run)}
             onClick={() => void runFrogs()}
           >
-            <Play size={16} strokeWidth={2.4} /> Run
+            <Play size={16} strokeWidth={2.4} className="text-pass" /> Run
           </button>
         ))}
       {reveal.step && (
@@ -40,12 +41,12 @@ export function RunControls() {
           disabled={busy || runningNow || stepping || (tut && !allow.step)}
           onClick={() => void stepFrogs()}
         >
-          <StepForward size={16} strokeWidth={2.4} /> Step
+          <StepForward size={16} strokeWidth={2.4} className="text-brand" /> Step
         </button>
       )}
       {reveal.run && !tut && (
-        <button className={button('glass')} disabled={busy} title="Put every frog back in its egg (your area stays)" onClick={resetFrogs}>
-          <RotateCcw size={16} strokeWidth={2.2} /> Reset
+        <button className={button()} disabled={busy} title="Put every frog back in its egg (your area stays)" onClick={resetFrogs}>
+          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> Reset
         </button>
       )}
       <span className="flex-1" />
