@@ -1145,6 +1145,11 @@ code {
 }
 
 /* ---------- labels in the scene (SceneTag): callouts, failures, frog state ---------- */
+/* positioned by SceneTag: bottom-centre (the pointer's tip) on the anchor */
+.scene-tag-holder {
+  transform-origin: 50% 100%;
+  padding-bottom: 6px;
+}
 .scene-tag {
   --tag-bg: #2b3445;
   position: relative;
@@ -1157,6 +1162,7 @@ code {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  transform-origin: 50% 100%;
   animation: tag-in 0.3s ease-out;
   transition:
     opacity 0.25s ease,

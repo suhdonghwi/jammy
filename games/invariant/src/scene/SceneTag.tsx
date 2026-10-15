@@ -15,16 +15,22 @@ export type TagTone = 'info' | 'good' | 'fail';
 /** Where a tag hangs: over a tile, or over a frog (following it as it hops). */
 export type TagAnchor = { tile: [number, number] } | { frog: FrogSim };
 
-const TAG_HEIGHT = 0.98;
+/** Height of the sitting frog model (its bounding box top). */
+const FROG_TOP = 0.53;
+/** Over a bare tile, where a frog's head would be. */
+const TILE_TAG_Y = 0.62;
+const GAP = 0.07;
 const v = new THREE.Vector3();
 
+/** The point the tag's pointer touches: just above the frog's head (or a tile). */
 export function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
   if ('tile' in a) {
     const [x, y] = a.tile;
-    return v.set(x, field.heightAt(x, y) * SLAB_H + TAG_HEIGHT, -y);
+    return v.set(x, field.heightAt(x, y) * SLAB_H + TILE_TAG_Y, -y);
   }
   const p = a.frog.drawn;
-  return p ? v.set(p.x, p.ground + TAG_HEIGHT, p.z) : null;
+  // rides with the frog, hops included, so the frog never runs into it
+  return p ? v.set(p.x, p.y + FROG_TOP * p.scale + GAP, p.z) : null;
 }
 
 export function SceneTag({
@@ -40,17 +46,26 @@ export function SceneTag({
   children: ReactNode;
 }) {
   const group = useRef<THREE.Group>(null);
+  const holder = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
-  useFrame(() => {
+  useFrame(({ camera }) => {
     const p = anchorPoint(anchor);
     if (group.current && p) group.current.position.copy(p);
+    // the pointer's tip sits on the anchor and the tag grows upward from it;
+    // a little smaller when the camera is far, so it never swamps the frog
+    if (holder.current && p) {
+      const k = THREE.MathUtils.clamp(14 / camera.position.distanceTo(p), 0.7, 1);
+      holder.current.style.transform = `translate(-50%, -100%) scale(${k.toFixed(3)})`;
+    }
     box.current?.classList.toggle('covered', !!hidden?.());
   });
   return (
     <group ref={group}>
-      <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-        <div ref={box} className={`scene-tag ${tone}`}>
-          {children}
+      <Html zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+        <div ref={holder} className="scene-tag-holder">
+          <div ref={box} className={`scene-tag ${tone}`}>
+            {children}
+          </div>
         </div>
       </Html>
     </group>

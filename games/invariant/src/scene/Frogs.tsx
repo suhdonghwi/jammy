@@ -347,11 +347,12 @@ export function Frogs() {
       const os = f.os!;
       const px = p.x + f.ox;
       const pz = p.z - f.oy!;
-      if (f.drawn) {
-        f.drawn.x = px;
-        f.drawn.ground = p.ground;
-        f.drawn.z = pz;
-      } else f.drawn = { x: px, ground: p.ground, z: pz };
+      if (!f.drawn) f.drawn = { x: 0, y: 0, ground: 0, z: 0, scale: 1 };
+      f.drawn.x = px;
+      f.drawn.y = p.y;
+      f.drawn.ground = p.ground;
+      f.drawn.z = pz;
+      f.drawn.scale = os * Math.max(0, p.sx);
       dummy.position.set(px, p.y, pz);
       dummy.rotation.set(p.pitch, p.yaw, p.roll, 'YXZ');
       dummy.scale.set(p.sx * os, p.sy * os, p.sx * os);
