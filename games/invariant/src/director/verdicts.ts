@@ -2,7 +2,7 @@ import gsap from 'gsap';
 import { checkFormula, type CheckResult } from '../checker/check';
 import type { Counterexample } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
-import { useGame, type Caption } from '../game/store';
+import { useGame, type Caption, type CaptionTone } from '../game/store';
 import type { State } from '../lang/ast';
 import { hop, RULES, running, showState, toBig, type Rule } from '../levels/level';
 import { cameraRig } from '../scene/cameraRig';
@@ -86,6 +86,8 @@ interface CounterexampleOptions {
   prefix?: string;
   /** Whose area it is: "your area" (the learner's, the default) or "this area" (one the tutorial is trying). */
   area?: string;
+  /** The caption's tone (default: a failure). A demo the learner predicted right uses success. */
+  tone?: CaptionTone;
   /** A paragraph added after it. */
   extra?: string;
   /** The caption's main button; by default it is Replay. Called when the caption is shown. */
@@ -140,7 +142,8 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
     if (opts.extra) text += `\n\n${opts.extra}`;
     const replay = { label: 'Replay', onClick: () => void playCounterexample(cex, opts) };
     const action = opts.action?.();
-    useGame.setState({ caption: action ? { text, tone: 'fail', action, secondary: replay } : { text, tone: 'fail', action: replay } });
+    const tone = opts.tone ?? 'fail';
+    useGame.setState({ caption: action ? { text, tone, action, secondary: replay } : { text, tone, action: replay } });
     await sleep(600);
     if (tok.alive) await handOut();
   } finally {

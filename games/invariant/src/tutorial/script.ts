@@ -328,7 +328,12 @@ export function preview(formula: string): () => void {
  * counterexample is acted out. Next restores the learner's area (`restore`,
  * or whatever the box held) and its verdicts. Returns the counterexample.
  */
-export async function demo(gen: number, formula: string, rules: Rule[], opts: { extra?: string; restore?: string } = {}): Promise<Counterexample | null> {
+export async function demo(
+  gen: number,
+  formula: string,
+  rules: Rule[],
+  opts: { extra?: string; restore?: string; /** The learner's prediction, if there was one: the caption opens with the verdict. */ guessedRight?: boolean } = {},
+): Promise<Counterexample | null> {
   const g = useGame.getState();
   const mine = opts.restore ?? g.formulaText;
   useGame.setState({ busy: true, callouts: [] });
@@ -354,8 +359,11 @@ export async function demo(gen: number, formula: string, rules: Rule[], opts: { 
   const cex = res && failing ? failureOf(res, failing) : null;
   if (cex) {
     useGame.setState({ pitfallMessage: null });
-    // the area on the plane is the one being tried, not the learner's
-    await playCounterexample(cex, { extra: opts.extra, area: 'this area', action: nextAfterCounterexample });
+    // the area on the plane is the one being tried, not the learner's; the
+    // verdict on their prediction leads, so the failure doesn't read as theirs
+    const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? 'Right, no. ' : 'Not quite. ';
+    const tone = opts.guessedRight ? 'success' : 'fail';
+    await playCounterexample(cex, { prefix: verdict, tone, extra: opts.extra, area: 'this area', action: nextAfterCounterexample });
     guard(gen);
     await holdCaption(gen);
   }

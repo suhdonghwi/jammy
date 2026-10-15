@@ -118,10 +118,9 @@ async function witness(
     preview(pitfall);
     const yes = await ask(gen, `Before we move on: what if we had tried \`${pitfall}\`? ${o.question}`);
     guard(gen);
-    await demo(gen, pitfall, upTo(rule), { extra: o.extra, restore: mine });
+    await demo(gen, pitfall, upTo(rule), { extra: o.extra, restore: mine, guessedRight: !yes });
     guard(gen);
-    const verdict = yes ? 'Not quite: no.' : 'Right: no.';
-    await beat(gen, `${verdict} ${o.afterDemo}`, { spot: 'lights' });
+    await beat(gen, o.afterDemo, { spot: 'lights' });
   } else {
     await beat(gen, o.afterOwn, { spot: 'lights' });
   }

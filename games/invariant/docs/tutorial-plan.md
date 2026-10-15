@@ -353,8 +353,11 @@ looking at the area; afterwards the learner's own area comes back.
 > Before we move on: what if we had tried `i == n`? Would every egg sit on
 > it? **✓ Yes** · **✕ No**
 
-The hand is not named here (the learner may not have met it yet). After the
-demo: "Right: no." or "Not quite: no." followed by the rule's explanation.
+The hand is not named here (the learner may not have met it yet). The
+counterexample's caption opens with the verdict, "Right, no." in the success
+tone or "Not quite." in the failure tone, then says what the frog did ("this
+frog starts at … — outside this area"); the rule's explanation follows on
+Next.
 For stage 3, the question is "Would it pass all three rules?". Predictions
 are never scored or remembered; they exist to make the learner commit. They
 are plain buttons, not clicks in the scene, and the demo cannot be skipped: a
