@@ -75,7 +75,8 @@ function fingertipFrame() {
 
 /**
  * Point at whatever sits on tile (x, y) — an egg or a frog: the fingertip stops
- * just short of it, angled down at its middle, then jabs at it a few times.
+ * just short of it, angled down at its middle, then jabs at it a few times. A
+ * hand that is away comes in already pointing, from above and behind.
  */
 export async function pointAt(x: number, y: number) {
   const slot = occupancy.eggSlots.get(`${x},${y}`);
@@ -85,6 +86,8 @@ export async function pointAt(x: number, y: number) {
   // fingertip a little way back from the target's middle, along the finger
   const at = target.clone().addScaledVector(dir, -0.3).sub(tip);
   const back = at.clone().addScaledVector(dir, -0.12);
-  await tween(handState, { visible: 1, x: back.x, y: back.y, z: back.z, ...POINT_POSE, duration: 0.5, ease: 'power2.out' });
+  const away = handState.visible < 0.05;
+  if (away) Object.assign(handState, { x: back.x + 1.5, y: back.y + 5, z: back.z - 3, ...POINT_POSE, shrug: 0, tap: 0, palmUp: 0 });
+  await tween(handState, { visible: 1, x: back.x, y: back.y, z: back.z, ...POINT_POSE, duration: away ? 0.7 : 0.5, ease: away ? 'power3.out' : 'power2.out' });
   await tween(handState, { x: at.x, y: at.y, z: at.z, duration: 0.16, yoyo: true, repeat: 3, ease: 'sine.inOut' });
 }

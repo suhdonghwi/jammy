@@ -112,8 +112,6 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
     const broken = cex.broken ? ` \`${cex.broken}\` ${cex.rule === 'maintenance' ? 'no longer holds' : 'is false there'}.` : '';
     let text: string;
     if (cex.rule === 'initialization') {
-      await handIn(x + 0.4, y - 1.3, 1.6, { curl: 0.2 });
-      if (!tok.alive) return;
       await pointAt(x, y);
       hatch(cex.state);
       await sleep(450);
