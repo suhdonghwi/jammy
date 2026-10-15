@@ -345,7 +345,9 @@ green outlines on the area's stop tiles (Exit). Outlines only, no tags: the
 caption says what they show. Then Next.
 
 **Predict.** A yes-or-no question, with Yes and No as buttons that carry a
-green tick and a red cross:
+green tick and a red cross. While it is asked, the pitfall formula sits in
+the area box and its slabs are on the plane, so the learner answers by
+looking at the area; afterwards the learner's own area comes back.
 
 > Before we move on: what if we had tried `i == n`? Would every egg sit on
 > it? **✓ Yes** · **✕ No**
@@ -358,11 +360,12 @@ are plain buttons, not clicks in the scene, and the demo cannot be skipped: a
 learner who passes every stage first try still sees all three failures,
 because the demos are where the rules get their names.
 
-**Demo.** `demo(gen, formula, rule)`: the learner's formula is saved; the hand
-comes in; the formula box types out `formula` character by character (slabs
-follow, as when the learner types); the checker runs; the counterexample plays
-with its Replay button; Next restores the learner's formula and slabs. The box
-is read-only during a demo.
+**Demo.** `demo(gen, formula, rule)`: the learner's formula is saved; unless
+the box already shows `formula` (it does, after a prediction), the hand comes
+in and the box types it out character by character (slabs follow, as when
+the learner types); the checker runs; the counterexample plays with its
+Replay button; Next restores the learner's formula and slabs. The box is
+read-only during a demo.
 
 ## UI and engine changes
 

@@ -304,24 +304,37 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
 }
 
 /**
- * The hand tries a formula of its own: it types it into the box (the slabs
- * follow), the rules run, and the counterexample is acted out. Next restores
- * the learner's area and its verdicts. Returns the counterexample.
+ * Show a formula in the box, slabs and all, for the learner to look at (the
+ * box stays read-only). `preview()` then puts the learner's own area back.
  */
-export async function demo(gen: number, formula: string, rules: Rule[], extra?: string): Promise<Counterexample | null> {
+export function preview(formula: string): () => void {
+  const mine = useGame.getState().formulaText;
+  useGame.getState().setFormula(formula);
+  return () => useGame.getState().setFormula(mine);
+}
+
+/**
+ * A formula of the tutorial's own is tried: the hand types it into the box
+ * (the slabs follow) unless it is already there, the rules run, and the
+ * counterexample is acted out. Next restores the learner's area (`restore`,
+ * or whatever the box held) and its verdicts. Returns the counterexample.
+ */
+export async function demo(gen: number, formula: string, rules: Rule[], opts: { extra?: string; restore?: string } = {}): Promise<Counterexample | null> {
   const g = useGame.getState();
-  const mine = g.formulaText;
+  const mine = opts.restore ?? g.formulaText;
   useGame.setState({ busy: true, callouts: [] });
   frogWorld.clear('test');
   say(`Trying \`${formula}\`…`, 'formula', 'muted');
-  const t = cameraRig.target();
-  void handIn(t.x + 2.5, -t.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
-  await sleep(500);
-  guard(gen);
-  for (let k = 1; k <= formula.length; k++) {
-    g.setFormula(formula.slice(0, k));
-    await sleep(formula[k - 1] === ' ' ? 30 : 70);
+  if (g.formulaText.trim() !== formula) {
+    const t = cameraRig.target();
+    void handIn(t.x + 2.5, -t.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
+    await sleep(500);
     guard(gen);
+    for (let k = 1; k <= formula.length; k++) {
+      g.setFormula(formula.slice(0, k));
+      await sleep(formula[k - 1] === ' ' ? 30 : 70);
+      guard(gen);
+    }
   }
   await sleep(550);
   guard(gen);
@@ -332,7 +345,7 @@ export async function demo(gen: number, formula: string, rules: Rule[], extra?: 
   const cex = res && failing ? failureOf(res, failing) : null;
   if (cex) {
     useGame.setState({ pitfallMessage: null });
-    await playCounterexample(cex, { extra, action: nextAfterCounterexample });
+    await playCounterexample(cex, { extra: opts.extra, action: nextAfterCounterexample });
     guard(gen);
     await holdCaption(gen);
   }

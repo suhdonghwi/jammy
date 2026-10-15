@@ -7,7 +7,7 @@ import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { eggsNear, tileState } from '../scene/tiles';
 import { EXIT_MS } from '../ui/presence';
-import { allow, ask, beat, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
+import { allow, ask, beat, demo, guard, preview, say, sayWaiting, stage, waitEvent, waitStore } from './script';
 
 // The story, as steps. Each step knows the scene it starts from, so Back can
 // rebuild it and replay the step; moving forward just runs the next one.
@@ -110,9 +110,12 @@ async function witness(
   o: { question: string; afterDemo: string; afterOwn: string; extra?: string },
 ) {
   if (!witnessed.has(rule)) {
+    // the pitfall is shown in the box and on the plane while the learner decides
+    const mine = useGame.getState().formulaText;
+    preview(pitfall);
     const yes = await ask(gen, `Before we move on: what if we had tried \`${pitfall}\`? ${o.question}`);
     guard(gen);
-    await demo(gen, pitfall, upTo(rule), o.extra);
+    await demo(gen, pitfall, upTo(rule), { extra: o.extra, restore: mine });
     guard(gen);
     const verdict = yes ? 'Not quite: no.' : 'Right: no.';
     await beat(gen, `${verdict} ${o.afterDemo}`, { spot: 'lights' });
