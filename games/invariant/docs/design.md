@@ -167,18 +167,16 @@ touching levels, the language or the checker.
 - programs are loops a programmer might actually write (round up to a
   multiple, deal cards, integer square root), and a level's intro says what
   the loop is *for*, not how to solve it;
-- levels are numbered straight through and grouped by **the kind of fact the
-  area needs**, so a group's name tells the learner what they are practising.
-  Each group starts with a gentle level and ends on one that combines its
-  idea with an earlier one:
+- levels are numbered straight through and get harder from first to last;
+  the level list shows them in three tiers a learner can read at a glance,
+  **Beginner**, **Intermediate** and **Advanced** (with ●○○ to ●●● beside
+  each), each ending on its hardest level:
 
-| Group | The area needs | Levels |
+| Tier | What the areas need | Levels |
 |---|---|---|
-| **Fences** | one inequality: the line real frogs never cross | Countdown, Overshoot, Meet in the Middle (the slider's first level) |
-| **Rhythm** | which tiles frogs land on (`%`), plus a fence | Step by Two, Parity, Round Up |
-| **Balance** | a preserved equation, plus a fence | Transfer, Doubling, Divide by 3, Catch Up |
-| **Forks** | a fact every branch of an `if` keeps | Even Out, Absolute Value, Deal the Cards, Count the Threes |
-| **Curves** | a preserved equation with a product in it | Odd Squares, Sum to n, Square Root |
+| **Beginner** | one fence (the line real frogs never cross), then which tiles frogs land on (`%`) | Countdown, Overshoot, Meet in the Middle (the slider's first level), Step by Two, Parity, Round Up |
+| **Intermediate** | a preserved equation plus a fence; then a fact every branch of an `if` keeps | Transfer, Doubling, Divide by 3, Even Out (the first `if`), Absolute Value, Catch Up |
+| **Advanced** | two facts at once across branches, then equations with a product in them | Deal the Cards, Count the Threes, Odd Squares, Sum to n, Square Root |
 
 ## The tutorial
 

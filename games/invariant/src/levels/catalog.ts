@@ -1,8 +1,7 @@
 import type { LevelDef } from './level';
 
-// Every level, in order (the tutorial's program first). Levels come in groups,
-// each named for the kind of fact its areas need; within a group, and from one
-// group to the next, they get harder.
+// Every level, in order (the tutorial's program first), getting harder from
+// first to last; the level list shows them in three tiers of difficulty.
 
 export const tutorialLevel: LevelDef = {
   id: 'tutorial',
@@ -33,7 +32,7 @@ export interface LevelGroup {
 
 export const GROUPS: LevelGroup[] = [
   {
-    name: 'Fences',
+    name: 'Beginner',
     levels: [
       {
         id: 'countdown',
@@ -118,11 +117,6 @@ ensures hi <= lo && lo <= hi + 1;`,
         ],
         camera: { x: 2, y: 3, distance: 13 },
       },
-    ],
-  },
-  {
-    name: 'Rhythm',
-    levels: [
       {
         id: 'step-by-two',
         title: 'Step by Two',
@@ -206,7 +200,7 @@ ensures i % 3 == 0 && n <= i && i < n + 3;`,
     ],
   },
   {
-    name: 'Balance',
+    name: 'Intermediate',
     levels: [
       {
         id: 'transfer',
@@ -296,40 +290,6 @@ ensures a == 3 * q + r && 0 <= r && r < 3;`,
         camera: { x: 1, y: 3, distance: 14 },
       },
       {
-        id: 'catch-up',
-        title: 'Catch Up',
-        source: `input n;
-requires n >= 0;
-
-var a = 0;
-var b = n;
-while (a < b) {
-  a = a + 2;
-  b = b + 1;
-}
-
-ensures a == b && a == 2 * n;`,
-        view: { x: 'a', y: 'b' },
-        planes: { min: 0, max: 15, start: 3 },
-        solutions: ['a == 2 * (b - n) && a <= b', 'a == 2 * b - 2 * n && a <= b'],
-        pitfalls: [
-          { formula: 'a == 2 * (b - n)', message: 'Right line — but a frog on it could stop with `a` already past `b`.' },
-          { formula: 'a <= b', message: '`a` never passes `b` — right. But nothing in your area ties them to `n`.' },
-        ],
-        intro: '`a` runs two steps per hop and `b` runs one, but `b` starts `n` ahead. Where does `a` catch up?',
-        hints: [
-          'Each hop, `a` gains 2 and `b` gains 1. Compare `a` with how far `b` has come from `n`.',
-          '`b - n` counts the hops so far, and `a` is always twice that. Where can a frog on that line stop?',
-          'An equation linking `a`, `b` and `n`, plus a fence: `a` never passes `b`.',
-        ],
-        camera: { x: 3, y: 4, distance: 14 },
-      },
-    ],
-  },
-  {
-    name: 'Forks',
-    levels: [
-      {
         id: 'even-out',
         title: 'Even Out',
         source: `var x, y;
@@ -350,7 +310,7 @@ ensures x == y && x >= 0;`,
           { formula: 'x >= 0', message: 'When `x` shrinks, what keeps it from dropping below `0`? Look at `y`.' },
           { formula: 'y >= 0', message: 'When `y` shrinks, what keeps it from dropping below `0`? Look at `x`.' },
         ],
-        intro: 'Two numbers step toward each other until they meet.',
+        intro: 'Two numbers step toward each other until they meet. The body has an `if` now: your area must survive both branches.',
         hints: [
           'Each hop, only the larger number shrinks. Can it ever drop below the smaller one?',
           'When `x` shrinks, it’s because `x > y`. So if `y` is never negative, neither is the new `x` — and the same the other way round.',
@@ -390,6 +350,40 @@ ensures y == abs(a);`,
         ],
         camera: { x: 0, y: 2, distance: 14 },
       },
+      {
+        id: 'catch-up',
+        title: 'Catch Up',
+        source: `input n;
+requires n >= 0;
+
+var a = 0;
+var b = n;
+while (a < b) {
+  a = a + 2;
+  b = b + 1;
+}
+
+ensures a == b && a == 2 * n;`,
+        view: { x: 'a', y: 'b' },
+        planes: { min: 0, max: 15, start: 3 },
+        solutions: ['a == 2 * (b - n) && a <= b', 'a == 2 * b - 2 * n && a <= b'],
+        pitfalls: [
+          { formula: 'a == 2 * (b - n)', message: 'Right line — but a frog on it could stop with `a` already past `b`.' },
+          { formula: 'a <= b', message: '`a` never passes `b` — right. But nothing in your area ties them to `n`.' },
+        ],
+        intro: '`a` runs two steps per hop and `b` runs one, but `b` starts `n` ahead. Where does `a` catch up?',
+        hints: [
+          'Each hop, `a` gains 2 and `b` gains 1. Compare `a` with how far `b` has come from `n`.',
+          '`b - n` counts the hops so far, and `a` is always twice that. Where can a frog on that line stop?',
+          'An equation linking `a`, `b` and `n`, plus a fence: `a` never passes `b`.',
+        ],
+        camera: { x: 3, y: 4, distance: 14 },
+      },
+    ],
+  },
+  {
+    name: 'Advanced',
+    levels: [
       {
         id: 'deal-the-cards',
         title: 'Deal the Cards',
@@ -457,11 +451,6 @@ ensures c == n / 3;`,
         ],
         camera: { x: 4, y: 1, distance: 13 },
       },
-    ],
-  },
-  {
-    name: 'Curves',
-    levels: [
       {
         id: 'odd-squares',
         title: 'Odd Squares',

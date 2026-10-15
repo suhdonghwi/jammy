@@ -89,18 +89,22 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
           <span className="w-20" />
         </div>
         <div className="overflow-y-auto px-6 pt-1.5 pb-6">
-          {GROUPS.map((g) => (
+          {GROUPS.map((g, tier) => (
             <section key={g.name}>
-              {/* the group's name says what kind of fact its areas need; the numbers run on across groups */}
-              <h3 className="mt-4 mb-2.5 font-display text-lg font-semibold">{g.name}</h3>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-2.5">
+              <h3 className="mt-4 mb-2.5 flex items-center gap-2.5 font-display text-lg font-semibold">
+                {g.name}
+                <Pips filled={tier + 1} of={GROUPS.length} />
+              </h3>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2.5">
                 {g.levels.map((l) => (
                   <button
                     key={l.id}
-                    className="flex cursor-pointer items-baseline gap-2.5 rounded-2xl border border-line bg-white px-3.5 py-3 text-left shadow-[0_3px_0_#e2e6ee] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_5px_0_#dfe4ec,0_10px_20px_rgb(32_44_70/0.08)]"
+                    className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line bg-white py-2.5 pr-3.5 pl-2.5 text-left shadow-[0_3px_0_#e2e6ee] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_5px_0_#dfe4ec,0_10px_20px_rgb(32_44_70/0.08)]"
                     onClick={() => openLevel(l)}
                   >
-                    <span className="font-mono text-xs text-faint">{levelNumber(l.id)}</span>
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft font-display text-md font-semibold text-brand">
+                      {levelNumber(l.id)}
+                    </span>
                     <span className="font-display text-md font-semibold">{l.title}</span>
                   </button>
                 ))}
@@ -110,5 +114,17 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
         </div>
       </div>
     </div>
+  );
+}
+
+/** A tier's difficulty as filled dots: ●○○, ●●○, ●●●. */
+function Pips({ filled, of }: { filled: number; of: number }) {
+  return (
+    // a pixel below the line box's centre (the capitals'), toward the lowercase letters', so they don't look high
+    <span className="flex translate-y-px gap-1" aria-label={`difficulty ${filled} of ${of}`}>
+      {Array.from({ length: of }, (_, k) => (
+        <span key={k} className={`size-2 rounded-full ${k < filled ? 'bg-brand' : 'bg-shade/12'}`} />
+      ))}
+    </span>
   );
 }
