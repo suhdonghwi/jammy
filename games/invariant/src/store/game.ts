@@ -86,8 +86,6 @@ export interface Game {
   landGuard: 'true' | 'false' | 'mixed';
   lastFailure: Counterexample | null;
   ghost: string | null;
-  hints: string[];
-  hintsShown: number;
   showMe: string | null;
   showRules: boolean;
   pitfallMessage: string | null;
@@ -149,8 +147,6 @@ export const useGame = create<Game>((set, get) => ({
   landGuard: 'true',
   lastFailure: null,
   ghost: null,
-  hints: [],
-  hintsShown: 0,
   showMe: null,
   showRules: false,
   pitfallMessage: null,
@@ -185,8 +181,6 @@ export const useGame = create<Game>((set, get) => ({
       selected: null,
       lastFailure: null,
       ghost: null,
-      hints: def.hints ?? [],
-      hintsShown: 0,
       showMe: null,
       pitfallMessage: null,
       elevating: false,

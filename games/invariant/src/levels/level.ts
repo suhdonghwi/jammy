@@ -21,7 +21,6 @@ export interface LevelDef {
   view: { x: string; y: string };
   solutions: string[];
   pitfalls?: Pitfall[];
-  hints?: string[];
   /** Caption shown when the level opens. */
   intro?: string;
   /** Camera target tile and distance. */

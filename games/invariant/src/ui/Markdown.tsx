@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 
-// A tiny Markdown subset for captions and hints, rendered straight to React
+// A tiny Markdown subset for captions, rendered straight to React
 // elements (no HTML strings):
 //   blank line → new paragraph, single newline → line break
 //   "- item" lines → bullet list, "1. item" lines → numbered list

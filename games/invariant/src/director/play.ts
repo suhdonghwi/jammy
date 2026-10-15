@@ -57,12 +57,8 @@ export async function check() {
   }
   if (RULES.some((r) => res.verdicts[r]?.status === 'undecided')) {
     const usesDivision = g.formulaText.includes('/');
-    const hint = usesDivision
-      ? 'Try avoiding division — for example `2 * s == …` instead of `s == … / 2`.'
-      : g.level.hints?.[0] ?? '';
-    await director.playShrug(
-      `I couldn't find a frog that breaks this nearby — but I couldn't prove it either. ${hint}`,
-    );
+    const tip = usesDivision ? ' Try avoiding division — for example `2 * s == …` instead of `s == … / 2`.' : '';
+    await director.playShrug(`I couldn't find a frog that breaks this nearby — but I couldn't prove it either.${tip}`);
     return;
   }
   const level = g.level;
@@ -73,12 +69,4 @@ export async function check() {
     tone: 'success',
     action: next ? { label: `Next: ${next.title}`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
   });
-}
-
-export function showHint() {
-  const g = game();
-  if (!g.hints.length) return;
-  const k = Math.min(g.hintsShown, g.hints.length - 1);
-  g.patch({ hintsShown: k + 1 });
-  g.setCaption({ text: `Hint: ${g.hints[k]}`, tone: 'info' });
 }

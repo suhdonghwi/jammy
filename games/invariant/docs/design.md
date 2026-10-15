@@ -152,7 +152,7 @@ Every result follows one script: **camera glides (switching ponds if needed) →
 | Init fails | Camera finds an egg on the floor; hand points; egg pulses red; frog hatches off the slab | *"This frog starts at i = 0, n = 1 — outside your area."* |
 | Preservation fails | Hand places a test frog on a slab in the continue region; it hops and **falls off**; turns red | *"From (0, 2), one hop lands at (1, 2) — outside your area."* |
 | Exit fails | Hand places a test frog on a slab in the stop region, on a tile with no goal marker; tile pulses red | *"A frog that stops at i = 1, n = 0 doesn't meet the postcondition."* |
-| Undecided | Hand shrugs | *"No frog breaks this in ponds 0–200, tiles within ±500 — but I couldn't prove it either."* + level hint |
+| Undecided | Hand shrugs | *"No frog breaks this in ponds 0–200, tiles within ±500 — but I couldn't prove it either."* (+ a tip to avoid division, if the formula divides) |
 | All pass | Camera pulls back; hand **scatters frogs**; continue-region frogs hop and land on slabs; stop-region frogs sit on goals; in pond levels the rain sweeps the stack | — |
 
 The checker splits the formula at top-level `&&` internally, so captions can name which conjunct broke: *"`(x + y) % 2 == 0` no longer holds after the hop."*
@@ -222,17 +222,12 @@ export default defineLevel({
   pitfalls: [
     { formula: 'i <= n', message: 'That bound held in the tutorial — but which way does this frog move?' },
   ],
-  hints: [
-    'Frogs start at i = n and only move left.',
-    'What stays true of i on every tile a real frog visits?',
-  ],
 });
 ```
 
 - **`view`** maps two variables to the plane's axes; any remaining input gets the pond stack and vertical slider. Layout only — never semantics.
 - **`solutions`** — known-good invariants; verified at build time; power the "equivalent to a known answer" fallback.
 - **`pitfalls`** — expected wrong answers with tailored messages, shown when the learner's formula is Z3-equivalent to one (short timeout).
-- **`hints`** — escalating hints.
 
 ### 5.3 Build-time validation (`scripts/validate-levels.ts`, runs in CI)
 
@@ -268,7 +263,7 @@ Hosting needs cross-origin isolation headers (COOP/COEP) for Z3's WASM threads.
 | Counterexample | Places/points | Fix it |
 | **Undecided** | Shrugs | **Not cleared** |
 
-**Before reporting undecided:** try alternative Z3 strategies (nonlinear tactics); try proving the formula **equivalent to a known solution**; allow a longer budget (Check only). If still unknown: shrug, report what was searched, show a level hint (most commonly: *avoid division — write `2*s == i*(i+1)`*).
+**Before reporting undecided:** try alternative Z3 strategies (nonlinear tactics); try proving the formula **equivalent to a known solution**; allow a longer budget (Check only). If still unknown: shrug, report what was searched, if the formula divides, suggest avoiding division (*write `2*s == i*(i+1)`*).
 
 A large box search never silently substitutes for a proof — that would contradict what the site teaches.
 
@@ -378,7 +373,7 @@ ensures i == n;
 | A | Exact formula | Ghost text; Tab accepts |
 | B | The idea in words | Ghost text after a pause, or "Show me" |
 | C | A hint | "Show me" only |
-| D | Learner's own | Escalating hints → "Show me" |
+| D | Learner's own | "Show me" |
 
 ### 8.6 Ending
 
@@ -477,7 +472,7 @@ scripts/
 | M4 | Hand & choreography | Three replays, shrug, frog rain, lights, captions |
 | M5 | Ponds | Stack, slider, camera glide, pond-switching counterexamples, bridge cinematic |
 | M6 | Tutorial | Full counter tutorial with fading guidance |
-| M7 | Content & polish | All v1 levels, pitfalls, hints, recap card, progress saving, playtesting |
+| M7 | Content & polish | All v1 levels, pitfalls, recap card, progress saving, playtesting |
 
 **Parity (1-2)** is the testbed level for M2–M4.
 

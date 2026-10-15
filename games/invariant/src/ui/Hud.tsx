@@ -2,7 +2,7 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { displayNames, RULE_NAMES, showState, type CompiledLevel, type Rule } from '../levels/level';
 import { useGame } from '../store/game';
 import { director } from '../director/director';
-import { goMenu, showHint } from '../director/play';
+import { goMenu } from '../director/play';
 import { tokenize } from '../lang/parser';
 import { useHover } from '../scene/hover';
 import {
@@ -18,7 +18,6 @@ import {
   CircleHelp,
   CircleX,
   Eraser,
-  Lightbulb,
   LoaderCircle,
   Pause,
   Play,
@@ -327,7 +326,6 @@ export function RunControls() {
   const busy = useGame((s) => s.busy);
   const stepping = useGame((s) => s.stepping);
   const mode = useGame((s) => s.mode);
-  const hints = useGame((s) => s.hints);
   const showMe = useGame((s) => s.showMe);
   const spot = useGame((s) => s.spotlight);
   const allow = useGame((s) => s.tutorialAllow);
@@ -363,11 +361,6 @@ export function RunControls() {
         </button>
       )}
       <span className="spacer" />
-      {reveal.formula && hints.length > 0 && (
-        <button className="btn ghost icon-btn" onClick={showHint}>
-          <Lightbulb size={16} strokeWidth={2.2} /> Hint
-        </button>
-      )}
       {mode === 'tutorial' && showMe && reveal.formula && (
         <button className="btn ghost icon-btn" onClick={() => useGame.getState().setFormula(showMe)}>
           <Wand2 size={16} strokeWidth={2.2} /> Show me

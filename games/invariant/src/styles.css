@@ -841,6 +841,17 @@ code {
 .run-controls .spacer {
   flex: 1;
 }
+/* These sit right on the scene, where a faint wash vanishes: a frosted pill,
+   still quieter than Run/Step (muted text, no bottom edge). */
+.run-controls .btn.ghost {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: var(--line);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.run-controls .btn.ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.95);
+}
 
 /* ---------- rules modal ---------- */
 .modal-backdrop {
