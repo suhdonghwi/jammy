@@ -157,18 +157,22 @@ touching levels, the language or the checker.
 
 ## The tutorial
 
-A scripted story on one program, a counter (`i` from `0` up to `n`), about ten
-minutes long, built on the same engine as the levels.
+A scripted story on one program, a counter (`i` from `0` up to `n`), built on
+the same engine as the levels. It is being rebuilt; the full script, the
+vocabulary it introduces and the engine changes it needs are in
+[tutorial-plan.md](tutorial-plan.md). In short:
 
-- **Progressive reveal:** it starts with a bare plane and one frog; the code,
-  Step, eggs, goals, Run, the formula box and each rule's light appear only when
-  the story needs them.
-- **Every rule's failure is witnessed once**, each by a specific formula the
-  step asks for: `i == n` breaks Init, `i == 0 || i == n` breaks Preservation,
-  `i >= 0` passes both but breaks Exit, and `0 <= i <= n` passes all three.
-- The learner types each formula (Tab fills in the suggestion; "Show me" types
-  it); nothing else is accepted, so what happens next is always what the
-  caption promised.
+- **Progressive reveal:** a bare plane and one frog first; the code, Step,
+  eggs, goals, Run, the assert line, the formula box and the rule lights
+  appear only when the story needs them.
+- **Any formula is a valid move.** Each of three stages asks for one rule's
+  worth of area and checks only the rules introduced so far; the story
+  branches on which rule failed, never on which formula was typed.
+- **Every failure is witnessed:** by the learner's own formula if it fails,
+  or by the hand demonstrating that stage's pitfall if it passes, after the
+  learner predicts the outcome.
+- A hint ladder (a nudge, then a formula to try, then filling it in) is how a
+  stuck learner finishes.
 - No ponds. It ends with the rules card, then the first level.
 
 ## Scope

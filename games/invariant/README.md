@@ -10,6 +10,7 @@ An interactive, visual website that teaches programmers what loop invariants are
 Docs:
 
 - [docs/design.md](docs/design.md) — what the game teaches and the rules of its world
+- [docs/tutorial-plan.md](docs/tutorial-plan.md) — the tutorial's script, vocabulary and the overhaul it is getting
 - [docs/experience.md](docs/experience.md) — how the interface should look, move and respond
 - [docs/architecture.md](docs/architecture.md) — how the code is organised, and the rules that keep it working
 
