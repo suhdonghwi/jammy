@@ -681,6 +681,28 @@ code {
 .caption-text {
   flex: 1;
 }
+.caption-text p,
+.caption-text ul,
+.caption-text ol {
+  margin: 0;
+}
+.caption-text > * + * {
+  margin-top: 9px;
+}
+.caption-text ul,
+.caption-text ol {
+  padding-left: 22px;
+}
+.caption-text li + li {
+  margin-top: 2px;
+}
+.caption-text li::marker {
+  color: var(--muted);
+}
+.caption-text strong {
+  font-weight: 700;
+  color: var(--text);
+}
 .caption.fail {
   border-color: rgba(229, 72, 77, 0.25);
   background: rgba(255, 247, 247, 0.94);

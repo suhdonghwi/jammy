@@ -27,6 +27,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { tileState } from '../scene/tiles';
+import { Markdown } from './Markdown';
 
 // ---------------------------------------------------------------------------
 // Code panel: the program, with the loop header lighting up on each landing
@@ -230,12 +231,6 @@ export function HoverReadout() {
 // Caption bar
 // ---------------------------------------------------------------------------
 
-function renderInlineCode(text: string) {
-  return text.split(/(`[^`]+`)/g).map((part, i) =>
-    part.startsWith('`') && part.endsWith('`') ? <code key={i}>{part.slice(1, -1)}</code> : <Fragment key={i}>{part}</Fragment>,
-  );
-}
-
 export function CaptionBar() {
   const caption = useGame((s) => s.caption);
   const pitfall = useGame((s) => s.pitfallMessage);
@@ -243,9 +238,11 @@ export function CaptionBar() {
   return (
     <div className={`caption ${caption.tone}`} key={caption.text}>
       <div className="caption-text">
-        {renderInlineCode(caption.text)}
+        <Markdown text={caption.text} />
         {pitfall && caption.tone === 'fail' && !caption.text.includes(pitfall) && (
-          <div className="caption-pitfall">{renderInlineCode(pitfall)}</div>
+          <div className="caption-pitfall">
+            <Markdown text={pitfall} />
+          </div>
         )}
       </div>
       {(caption.secondary || caption.action) && (

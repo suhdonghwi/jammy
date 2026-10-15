@@ -426,7 +426,7 @@ export const director = {
           text = `${prefix}A frog that stops at ${fmt(cex.state)} doesn't meet the postcondition.`;
         }
       }
-      if (opts.extra) text += ` ${opts.extra}`;
+      if (opts.extra) text += `\n\n${opts.extra}`;
       const replay = { label: 'Replay', onClick: () => void director.playCounterexample(cex, opts) };
       if (opts.reserveNext) {
         // The tutorial adds Next here: if it's already waiting (this is a replay),

@@ -174,6 +174,12 @@ export function toBig(s: Record<string, number>): State {
   return o;
 }
 
+/** Variable names in display order: the plotted axes first, then the rest. */
+export function displayNames(level: CompiledLevel): string[] {
+  const { x, y } = level.view;
+  return [x, y, ...level.names.filter((n) => n !== x && n !== y)];
+}
+
 export function showState(level: CompiledLevel, s: State): string {
-  return level.names.filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
+  return displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
 }

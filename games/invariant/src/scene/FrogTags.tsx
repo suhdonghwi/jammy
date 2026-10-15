@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { State } from '../lang/ast';
-import type { CompiledLevel } from '../levels/level';
+import { displayNames, type CompiledLevel } from '../levels/level';
 import { useGame } from '../store/game';
 import { frogWorld, type FrogSim } from './frogSim';
 
@@ -51,7 +51,7 @@ function FrogTag({ frog, level }: { frog: FrogSim; level: CompiledLevel }) {
     <group ref={group}>
       <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={box} className="frog-tag">
-          {[level.view.x, level.view.y, ...level.names.filter((n) => n !== level.view.x && n !== level.view.y)]
+          {displayNames(level)
             .filter((n) => n in shown)
             .map((n, i) => (
               <span key={n} className="frog-tag-var">
