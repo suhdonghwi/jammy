@@ -23,9 +23,11 @@ import { useArea, useHomeLevel } from './common';
 // frogs which hop right until they reach the goal. When every frog has
 // arrived, the board resets. Now and then the skeptical hand pokes a frog.
 
-export type MiniLevelFraming = 'mini' | 'corner' | 'overview';
+export type MiniLevelFraming = 'simple' | 'mini' | 'corner' | 'overview';
 
-const SETUPS: Record<MiniLevelFraming, { rows: [number, number]; hopEvery: number; hand: boolean }> = {
+/** `plain`: a bare floor, with goals only at the ends of the rows (no stop region, no boundary). */
+const SETUPS: Record<MiniLevelFraming, { rows: [number, number]; hopEvery: number; hand: boolean; plain?: boolean }> = {
+  simple: { rows: [3, 4], hopEvery: 0.7, hand: true, plain: true },
   mini: { rows: [3, 6], hopEvery: 0.62, hand: true },
   corner: { rows: [4, 5], hopEvery: 0.75, hand: true },
   overview: { rows: [1, 8], hopEvery: 0.5, hand: false },
@@ -150,7 +152,7 @@ export function MiniLevel({ framing, shift = 0 }: { framing: MiniLevelFraming; /
     const t = clock.elapsedTime;
     const aspect = size.width / size.height;
     const sway = Math.sin(t * 0.13) * 0.35;
-    const k = framing === 'corner' ? 0.95 : framing === 'overview' ? 1.6 : 1.25;
+    const k = framing === 'corner' ? 0.95 : framing === 'overview' ? 1.6 : framing === 'simple' ? 0.95 : 1.25;
     if (aspect > 1.1) {
       const sx = -shift * Math.min(aspect, 2.2) * k;
       void c.setLookAt(focus.x + sx + sway, 5.4 * k, -focus.y + 8.4 * k, focus.x + sx, 0.2, -focus.y + 0.4, false);
@@ -161,11 +163,16 @@ export function MiniLevel({ framing, shift = 0 }: { framing: MiniLevelFraming; /
   });
 
   const win = useMemo(() => ({ cx: Math.round(focus.x), cy: Math.round(focus.y), R: 14 }), [focus]);
+  const goals = useMemo(() => (setup.plain ? rows.map((n) => [n, n] as [number, number]) : undefined), [setup, rows]);
   return (
     <group>
-      <Floor level={level} pond={0} y={0} opacity={1} showAxes={false} showStop showGoal />
+      {setup.plain ? (
+        <Floor level={null} pond={0} y={0} opacity={1} showAxes={false} showStop={false} showGoal={false} />
+      ) : (
+        <Floor level={level} pond={0} y={0} opacity={1} showAxes={false} showStop showGoal />
+      )}
       <Slabs version={version} dim={false} showStop showGoal />
-      <GoalColumns level={level} pond={0} win={win} version={version} />
+      <GoalColumns level={level} pond={0} win={win} version={version} only={goals} />
       <Eggs rows={rows} out={out} />
       <Frogs />
       <HatchShells />

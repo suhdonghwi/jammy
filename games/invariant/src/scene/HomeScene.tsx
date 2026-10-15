@@ -14,6 +14,6 @@ export function HomeScene() {
     case 'd':
       return <EditorialHome key="d" />;
     default:
-      return <MiniLevel key="a" framing="mini" shift={1.25} />;
+      return <MiniLevel key="a" framing="simple" shift={1.25} />;
   }
 }
