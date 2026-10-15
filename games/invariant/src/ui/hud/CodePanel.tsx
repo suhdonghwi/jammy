@@ -4,9 +4,9 @@ import { BUILTINS, KEYWORDS, tokenize } from '../../lang/parser';
 import { showState, type CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
 
-// The program, with the loop lighting up as frogs hop, a ghost `assert` line
-// showing the area as the condition it is, and the selected frog's values
-// shown underneath like a debugger.
+// The program, with the loop lighting up as frogs hop, a ghost `assert(?)`
+// line standing for the invariant at the top of the loop, and the selected
+// frog's values shown underneath like a debugger.
 
 const TOKEN = {
   keyword: 'font-semibold text-[#7c4ddb]',
@@ -27,8 +27,8 @@ interface Beat {
   hopDur: number;
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
-  /** The ghost assert line's condition (null: no assert line). */
-  assert: string | null;
+  /** Show the ghost `assert(?)` line at the top of the loop body. */
+  assert: boolean;
   /** Lines the tutorial's caption is talking about (1-based). */
   spotLines: number[];
 }
@@ -93,17 +93,16 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
       </div>
     );
   });
-  // the invariant, as the assert it stands for: a ghost line at the top of the loop body
-  if (beat.assert !== null && headerLine >= 0) {
+  // the invariant, as the assert it stands for: a ghost line at the top of the
+  // loop body, indented like the body (the area itself lives in the box below)
+  if (beat.assert && headerLine >= 0) {
     const indent = stmts.length ? src.slice(lines[bodyFirst].from).match(/^\s*/)?.[0] ?? '  ' : '  ';
-    // w-0 + min-w-full: the line takes the panel's width but never widens
-    // it, so a long area doesn't make the panel grow; it is clipped instead
     rows.splice(headerLine + 1, 0, (
-      <div key="assert" className="-mx-2 flex w-0 min-w-full animate-row-open overflow-hidden px-2 text-faint">
+      <div key="assert" className="-mx-2 flex animate-row-open overflow-hidden px-2 text-faint">
         <span className="mr-3 w-[2ch] flex-none select-none" />
-        <span className="truncate">
+        <span>
           {indent}
-          <span className="font-semibold">assert</span>({beat.assert});
+          <span className="font-semibold">assert</span>(?);
         </span>
       </div>
     ));
@@ -120,8 +119,7 @@ export function CodePanel() {
   const selected = useGame((s) => s.selected);
   const reveal = useGame((s) => s.reveal);
   const spotLines = useGame((s) => s.spotLines);
-  // the assert line shows the area once there is one to show, and ??? before
-  const assert = useGame((s) => (s.reveal.assert ? (s.reveal.formula && s.formulaText.trim() ? s.formulaText.trim() : '???') : null));
+  const assert = useGame((s) => s.reveal.assert);
   const nodes = useMemo(
     () => highlightSource(level, { hopTick, hopDur, landTick, landGuard, assert, spotLines }),
     [level, hopTick, hopDur, landTick, landGuard, assert, spotLines],

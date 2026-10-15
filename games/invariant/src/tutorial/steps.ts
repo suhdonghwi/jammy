@@ -229,7 +229,7 @@ export const STEPS: Step[] = [
     run: (gen) =>
       beat(
         gen,
-        'If you could *prove* it instead of watching, you’d want a condition that is true every time a run reaches the top of the loop, for every run. An `assert` there that never fires.\n\nThat condition is called a **loop invariant**. In this world it is an **area** of the plane: the tiles where the condition is true. An area has to pass three checks; we’ll take them one at a time.',
+        'If you could *prove* it instead of watching, you’d want a condition that is true every time a run reaches the top of the loop, for every run. An `assert(?)` there that never fires.\n\nThat condition is called a **loop invariant**. In this world it is an **area** of the plane: the tiles where the condition is true. An area has to pass three checks; we’ll take them one at a time.',
         {
           spot: 'code',
           prepare: async () => {
@@ -247,12 +247,12 @@ export const STEPS: Step[] = [
     run: async (gen) => {
       useGame.getState().setReveal({ formula: true });
       allow({ formula: true });
-      say('Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**, and the `assert` line follows.\n\nTry two or three, and watch the plane.', 'formula');
+      say('Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**. That is the `assert(?)` drawn on the plane.\n\nTry two or three, and watch the plane.', 'formula');
       // Next once there is something to look at
       await waitStore(gen, (g) => g.valid !== null && g.formulaText.trim() !== '');
       await sleep(900);
       guard(gen);
-      await beat(gen, 'Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**, and the `assert` line follows.\n\nTry two or three, and watch the plane.', { spot: 'formula' });
+      await beat(gen, 'Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**. That is the `assert(?)` drawn on the plane.\n\nTry two or three, and watch the plane.', { spot: 'formula' });
       allow({});
     },
   },

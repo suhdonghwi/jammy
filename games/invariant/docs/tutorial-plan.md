@@ -171,7 +171,7 @@ Callout on one egg: "starting state: i = 0, n = 2".
 few. "So how can we check them all?"
 
 **1.9 The bridge.** Camera back in. The code panel shows a ghost line at the
-top of the loop body: `assert(???);` (new reveal flag). All three rule lights
+top of the loop body: `assert(?);` (new reveal flag). All three rule lights
 appear in the top bar, dim.
 
 > If you could prove it instead of watching, you'd want a condition that is
@@ -185,7 +185,8 @@ appear in the top bar, dim.
 **1.10 Draw before you check.** Formula box appears; Check stays disabled.
 
 > Type any condition on `i` and `n`. The tiles where it's true rise as
-> **slabs**. Try two or three, and watch the plane.
+> **slabs**. That is the `assert(?)` drawn on the plane. Try two or three,
+> and watch the plane.
 
 Next appears after the first valid formula. Hover readout shows "in your
 area / outside your area" as today. No suggestion placeholder here; the
@@ -365,9 +366,10 @@ Scene and HUD:
   followed the camera were distracting; a per-tile compass on hover was
   fiddly. On in levels too.
 - **Ghost assert line** in the code panel: a reveal flag `assert` draws
-  `assert(???);` as the loop body's first line, dimmed; from 1.10 on, `???` is
-  replaced by the current formula text (so the code panel and the box always
-  agree). Levels show it too once the formula box is open.
+  `assert(?);` as the loop body's first line, dimmed and indented like the
+  body. It never shows the formula itself: the panel is narrow and
+  invariants get long, and the area box below is where the formula lives.
+  Levels show it too.
 - **Rule lights** get a third look besides shown/hidden: *dim* (revealed but
   not yet checked in the tutorial, greyed) and *awake* (the current stage's
   rule and all earlier ones, as today). `reveal.lights`
