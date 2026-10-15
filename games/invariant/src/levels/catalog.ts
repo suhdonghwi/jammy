@@ -52,7 +52,7 @@ ensures i == 0;`,
           { formula: 'i <= n', message: 'That bound held in the tutorial — but which way does this frog move?' },
           { formula: 'i == 0 || i == n', message: 'Frogs also pass through the tiles in between.' },
         ],
-        intro: 'Same idea, but this frog counts down. Start with an area every egg sits on, and strengthen from there.',
+        intro: 'Same idea, but this frog counts down. Which way does it hop, and where does it stop?',
         hints: [
           'Run the frogs. Which way do they hop, and where do they stop?',
           'The loop stops as soon as `i` is no longer above `0`. Your area must rule out stopping anywhere but `0` itself.',
@@ -88,36 +88,6 @@ ensures n <= i && i < n + 3;`,
         camera: { x: 3, y: 3, distance: 14 },
       },
       {
-        id: 'meet-in-the-middle',
-        title: 'Meet in the Middle',
-        source: `input n;
-requires n >= 0;
-
-var lo = 0;
-var hi = n;
-while (lo < hi) {
-  lo = lo + 1;
-  hi = hi - 1;
-}
-
-ensures hi <= lo && lo <= hi + 1;`,
-        view: { x: 'lo', y: 'hi' },
-        start: { n: 5 },
-        solutions: ['lo <= hi + 1', 'lo + hi == n && lo <= hi + 1'],
-        pitfalls: [
-          { formula: 'lo <= hi', message: 'When `lo` and `hi` are next to each other, one hop makes them trade places.' },
-          { formula: 'lo + hi == n', message: 'That stays true — but which frogs on that line are allowed to stop?' },
-        ],
-        intro:
-          '`n` is an input now: each value of `n` is its own plane, and the slider on the right switches between them. Two ends step toward each other until they meet or cross.',
-        hints: [
-          'Try an even `n` and an odd `n` with the slider. Where does each frog stop?',
-          'The ends can cross, but never by more than one tile. What does that say about `lo` compared with `hi`?',
-          'A single fence, parallel to the line `lo = hi` and one tile past it.',
-        ],
-        camera: { x: 2, y: 3, distance: 13 },
-      },
-      {
         id: 'step-by-two',
         title: 'Step by Two',
         source: `input n;
@@ -142,33 +112,6 @@ ensures i == n;`,
           'Join the tutorial’s bound with a fact about `i % 2`.',
         ],
         camera: { x: 2, y: 3, distance: 14 },
-      },
-      {
-        id: 'parity',
-        title: 'Parity',
-        source: `var x, y;
-requires x >= 0 && (x + y) % 2 == 0;
-
-while (x > 0) {
-  x = x - 1;
-  y = y + 1;
-}
-
-ensures y % 2 == 0;`,
-        view: { x: 'x', y: 'y' },
-        solutions: ['x >= 0 && (x + y) % 2 == 0'],
-        pitfalls: [
-          { formula: '(x + y) % 2 == 0', message: 'The hop keeps `x + y` even — but your area also lets `x` go negative.' },
-          { formula: 'y % 2 == 0', message: 'That is just the goal. Do all eggs sit there?' },
-          { formula: 'x >= 0', message: 'Frogs never go below `x = 0` — but some tiles on your area stop with an odd `y`.' },
-        ],
-        intro: 'Eggs everywhere on a checkerboard. Every frog hops diagonally until `x` reaches `0`.',
-        hints: [
-          'Each hop takes one from `x` and gives one to `y`. What happens to `x + y`?',
-          '`x + y` never changes, so it stays even. And the loop stops when `x` is no longer above `0` — what keeps it from being negative then?',
-          'Two facts joined with `&&`: one about `(x + y) % 2`, and a fence on `x`.',
-        ],
-        camera: { x: 2, y: 2, distance: 15 },
       },
       {
         id: 'round-up',
@@ -197,11 +140,79 @@ ensures i % 3 == 0 && n <= i && i < n + 3;`,
         ],
         camera: { x: 3, y: 3, distance: 14 },
       },
+      {
+        id: 'meet-in-the-middle',
+        title: 'Meet in the Middle',
+        source: `var lo, hi;
+requires lo <= hi;
+
+while (lo < hi) {
+  lo = lo + 1;
+  hi = hi - 1;
+}
+
+ensures hi <= lo <= hi + 1;`,
+        view: { x: 'lo', y: 'hi' },
+        solutions: ['lo <= hi + 1', 'lo - hi <= 1'],
+        pitfalls: [
+          {
+            formula: 'lo <= hi',
+            message: 'When `lo` and `hi` are next to each other, one hop makes them trade places. The fence has to let that one hop through.',
+          },
+          { formula: 'lo < hi', message: 'Some eggs already have `lo` equal to `hi`.' },
+          { formula: 'lo <= hi + 2', message: 'Too loose: a frog on your area could stop two past `hi`.' },
+        ],
+        intro: 'Two ends step toward each other until they meet — or cross. Overshoot again, but this time both ends move.',
+        hints: [
+          'Step a frog whose gap is even, then one whose gap is odd. Where does each stop?',
+          'The ends can cross, but only by one tile. Compare `lo` with `hi` after the last hop.',
+          'A single fence, parallel to the line `lo = hi` and one tile past it.',
+        ],
+        camera: { x: 2, y: 3, distance: 13 },
+      },
     ],
   },
   {
     name: 'Intermediate',
     levels: [
+      {
+        id: 'tag-along',
+        title: 'Tag Along',
+        source: `input n;
+requires n >= 0;
+
+var i = 0;
+var s = 0;
+while (i < n) {
+  i = i + 1;
+  s = s + i;
+}
+
+ensures i == n;`,
+        view: { x: 'i', y: 's' },
+        start: { n: 4 },
+        solutions: ['i <= n', '0 <= i <= n'],
+        pitfalls: [
+          { formula: 'i == n', message: 'That only covers frogs that are already done.' },
+          {
+            formula: '2 * s == i * (i + 1)',
+            message: 'True of every real frog — but the goal is about `i`, and nothing here stops `i` past `n`.',
+          },
+          { formula: 'i <= s', message: 'Nothing in your area mentions `n`, so nothing stops a frog past it.' },
+          {
+            formula: 'i <= n && s >= 0',
+            message: '`s >= 0` is true of real frogs, but a ghost frog at a negative `i` makes `s` shrink. The goal doesn’t need `s`; leave it out.',
+          },
+        ],
+        intro:
+          'The goal now depends on `n`. Change `n` in the inputs card under the code — the proof has to hold for every `n`.',
+        hints: [
+          'Change `n`. What moves with it?',
+          'The goal says nothing about `s`, so your area needn’t either.',
+          'A fence read off the guard, like the tutorial’s.',
+        ],
+        camera: { x: 2, y: 4, distance: 15 },
+      },
       {
         id: 'transfer',
         title: 'Transfer',
@@ -290,6 +301,67 @@ ensures a == 3 * q + r && 0 <= r && r < 3;`,
         camera: { x: 1, y: 3, distance: 14 },
       },
       {
+        id: 'parity',
+        title: 'Parity',
+        source: `var x, y;
+requires x >= 0 && (x + y) % 2 == 0;
+
+while (x > 0) {
+  x = x - 1;
+  y = y + 1;
+}
+
+ensures y % 2 == 0;`,
+        view: { x: 'x', y: 'y' },
+        solutions: ['x >= 0 && (x + y) % 2 == 0'],
+        pitfalls: [
+          { formula: '(x + y) % 2 == 0', message: 'The hop keeps `x + y` even — but your area also lets `x` go negative.' },
+          { formula: 'y % 2 == 0', message: 'That is just the goal. Do all eggs sit there?' },
+          { formula: 'x >= 0', message: 'Frogs never go below `x = 0` — but some tiles on your area stop with an odd `y`.' },
+        ],
+        intro: 'Eggs everywhere on a checkerboard. Every frog hops diagonally until `x` reaches `0`.',
+        hints: [
+          'Each hop takes one from `x` and gives one to `y`. What happens to `x + y`?',
+          '`x + y` never changes, so it stays even. And the loop stops when `x` is no longer above `0` — what keeps it from being negative then?',
+          'Two facts joined with `&&`: one about `(x + y) % 2`, and a fence on `x`.',
+        ],
+        camera: { x: 2, y: 2, distance: 15 },
+      },
+      {
+        id: 'catch-up',
+        title: 'Catch Up',
+        source: `input n;
+requires n >= 0;
+
+var a = 0;
+var b = n;
+while (a < b) {
+  a = a + 2;
+  b = b + 1;
+}
+
+ensures a == b && a == 2 * n;`,
+        view: { x: 'a', y: 'b' },
+        start: { n: 3 },
+        solutions: ['a == 2 * (b - n) && a <= b', 'a == 2 * b - 2 * n && a <= b'],
+        pitfalls: [
+          { formula: 'a == 2 * (b - n)', message: 'Right line — but a frog on it could stop with `a` already past `b`.' },
+          { formula: 'a <= b', message: '`a` never passes `b` — right. But nothing in your area ties them to `n`.' },
+        ],
+        intro: '`a` runs two steps per hop and `b` runs one, but `b` starts `n` ahead. Where does `a` catch up?',
+        hints: [
+          'Each hop, `a` gains 2 and `b` gains 1. Compare `a` with how far `b` has come from `n`.',
+          '`b - n` counts the hops so far, and `a` is always twice that. Where can a frog on that line stop?',
+          'An equation linking `a`, `b` and `n`, plus a fence: `a` never passes `b`.',
+        ],
+        camera: { x: 3, y: 4, distance: 14 },
+      },
+    ],
+  },
+  {
+    name: 'Advanced',
+    levels: [
+      {
         id: 'even-out',
         title: 'Even Out',
         source: `var x, y;
@@ -310,7 +382,7 @@ ensures x == y && x >= 0;`,
           { formula: 'x >= 0', message: 'When `x` shrinks, what keeps it from dropping below `0`? Look at `y`.' },
           { formula: 'y >= 0', message: 'When `y` shrinks, what keeps it from dropping below `0`? Look at `x`.' },
         ],
-        intro: 'Two numbers step toward each other until they meet. The body has an `if` now: your area must survive both branches.',
+        intro: 'Two numbers step toward each other until they meet. The body has an `if` now: your area must survive both branches — and here, the facts you start with are enough.',
         hints: [
           'Each hop, only the larger number shrinks. Can it ever drop below the smaller one?',
           'When `x` shrinks, it’s because `x > y`. So if `y` is never negative, neither is the new `x` — and the same the other way round.',
@@ -350,40 +422,6 @@ ensures y == abs(a);`,
         ],
         camera: { x: 0, y: 2, distance: 14 },
       },
-      {
-        id: 'catch-up',
-        title: 'Catch Up',
-        source: `input n;
-requires n >= 0;
-
-var a = 0;
-var b = n;
-while (a < b) {
-  a = a + 2;
-  b = b + 1;
-}
-
-ensures a == b && a == 2 * n;`,
-        view: { x: 'a', y: 'b' },
-        start: { n: 3 },
-        solutions: ['a == 2 * (b - n) && a <= b', 'a == 2 * b - 2 * n && a <= b'],
-        pitfalls: [
-          { formula: 'a == 2 * (b - n)', message: 'Right line — but a frog on it could stop with `a` already past `b`.' },
-          { formula: 'a <= b', message: '`a` never passes `b` — right. But nothing in your area ties them to `n`.' },
-        ],
-        intro: '`a` runs two steps per hop and `b` runs one, but `b` starts `n` ahead. Where does `a` catch up?',
-        hints: [
-          'Each hop, `a` gains 2 and `b` gains 1. Compare `a` with how far `b` has come from `n`.',
-          '`b - n` counts the hops so far, and `a` is always twice that. Where can a frog on that line stop?',
-          'An equation linking `a`, `b` and `n`, plus a fence: `a` never passes `b`.',
-        ],
-        camera: { x: 3, y: 4, distance: 14 },
-      },
-    ],
-  },
-  {
-    name: 'Advanced',
-    levels: [
       {
         id: 'deal-the-cards',
         title: 'Deal the Cards',
@@ -452,35 +490,6 @@ ensures c == n / 3;`,
         camera: { x: 4, y: 1, distance: 13 },
       },
       {
-        id: 'odd-squares',
-        title: 'Odd Squares',
-        source: `input n;
-requires n >= 0;
-
-var i = 0;
-var s = 0;
-while (i < n) {
-  s = s + 2 * i + 1;
-  i = i + 1;
-}
-
-ensures s == n * n;`,
-        view: { x: 'i', y: 's' },
-        start: { n: 3 },
-        solutions: ['s == i * i && i <= n', 's == i * i && 0 <= i <= n'],
-        pitfalls: [
-          { formula: 's == i * i', message: 'Right curve — but your area keeps going past `i = n`.' },
-          { formula: 'i <= n', message: 'That fences `i`, but says nothing about the total `s`.' },
-        ],
-        intro: 'Add up the first `n` odd numbers, `1 + 3 + 5 + …`, and check the total against `n * n`.',
-        hints: [
-          'Step a frog and write down `s` at each tile: 0, 1, 4, 9, …',
-          'Those are squares: `s` is always `i` times `i`.',
-          'Your equation, plus a bound so the curve ends at `i = n`.',
-        ],
-        camera: { x: 2, y: 4, distance: 15 },
-      },
-      {
         id: 'sum-to-n',
         title: 'Sum to n',
         source: `input n;
@@ -501,7 +510,7 @@ ensures 2 * s == n * (n + 1);`,
           { formula: '2 * s == i * (i + 1)', message: 'Right curve — but your area keeps going past `i = n`.' },
           { formula: 'i <= n', message: 'That fences `i`, but says nothing about the total `s`.' },
         ],
-        intro: 'Add `1 + 2 + … + n`. The solver prefers equations without division.',
+        intro: 'Tag Along’s loop again — this time the goal cares about `s`. The solver prefers equations without division.',
         hints: [
           'Step a frog and write down `s` at each tile: 0, 1, 3, 6, 10, … Now double each one.',
           '`2 * s` is `i` times the number after `i`.',
