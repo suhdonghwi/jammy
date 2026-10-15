@@ -33,7 +33,7 @@ export function TopBar() {
         >
           <ArrowLeft size={17} strokeWidth={2.4} />
         </button>
-        <div className="flex items-center gap-2 pr-3 font-display text-lg font-semibold">
+        <div className="flex items-center gap-2 pr-3 pl-1.5 font-display text-lg font-semibold">
           {/* the mono digits sit high in their line box: a little more padding on top centres them on the title */}
           {mode === 'level' && <span className="rounded-full bg-shade/6 px-2 pt-0.75 pb-0.25 font-mono text-xs text-muted">{level.id}</span>}
           {level.title}
