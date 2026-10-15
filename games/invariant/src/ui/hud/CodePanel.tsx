@@ -127,9 +127,10 @@ export function CodePanel() {
   const spot = useGame((s) => s.spotlight);
   if (!reveal.code) return null;
   return (
-    <div className={`${CARD} max-w-85 animate-slide-in px-4 pt-3.25 pb-3 max-md:max-w-52 max-md:p-2.5 ${spot === 'code' ? 'spotlight' : ''}`}>
+    // wide enough for the longest program line in the catalog; anything longer scrolls sideways rather than spilling
+    <div className={`${CARD} max-w-105 animate-slide-in px-4 pt-3.25 pb-3 max-md:max-w-52 max-md:p-2.5 ${spot === 'code' ? 'spotlight' : ''}`}>
       <div className={CARD_LABEL}>Program</div>
-      <pre className="m-0 font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]">{nodes}</pre>
+      <pre className="-mx-2 m-0 overflow-x-auto px-2 font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]">{nodes}</pre>
       {/* one fixed height for both texts, so selecting a frog doesn't grow the panel */}
       <div
         className={`mt-2.5 flex h-7.25 items-center gap-1.5 border-t border-dashed border-shade/12 pt-2 ${selected ? 'font-mono text-sm font-semibold text-pass' : 'text-xs text-faint'}`}
