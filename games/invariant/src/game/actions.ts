@@ -29,6 +29,31 @@ export function goMenu(view: 'home' | 'levels' = 'home') {
   useGame.getState().backToMenu(view);
 }
 
+/** The Hint button in a level: the first hint, or (pressed again) the ones already asked for, in the caption. */
+export function showLevelHint() {
+  const g = useGame.getState();
+  if (g.busy || !g.level?.hints?.length) return;
+  // a check's caption may have replaced them since; the button brings them back
+  showHints(Math.max(g.hintsShown, 1));
+}
+
+/** The first `shown` hints, one under another, with a button for the next. */
+function showHints(shown: number) {
+  const hints = useGame.getState().level?.hints ?? [];
+  const text = hints
+    .slice(0, shown)
+    .map((h, k) => `**Hint ${k + 1} of ${hints.length}.** ${h}`)
+    .join('\n\n');
+  useGame.setState({
+    hintsShown: shown,
+    caption: {
+      text,
+      tone: 'info',
+      action: shown < hints.length ? { label: 'Another hint', onClick: () => showHints(shown + 1) } : undefined,
+    },
+  });
+}
+
 export async function check() {
   const g = useGame.getState();
   if (g.busy || g.checking || !g.level) return;

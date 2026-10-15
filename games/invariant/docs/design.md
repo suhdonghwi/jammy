@@ -144,10 +144,15 @@ Every level carries:
 
 - **solutions** — known-good invariants, all proved at build time;
 - **pitfalls** — the wrong answers learners are expected to try, each with a
-  tailored message, each verified to fail.
+  tailored message, each verified to fail;
+- **hints** — two or three, behind a Hint button, revealed one at a time:
+  first what to look at in the real runs, then the fact that matters, then
+  the shape of the area (an equation plus a bound, say). None spells out a
+  solution: turning the last hint into a formula is the learner's job.
 
 `pnpm validate` checks every level: it compiles, has starting states, every
-real frog stops, every solution is proved, every pitfall fails. Run it after
+real frog stops, every solution is proved, every pitfall fails, and no hint
+quotes a solution. Run it after
 touching levels, the language or the checker.
 
 **Level design principles:**
@@ -155,8 +160,21 @@ touching levels, the language or the checker.
 - each level teaches one idea, and its pitfall is the tempting formula that
   misses that idea (often the previous level's answer — *don't pattern-match*);
 - the usual fix is **strengthening**: add the bound or fact the pitfall forgot;
-- chapters build up: one plane (the rules alone) → a plane per input (a
-  preserved equation + a bound) → branches (Maintenance must hold on every branch).
+- programs are loops a programmer might actually write (round up to a
+  multiple, deal cards, integer square root), and a level's intro says what
+  the loop is *for*, not how to solve it;
+- levels are numbered straight through and grouped by **the kind of fact the
+  area needs**, so a group's name tells the learner what they are practising.
+  Each group starts with a gentle level and ends on one that combines its
+  idea with an earlier one:
+
+| Group | The area needs | Levels |
+|---|---|---|
+| **Fences** | one inequality: the line real frogs never cross | Countdown, Overshoot, Meet in the Middle (the slider's first level) |
+| **Rhythm** | which tiles frogs land on (`%`), plus a fence | Step by Two, Parity, Round Up |
+| **Balance** | a preserved equation, plus a fence | Transfer, Doubling, Divide by 3, Catch Up |
+| **Forks** | a fact every branch of an `if` keeps | Even Out, Absolute Value, Deal the Cards, Count the Threes |
+| **Curves** | a preserved equation with a product in it | Odd Squares, Sum to n, Square Root |
 
 ## The tutorial
 

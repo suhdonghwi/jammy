@@ -18,14 +18,15 @@ export interface Pitfall {
 export interface LevelDef {
   id: string;
   title: string;
-  chapter: number;
   source: string;
   /** Which variables go on the plane's axes. A leftover input becomes the plane slider: one plane per value. */
   view: { x: string; y: string };
   solutions: string[];
   pitfalls?: Pitfall[];
-  /** Caption shown when the level opens. */
+  /** Caption shown when the level opens (and its line in the level list). */
   intro?: string;
+  /** For a stuck learner, revealed one at a time: from what to look at, to the shape of the area. Never the formula itself. */
+  hints?: string[];
   /** Camera target tile and distance. */
   camera?: { x: number; y: number; distance?: number };
   /** Slider range and starting plane. */

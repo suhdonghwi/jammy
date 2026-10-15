@@ -2,7 +2,7 @@ import { ArrowLeft, GraduationCap, LayoutGrid } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { openLevel, openTutorial } from '../../game/actions';
 import { useGame } from '../../game/store';
-import { CHAPTERS, levels } from '../../levels/catalog';
+import { GROUPS, levelNumber } from '../../levels/catalog';
 import { button } from '../classes';
 import { MarkdownInline } from '../Markdown';
 import { usePresence } from '../presence';
@@ -70,7 +70,6 @@ function HeroCopy({ behind }: { behind: boolean }) {
 }
 
 function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean }) {
-  const chapters = [...new Set(levels.map((l) => l.chapter))];
   return (
     // arriving straight on the list (back from a level), it is simply there
     <div
@@ -91,30 +90,29 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
           <span className="w-20" />
         </div>
         <div className="overflow-y-auto px-6 pt-1.5 pb-6">
-          {chapters.map((c) => (
-            <section key={c}>
-              <h3 className="mt-4 mb-2.5 flex items-center gap-2.5 font-display text-lg font-semibold">
-                <span className="inline-grid size-7 place-items-center rounded-lg bg-brand-soft text-md text-brand">{c}</span>
-                {CHAPTERS[c]}
-              </h3>
+          {GROUPS.map((g) => (
+            <section key={g.name}>
+              {/* the group names the kind of fact its areas need; the numbers run on across groups */}
+              <h3 className="mt-4 font-display text-lg font-semibold">{g.name}</h3>
+              <p className="mb-2.5 text-sm text-muted">
+                <MarkdownInline text={g.blurb} />
+              </p>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2.5">
-                {levels
-                  .filter((l) => l.chapter === c)
-                  .map((l) => (
-                    <button
-                      key={l.id}
-                      className="flex cursor-pointer flex-col items-start gap-0.75 rounded-2xl border border-line bg-white px-3.5 pt-3 pb-3.25 text-left shadow-[0_3px_0_#e2e6ee] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_5px_0_#dfe4ec,0_10px_20px_rgb(32_44_70/0.08)]"
-                      onClick={() => openLevel(l)}
-                    >
-                      <span className="font-mono text-xs text-faint">{l.id}</span>
-                      <span className="font-display text-lg font-semibold">{l.title}</span>
-                      {l.intro && (
-                        <span className="text-sm leading-snug text-muted">
-                          <MarkdownInline text={l.intro} />
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                {g.levels.map((l) => (
+                  <button
+                    key={l.id}
+                    className="flex cursor-pointer flex-col items-start gap-0.75 rounded-2xl border border-line bg-white px-3.5 pt-3 pb-3.25 text-left shadow-[0_3px_0_#e2e6ee] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_5px_0_#dfe4ec,0_10px_20px_rgb(32_44_70/0.08)]"
+                    onClick={() => openLevel(l)}
+                  >
+                    <span className="font-mono text-xs text-faint">{levelNumber(l.id)}</span>
+                    <span className="font-display text-lg font-semibold">{l.title}</span>
+                    {l.intro && (
+                      <span className="text-sm leading-snug text-muted">
+                        <MarkdownInline text={l.intro} />
+                      </span>
+                    )}
+                  </button>
+                ))}
               </div>
             </section>
           ))}

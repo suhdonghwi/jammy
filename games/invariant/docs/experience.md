@@ -82,7 +82,9 @@ behind many small decisions; keep them when changing or adding UI.
   stays (with Replay) while the learner fixes the area; the ask is not
   repeated.
 - **One hint per stage**, a single sentence behind a Hint button. Pressing it
-  adds the sentence under the stage's ask, and the button goes.
+  adds the sentence under the stage's ask, and the button goes. In levels the
+  Hint button stays: it shows the first hint in the caption, with "Another
+  hint" for the next; pressed again later, it brings back the ones asked for.
 - **Predict before you see.** Before the hand demos a pitfall, the caption asks
   Passes or Fails. Never scored; it only makes the learner commit.
 - **Spotlight** whatever the caption is talking about.

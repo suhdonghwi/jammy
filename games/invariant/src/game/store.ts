@@ -99,6 +99,8 @@ export interface Game {
   landGuard: 'true' | 'false' | 'mixed';
   /** Tutorial: the stage's hint while it waits for Check. */
   hint: Hint | null;
+  /** Levels: how many of the level's hints the learner has asked for. */
+  hintsShown: number;
   showRules: boolean;
   /** The syntax reference card is open. */
   showSyntax: boolean;
@@ -153,6 +155,7 @@ export const useGame = create<Game>((set, get) => ({
   landTick: 0,
   landGuard: 'true',
   hint: null,
+  hintsShown: 0,
   showRules: false,
   showSyntax: false,
   pitfallMessage: null,
@@ -184,7 +187,8 @@ export const useGame = create<Game>((set, get) => ({
       running: false,
       caption: def.intro ? { text: def.intro, tone: 'info' } : null,
       reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
-          hint: null,
+      hint: null,
+      hintsShown: 0,
       pitfallMessage: null,
       failMark: null,
       callouts: [],

@@ -9,7 +9,6 @@ import { compileLevel, type CompiledLevel } from '../../levels/level';
 export const DIAGONAL: CompiledLevel = compileLevel({
   id: 'home-diagonal',
   title: 'home',
-  chapter: 0,
   source: `var x, y;
 while (x < y) {
   x = x + 1;

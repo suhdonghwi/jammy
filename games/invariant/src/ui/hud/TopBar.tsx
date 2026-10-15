@@ -2,6 +2,7 @@ import { ArrowLeft, BookOpen, CircleCheck, CircleDashed, CircleHelp, CircleX, Lo
 import { playCounterexample } from '../../director/verdicts';
 import { goMenu } from '../../game/actions';
 import { useGame } from '../../game/store';
+import { levelNumber } from '../../levels/catalog';
 import { RULE_NAMES, RULES } from '../../levels/level';
 import { button } from '../classes';
 
@@ -35,7 +36,7 @@ export function TopBar() {
         </button>
         <div className="flex items-center gap-2 pr-3 pl-1.5 font-display text-lg font-semibold">
           {/* the mono digits sit high in their line box: a little more padding on top centres them on the title */}
-          {mode === 'level' && <span className="rounded-full bg-shade/6 px-2 pt-0.75 pb-0.25 font-mono text-xs text-muted">{level.id}</span>}
+          {mode === 'level' && <span className="rounded-full bg-shade/6 px-2 pt-0.75 pb-0.25 font-mono text-xs text-muted">{levelNumber(level.id)}</span>}
           {level.title}
         </div>
         <button className={`${button('quiet', 'icon')} ml-auto sm:hidden`} title="Rules" aria-label="Rules" onClick={showRules}>

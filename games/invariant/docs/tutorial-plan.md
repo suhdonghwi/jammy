@@ -20,7 +20,7 @@ A review of the current tutorial (played end to end, and against the script in
   formula. Typing `i <= n`, a listed solution for the level, is refused with
   "type exactly `i == n`". The rationale for each formula is given in the
   caption before the attempt, so the learner doesn't form the hypothesis
-  either. Then level 1-1 says "you are on your own now".
+  either. Then the first level says "you are on your own now".
 - **No bridge to what programmers already know.** The program's `requires` and
   `ensures` are never explained; "precondition" and "postcondition" appear
   late and unannounced; the word "invariant" appears only in the last caption.
@@ -32,7 +32,7 @@ A review of the current tutorial (played end to end, and against the script in
   sense once "true but too weak" is a thing.
 - **Metaphors go unexplained.** The purple test frog is never introduced; the
   slabs are never named as the formula drawn on the plane; the axes have no
-  variable names; eggs are called "inputs" (wrong from level 1-2 on).
+  variable names; eggs are called "inputs" (wrong from Parity on).
 - **Too many names per concept.** Goal / "what we want" / `ensures` /
   postcondition. Area / formula / condition / invariant.
 
@@ -336,8 +336,8 @@ Callouts: one egg ("too small: egg outside") and one stop tile off the goals
 
 Button: Finish.
 
-**3.3 Rules card.** Updated text (see "UI changes"). Closing it opens level
-1-1, whose intro becomes: "Same idea, but this frog counts down. Start with an
+**3.3 Rules card.** Updated text (see "UI changes"). Closing it opens
+Countdown (the first level), whose intro becomes: "Same idea, but this frog counts down. Start with an
 area every egg sits on, and strengthen from there."
 
 ## The attempt loop
@@ -460,7 +460,7 @@ Tutorial engine (`src/tutorial/`):
 
 Levels and docs:
 
-- `catalog.ts`: level 1-1's intro as above. Pitfall messages stay for the
+- `catalog.ts`: Countdown's intro as above. Pitfall messages stay for the
   levels; the tutorial's own explanations replace them in every stage.
 - `design.md`: replace "The tutorial" with a pointer to this plan (or fold the
   Principles and Vocabulary sections in once built).

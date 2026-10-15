@@ -3,7 +3,7 @@
 import { checkFormula } from '../src/checker/check';
 import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import type { State } from '../src/lang/ast';
-import { allLevels } from '../src/levels/catalog';
+import { allLevels, tutorialLevel } from '../src/levels/catalog';
 import { compileFormula, compileLevel, hop, isEgg, running, startState, type CompiledLevel } from '../src/levels/level';
 
 const ctx = await nodeZ3();
@@ -36,6 +36,15 @@ for (const def of allLevels) {
   } catch (e) {
     fail(`does not compile: ${(e as Error).message}`);
     continue;
+  }
+  if (def !== tutorialLevel) {
+    if ((def.hints?.length ?? 0) < 2) fail('needs at least two hints');
+    // a hint points the way; typing the answer is the learner's job
+    for (const h of def.hints ?? []) {
+      const quoted = [...h.matchAll(/`([^`]+)`/g)].map((m) => m[1].replace(/\s+/g, ''));
+      const given = def.solutions.find((sol) => quoted.includes(sol.replace(/\s+/g, '')));
+      if (given) fail(`hint gives away solution '${given}': ${h}`);
+    }
   }
   const box = { cx: 0, cy: 0, r: 12, planeR: 8, plane: def.planes?.start };
 

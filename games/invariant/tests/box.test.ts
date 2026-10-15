@@ -36,11 +36,11 @@ describe('tutorial counterexamples match the design', () => {
 
 describe('levels', () => {
   it('parity: hand finds (-1, 1)', () => {
-    const lvl = compileLevel(levels.find((l) => l.id === '1-2')!);
+    const lvl = compileLevel(levels.find((l) => l.id === 'parity')!);
     expect(num(search(lvl, '(x + y) % 2 == 0', { ...box, cx: 2, cy: 2 }).termination!.state)).toEqual({ x: -1, y: 1 });
   });
-  it('abs: prefers the focused plane and names the broken conjunct', () => {
-    const lvl = compileLevel(levels.find((l) => l.id === '3-2')!);
+  it('even out: prefers the focused plane and names the broken conjunct', () => {
+    const lvl = compileLevel(levels.find((l) => l.id === 'even-out')!);
     const c = search(lvl, 'x >= 0 && x == x');
     expect(c.maintenance).toBeDefined();
     expect(c.maintenance!.broken).toBe('x >= 0');

@@ -31,5 +31,5 @@ the same headers. `pnpm install` copies Z3's browser build into `public/z3/`.
 |---|---|
 | `pnpm dev` | Dev server |
 | `pnpm test` | Unit tests (parser, types, integer semantics, box search) |
-| `pnpm validate` | Proves every level's solutions with Z3, checks every pitfall fails the intended rule, and checks real frogs terminate |
+| `pnpm validate` | Proves every level's solutions with Z3, checks every pitfall fails the intended rule, checks real frogs terminate, and checks no hint gives a solution away |
 | `pnpm build` | Typecheck + production build |
