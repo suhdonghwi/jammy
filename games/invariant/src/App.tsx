@@ -16,12 +16,15 @@ const showLab = import.meta.env.DEV && typeof location !== 'undefined' && new UR
 export function App() {
   const mode = useGame((s) => s.mode);
   const level = useGame((s) => s.level);
+  const menuView = useGame((s) => s.menuView);
 
-  // Warm up the solver in the background so the first Check is quick.
+  // Warm up the solver in the background so the first Check is quick, but only
+  // once the player heads for a level: it is a large download, and someone who
+  // only looks at the home screen never needs it.
+  const wantSolver = mode !== 'menu' || menuView === 'levels';
   useEffect(() => {
-    const t = setTimeout(() => void browserZ3().catch(() => {}), 1500);
-    return () => clearTimeout(t);
-  }, []);
+    if (wantSolver) void browserZ3().catch(() => {});
+  }, [wantSolver]);
 
   return (
     <div className="fixed inset-0">
