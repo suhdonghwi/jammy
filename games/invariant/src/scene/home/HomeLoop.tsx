@@ -1,5 +1,5 @@
-import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../store/game';
 import { cameraRig } from '../cameraRig';
@@ -25,6 +25,12 @@ const RING = { x0: 1, y0: 8, w: 7, h: 5 };
 const FROGS = 5;
 /** What the camera frames: centre tile and width in tiles. */
 const FOCUS = { x: 4.6, y: 9, span: 11 };
+/** The glide into place on arrival (seconds), and where it starts on a fresh page load. */
+const INTRO_SECONDS = 1.6;
+const OVERVIEW = new THREE.Vector3(0, 9, 7);
+let firstArrival = true;
+const eye = new THREE.Vector3();
+const target = new THREE.Vector3();
 
 /** The rectangle's edge, clockwise as seen from the camera. */
 function edgePath({ x0, y0, w, h }: typeof RING): [number, number][] {
@@ -135,30 +141,74 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
     };
   }, [level, rect]);
 
-  // camera: beside the copy on wide screens, above it on narrow ones
+  // Camera: beside the copy on wide screens, above it on narrow ones. On
+  // arrival it glides into place: from a high overview when the page loads,
+  // or from wherever the camera was (a level) when coming back home.
   const mode = useGame((s) => s.mode);
   const centre = FOCUS;
-  useFrame(({ clock, size }) => {
-    const c = cameraRig.controls;
-    if (!c || mode !== 'menu') return;
-    const t = clock.elapsedTime;
-    const aspect = size.width / size.height;
+  const intro = useRef<{ t0: number; eye: THREE.Vector3; target: THREE.Vector3 } | null>(null);
+  /** Where the camera rests (into eye / target), swaying gently over time. */
+  const pose = (t: number, aspect: number) => {
     const sway = Math.sin(t * 0.13) * 0.35;
     const k = Math.max(0.9, centre.span / 8.5);
     if (aspect > 1.1) {
       const sx = -shift * Math.min(aspect, 2.2) * 1.75;
-      void c.setLookAt(centre.x + sx + sway, 7.6 * k, -centre.y + 11.6 * k, centre.x + sx, 0.2, -centre.y + 0.4, false);
+      eye.set(centre.x + sx + sway, 7.6 * k, -centre.y + 11.6 * k);
+      target.set(centre.x + sx, 0.2, -centre.y + 0.4);
     } else {
       // narrow: far enough back that the scene's width fits the screen
       const kn = Math.max(k, centre.span / (aspect * 13.5));
-      void c.setLookAt(centre.x + sway, 10 * kn, -centre.y + 15.5 * kn, centre.x, -1.6 * kn, -centre.y + 2.4 * kn, false);
+      eye.set(centre.x + sway, 10 * kn, -centre.y + 15.5 * kn);
+      target.set(centre.x, -1.6 * kn, -centre.y + 2.4 * kn);
+    }
+  };
+
+  // Decide where the glide starts before the first frame is drawn, and on a
+  // fresh page load put the camera there right away (no default-camera frame).
+  const { camera, size, clock } = useThree();
+  useLayoutEffect(() => {
+    const t = clock.elapsedTime;
+    pose(t, size.width / size.height);
+    const c = cameraRig.controls;
+    if (firstArrival) {
+      firstArrival = false;
+      intro.current = { t0: t, eye: eye.clone().add(OVERVIEW), target: target.clone() };
+      camera.position.copy(intro.current.eye);
+      camera.lookAt(intro.current.target);
+      void c?.setLookAt(...intro.current.eye.toArray(), ...intro.current.target.toArray(), false);
+    } else {
+      // where the camera is right now (not where a running camera move is headed)
+      intro.current = {
+        t0: t,
+        eye: c ? c.getPosition(new THREE.Vector3(), false) : camera.position.clone(),
+        target: c ? c.getTarget(new THREE.Vector3(), false) : target.clone(),
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useFrame(({ clock, size, camera }) => {
+    if (mode !== 'menu' || !intro.current) return;
+    const c = cameraRig.controls;
+    const t = clock.elapsedTime;
+    pose(t, size.width / size.height);
+    const u = Math.min(1, (t - intro.current.t0) / INTRO_SECONDS);
+    // ease in and out, so the glide neither jerks off nor stops dead
+    const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    eye.lerpVectors(intro.current.eye, eye, e);
+    target.lerpVectors(intro.current.target, target, e);
+    if (c) void c.setLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, false);
+    else {
+      // before the controls exist (the very first frames), place the camera directly
+      camera.position.copy(eye);
+      camera.lookAt(target);
     }
   });
 
   const win = useMemo(() => ({ cx: Math.round(centre.x), cy: Math.round(centre.y), R: 16 }), [centre]);
   return (
     <group>
-      <Floor level={level} pond={0} y={0} opacity={1} showAxes={false} showStop showGoal />
+      <Floor level={level} pond={0} y={0} opacity={1} initialOpacity={0} fadeSpeed={2.6} showAxes={false} showStop showGoal />
       <Slabs version={version} dim={false} showStop showGoal />
       <GoalColumns level={level} pond={0} win={win} version={version} />
       <StartEggs eggs={eggs} />

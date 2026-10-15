@@ -138,14 +138,18 @@ function TitleScene({ font }: { font: opentype.Font }) {
   );
 }
 
-/** The 3D title block. Its height follows its width, by the content's own proportions. */
+/**
+ * The title block's width : height. It is fixed (not measured from the font)
+ * so the block has its final size before the font has loaded and nothing
+ * around it shifts; the lettering is fitted inside it. Measured from layout()
+ * with the current sizes and spacing; update it if those change.
+ */
+const TITLE_ASPECT = 1.89;
+
+/** The 3D title block. */
 export function Title3D() {
   const font = useTitleFont();
-  const aspect = useMemo(() => {
-    if (!font) return 2.2;
-    const L = layout(font);
-    return (L.right - L.left + 0.08) / (L.top - L.bottom + 0.08);
-  }, [font]);
+  const aspect = TITLE_ASPECT;
   return (
     <div className="title3d" style={{ aspectRatio: aspect }}>
       {font && (

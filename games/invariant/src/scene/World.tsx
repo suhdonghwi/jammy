@@ -1,6 +1,6 @@
 import { CameraControls } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useGame } from '../store/game';
 import { cameraRig, VIEW } from './cameraRig';
 import { POND_SPACING } from './constants';
@@ -31,7 +31,9 @@ function Controls() {
   const ref = useRef<CameraControls>(null);
   // the home screen drives its own camera; user input there would only fight it
   const interactive = useGame((s) => s.mode !== 'menu');
-  useEffect(() => {
+  // attached before anything else's layout effects (and before the first
+  // frame), so scenes can position the camera through it from the start
+  useLayoutEffect(() => {
     cameraRig.attach(ref.current);
     const c = ref.current;
     if (c) {

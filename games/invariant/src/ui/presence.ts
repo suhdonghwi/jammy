@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 // during that moment (styles add a `.leaving` class with the reverse animation).
 
 /** Exit animations last this long (keep in step with the `.leaving` styles). */
-export const EXIT_MS = 220;
+export const EXIT_MS = 150;
 
 /** A single element: still mounted while `leaving`, then gone. */
 export function usePresence(show: boolean, ms = EXIT_MS): { mounted: boolean; leaving: boolean } {
