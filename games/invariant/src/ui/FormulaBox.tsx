@@ -52,10 +52,14 @@ const errorField = StateField.define<DecorationSet>({
 
 const singleLine = EditorState.transactionFilter.of((tr) => (tr.newDoc.lines > 1 ? [] : tr));
 
+const isLocked = (g: { mode: string; awaitingCheck: boolean }) => g.mode === 'tutorial' && !g.awaitingCheck;
+const lockExt = (locked: boolean): Extension => [EditorState.readOnly.of(locked), EditorView.editable.of(!locked)];
+
 export function FormulaBox() {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const ghostComp = useRef(new Compartment());
+  const lockComp = useRef(new Compartment());
   const ghost = useGame((s) => s.ghost);
   const formula = useGame((s) => s.formula);
   const formulaText = useGame((s) => s.formulaText);
@@ -108,6 +112,7 @@ export function FormulaBox() {
           exprLanguage,
           syntaxHighlighting(highlight),
           ghostComp.current.of(ghostExt(useGame.getState().ghost)),
+          lockComp.current.of(lockExt(isLocked(useGame.getState()))),
           keymap.of([
             { key: 'Enter', run: () => (void check(), true) },
             {
@@ -141,6 +146,13 @@ export function FormulaBox() {
     return () => v.destroy();
   }, []);
 
+  // In the tutorial the area can only be edited while a step asks for it;
+  // otherwise it stays what the caption is talking about.
+  const locked = mode === 'tutorial' && !awaitingCheck;
+  useEffect(() => {
+    view.current?.dispatch({ effects: lockComp.current.reconfigure(lockExt(locked)) });
+  }, [locked]);
+
   // ghost text changes
   useEffect(() => {
     const v = view.current;
@@ -170,7 +182,7 @@ export function FormulaBox() {
   return (
     <div className={`formula ${spot === 'formula' ? 'spotlight-wrap' : ''}`}>
       <div
-        className={`formula-row ${settledError ? 'has-error' : ''} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'shake' : ''}`}
+        className={`formula-row ${settledError ? 'has-error' : ''} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'shake' : ''} ${locked ? 'locked' : ''}`}
       >
         <span className="formula-label">area</span>
         <div className="formula-editor" ref={host} />

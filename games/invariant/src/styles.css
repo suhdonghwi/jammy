@@ -726,6 +726,11 @@ code {
 .formula-row:focus-within {
   border-color: rgba(59, 130, 246, 0.65);
 }
+/* the tutorial isn't asking for a formula right now: read-only */
+.formula-row.locked .formula-editor {
+  opacity: 0.6;
+  cursor: default;
+}
 .formula-row.has-error {
   border-color: rgba(229, 72, 77, 0.5);
 }
