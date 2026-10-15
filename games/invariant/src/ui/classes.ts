@@ -25,8 +25,9 @@ const VARIANTS: Record<Variant, string> = {
   // chunky, with a solid bottom edge
   toy: 'mb-1 bg-white text-ink shadow-toy enabled:hover:bg-sky enabled:active:translate-y-[3px] enabled:active:shadow-toy-pressed',
   primary: 'mb-1 bg-brand text-white shadow-toy-brand enabled:hover:bg-brand-light enabled:active:translate-y-[3px] enabled:active:shadow-toy-brand-pressed',
-  // inside the formula row: raised by half its 3px edge, so it is centred with it
-  check: 'relative -top-[1.5px] bg-brand px-5 py-2 text-md font-semibold text-white shadow-[0_3px_0_var(--color-brand-deep)] enabled:hover:bg-brand-light enabled:active:translate-y-px',
+  // inside the formula row: raised by half its 3px edge, so it is centred with
+  // it; a little less padding on the icon's side, whose glyph has its own margin
+  check: 'relative -top-[1.5px] bg-brand pl-4.5 pr-5 py-2 text-md font-semibold text-white shadow-[0_3px_0_var(--color-brand-deep)] enabled:hover:bg-brand-light enabled:active:translate-y-px',
 };
 
 const SIZES: Record<Size, string> = {
