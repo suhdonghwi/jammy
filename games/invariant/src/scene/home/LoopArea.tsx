@@ -134,10 +134,11 @@ export function LoopArea({ variant, shift = 1.25 }: { variant: LoopVariant; shif
       f.face = f.yaw = yawToward(x, y, nx, ny);
       return f;
     });
+    // everyone starts hopping together, on the same beat, once the last frog is out
+    const lastOut = Math.max(...frogs.map((f) => f.hatchT0 ?? t0)) + 0.6;
     const timer = setInterval(() => {
+      if (now() < lastOut) return;
       frogs.forEach((f, j) => {
-        // still in (or climbing out of) its egg
-        if (f.hatchT0 !== undefined && now() < f.hatchT0 + 0.7) return;
         pos[j] = (pos[j] + 1) % path.length;
         const [x, y] = path[pos[j]];
         // landing in a pool on the way splashes (hopTo does that, as in a level)
@@ -171,7 +172,9 @@ export function LoopArea({ variant, shift = 1.25 }: { variant: LoopVariant; shif
       const sx = -shift * Math.min(aspect, 2.2) * 1.75;
       void c.setLookAt(centre.x + sx + sway, 7.6 * k, -centre.y + 11.6 * k, centre.x + sx, 0.2, -centre.y + 0.4, false);
     } else {
-      void c.setLookAt(centre.x + sway, 10 * k, -centre.y + 15.5 * k, centre.x, -1.6, -centre.y + 2.4, false);
+      // narrow: far enough back that the scene's width fits the screen
+      const kn = Math.max(k, centre.span / (aspect * 13.5));
+      void c.setLookAt(centre.x + sway, 10 * kn, -centre.y + 15.5 * kn, centre.x, -1.6 * kn, -centre.y + 2.4 * kn, false);
     }
   });
 
