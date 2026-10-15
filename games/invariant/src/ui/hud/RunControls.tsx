@@ -1,10 +1,11 @@
-import { Lightbulb, Pause, Play, RotateCcw, StepForward, Wand2 } from 'lucide-react';
+import { Braces, Lightbulb, Pause, Play, RotateCcw, StepForward, Wand2 } from 'lucide-react';
 import { pauseRun, resetFrogs, runFrogs, stepFrogs } from '../../director/frogs';
 import { useGame } from '../../game/store';
 import { climbHint } from '../../tutorial/script';
 import { button } from '../classes';
 
-// Run / Pause, Step and Reset (and, in the tutorial, the hint ladder).
+// Run / Pause, Step and Reset; on the right, the syntax reference (once there
+// is an area box) and, in the tutorial, the hint ladder.
 
 export function RunControls() {
   const reveal = useGame((s) => s.reveal);
@@ -53,6 +54,11 @@ export function RunControls() {
         <button className={button('glass')} disabled={busy} onClick={climbHint}>
           {hint.rung < 2 ? <Lightbulb size={16} strokeWidth={2.2} /> : <Wand2 size={16} strokeWidth={2.2} />}
           {hint.rung === 0 ? 'Hint' : hint.rung === 1 ? 'Another hint' : 'Fill it in'}
+        </button>
+      )}
+      {reveal.formula && (
+        <button className={button('glass')} title="What you can type into the area box" onClick={() => useGame.setState({ showSyntax: true })}>
+          <Braces size={16} strokeWidth={2.2} /> Syntax
         </button>
       )}
     </div>
