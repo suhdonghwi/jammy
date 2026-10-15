@@ -2,8 +2,9 @@ import { ArrowLeft, BookOpen, CircleCheck, CircleDashed, CircleHelp, CircleX, Lo
 import { playCounterexample } from '../../director/verdicts';
 import { goMenu } from '../../game/actions';
 import { useGame } from '../../game/store';
+import { useT } from '../../i18n/i18n';
 import { levelNumber } from '../../levels/catalog';
-import { RULE_NAMES, RULES } from '../../levels/level';
+import { RULES } from '../../levels/level';
 import { button } from '../classes';
 
 // The top bar: back, the level's name, the three rule lights (dim until the
@@ -19,6 +20,7 @@ export function TopBar() {
   const checking = useGame((s) => s.checking);
   const busy = useGame((s) => s.busy);
   const spot = useGame((s) => s.spotlight);
+  const tr = useT();
   if (!level) return null;
   return (
     // .topbar and .pill-group: HoverReadout measures them to lift itself into this row when the middle is free
@@ -28,8 +30,8 @@ export function TopBar() {
         {/* just an arrow: the level's name is what this pill is about */}
         <button
           className={button('quiet', 'icon')}
-          title={mode === 'tutorial' ? 'Home' : 'All levels'}
-          aria-label={mode === 'tutorial' ? 'Home' : 'All levels'}
+          title={mode === 'tutorial' ? tr.topBar.home : tr.topBar.allLevels}
+          aria-label={mode === 'tutorial' ? tr.topBar.home : tr.topBar.allLevels}
           onClick={() => goMenu(mode === 'tutorial' ? 'home' : 'levels')}
         >
           <ArrowLeft size={17} strokeWidth={2.4} />
@@ -39,7 +41,7 @@ export function TopBar() {
           {mode === 'level' && <span className="rounded-full bg-shade/6 px-2 pt-0.75 pb-0.25 font-mono text-xs text-muted">{levelNumber(level.id)}</span>}
           {level.title}
         </div>
-        <button className={`${button('quiet', 'icon')} ml-auto sm:hidden`} title="Rules" aria-label="Rules" onClick={showRules}>
+        <button className={`${button('quiet', 'icon')} ml-auto sm:hidden`} title={tr.topBar.rules} aria-label={tr.topBar.rules} onClick={showRules}>
           <BookOpen size={16} strokeWidth={2.2} />
         </button>
       </div>
@@ -55,16 +57,16 @@ export function TopBar() {
                 key={r}
                 className={`flex animate-[pop_0.35s_ease-out] items-center gap-1.5 rounded-full px-3 py-1.75 font-display text-sm font-medium max-md:px-2 max-md:py-1.25 max-md:text-xs max-sm:flex-1 max-sm:justify-center max-sm:gap-1 max-sm:px-1.5 max-[22.5rem]:px-1 max-[22.5rem]:text-[11px] [&_svg]:shrink-0 ${LIGHT[status]}`}
                 disabled={busy || v?.status !== 'fail'}
-                title={v?.status === 'fail' ? 'Replay the counterexample' : RULE_NAMES[r]}
+                title={v?.status === 'fail' ? tr.topBar.replay : tr.rules[r]}
                 onClick={() => v?.status === 'fail' && void playCounterexample(v.cex)}
               >
                 <LightIcon status={status} />
-                {RULE_NAMES[r]}
+                {tr.rules[r]}
               </button>
             );
           })}
         <button className={`${button('quiet')} max-sm:hidden`} onClick={showRules}>
-          <BookOpen size={16} strokeWidth={2.2} /> Rules
+          <BookOpen size={16} strokeWidth={2.2} /> {tr.topBar.rules}
         </button>
       </div>
     </div>

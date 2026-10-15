@@ -1,6 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useGame } from '../../game/store';
+import { useT } from '../../i18n/i18n';
 import { BUILTINS, KEYWORDS, tokenize } from '../../lang/parser';
 import type { CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
@@ -125,6 +126,7 @@ export function CodePanel() {
   );
   const spot = useGame((s) => s.spotlight);
   const [folded, setFolded] = useState(false);
+  const tr = useT();
   // a new level starts unfolded, and so does anything the tutorial points at in the code
   useEffect(() => setFolded(false), [level]);
   const open = !folded || spot === 'code' || spotLines.length > 0;
@@ -140,7 +142,7 @@ export function CodePanel() {
         aria-expanded={open}
         onClick={() => setFolded(open)}
       >
-        Program
+        {tr.code.title}
         <ChevronDown size={14} strokeWidth={2.6} className={`transition-transform duration-200 sm:hidden ${open ? 'rotate-180' : ''}`} />
       </button>
       <pre className={`-mx-2 m-0 min-h-0 overflow-auto ${open ? '' : 'max-sm:hidden'} px-2 font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]`}>{nodes}</pre>

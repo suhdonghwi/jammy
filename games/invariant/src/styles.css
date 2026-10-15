@@ -14,9 +14,37 @@
   }
 }
 
+/* The Korean fonts, for Hangul only, so a symbol Nunito lacks (≠, say) on an
+   English page never pulls in a whole Korean font. They are subsets of the
+   full fonts, made by scripts/subset-fonts.mjs (`pnpm fonts`). */
+@font-face {
+  font-family: 'NanumSquareRound';
+  src: url('./assets/fonts/NanumSquareRound-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+1100-11FF, U+3130-318F, U+AC00-D7A3;
+}
+@font-face {
+  font-family: 'NanumSquareRound';
+  src: url('./assets/fonts/NanumSquareRound-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+1100-11FF, U+3130-318F, U+AC00-D7A3;
+}
+@font-face {
+  font-family: 'TmoneyRoundWind';
+  src: url('./assets/fonts/TmoneyRoundWind-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+  unicode-range: U+1100-11FF, U+3130-318F, U+AC00-D7A3;
+}
+
 @theme {
-  --font-sans: 'Nunito Variable', ui-rounded, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Fredoka', 'Nunito Variable', ui-rounded, sans-serif;
+  /* Korean letters come from rounded fonts of the same feel: NanumSquareRound
+     beside Nunito, T-money RoundWind beside Fredoka (neither has Latin letters
+     loaded); headings show NanumSquareRound while RoundWind is still loading */
+  --font-sans: 'Nunito Variable', 'NanumSquareRound', ui-rounded, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Fredoka', 'TmoneyRoundWind', 'Nunito Variable', 'NanumSquareRound', ui-rounded, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
   /* the UI's base size, between sm and base */
@@ -88,6 +116,18 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+  /* Korean breaks lines between words, not inside them */
+  :lang(ko) {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+}
+
+/* RoundWind has one weight, and already a heavy one: a label of any weight
+   uses it as it is, never thickened further (Fredoka has real weights, so it
+   is unaffected) */
+.font-display {
+  font-synthesis-weight: none;
 }
 
 /* The tutorial's spotlight: a pulsing ring around whatever the caption talks

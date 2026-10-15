@@ -2,14 +2,17 @@ import { ArrowLeft, GraduationCap, LayoutGrid } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { openLevel, openTutorial } from '../../game/actions';
 import { useGame } from '../../game/store';
+import { useT } from '../../i18n/i18n';
 import { GROUPS, levelNumber } from '../../levels/catalog';
+import { groupName, localizeLevel } from '../../levels/localize';
 import { button } from '../classes';
 import { usePresence } from '../presence';
+import { LangSwitch } from './LangSwitch';
 import { Title3D } from './title/Title3D';
 import { useCompactHome } from './useCompactHome';
 
 // The home screen over the 3D scene: the title, a line about the game, the way
-// in, and the level list.
+// in, the level list, and in the corner, the language.
 
 export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
@@ -32,6 +35,9 @@ export function HomeOverlay() {
         <HeroCopy behind={view === 'levels'} />
       </div>
       {picker.mounted && <LevelPicker leaving={picker.leaving} instant={instant} />}
+      <div className="fixed top-4 right-4 flex animate-[fade_0.4s_ease-out_both] items-center gap-2">
+        <LangSwitch />
+      </div>
     </>
   );
 }
@@ -41,13 +47,14 @@ const WASH =
   'before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-linear-to-r before:from-wash/94 before:via-wash/70 before:via-26% before:to-wash/0 before:to-42% narrow:before:bg-linear-to-t narrow:before:from-wash/95 narrow:before:via-wash/80 narrow:before:via-42% narrow:before:to-62%';
 
 function HomeButtons() {
+  const tr = useT();
   return (
     <div className="flex gap-3.5 narrow:justify-center max-sm:gap-2.5">
       <button className={button('primary', 'lg')} onClick={openTutorial}>
-        <GraduationCap size={22} strokeWidth={2.2} /> Tutorial
+        <GraduationCap size={22} strokeWidth={2.2} /> {tr.home.tutorial}
       </button>
       <button className={button('toy', 'lg')} onClick={() => useGame.setState({ menuView: 'levels' })}>
-        <LayoutGrid size={22} strokeWidth={2.2} /> Levels
+        <LayoutGrid size={22} strokeWidth={2.2} /> {tr.home.levels}
       </button>
     </div>
   );
@@ -55,20 +62,22 @@ function HomeButtons() {
 
 /** The title, a line about the game, and the way in. */
 function HeroCopy({ behind }: { behind: boolean }) {
+  const tr = useT();
   return (
     <div className={`max-w-118 animate-[rise_0.6s_ease-out_both] narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
-      <p className="mb-3 font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">A little game about loop invariants</p>
+      <p className="mb-3 font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
       <h1 className="mb-3.5">
         <span className="sr-only">Invariant Frog</span>
         <Title3D />
       </h1>
-      <p className="mb-6.5 text-lg leading-[1.55] text-muted max-sm:text-base">How do you know if your loop is correct for every input? Let's find that out, with frogs.</p>
+      <p className="mb-6.5 text-lg leading-[1.55] text-muted max-sm:text-base">{tr.home.pitch}</p>
       <HomeButtons />
     </div>
   );
 }
 
 function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean }) {
+  const tr = useT();
   return (
     // arriving straight on the list (back from a level), it is simply there
     <div
@@ -83,16 +92,16 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
       >
         <div className="flex items-center px-4 pt-3.5 pb-1.5">
           <button className={button('quiet')} onClick={() => useGame.setState({ menuView: 'home' })}>
-            <ArrowLeft size={16} strokeWidth={2.4} /> Back
+            <ArrowLeft size={16} strokeWidth={2.4} /> {tr.home.back}
           </button>
-          <h2 className="flex-1 text-center font-display text-2xl font-semibold">Levels</h2>
+          <h2 className="flex-1 text-center font-display text-2xl font-semibold">{tr.home.levels}</h2>
           <span className="w-20" />
         </div>
         <div className="overflow-y-auto px-6 pt-1.5 pb-6">
           {GROUPS.map((g, tier) => (
             <section key={g.name}>
               <h3 className="mt-4 mb-2.5 flex items-center gap-2.5 font-display text-lg font-semibold">
-                {g.name}
+                {groupName(g.name)}
                 <Pips filled={tier + 1} of={GROUPS.length} />
               </h3>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2.5">
@@ -105,7 +114,7 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
                     <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft font-display text-md font-semibold text-brand">
                       {levelNumber(l.id)}
                     </span>
-                    <span className="font-display text-md font-semibold">{l.title}</span>
+                    <span className="font-display text-md font-semibold">{localizeLevel(l).title}</span>
                   </button>
                 ))}
               </div>
@@ -119,9 +128,10 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
 
 /** A tier's difficulty as filled dots: ●○○, ●●○, ●●●. */
 function Pips({ filled, of }: { filled: number; of: number }) {
+  const tr = useT();
   return (
     // a pixel below the line box's centre (the capitals'), toward the lowercase letters', so they don't look high
-    <span className="flex translate-y-px gap-1" aria-label={`difficulty ${filled} of ${of}`}>
+    <span className="flex translate-y-px gap-1" aria-label={tr.home.difficulty(filled, of)}>
       {Array.from({ length: of }, (_, k) => (
         <span key={k} className={`size-2 rounded-full ${k < filled ? 'bg-brand' : 'bg-shade/12'}`} />
       ))}

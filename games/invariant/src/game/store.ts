@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Formula } from '../checker/check';
 import type { Verdicts } from '../checker/types';
 import { compileFormula, compileLevel, type CompiledLevel, type FormulaResult, type LevelDef, type Rule } from '../levels/level';
+import { localizeLevel } from '../levels/localize';
 
 // The game's state, shared by the scene, the HUD and the scripted sequences.
 
@@ -173,7 +174,8 @@ export const useGame = create<Game>((set, get) => ({
   spotlight: null,
 
   openLevel(def, mode) {
-    const level = compileLevel(def);
+    // in the current language: its title, intro, hints and pitfalls
+    const level = compileLevel(localizeLevel(def));
     set({
       mode,
       level,
@@ -185,7 +187,7 @@ export const useGame = create<Game>((set, get) => ({
       checking: false,
       busy: false,
       running: false,
-      caption: def.intro ? { text: def.intro, tone: 'info' } : null,
+      caption: level.intro ? { text: level.intro, tone: 'info' } : null,
       reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
       hint: null,
       hintsShown: 0,

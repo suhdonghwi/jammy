@@ -5,7 +5,8 @@ import { handIn } from '../director/hand';
 import { sleep } from '../director/sequence';
 import { playCounterexample, playShrug, runChecker } from '../director/verdicts';
 import { useGame, type CaptionTone, type Game } from '../game/store';
-import { RULE_NAMES, type Rule } from '../levels/level';
+import { t as messages } from '../i18n/i18n';
+import { ruleName, type Rule } from '../levels/level';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 
@@ -53,7 +54,7 @@ const DOUBLE_CLICK_MS = 120;
  * It shows right away; pressing it skips ahead to the next step at once
  * instead of waiting.
  */
-function earlyNext(label = 'Next') {
+function earlyNext(label = messages().caption.next) {
   const shownAt = performance.now();
   return {
     label,
@@ -77,11 +78,11 @@ export function say(text: string, spot: Spot = null, tone: CaptionTone = 'info',
 /** Show a caption whose Next is there but greyed: the step waits for the learner to do something first. */
 export function sayWaiting(text: string, spot: Spot = null) {
   captionShownAt = performance.now();
-  useGame.setState({ caption: { text, tone: 'info', action: { label: 'Next', onClick: () => {}, disabled: true } }, spotlight: spot });
+  useGame.setState({ caption: { text, tone: 'info', action: { label: messages().caption.next, onClick: () => {}, disabled: true } }, spotlight: spot });
 }
 
 /** Show a caption with a button and wait for it. */
-function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone: CaptionTone = 'info'): Promise<void> {
+function next(gen: number, text: string, label = messages().caption.next, spot: Spot = null, tone: CaptionTone = 'info'): Promise<void> {
   return new Promise((resolve, reject) => {
     const shown = useGame.getState().caption;
     // the double-click guard counts from when this caption (and its button)
@@ -128,18 +129,19 @@ export async function beat(
   // small labelled tags in the scene for what this beat talks about (cleared otherwise)
   useGame.setState({ callouts: opts.callouts ?? [], spotLines: opts.lines ?? [] });
   const tone = opts.tone ?? 'info';
-  say(text, opts.spot ?? null, tone, opts.label ?? 'Next');
+  const label = opts.label ?? messages().caption.next;
+  say(text, opts.spot ?? null, tone, label);
   if (opts.prepare) await opts.prepare();
   guard(gen);
   await sleep(opts.settle ?? 300);
   guard(gen);
-  await next(gen, text, opts.label ?? 'Next', opts.spot ?? null, tone);
+  await next(gen, text, label, opts.spot ?? null, tone);
 }
 
 /** Keep the caption currently shown (e.g. a counterexample) until Next. */
 export function holdCaption(gen: number): Promise<void> {
   const c = useGame.getState().caption;
-  return next(gen, c?.text ?? '', 'Next', null, c?.tone ?? 'info');
+  return next(gen, c?.text ?? '', messages().caption.next, null, c?.tone ?? 'info');
 }
 
 /** Let the learner use these controls (and only these) for now. */
@@ -197,8 +199,8 @@ export function choose<K extends string>(gen: number, text: string, choices: { k
 /** A yes-or-no question; resolves with true for Yes. */
 export async function ask(gen: number, text: string): Promise<boolean> {
   const k = await choose(gen, text, [
-    { key: 'yes', label: 'Yes', tone: 'yes' },
-    { key: 'no', label: 'No', tone: 'no' },
+    { key: 'yes', label: messages().caption.yes, tone: 'yes' },
+    { key: 'no', label: messages().caption.no, tone: 'no' },
   ]);
   return k === 'yes';
 }
@@ -234,7 +236,7 @@ function waitCheck(gen: number): Promise<void> {
 export function showHint() {
   const h = useGame.getState().hint;
   if (!h || h.shown) return;
-  useGame.setState({ hint: { ...h, shown: true }, caption: { text: `${h.ask}\n\n**Hint:** ${h.nudge}`, tone: 'info' }, spotlight: null });
+  useGame.setState({ hint: { ...h, shown: true }, caption: { text: `${h.ask}\n\n**${messages().tutorial.hint}** ${h.nudge}`, tone: 'info' }, spotlight: null });
 }
 
 // ---- stages and demos ----
@@ -279,7 +281,7 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
     const failing = o.rules.find((r) => res.verdicts[r]?.status === 'fail');
     if (!failing) {
       if (o.rules.some((r) => res.verdicts[r]?.status === 'undecided')) {
-        await playShrug("I couldn't prove that either way. Try a simpler formula.");
+        await playShrug(messages().tutorial.undecided);
         guard(gen);
         continue;
       }
@@ -292,10 +294,10 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
     o.onFail?.(failing);
     const cex = failureOf(res, failing)!;
     const stageRule = o.rules[o.rules.length - 1];
-    const prefix = failing !== stageRule ? `${RULE_NAMES[failing]} held a moment ago; this change lost it. ` : undefined;
+    const prefix = failing !== stageRule ? messages().tutorial.lostRule(ruleName(failing)) : undefined;
     // the level's pitfall line duplicates the explanations here
     useGame.setState({ pitfallMessage: null });
-    const extra = `${o.explain?.[failing] ?? ''}\n\nFix your area and press **Check** again.`.trim();
+    const extra = `${o.explain?.[failing] ?? ''}\n\n${messages().tutorial.fixAndCheck}`.trim();
     await playCounterexample(cex, { prefix, extra });
     guard(gen);
   }
@@ -328,7 +330,7 @@ export async function demo(
   useGame.setState({ busy: true, callouts: [] });
   frogWorld.clear('test');
   // no spotlight on the box: the formula is already in it (and the slabs on the plane)
-  say(`Trying \`${formula}\`…`, null, 'muted');
+  say(messages().tutorial.trying(formula), null, 'muted');
   if (g.formulaText.trim() !== formula) {
     const t = cameraRig.target();
     void handIn(t.x + 2.5, -t.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
@@ -351,9 +353,9 @@ export async function demo(
     useGame.setState({ pitfallMessage: null });
     // the area on the plane is the one being tried, not the learner's; the
     // verdict on their prediction leads, so the failure doesn't read as theirs
-    const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? 'Right, no. ' : 'Not quite. ';
+    const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? messages().tutorial.guessedRight : messages().tutorial.guessedWrong;
     const tone = opts.guessedRight ? 'success' : 'fail';
-    await playCounterexample(cex, { prefix: verdict, tone, extra: opts.extra, area: 'the area', action: nextAfterCounterexample });
+    await playCounterexample(cex, { prefix: verdict, tone, extra: opts.extra, area: messages().verdicts.theArea, action: nextAfterCounterexample });
     guard(gen);
     await holdCaption(gen);
   }

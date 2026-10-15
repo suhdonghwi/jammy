@@ -1,4 +1,5 @@
 import type { Expr, Program, Stmt } from './ast';
+import { t as messages } from '../i18n/i18n';
 import { LangError } from './parser';
 
 // Type checking: every name is an int; conditions must be true/false.
@@ -10,14 +11,13 @@ const REL = new Set(['<', '<=', '>', '>=']);
 
 /** Type-check an expression; every name in `scope` is an int. */
 function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
+  const E = messages().langErrors;
   const text = (x: Expr) => src.slice(x.span.from, x.span.to);
   const want = (x: Expr, t: Type, ctx: string): void => {
     const got = typeOf(x, scope, src);
     if (got !== t) {
       throw new LangError(
-        t === 'int'
-          ? `\`${text(x)}\` is true/false, but ${ctx} needs a number`
-          : `\`${text(x)}\` is a number, but ${ctx} needs a true/false condition`,
+        t === 'int' ? E.needsNumber(text(x), ctx) : E.needsCondition(text(x), ctx),
         x.span,
       );
     }
@@ -30,7 +30,7 @@ function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
     case 'var':
       if (!scope.has(e.name)) {
         const names = [...scope].join(', ');
-        throw new LangError(`Unknown name '${e.name}'. You can use: ${names}`, e.span);
+        throw new LangError(E.unknownName(e.name, names), e.span);
       }
       return 'int';
     case 'unary':
@@ -43,14 +43,14 @@ function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
     case 'call': {
       const arity = e.fn === 'abs' ? 1 : 2;
       if (e.args.length !== arity) {
-        throw new LangError(`${e.fn} takes ${arity} argument${arity > 1 ? 's' : ''}`, e.span);
+        throw new LangError(E.arity(e.fn, arity), e.span);
       }
       e.args.forEach((a) => want(a, 'int', e.fn));
       return 'int';
     }
     case 'ite':
-      want(e.cond, 'bool', 'a condition');
-      want(e.else, typeOf(e.then, scope, src), 'both branches');
+      want(e.cond, 'bool', E.aCondition);
+      want(e.else, typeOf(e.then, scope, src), E.bothBranches);
       return typeOf(e.then, scope, src);
     case 'binary': {
       if (ARITH.has(e.op)) {
@@ -58,7 +58,7 @@ function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
         want(e.right, 'int', `'${e.op}'`);
         if (e.op === '/' || e.op === '%') {
           if (e.right.kind !== 'num' || e.right.value <= 0n) {
-            throw new LangError(`'${e.op}' only works with a positive number on the right, like \`x ${e.op} 2\``, e.right.span);
+            throw new LangError(E.positiveDivisor(e.op), e.right.span);
           }
         }
         return 'int';
@@ -82,10 +82,11 @@ function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
 }
 
 export function checkCondition(e: Expr, scope: ReadonlySet<string>, src: string, what: string): void {
+  const E = messages().langErrors;
   const t = typeOf(e, scope, src);
   if (t !== 'bool') {
     const text = src.slice(e.span.from, e.span.to);
-    throw new LangError(`\`${text}\` is a number, but ${what} needs a true/false condition. Did you mean \`${text} == 0\`?`, e.span);
+    throw new LangError(E.didYouMean(text, what), e.span);
   }
 }
 

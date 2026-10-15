@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, Check, RotateCcw, X } from 'lucide-react';
 import { useGame, type CaptionTone } from '../../game/store';
+import { useT } from '../../i18n/i18n';
 import { button } from '../classes';
 import { Markdown } from '../Markdown';
 import { useLingering } from '../presence';
@@ -20,7 +21,9 @@ export function CaptionBar() {
   const { value: caption, leaving } = useLingering(useGame((s) => s.caption));
   const pitfall = useGame((s) => s.pitfallMessage);
   const back = useGame((s) => (s.mode === 'tutorial' ? s.back : null));
+  const tr = useT();
   if (!caption) return null;
+  const replay = caption.action?.label === tr.caption.replay;
   return (
     <div
       key={caption.text}
@@ -44,7 +47,7 @@ export function CaptionBar() {
           {/* tutorial: back to the previous step (left), then the step's own buttons */}
           {back && (
             <button className={button('quiet', 'sm')} onClick={back}>
-              <ArrowLeft size={15} strokeWidth={2.4} /> Back
+              <ArrowLeft size={15} strokeWidth={2.4} /> {tr.caption.back}
             </button>
           )}
           <span className="flex-1" />
@@ -64,9 +67,9 @@ export function CaptionBar() {
           )}
           {caption.action && (
             <button className={button('primary', 'sm')} disabled={caption.action.disabled} onClick={() => caption.action!.onClick()}>
-              {caption.action.label === 'Replay' ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
+              {replay ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
               {caption.action.label}
-              {caption.action.label !== 'Replay' ? <ArrowRight size={15} strokeWidth={2.4} /> : null}
+              {!replay ? <ArrowRight size={15} strokeWidth={2.4} /> : null}
             </button>
           )}
         </div>

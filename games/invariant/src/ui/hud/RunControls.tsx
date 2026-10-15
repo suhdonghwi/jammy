@@ -2,6 +2,7 @@ import { Braces, Lightbulb, Pause, Play, RotateCcw, StepForward } from 'lucide-r
 import { pauseRun, resetFrogs, runFrogs, stepFrogs } from '../../director/frogs';
 import { showLevelHint } from '../../game/actions';
 import { useGame } from '../../game/store';
+import { useT } from '../../i18n/i18n';
 import { showHint } from '../../tutorial/script';
 import { button } from '../classes';
 
@@ -20,6 +21,7 @@ export function RunControls() {
   const spot = useGame((s) => s.spotlight);
   const allow = useGame((s) => s.tutorialAllow);
   const tut = mode === 'tutorial';
+  const tr = useT();
   const hinting = tut && !!hint && !hint.shown && awaitingCheck;
   const onHint = hinting ? showHint : levelHints > 0 ? showLevelHint : null;
   // on phones the row only has room for Syntax's label when neither Reset nor a hint is in it
@@ -30,7 +32,7 @@ export function RunControls() {
       {reveal.run &&
         (runningNow ? (
           <button className={button()} onClick={pauseRun}>
-            <Pause size={16} strokeWidth={2.4} className="text-pass" /> Pause
+            <Pause size={16} strokeWidth={2.4} className="text-pass" /> {tr.controls.pause}
           </button>
         ) : (
           <button
@@ -38,7 +40,7 @@ export function RunControls() {
             disabled={busy || stepping || (tut && !allow.run)}
             onClick={() => void runFrogs()}
           >
-            <Play size={16} strokeWidth={2.4} className="text-pass" /> Run
+            <Play size={16} strokeWidth={2.4} className="text-pass" /> {tr.controls.run}
           </button>
         ))}
       {reveal.step && (
@@ -47,30 +49,30 @@ export function RunControls() {
           disabled={busy || runningNow || stepping || (tut && !allow.step)}
           onClick={() => void stepFrogs()}
         >
-          <StepForward size={16} strokeWidth={2.4} className="text-brand" /> Step
+          <StepForward size={16} strokeWidth={2.4} className="text-brand" /> {tr.controls.step}
         </button>
       )}
       {reveal.run && !tut && (
-        <button className={button()} disabled={busy} title="Put every frog back in its egg (your area stays)" aria-label="Reset" onClick={resetFrogs}>
+        <button className={button()} disabled={busy} title={tr.controls.resetTitle} aria-label={tr.controls.reset} onClick={resetFrogs}>
           {/* on phones a level's row also holds Hint: Reset gives up its label */}
-          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> <span className={onHint ? 'max-sm:hidden' : ''}>Reset</span>
+          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> <span className={onHint ? 'max-sm:hidden' : ''}>{tr.controls.reset}</span>
         </button>
       )}
       <span className="flex-1" />
       {/* the tutorial's one sentence goes once it's shown; a level's hints come one at a time from the caption */}
       {onHint && (
-        <button className={button('glass')} disabled={busy} title="A nudge for when you're stuck" aria-label="Hint" onClick={onHint}>
-          <Lightbulb size={16} strokeWidth={2.2} /> <span className={tut ? '' : 'max-sm:hidden'}>Hint</span>
+        <button className={button('glass')} disabled={busy} title={tr.controls.hintTitle} aria-label={tr.controls.hint} onClick={onHint}>
+          <Lightbulb size={16} strokeWidth={2.2} /> <span className={tut ? '' : 'max-sm:hidden'}>{tr.controls.hint}</span>
         </button>
       )}
       {reveal.formula && (
         <button
           className={button('glass')}
-          title="What you can type into the area box"
-          aria-label="Syntax"
+          title={tr.controls.syntaxTitle}
+          aria-label={tr.controls.syntax}
           onClick={() => useGame.setState({ showSyntax: true })}
         >
-          <Braces size={16} strokeWidth={2.2} /> <span className={crowded ? 'max-sm:hidden' : ''}>Syntax</span>
+          <Braces size={16} strokeWidth={2.2} /> <span className={crowded ? 'max-sm:hidden' : ''}>{tr.controls.syntax}</span>
         </button>
       )}
     </div>

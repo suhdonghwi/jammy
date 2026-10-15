@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { useT } from '../../i18n/i18n';
 import { button } from '../classes';
 import { closeDialog, Dialog } from '../Dialog';
 import { ArtTermination, ArtInitialization, ArtMaintenance } from './RuleArt';
@@ -6,20 +7,19 @@ import { ArtTermination, ArtInitialization, ArtMaintenance } from './RuleArt';
 // The three rules, as a card over everything (from the top bar, and at the end of the tutorial).
 
 export function RulesCard() {
+  const tr = useT();
+  const card = tr.rulesCard;
   return (
     <Dialog flag="showRules" wide>
-      <h2 className="mb-1.5 font-display text-2xl font-semibold">The three rules</h2>
-      <p className="my-4 leading-[1.55] text-muted">
-        An area that passes all three is a loop invariant strong enough to prove the postcondition: every run that stops, stops on a goal — for every
-        input.
-      </p>
+      <h2 className="mb-1.5 font-display text-2xl font-semibold">{card.title}</h2>
+      <p className="my-4 leading-[1.55] text-muted">{card.intro}</p>
       <div className="my-4.5 grid grid-cols-3 gap-3 max-sm:grid-cols-1">
-        <Rule n={1} name="Initialization" text="Every egg sits on your area." art={<ArtInitialization />} />
-        <Rule n={2} name="Maintenance" text="A frog on your area that hops lands on your area." art={<ArtMaintenance />} />
-        <Rule n={3} name="Termination" text="A frog that stops on your area is on a goal." art={<ArtTermination />} />
+        <Rule n={1} name={tr.rules.initialization} text={card.initialization} art={<ArtInitialization />} />
+        <Rule n={2} name={tr.rules.maintenance} text={card.maintenance} art={<ArtMaintenance />} />
+        <Rule n={3} name={tr.rules.termination} text={card.termination} art={<ArtTermination />} />
       </div>
       <button className={button('primary')} onClick={() => closeDialog('showRules')}>
-        <Check size={17} strokeWidth={2.6} /> Got it
+        <Check size={17} strokeWidth={2.6} /> {card.gotIt}
       </button>
     </Dialog>
   );

@@ -1,7 +1,11 @@
+import { t } from '../i18n/i18n';
 import { COMPARISON_OPS, spanOf, type BinOp, type BuiltinFn, type Expr, type Program, type Span, type Stmt, type VarDecl } from './ast';
 
 // Tokenizer and recursive-descent parser for programs and area formulas,
 // with friendly errors that point at a span of the source.
+
+/** Error messages a learner can see, in the current language (named so a token `t` doesn't shadow it). */
+const tr = () => t().langErrors;
 
 export class LangError extends Error {
   constructor(message: string, public span: Span) {
@@ -48,7 +52,7 @@ export function tokenize(src: string): Token[] {
     }
     const op = OPS.find((o) => src.startsWith(o, i));
     if (!op) {
-      throw new LangError(`Unexpected character '${c}'`, { from: i, to: i + 1 });
+      throw new LangError(tr().unexpectedChar(c), { from: i, to: i + 1 });
     }
     toks.push({ kind: 'op', text: op, span: { from: i, to: i + op.length } });
     i += op.length;
@@ -81,17 +85,17 @@ class Parser {
   expectOp(text: string): Token {
     const t = this.peek();
     if (t.kind === 'op' && t.text === text) return this.next();
-    throw new LangError(t.kind === 'eof' ? `Expected '${text}' but the input ended` : `Expected '${text}' but found '${t.text}'`, t.span);
+    throw new LangError(t.kind === 'eof' ? tr().expectedEnded(text) : tr().expectedFound(text, t.text), t.span);
   }
   expectKw(text: string): Token {
     if (this.isKw(text)) return this.next();
     const t = this.peek();
-    throw new LangError(`Expected '${text}'`, t.span);
+    throw new LangError(tr().expected(text), t.span);
   }
   ident(): Token {
     const t = this.peek();
     if (t.kind !== 'ident' || KEYWORDS.has(t.text)) {
-      throw new LangError(t.kind === 'eof' ? 'Expected a name but the input ended' : `Expected a name but found '${t.text}'`, t.span);
+      throw new LangError(t.kind === 'eof' ? tr().expectedNameEnded : tr().expectedNameFound(t.text), t.span);
     }
     return this.next();
   }
@@ -177,7 +181,7 @@ class Parser {
       if (KEYWORDS.has(t.text)) throw new LangError(`'${t.text}' can't be used here`, t.span);
       this.next();
       if (this.isOp('(')) {
-        if (!BUILTINS.has(t.text)) throw new LangError(`Unknown function '${t.text}'. Available: abs, min, max`, t.span);
+        if (!BUILTINS.has(t.text)) throw new LangError(tr().unknownFunction(t.text), t.span);
         this.next();
         const args: Expr[] = [];
         if (!this.isOp(')')) {
@@ -312,10 +316,10 @@ class Parser {
 
 export function parseFormula(src: string): Expr {
   const p = new Parser(src);
-  if (p.peek().kind === 'eof') throw new LangError('Type a condition', { from: 0, to: 0 });
+  if (p.peek().kind === 'eof') throw new LangError(tr().empty, { from: 0, to: 0 });
   const e = p.expr();
   const t = p.peek();
-  if (t.kind !== 'eof') throw new LangError(`Unexpected '${t.text}'`, t.span);
+  if (t.kind !== 'eof') throw new LangError(tr().unexpected(t.text), t.span);
   return e;
 }
 

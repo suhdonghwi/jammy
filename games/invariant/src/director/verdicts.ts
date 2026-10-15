@@ -3,6 +3,7 @@ import { checkFormula, type CheckResult } from '../checker/check';
 import type { Counterexample } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
+import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
 import { hop, RULES, running, showState, toBig, type Rule } from '../levels/level';
 import { cameraRig } from '../scene/cameraRig';
@@ -73,7 +74,7 @@ export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | n
     useGame.setState({ verdicts: { ...keep, ...res.verdicts }, pitfallMessage: res.pitfall?.message ?? null });
     return res;
   } catch (e) {
-    caption(`The solver could not start: ${(e as Error).message}`, 'fail');
+    caption(messages().verdicts.solverFailed((e as Error).message), 'fail');
     return null;
   } finally {
     clearTimeout(tapTimer);
@@ -85,7 +86,7 @@ export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | n
 interface CounterexampleOptions {
   /** Said before the explanation (default: a note when the frog was found far away). */
   prefix?: string;
-  /** Whose area it is: "your area" (the learner's, the default) or "the area" (one the tutorial is trying). */
+  /** Whose area it is: "your area" (the learner's, the default) or "the area" (one the tutorial is trying), in the current language. */
   area?: string;
   /** The caption's tone (default: a failure). A demo the learner predicted right uses success. */
   tone?: CaptionTone;
@@ -107,16 +108,17 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
     if (handState.visible > 0.1) await handOut();
     await focusState(cex.state, cex.far);
     if (!tok.alive) return;
-    const prefix = opts.prefix ?? (cex.far ? 'Everything nearby looked fine — but far away: ' : '');
-  const area = opts.area ?? 'your area';
-    const broken = cex.broken ? ` \`${cex.broken}\` ${cex.rule === 'maintenance' ? 'no longer holds' : 'is false there'}.` : '';
+    const say = messages().verdicts;
+    const prefix = opts.prefix ?? (cex.far ? say.far : '');
+    const area = opts.area ?? say.yourArea;
+    const broken = cex.broken ? (cex.rule === 'maintenance' ? say.noLongerHolds(cex.broken) : say.falseThere(cex.broken)) : '';
     let text: string;
     if (cex.rule === 'initialization') {
       await pointAt(x, y);
       hatch(cex.state);
       await sleep(450);
-      markFailure(x, y, `starts outside ${area}`);
-      text = `${prefix}This frog starts at ${fmt(cex.state)} — outside ${area}.${broken}`;
+      markFailure(x, y, say.startsOutsideTag(area));
+      text = `${prefix}${say.startsOutside(fmt(cex.state), area)}${broken}`;
     } else {
       const f = await placeTestFrog(tok, cex.state);
       if (!f || !tok.alive) return;
@@ -125,18 +127,18 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
         const nx = Number(cex.next[L.view.x]);
         const ny = Number(cex.next[L.view.y]);
         await frogWorld.hopTo(L, f, cex.next, 0.55);
-        markFailure(nx, ny, `lands outside ${area}`);
+        markFailure(nx, ny, say.landsOutsideTag(area));
         if (!tok.alive) return;
         await pointAt(nx, ny);
-        text = `${prefix}From ${fmt(cex.state)}, one hop lands at ${fmt(cex.next)} — outside ${area}.${broken}`;
+        text = `${prefix}${say.landsOutside(fmt(cex.state), fmt(cex.next), area)}${broken}`;
       } else {
-        markFailure(x, y, 'stops, but not on a goal');
+        markFailure(x, y, say.offGoalTag);
         await pointAt(x, y);
-        text = `${prefix}A frog that stops at ${fmt(cex.state)} doesn't meet the postcondition.`;
+        text = `${prefix}${say.offGoal(fmt(cex.state))}`;
       }
     }
     if (opts.extra) text += `\n\n${opts.extra}`;
-    const replay = { label: 'Replay', onClick: () => void playCounterexample(cex, opts) };
+    const replay = { label: messages().caption.replay, onClick: () => void playCounterexample(cex, opts) };
     const action = opts.action?.();
     const tone = opts.tone ?? 'fail';
     useGame.setState({ caption: action ? { text, tone, action, secondary: replay } : { text, tone, action: replay } });

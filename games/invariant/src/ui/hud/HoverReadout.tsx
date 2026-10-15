@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useGame } from '../../game/store';
+import { useT } from '../../i18n/i18n';
 import { displayNames } from '../../levels/level';
 import { useHover } from '../../scene/hover';
 import { tileState } from '../../scene/tiles';
@@ -49,6 +50,7 @@ export function HoverReadout() {
   const tile = useHover((s) => s.tile);
   const ref = useRef<HTMLDivElement>(null);
   useTopRowPlacement(ref);
+  const tr = useT();
   if (!tile || !reveal.axes) return null;
   const s = tileState(level, tile[0], tile[1], plane);
   const vals = displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
@@ -57,7 +59,7 @@ export function HoverReadout() {
     return (
       <div className={READOUT} ref={ref}>
         <span className="font-mono font-semibold">{vals}</span>
-        <span className={`${TAG} bg-white/6 text-[#9aa3b5]`}>not a possible state</span>
+        <span className={`${TAG} bg-white/6 text-[#9aa3b5]`}>{tr.hover.impossible}</span>
       </div>
     );
   }
@@ -74,9 +76,9 @@ export function HoverReadout() {
     <div className={READOUT} ref={ref}>
       <span className="font-mono font-semibold">{vals}</span>
       {reveal.stop && (
-        <span className={`${TAG} ${cont ? 'bg-white/12' : 'bg-[#efa52b]/25 text-[#ffd48a]'}`}>{cont ? `hops to ${next}` : goal && reveal.goals ? 'stops · goal ✓' : 'stops here'}</span>
+        <span className={`${TAG} ${cont ? 'bg-white/12' : 'bg-[#efa52b]/25 text-[#ffd48a]'}`}>{cont ? tr.hover.hopsTo(next!) : goal && reveal.goals ? tr.hover.stopsOnGoal : tr.hover.stops}</span>
       )}
-      {inArea !== null && <span className={`${TAG} ${inArea ? 'bg-slab/35 text-[#d5e6ff]' : 'bg-white/8 text-[#c9cfdb]'}`}>{inArea ? 'in the area' : 'outside the area'}</span>}
+      {inArea !== null && <span className={`${TAG} ${inArea ? 'bg-slab/35 text-[#d5e6ff]' : 'bg-white/8 text-[#c9cfdb]'}`}>{inArea ? tr.hover.inArea : tr.hover.outsideArea}</span>}
     </div>
   );
 }

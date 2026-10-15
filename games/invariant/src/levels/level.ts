@@ -1,3 +1,4 @@
+import { t } from '../i18n/i18n';
 import { conjuncts, freeVars, mk, subst, type Expr, type Program, type State } from '../lang/ast';
 import { compileFast, evaluate, holds, step, symbolicStep, type FastFn } from '../lang/eval';
 import { LangError, parseFormula, parseProgram } from '../lang/parser';
@@ -8,7 +9,8 @@ import { checkCondition, checkProgram } from '../lang/typecheck';
 
 export type Rule = 'initialization' | 'maintenance' | 'termination';
 export const RULES: Rule[] = ['initialization', 'maintenance', 'termination'];
-export const RULE_NAMES: Record<Rule, string> = { initialization: 'Initialization', maintenance: 'Maintenance', termination: 'Termination' };
+/** A rule's name in the current language. */
+export const ruleName = (r: Rule): string => t().rules[r];
 
 export interface Pitfall {
   formula: string;
@@ -127,7 +129,7 @@ export type FormulaResult =
 export function compileFormula(level: CompiledLevel, text: string): FormulaResult {
   try {
     const expr = parseFormula(text);
-    checkCondition(expr, new Set(level.names), text, 'an area');
+    checkCondition(expr, new Set(level.names), text, t().langErrors.anArea);
     return { ok: true, expr, fast: compileFast(expr), text };
   } catch (e) {
     if (e instanceof LangError) return { ok: false, error: e, text };

@@ -2,8 +2,10 @@ import { compareToModel, type ModelMatch } from '../checker/check';
 import { browserZ3 } from '../checker/z3-browser';
 import { resetLevel } from '../director/frogs';
 import { playCounterexample, playRain, playShrug, runChecker } from '../director/verdicts';
+import { t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
 import { RULES, type LevelDef } from '../levels/level';
+import { localizeLevel } from '../levels/localize';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';
 import { useGame } from './store';
@@ -44,14 +46,14 @@ function showHints(shown: number) {
   const hints = useGame.getState().level?.hints ?? [];
   const text = hints
     .slice(0, shown)
-    .map((h, k) => `**Hint ${k + 1} of ${hints.length}.** ${h}`)
+    .map((h, k) => `${t().level.hint(k + 1, hints.length)} ${h}`)
     .join('\n\n');
   useGame.setState({
     hintsShown: shown,
     caption: {
       text,
       tone: 'info',
-      action: shown < hints.length ? { label: 'Another hint', onClick: () => showHints(shown + 1) } : undefined,
+      action: shown < hints.length ? { label: t().level.anotherHint, onClick: () => showHints(shown + 1) } : undefined,
     },
   });
 }
@@ -79,8 +81,8 @@ export async function check() {
     return;
   }
   if (RULES.some((r) => res.verdicts[r]?.status === 'undecided')) {
-    const tip = g.formulaText.includes('/') ? ' Try avoiding division — for example `2 * s == …` instead of `s == … / 2`.' : '';
-    await playShrug(`I couldn't find a frog that breaks this nearby — but I couldn't prove it either.${tip}`);
+    const tip = g.formulaText.includes('/') ? t().level.avoidDivision : '';
+    await playShrug(`${t().level.undecided}${tip}`);
     return;
   }
   // compared while the frogs rain, so the caption doesn't wait on it
@@ -95,9 +97,11 @@ export async function check() {
   const next = levels[levels.findIndex((l) => l.id === level.id) + 1];
   useGame.setState({
     caption: {
-      text: `Proved. Every frog, everywhere you claimed — for every input.\n\n${model}`,
+      text: `${t().level.proved}\n\n${model}`,
       tone: 'success',
-      action: next ? { label: `Next: ${next.title}`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
+      action: next
+        ? { label: t().level.next(localizeLevel(next).title), onClick: () => openLevel(next) }
+        : { label: t().level.backToLevels, onClick: () => goMenu('levels') },
     },
   });
 }

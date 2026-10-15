@@ -1,10 +1,11 @@
 // Build-time level validation: every level parses, every solution is proved,
-// every pitfall fails, and real frogs terminate.
+// every pitfall fails, real frogs terminate, and the Korean text matches.
 import { checkFormula } from '../src/checker/check';
 import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import type { State } from '../src/lang/ast';
 import { allLevels, tutorialLevel } from '../src/levels/catalog';
-import { compileFormula, compileLevel, hop, isEgg, running, startState, type CompiledLevel } from '../src/levels/level';
+import { levelsKo } from '../src/levels/catalog.ko';
+import { compileFormula, compileLevel, hop, isEgg, running, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
 
 const ctx = await nodeZ3();
 let failures = 0;
@@ -28,8 +29,33 @@ function sampleEggs(level: CompiledLevel): State[] {
   return eggs;
 }
 
+/** A hint points the way; typing the answer is the learner's job. */
+function checkHints(def: LevelDef, hints: string[]) {
+  for (const h of hints) {
+    const quoted = [...h.matchAll(/`([^`]+)`/g)].map((m) => m[1].replace(/\s+/g, ''));
+    const given = def.solutions.find((sol) => quoted.includes(sol.replace(/\s+/g, '')));
+    if (given) fail(`hint gives away solution '${given}': ${h}`);
+  }
+}
+
+/** The Korean text says as much as the English: the same hints and pitfall messages, in the same order. */
+function checkKorean(def: LevelDef) {
+  const ko = levelsKo[def.id];
+  if (!ko) return fail('no Korean text in catalog.ko.ts');
+  const count = (what: string, en = 0, k = 0) => en !== k && fail(`${en} ${what} in English but ${k} in Korean`);
+  count('hints', def.hints?.length, ko.hints?.length);
+  count('pitfall messages', def.pitfalls?.length, ko.pitfalls?.length);
+  if (!!def.intro !== !!ko.intro) fail(`intro in ${def.intro ? 'English' : 'Korean'} only`);
+  checkHints(def, ko.hints ?? []);
+}
+
+for (const id of Object.keys(levelsKo)) {
+  if (!allLevels.some((l) => l.id === id)) fail(`catalog.ko.ts has text for unknown level '${id}'`);
+}
+
 for (const def of allLevels) {
   console.log(`${def.id} ${def.title}`);
+  checkKorean(def);
   let level: CompiledLevel;
   try {
     level = compileLevel(def);
@@ -39,12 +65,7 @@ for (const def of allLevels) {
   }
   if (def !== tutorialLevel) {
     if ((def.hints?.length ?? 0) < 2) fail('needs at least two hints');
-    // a hint points the way; typing the answer is the learner's job
-    for (const h of def.hints ?? []) {
-      const quoted = [...h.matchAll(/`([^`]+)`/g)].map((m) => m[1].replace(/\s+/g, ''));
-      const given = def.solutions.find((sol) => quoted.includes(sol.replace(/\s+/g, '')));
-      if (given) fail(`hint gives away solution '${given}': ${h}`);
-    }
+    checkHints(def, def.hints ?? []);
   }
   const box = { cx: 0, cy: 0, r: 12, planeR: 8, plane: def.planes?.start };
 
