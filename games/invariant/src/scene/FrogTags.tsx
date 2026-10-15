@@ -5,6 +5,7 @@ import { displayNames, type CompiledLevel } from '../levels/level';
 import { useGame } from '../store/game';
 import { frogWorld, type FrogSim } from './frogSim';
 import { SceneTag } from './SceneTag';
+import { usePresentList } from '../ui/presence';
 
 // A little tag over each real frog listing its variables. When a hop changes a
 // variable, the tag updates as the frog lands: the old value is struck out and
@@ -20,17 +21,19 @@ export function FrogTags() {
     const list = on ? frogWorld.frogs.filter((f) => f.kind === 'real').slice(0, MAX_TAGS) : [];
     if (list.length !== frogs.length || list.some((f, i) => f !== frogs[i])) setFrogs(list);
   });
+  // tags of frogs that went away (or when tags are turned off) fade out
+  const shown = usePresentList(frogs, (f) => String(f.id));
   if (!level) return null;
   return (
     <>
-      {frogs.map((f) => (
-        <FrogTag key={f.id} frog={f} level={level} />
+      {shown.map(({ item: f, key, leaving }) => (
+        <FrogTag key={key} frog={f} level={level} leaving={leaving} />
       ))}
     </>
   );
 }
 
-function FrogTag({ frog, level }: { frog: FrogSim; level: CompiledLevel }) {
+function FrogTag({ frog, level, leaving }: { frog: FrogSim; level: CompiledLevel; leaving: boolean }) {
   // the values shown change when the frog lands, not when it takes off
   const [shown, setShown] = useState<State>(frog.state);
   useFrame(() => {
@@ -47,7 +50,7 @@ function FrogTag({ frog, level }: { frog: FrogSim; level: CompiledLevel }) {
     );
   };
   return (
-    <SceneTag anchor={{ frog }} hidden={covered}>
+    <SceneTag anchor={{ frog }} hidden={covered} leaving={leaving}>
       {displayNames(level)
         .filter((n) => n in shown)
         .map((n, i) => (

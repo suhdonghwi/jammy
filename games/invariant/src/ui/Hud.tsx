@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { tileState } from '../scene/tiles';
 import { Markdown } from './Markdown';
+import { useLingering, usePresence } from './presence';
 
 // ---------------------------------------------------------------------------
 // Code panel: the program, with the loop header lighting up on each landing
@@ -262,11 +263,12 @@ export function HoverReadout() {
 // ---------------------------------------------------------------------------
 
 export function CaptionBar() {
-  const caption = useGame((s) => s.caption);
+  // when the caption goes away, the last one fades out
+  const { value: caption, leaving } = useLingering(useGame((s) => s.caption));
   const pitfall = useGame((s) => s.pitfallMessage);
   if (!caption) return null;
   return (
-    <div className={`caption ${caption.tone}`} key={caption.text}>
+    <div className={`caption ${caption.tone} ${leaving ? 'leaving' : ''}`} key={caption.text}>
       <div className="caption-text">
         <Markdown text={caption.text} />
         {pitfall && caption.tone === 'fail' && !caption.text.includes(pitfall) && (
@@ -432,9 +434,10 @@ export function ElevatorToast() {
   const pond = useGame((s) => s.pond);
   const elevating = useGame((s) => s.elevating);
   const dir = useGame((s) => s.elevatorDir);
-  if (!level?.pond || !elevating) return null;
+  const { mounted, leaving } = usePresence(!!level?.pond && elevating);
+  if (!level?.pond || !mounted) return null;
   return (
-    <div className="elevator-toast" key={pond}>
+    <div className={`elevator-toast ${leaving ? 'leaving' : ''}`} key={pond}>
       <span className="elevator-arrow">{dir > 0 ? <ArrowUp size={22} strokeWidth={2.8} /> : <ArrowDown size={22} strokeWidth={2.8} />}</span>
       <span className="elevator-name">{level.pond}</span> = {pond}
     </div>

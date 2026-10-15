@@ -2,17 +2,23 @@ import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
 import { CHAPTERS, levels } from '../levels/defs';
 import { useGame } from '../store/game';
 import { useCompactHome } from '../home/compact';
+import { usePresence } from './presence';
 import { Title3D } from '../home/Title3D';
 import { openLevel, openTutorial } from '../director/play';
 
 export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
   const compact = useCompactHome();
-  if (view === 'levels') return <LevelPicker />;
+  const picker = usePresence(view === 'levels');
   return (
-    <div className={`home ${compact ? 'compact' : ''}`}>
-      <HeroCopy />
-    </div>
+    <>
+      {view === 'home' && (
+        <div className={`home ${compact ? 'compact' : ''}`}>
+          <HeroCopy />
+        </div>
+      )}
+      {picker.mounted && <LevelPicker leaving={picker.leaving} />}
+    </>
   );
 }
 
@@ -44,10 +50,10 @@ function HeroCopy() {
   );
 }
 
-function LevelPicker() {
+function LevelPicker({ leaving }: { leaving: boolean }) {
   const chapters = [...new Set(levels.map((l) => l.chapter))];
   return (
-    <div className="picker-backdrop">
+    <div className={`picker-backdrop ${leaving ? 'leaving' : ''}`}>
       <div className="picker">
         <div className="picker-head">
           <button className="btn ghost icon-btn" onClick={() => useGame.setState({ menuView: 'home' })}>
@@ -83,11 +89,11 @@ function LevelPicker() {
 }
 
 export function RulesCard() {
-  const show = useGame((s) => s.showRules);
-  if (!show) return null;
+  const { mounted, leaving } = usePresence(useGame((s) => s.showRules));
+  if (!mounted) return null;
   const close = () => useGame.setState({ showRules: false });
   return (
-    <div className="modal-backdrop" onClick={close}>
+    <div className={`modal-backdrop ${leaving ? 'leaving' : ''}`} onClick={close}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>The three rules</h2>
         <p className="modal-sub">If your area passes all three, every frog — for every input — stops on a goal.</p>

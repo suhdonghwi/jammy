@@ -1290,3 +1290,48 @@ code {
 .home.compact::before {
   background: none;
 }
+
+/* ---------- exits: things fade out instead of vanishing (see ui/presence.ts, EXIT_MS) ---------- */
+.leaving {
+  pointer-events: none !important;
+}
+.modal-backdrop.leaving,
+.picker-backdrop.leaving {
+  animation: fade-out 0.22s ease-in forwards;
+}
+.modal-backdrop.leaving .modal,
+.picker-backdrop.leaving .picker {
+  animation: pop-out 0.22s ease-in forwards;
+}
+.caption.leaving {
+  animation: sink-out 0.22s ease-in forwards;
+}
+.elevator-toast.leaving {
+  animation: fade-out 0.22s ease-in forwards;
+}
+.scene-tag.leaving {
+  animation: tag-out 0.22s ease-in forwards;
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes sink-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes tag-out {
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+}

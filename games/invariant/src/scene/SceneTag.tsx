@@ -37,10 +37,13 @@ export function SceneTag({
   anchor,
   tone = 'info',
   hidden,
+  leaving = false,
   children,
 }: {
   anchor: TagAnchor;
   tone?: TagTone;
+  /** On its way out (fades away). */
+  leaving?: boolean;
   /** Checked every frame; a hidden tag fades out (and back in). */
   hidden?: () => boolean;
   children: ReactNode;
@@ -63,7 +66,7 @@ export function SceneTag({
     <group ref={group}>
       <Html zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={holder} className="scene-tag-holder">
-          <div ref={box} className={`scene-tag ${tone}`}>
+          <div ref={box} className={`scene-tag ${tone} ${leaving ? 'leaving' : ''}`}>
             {children}
           </div>
         </div>

@@ -1,10 +1,11 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useGame } from "../store/game";
+import { useGame, type Game } from "../store/game";
+import { EXIT_MS, useLingering, usePresentList } from "../ui/presence";
 import { COLORS, SLAB_H } from "./constants";
 import { field } from "./field";
-import { frogWorld } from "./frogSim";
+import { frogWorld, type FrogSim } from "./frogSim";
 import { SceneTag, type TagTone } from "./SceneTag";
 
 // Where a check failed: a pulsing red outline and wash on the tile, and a small
@@ -34,6 +35,8 @@ export interface TileTagProps {
   pulse?: boolean;
   /** Fill the tile with a faint wash. */
   wash?: boolean;
+  /** On its way out: everything fades. */
+  leaving?: boolean;
 }
 
 const TONE_COLORS: Record<TagTone, string> = {
@@ -51,12 +54,14 @@ export function TileTag({
   tone,
   pulse = false,
   wash = false,
+  leaving = false,
 }: TileTagProps) {
   const color = TONE_COLORS[tone];
   const group = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
   const washRef = useRef<THREE.Mesh>(null);
   const t0 = useRef(performance.now());
+  const leftAt = useRef<number | null>(null);
   const geoms = useMemo(() => {
     const outer = roundedRect(1.0, 0.17);
     outer.holes.push(roundedRect(0.88, 0.12) as unknown as THREE.Path);
@@ -74,7 +79,9 @@ export function TileTag({
     const t = (performance.now() - t0.current) / 1000;
     const base = field.heightAt(x, y) * SLAB_H;
     g.position.set(x, base + 0.012, -y);
-    const pop = Math.min(1, t / 0.3);
+    if (leaving && leftAt.current === null) leftAt.current = performance.now();
+    const out = leftAt.current === null ? 1 : Math.max(0, 1 - (performance.now() - leftAt.current) / EXIT_MS);
+    const pop = Math.min(1, t / 0.3) * out;
     const beat = pulse ? 0.5 + 0.5 * Math.sin(t * 4.2) : 1;
     if (ring.current) {
       ring.current.scale.setScalar(
@@ -110,7 +117,7 @@ export function TileTag({
           />
         </mesh>
       </group>
-      <SceneTag anchor={{ tile: [x, y] }} tone={tone}>
+      <SceneTag anchor={{ tile: [x, y] }} tone={tone} leaving={leaving}>
         {PREFIX[tone]}
         {label}
       </SceneTag>
@@ -120,52 +127,40 @@ export function TileTag({
 
 /** Where the last check failed. Frogs keep their own colours. */
 export function FailMarker() {
-  const mark = useGame((s) => s.failMark);
+  const { value: mark, leaving } = useLingering(useGame((s) => s.failMark));
   if (!mark) return null;
-  return (
-    <TileTag
-      key={`${mark.x},${mark.y},${mark.t0}`}
-      x={mark.x}
-      y={mark.y}
-      label={mark.label}
-      tone="fail"
-      pulse
-      wash
-    />
-  );
+  return <TileTag key={`${mark.x},${mark.y},${mark.t0}`} x={mark.x} y={mark.y} label={mark.label} tone="fail" pulse wash leaving={leaving} />;
 }
+
+type Callout = Game['callouts'][number];
+const calloutKey = (c: Callout) => (c.frog !== undefined ? `f${c.frog},${c.text}` : `${c.x},${c.y},${c.text}`);
 
 /**
  * Tutorial hints ("egg: input n = 2", "Init", …): over a tile, with an outline,
- * or riding along with a frog.
+ * or riding along with a frog. Removed ones fade out.
  */
 export function Callouts() {
-  const callouts = useGame((s) => s.callouts);
+  const callouts = usePresentList(
+    useGame((s) => s.callouts),
+    calloutKey,
+  );
+  // the frog a label rides on, remembered so it can still fade out with it
+  const frogs = useRef(new Map<number, FrogSim>());
   return (
     <>
-      {callouts.map((c) => {
+      {callouts.map(({ item: c, key, leaving }) => {
         if (c.frog !== undefined) {
-          const frog = frogWorld.frogs.find((f) => f.id === c.frog);
-          return frog ? (
-            <SceneTag
-              key={`f${c.frog},${c.text}`}
-              anchor={{ frog }}
-              tone={c.tone}
-            >
+          const frog = frogWorld.frogs.find((f) => f.id === c.frog) ?? frogs.current.get(c.frog);
+          if (!frog) return null;
+          frogs.current.set(c.frog, frog);
+          return (
+            <SceneTag key={key} anchor={{ frog }} tone={c.tone} leaving={leaving}>
               {PREFIX[c.tone]}
               {c.text}
             </SceneTag>
-          ) : null;
+          );
         }
-        return (
-          <TileTag
-            key={`${c.x},${c.y},${c.text}`}
-            x={c.x}
-            y={c.y}
-            label={c.text}
-            tone={c.tone}
-          />
-        );
+        return <TileTag key={key} x={c.x} y={c.y} label={c.text} tone={c.tone} leaving={leaving} />;
       })}
     </>
   );
