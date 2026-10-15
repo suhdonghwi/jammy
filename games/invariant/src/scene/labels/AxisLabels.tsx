@@ -7,7 +7,7 @@ import { textTexture } from '../shaders/common';
 // tile just before the row's 0, and "n ↑" just before the column's 0, in the
 // numbers' font and place (the near-left corner, see GLSL_DIGITS), so the row
 // reads "i → 0 1 2 3" and the column "n ↑ 0 1 2 3". The hovered tile gets a
-// small compass of its own: "i →" along its near edge and "n ↑" along its far
+// small compass of its own: "i →" along its near edge and "n ↑" by its left
 // edge, both upright, so the directions can be read anywhere on the plane.
 // Like the numbers, none of this hides a tile.
 
@@ -68,7 +68,7 @@ export function AxisLabels() {
       {tile && (
         <>
           <FloorText at={[tile[0], tile[1] - COMPASS_INSET]} text={`${x} →`} size={COMPASS_SIZE} color={COMPASS_COLOR} />
-          <FloorText at={[tile[0], tile[1] + COMPASS_INSET]} text={`${y} ↑`} size={COMPASS_SIZE} color={COMPASS_COLOR} />
+          <FloorText at={[tile[0] - COMPASS_INSET + 0.06, tile[1]]} text={`${y} ↑`} size={COMPASS_SIZE} color={COMPASS_COLOR} />
         </>
       )}
     </>

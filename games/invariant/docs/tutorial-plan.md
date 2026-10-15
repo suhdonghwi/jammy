@@ -361,7 +361,7 @@ Scene and HUD:
   name is written where its numbers are, in the corner of the tile before the
   0, so the row reads "i → 0 1 2 3" and the column "n ↑ 0 1 2 3". Like the
   numbers it hides nothing. The hovered tile also gets a small compass of
-  its own ("i →" along its near edge, "n ↑" along its far edge, both
+  its own ("i →" along its near edge, "n ↑" by its left edge, both
   upright), so the directions can be read anywhere on the plane. Lines
   were tried and collided with the stop boundary, which runs in the same
   tile gaps; chips covered tiles, and chips that followed the camera were
