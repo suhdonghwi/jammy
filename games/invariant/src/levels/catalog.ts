@@ -137,7 +137,7 @@ ensures i == n;`,
         ],
         intro: 'Frogs hop two tiles at a time. Only even rows exist.',
         hints: [
-          'Real frogs only land on even `i` — but the hand may test any tile your area claims, odd ones too.',
+          'Real frogs only land on even `i` — but **Check** tests every tile your area claims, odd ones too.',
           'From an odd `i` just below `n`, a hop of 2 jumps right past `n`. Leave the odd tiles out.',
           'Join the tutorial’s bound with a fact about `i % 2`.',
         ],

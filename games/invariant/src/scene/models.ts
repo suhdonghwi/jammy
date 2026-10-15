@@ -45,6 +45,17 @@ export function frogGeometry(): THREE.BufferGeometry {
   return merged;
 }
 
+/**
+ * A see-through frog is see-through as a whole, not part by part: this pass
+ * draws its depth first (renderOrder one below the frog's), so only its front
+ * surface is blended, once, over what is behind it. Both passes are in the
+ * transparent queue, after the (transparent) floor, so the floor under the
+ * frog is already there to blend over.
+ */
+export function ghostDepthMaterial(): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true });
+}
+
 /** MeshStandardMaterial that colors frog parts by `aPart`, tinting the body by instance color. */
 export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({

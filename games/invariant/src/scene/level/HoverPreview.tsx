@@ -6,7 +6,7 @@ import { useGame } from '../../game/store';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { useHover } from '../hover';
-import { frogGeometry, frogMaterial } from '../models';
+import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
 import { tileState } from '../tiles';
 
@@ -16,11 +16,12 @@ export function HoverPreview() {
   const plane = useGame((s) => s.plane);
   const enabled = useGame((s) => s.reveal.hover && !s.busy);
   const tile = useHover((s) => s.tile);
-  const ghost = useRef<THREE.Mesh>(null);
+  const ghost = useRef<THREE.Group>(null);
   const assets = useMemo(() => {
     const geom = frogGeometry();
     const mat = frogMaterial({ ghost: true });
-    return { geom, mat };
+    const depth = ghostDepthMaterial();
+    return { geom, mat, depth };
   }, []);
 
   const hop = useMemo(() => {
@@ -58,7 +59,11 @@ export function HoverPreview() {
         transparent
         opacity={0.85}
       />
-      <mesh ref={ghost} geometry={assets.geom} material={assets.mat} />
+      {/* see-through as a whole (see ghostDepthMaterial) */}
+      <group ref={ghost}>
+        <mesh geometry={assets.geom} material={assets.depth} renderOrder={4} />
+        <mesh geometry={assets.geom} material={assets.mat} renderOrder={5} />
+      </group>
     </group>
   );
 }
