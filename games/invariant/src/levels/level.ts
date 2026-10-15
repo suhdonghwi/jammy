@@ -71,6 +71,10 @@ export interface CompiledLevel extends LevelDef {
   initExprs: Record<string, Expr>;
   /** Input-only part of `requires`: which planes / rows exist. */
   planeReq: Expr;
+  /** The conjuncts of planeReq that mention an axis name: which tiles of a plane exist (the floor draws the rest as ghosts). */
+  axisReq: Expr;
+  /** The conjuncts of planeReq over off-axis inputs alone: whether a plane exists at all. */
+  inputsReq: Expr;
   /** The rest of `requires`, evaluated after initialization. */
   eggReq: Expr;
   guard: Expr;
@@ -79,6 +83,7 @@ export interface CompiledLevel extends LevelDef {
   next: Record<string, Expr>;
   fast: {
     planeReq: FastFn;
+    inputsReq: FastFn;
     eggReq: FastFn;
     guard: FastFn;
     post: FastFn;
@@ -120,6 +125,9 @@ export function compileLevel(def: LevelDef): CompiledLevel {
   const reqs = program.requires.flatMap(conjuncts);
   const isInputOnly = (e: Expr) => [...freeVars(e)].every((n) => inputSet.has(n));
   const planeReq = mk.andAll(reqs.filter(isInputOnly));
+  const onAxis = (e: Expr) => [...freeVars(e)].some((n) => n === x || n === y);
+  const axisReq = mk.andAll(reqs.filter((e) => isInputOnly(e) && onAxis(e)));
+  const inputsReq = mk.andAll(reqs.filter((e) => isInputOnly(e) && !onAxis(e)));
   const eggReq = mk.andAll(reqs.filter((e) => !isInputOnly(e)));
   const guard = program.loop.guard;
   const post = mk.andAll(program.ensures);
@@ -140,12 +148,15 @@ export function compileLevel(def: LevelDef): CompiledLevel {
     freeDims,
     initExprs,
     planeReq,
+    axisReq,
+    inputsReq,
     eggReq,
     guard,
     post,
     next,
     fast: {
       planeReq: compileFast(planeReq),
+      inputsReq: compileFast(inputsReq),
       eggReq: compileFast(eggReq),
       guard: compileFast(guard),
       post: compileFast(post),
@@ -244,9 +255,9 @@ export function planeKey(inputs: Inputs): string {
     .join(';');
 }
 
-/** The inputs' part of the precondition holds: there are states in this plane. */
+/** The off-axis inputs' part of the precondition holds: there are states in this plane. */
 export function planeExists(level: CompiledLevel, inputs: Inputs): boolean {
-  return level.fast.planeReq({ ...inputs, [level.view.x]: 0, [level.view.y]: 0 }) === true;
+  return level.fast.inputsReq(inputs) === true;
 }
 
 /** Draw an array for the dice button: random cells that fit the level's precondition (a few tries, then the best effort). */

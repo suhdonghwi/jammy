@@ -75,14 +75,17 @@ int emod(int a, int k) { return a - k * fdiv(a, k); }
 
 /**
  * Functions over a tile (X, Y) of the plane the input uniforms pick:
- *   bool L_stop(ivec2 t), bool L_goal(ivec2 t)
- * Whether the plane exists at all (the inputs' part of the precondition) is
- * the same for every tile, so it is the uniform uExists, set from the CPU.
+ *   bool L_exists(ivec2 t), bool L_stop(ivec2 t), bool L_goal(ivec2 t)
+ * L_exists is the part of the precondition that mentions an axis name (a row
+ * `n < 0` on a level that plots `n`). The part over the off-axis inputs alone
+ * is the same for every tile, so it is the uniform uExists, set from the CPU:
+ * a quantifier over an array (sortedness, say) is checked once, not per pixel.
  */
 export function levelGlsl(level: CompiledLevel | null): string {
   if (!level) {
     return `
 uniform bool uExists;
+bool L_exists(ivec2 t) { return true; }
 bool L_stop(ivec2 t) { return false; }
 bool L_goal(ivec2 t) { return false; }
 `;
@@ -95,6 +98,7 @@ bool L_goal(ivec2 t) { return false; }
   const cells = Object.entries(level.arrays)
     .map(([a, len]) => `int cell_${a}(int k) { return (k >= 0 && k < ${inputUniform(len)}) ? ${arrayUniform(a)}[k] : 0; }`)
     .join('\n');
+  const exists = c.expr(level.axisReq);
   const stop = c.expr(level.guard);
   const goal = c.expr(level.post);
   const decls = [`int ${ident(level.view.x)} = t.x;`, `int ${ident(level.view.y)} = t.y;`, ...level.offAxis.filter((n) => !level.arrays[n]).map((n) => `int ${ident(n)} = ${inputUniform(n)};`)].join(' ');
@@ -104,6 +108,7 @@ uniform bool uExists;
 ${uniforms}
 ${cells}
 ${c.fns.join('\n')}
+bool L_exists(ivec2 t) { ${decls} return ${exists}; }
 bool L_stop(ivec2 t) { ${decls} return !(${stop}); }
 bool L_goal(ivec2 t) { ${decls} return ${goal}; }
 `;

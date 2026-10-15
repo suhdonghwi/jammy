@@ -39,15 +39,16 @@ ${GLSL_INT_HELPERS}
 ${levelGlsl(level)}
 
 // uShow* fade 0 → 1 when an element is revealed
-bool stopAt(ivec2 t) { return uShowStop > 0.002 && uExists && L_stop(t); }
-bool edgeBetween(ivec2 a, ivec2 b) { return uExists && stopAt(a) != stopAt(b); }
+bool existsAt(ivec2 t) { return uExists && L_exists(t); }
+bool stopAt(ivec2 t) { return uShowStop > 0.002 && existsAt(t) && L_stop(t); }
+bool edgeBetween(ivec2 a, ivec2 b) { return existsAt(a) && existsAt(b) && stopAt(a) != stopAt(b); }
 
 void main() {
   vec2 p = vec2(vWorld.x, -vWorld.z);
   vec2 tc = floor(p + 0.5);
   vec2 f = p - tc;
   ivec2 t = ivec2(int(tc.x), int(tc.y));
-  bool ex = uExists;
+  bool ex = existsAt(t);
 
   // derivatives are taken up front (uniform control flow)
   // derivatives of the continuous coordinate (f jumps at tile borders)
@@ -109,7 +110,8 @@ void main() {
     ivec2 cSE = cSW + ivec2(1, 0);
     ivec2 cNW = cSW + ivec2(0, 1);
     ivec2 cNE = cSW + ivec2(1, 1);
-    bool inCorner = max(abs(local.x), abs(local.y)) < RC && uExists;
+    bool inCorner = max(abs(local.x), abs(local.y)) < RC
+      && existsAt(cSW) && existsAt(cSE) && existsAt(cNW) && existsAt(cNE);
     if (inCorner) {
       bool sw = stopAt(cSW);
       bool se = stopAt(cSE);
