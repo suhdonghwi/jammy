@@ -1,6 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { useMemo } from 'react';
 import * as THREE from 'three';
 import type opentype from 'opentype.js';
 import { COLORS } from '../scene/constants';
@@ -10,105 +9,77 @@ import { useTitleFont, Word } from '../scene/home/common';
 
 // The home screen's title as 3D lettering, in its own small transparent canvas
 // so the page layout places it (left-aligned, above the copy) at any size.
-// A frog sits beside "Frog", breathes, glances toward the cursor and now and
-// then hops on the spot.
+// A frog hides behind the "o" of "Frog" and peeks over it, riding the wave
+// that runs through the letters.
 
-export type TitleStyle = 'standing' | 'platforms' | 'plaque';
+const SIZE = 1;
+const LINE1 = 'Invariant';
+const LINE2 = 'Frog';
+const LINE_GAP = 1.32;
+/** The wave through the letters (see Word): height, and the phase of "Frog". */
+const WAVE = 0.08;
+const PHASE2 = 1.4;
+/** The frog, relative to the letters. */
+const FROG_SCALE = 1.12;
 
-const LINE1 = { text: 'Invariant', size: 1.0 };
-const LINE2 = { text: 'Frog', size: 1.3 };
-const BUDDY = 1.55; // frog scale
+const letterOpts = { size: SIZE, depth: SIZE * 0.42, letterSpacing: SIZE * 0.02 };
 
-function widthOf(font: opentype.Font, text: string, size: number) {
-  const ls = letterGeometries(font, text, { size, depth: size * 0.42, letterSpacing: size * 0.02 });
+/** Width of a word, and where its "o" is (letter index, centre x and top), relative to the word's centre. */
+function measure(font: opentype.Font, text: string) {
+  const ls = letterGeometries(font, text, letterOpts);
   let min = Infinity;
   let max = -Infinity;
-  for (const l of ls) {
+  let o = { index: -1, x: 0, top: 0 };
+  ls.forEach((l, i) => {
     l.geom.computeBoundingBox();
     const bb = l.geom.boundingBox!;
     min = Math.min(min, l.x + bb.min.x);
     max = Math.max(max, l.x + bb.max.x);
+    if (o.index < 0 && text[i] === 'o') o = { index: i, x: l.x + (bb.min.x + bb.max.x) / 2, top: bb.max.y };
     l.geom.dispose();
-  }
-  return max - min;
+  });
+  return { width: max - min, o };
 }
 
-/** Content bounds per style, in title units (left edge at x = 0, baseline of "Frog" at y = 0). */
-/** Where the "o" of "Frog" is (centre x and top), relative to the word's centre. */
-function letterO(font: opentype.Font) {
-  const ls = letterGeometries(font, LINE2.text, { size: LINE2.size, depth: LINE2.size * 0.42, letterSpacing: LINE2.size * 0.02 });
-  const o = ls[2];
-  o.geom.computeBoundingBox();
-  const bb = o.geom.boundingBox!;
-  const out = { x: o.x + (bb.min.x + bb.max.x) / 2, top: bb.max.y };
-  ls.forEach((l) => l.geom.dispose());
-  return out;
+function layout(font: opentype.Font) {
+  const m1 = measure(font, LINE1);
+  const m2 = measure(font, LINE2);
+  return {
+    w1: m1.width,
+    w2: m2.width,
+    o: m2.o,
+    left: -0.05,
+    right: Math.max(m1.width, m2.width) + 0.25,
+    bottom: -0.35,
+    top: LINE_GAP + 0.95,
+  };
 }
 
-/** Content bounds per style, in title units (left edge at x = 0, baseline of "Frog" at y = 0). */
-function layout(font: opentype.Font, style: TitleStyle) {
-  const w1 = widthOf(font, LINE1.text, LINE1.size);
-  const w2 = widthOf(font, LINE2.text, LINE2.size);
-  const o = letterO(font);
-  // standing: the frog hides behind the "o" and peeks over it; others: beside the word
-  const buddyX = style === 'standing' ? w2 / 2 + o.x : w2 + 0.75;
-  const right = style === 'standing' ? Math.max(w1, w2) : Math.max(w1, buddyX + 0.45);
-  const y1 = style === 'standing' ? 1.32 : 1.5;
-  const bottom = style === 'standing' ? -0.35 : style === 'platforms' ? -0.5 : -0.55;
-  const top = style === 'plaque' ? y1 + 1.25 : y1 + 0.95;
-  return { w1, w2, buddyX, oTop: o.top, y1, left: style === 'standing' ? -0.05 : -0.35, right: right + 0.25, bottom, top };
-}
+const dummy = new THREE.Object3D();
 
-function useFrogBuddy() {
-  return useMemo(() => {
+/**
+ * The frog behind the "o": only its head shows over the top. It rises and
+ * falls exactly as the "o" does in the wave, and otherwise just breathes.
+ */
+function PeekingFrog({ x, y, letterIndex }: { x: number; y: number; letterIndex: number }) {
+  const mesh = useMemo(() => {
     const geom = frogGeometry();
     const body = new THREE.InstancedMesh(geom, frogMaterial(), 1);
     body.setColorAt(0, new THREE.Color(COLORS.frog));
     body.frustumCulled = false;
     // the same dark outline as the lettering
-    const line = new THREE.InstancedMesh(geom, outlineMaterial(0.018), 1);
+    const line = new THREE.InstancedMesh(geom, outlineMaterial(0.016), 1);
     line.frustumCulled = false;
     return { body, line };
   }, []);
-}
-
-const dummy = new THREE.Object3D();
-
-/** The frog beside the title. `peek`: it hides behind something and only looks over the top. */
-function FrogBuddy({ x, y, z = 0.2, peek = false, scale = BUDDY }: { x: number; y: number; z?: number; peek?: boolean; scale?: number }) {
-  const mesh = useFrogBuddy();
-  const look = useRef(0);
-  const target = useRef(0);
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      // turn a little toward the cursor's side of the screen
-      target.current = THREE.MathUtils.clamp(((e.clientX / window.innerWidth) * 2 - 1) * 1.1, -0.9, 0.9);
-    };
-    window.addEventListener('pointermove', onMove);
-    return () => window.removeEventListener('pointermove', onMove);
-  }, []);
-  useFrame(({ clock }, dt) => {
+  useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    look.current += (target.current - look.current) * Math.min(1, dt * 4);
-    const breath = 0.025 * Math.sin(t * 2.4);
-    let lift: number;
-    let hop = 0;
-    let crouch = 0;
-    if (peek) {
-      // it just stays there, peeking (breathing and glancing around)
-      lift = 0;
-    } else {
-      // a happy hop every few seconds
-      const u = ((t + 1.2) % 4.2) / 0.6;
-      hop = u < 1 ? Math.sin(Math.PI * u) : 0;
-      crouch = u > 1 && u < 1.25 ? Math.sin(Math.PI * (u - 1) * 4) : 0;
-      lift = 0.45 * hop;
-    }
-    const sy = 1 + breath + 0.12 * hop - 0.12 * crouch;
-    const sx = 1 - breath * 0.5 - 0.05 * hop + 0.06 * crouch;
-    dummy.position.set(x, y + lift, z);
-    dummy.rotation.set(peek ? 0 : -0.12 * hop, look.current, 0);
-    dummy.scale.set(sx * scale, sy * scale, sx * scale);
+    // the same wave as Word gives this letter
+    const ride = Math.max(0, Math.sin(t * 1.6 - letterIndex * 0.55 + PHASE2)) * WAVE;
+    const breath = 0.02 * Math.sin(t * 2.4);
+    dummy.position.set(x, y + ride, -0.58);
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.set(FROG_SCALE * (1 - breath * 0.5), FROG_SCALE * (1 + breath), FROG_SCALE * (1 - breath * 0.5));
     dummy.updateMatrix();
     for (const m of [mesh.body, mesh.line]) {
       m.setMatrixAt(0, dummy.matrix);
@@ -123,88 +94,46 @@ function FrogBuddy({ x, y, z = 0.2, peek = false, scale = BUDDY }: { x: number; 
   );
 }
 
-function Platform({ x, width, y }: { x: number; width: number; y: number }) {
-  const geom = useMemo(() => new RoundedBoxGeometry(width, 0.28, 1.0, 4, 0.1), [width]);
-  const mats = useMemo(() => new THREE.MeshStandardMaterial({ color: COLORS.slabTop, roughness: 0.5 }), []);
-  return <mesh geometry={geom} material={mats} position={[x + width / 2, y - 0.14, 0]} />;
-}
-
-/** A rounded blue sign the letters stand on (the frog peeks over its top). */
-function Plaque({ left, right, bottom, top }: { left: number; right: number; bottom: number; top: number }) {
-  const geom = useMemo(() => new RoundedBoxGeometry(right - left, top - bottom, 0.4, 5, 0.22), [left, right, bottom, top]);
-  useEffect(() => () => geom.dispose(), [geom]);
-  return (
-    <mesh geometry={geom} position={[(right + left) / 2, (top + bottom) / 2, -0.4]}>
-      <meshStandardMaterial color={COLORS.slabTop} roughness={0.5} />
-    </mesh>
-  );
-}
-
-function TitleScene({ font, style }: { font: opentype.Font; style: TitleStyle }) {
-  const L = useMemo(() => layout(font, style), [font, style]);
+function TitleScene({ font }: { font: opentype.Font }) {
+  const L = useMemo(() => layout(font), [font]);
   const { camera, size } = useThree();
-  const group = useRef<THREE.Group>(null);
 
-  // Fit the content into the canvas with a gentle perspective lens straight in
-  // front of it: the letters face the viewer, and their sides show just a
-  // little toward the edges, so they read as 3D without any tilt.
-  useFrame(({ clock }) => {
+  // A gentle perspective lens straight in front of the title: the letters face
+  // the viewer and their sides show just a little toward the edges.
+  useFrame(() => {
     const pad = 0.15;
     const W = L.right - L.left + pad * 2;
     const H = L.top - L.bottom + pad * 2;
     const cam = camera as THREE.PerspectiveCamera;
     const half = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
     const dist = Math.max(H, W / (size.width / size.height)) / (2 * half);
-    cam.position.set((L.left + L.right) / 2, (L.top + L.bottom) / 2, dist + 0.3);
-    cam.lookAt((L.left + L.right) / 2, (L.top + L.bottom) / 2, 0);
+    const cx = (L.left + L.right) / 2;
+    const cy = (L.top + L.bottom) / 2;
+    cam.position.set(cx, cy, dist + 0.3);
+    cam.lookAt(cx, cy, 0);
     cam.updateProjectionMatrix();
-    if (group.current) {
-      // the other styles sway a little and tip toward the viewer
-      group.current.rotation.y = style === 'standing' ? 0 : 0.16 + Math.sin(clock.elapsedTime * 0.5) * 0.05;
-      group.current.rotation.x = style === 'platforms' ? 0.32 : style === 'standing' ? 0 : 0.06;
-    }
   });
 
-  const blue = { face: COLORS.slabTop, side: COLORS.slabSide };
-  // a deeper green than the frog itself, so the frog peeking over it stands out
-  const green = { face: '#46b83e', side: '#2f8a29' };
-  const white = { face: '#ffffff', side: '#d9e2f0' };
-  const c1 = style === 'plaque' ? white : blue;
-  const c2 = style === 'plaque' ? { face: '#eaffd9', side: '#bfe6a8' } : green;
-
+  // the frog peeks over the "o": about 40% of it (its head) shows above the letter
+  const frogHeight = 0.53 * FROG_SCALE;
   return (
-    <group ref={group}>
-      {style === 'platforms' && (
-        <>
-          <Platform x={-0.3} width={L.w1 + 0.6} y={L.y1 - 0.08} />
-          <Platform x={-0.3} width={L.buddyX + 0.75} y={-0.08} />
-        </>
-      )}
-      {style === 'plaque' && <Plaque left={L.left} right={L.right} bottom={L.bottom} top={L.top - 0.3} />}
-      <Word font={font} text={LINE1.text} size={LINE1.size} position={[L.w1 / 2, L.y1, 0]} face={c1.face} side={c1.side} wave={0.08} outline={0.02} />
-      <Word font={font} text={LINE2.text} size={LINE2.size} position={[L.w2 / 2, 0, 0]} face={c2.face} side={c2.side} wave={0.08} phase={1.4} outline={0.02} />
-      {style === 'plaque' ? (
-        <FrogBuddy x={L.right - 0.55} y={L.top - 0.75} z={-0.75} peek />
-      ) : (
-        style === 'standing' ? (
-          // behind the "o", only its head showing over the top
-          <FrogBuddy x={L.buddyX} y={L.oTop - 0.4} z={-0.7} peek scale={1.45} />
-        ) : (
-          <FrogBuddy x={L.buddyX} y={0.0} />
-        )
-      )}
+    <group>
+      <Word font={font} text={LINE1} size={SIZE} position={[L.w1 / 2, LINE_GAP, 0]} face={COLORS.slabTop} side={COLORS.slabSide} wave={WAVE} outline={0.02} />
+      {/* a deeper green than the frog itself, so the frog peeking over it stands out */}
+      <Word font={font} text={LINE2} size={SIZE} position={[L.w2 / 2, 0, 0]} face="#46b83e" side="#2f8a29" wave={WAVE} phase={PHASE2} outline={0.02} />
+      <PeekingFrog x={L.w2 / 2 + L.o.x} y={L.o.top - frogHeight * 0.6} letterIndex={L.o.index} />
     </group>
   );
 }
 
 /** The 3D title block. Its height follows its width, by the content's own proportions. */
-export function Title3D({ style }: { style: TitleStyle }) {
+export function Title3D() {
   const font = useTitleFont();
   const aspect = useMemo(() => {
     if (!font) return 2.2;
-    const L = layout(font, style);
+    const L = layout(font);
     return (L.right - L.left + 0.3) / (L.top - L.bottom + 0.3);
-  }, [font, style]);
+  }, [font]);
   return (
     <div className="title3d" style={{ aspectRatio: aspect }}>
       {font && (
@@ -214,7 +143,7 @@ export function Title3D({ style }: { style: TitleStyle }) {
           <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
           {/* the letters face the viewer, so light them from the front too */}
           <directionalLight position={[1, 2, 10]} intensity={1.1} color="#ffffff" />
-          <TitleScene font={font} style={style} />
+          <TitleScene font={font} />
         </Canvas>
       )}
     </div>

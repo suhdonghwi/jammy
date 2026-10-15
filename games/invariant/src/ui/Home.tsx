@@ -2,7 +2,7 @@ import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
 import { CHAPTERS, levels } from '../levels/defs';
 import { useEffect } from 'react';
 import { useGame } from '../store/game';
-import { HOME_DRAFTS, useHomeDraft, type HomeDraftId } from '../home/drafts';
+import { HOME_DRAFTS, useHomeDraft } from '../home/drafts';
 import { Title3D } from '../home/Title3D';
 import { openLevel, openTutorial } from '../director/play';
 
@@ -21,7 +21,7 @@ export function HomeOverlay() {
     <>
       <DraftSwitcher />
       <div className={`home home-e`} key={draft}>
-        <EditorialCopy draft={draft} />
+        <EditorialCopy />
       </div>
     </>
   );
@@ -40,23 +40,14 @@ function HomeButtons() {
   );
 }
 
-const TITLE_STYLE = { a: 'standing', b: 'platforms', c: 'plaque' } as const;
-
-function EditorialCopy({ draft }: { draft: HomeDraftId }) {
+function EditorialCopy() {
   return (
     <div className="editorial">
       <p className="editorial-eyebrow">A little game about loop invariants</p>
-      {draft === 'd' ? (
-        <h1 className="editorial-title">
-          <span className="t-blue">Invariant</span>
-          <span className="t-green">Frog</span>
-        </h1>
-      ) : (
-        <h1 className="editorial-title-3d">
-          <span className="sr-only">Invariant Frog</span>
-          <Title3D style={TITLE_STYLE[draft]} />
-        </h1>
-      )}
+      <h1 className="editorial-title-3d">
+        <span className="sr-only">Invariant Frog</span>
+        <Title3D />
+      </h1>
       <p className="editorial-lede">Draw an area no frog can hop out of. Then convince a skeptical hand it holds for every input.</p>
       <HomeButtons />
     </div>
