@@ -1,6 +1,6 @@
 import { show } from '../lang/ast';
 import { compileFormula, type Rule } from '../levels/level';
-import { EMPTY_REVEAL, game, queuedNextAction, useGame, type Game, type Reveal } from '../store/game';
+import { earlyNextAction, EMPTY_REVEAL, game, useGame, type Game, type Reveal } from '../store/game';
 import { director, events } from '../director/director';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogSim';
@@ -32,25 +32,18 @@ function guard(gen: number) {
 
 type Spot = Game['spotlight'];
 
-/** Show a caption. `reserve`: the label of the button that will advance it (see queuedNextAction). */
+/** Show a caption. `reserve`: the label of the button that will advance it (see earlyNextAction). */
 let captionShownAt = 0;
 
 function say(text: string, spot: Spot = null, tone: 'info' | 'fail' | 'success' | 'muted' = 'info', reserve?: string) {
   captionShownAt = performance.now();
-  game().setCaption({ text, tone, action: reserve ? queuedNextAction(reserve) : undefined });
-  game().patch({ spotlight: spot, nextQueued: false });
+  game().setCaption({ text, tone, action: reserve ? earlyNextAction(reserve) : undefined });
+  game().patch({ spotlight: spot });
 }
 
 /** Show a caption with a button and wait for it. */
 function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone: 'info' | 'fail' | 'success' = 'info'): Promise<void> {
   return new Promise((resolve, reject) => {
-    // Next was already clicked while this step was getting ready
-    if (game().nextQueued) {
-      game().patch({ nextQueued: false, spotlight: null, nextAction: null });
-      if (gen !== generation) reject(new Aborted());
-      else resolve();
-      return;
-    }
     // the guard counts from when this caption (and its button) first appeared,
     // not from the invisible moment the button becomes ready
     const shownAt = game().caption?.text === text ? captionShownAt : performance.now();
@@ -148,7 +141,7 @@ export function stopTutorial() {
   pendingCheck = null;
   pendingNext = null;
   expected = null;
-  useGame.setState({ awaitingCheck: false, spotlight: null, nextAction: null, nextQueued: false, back: null, tutorialAllow: { step: false, run: false, eggs: false } });
+  useGame.setState({ awaitingCheck: false, spotlight: null, nextAction: null, back: null, skip: null, tutorialAllow: { step: false, run: false, eggs: false } });
 }
 
 /** Ask for one specific formula, wait for Check, and run the given rules. */
@@ -503,13 +496,21 @@ export function startTutorial(from = 0, rewound = false) {
     }
     for (let i = from; i < STEPS.length; i++) {
       stepIndex = i;
-      game().patch({ back: i > 0 ? goBack : null });
+      game().patch({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
       await STEPS[i].run(gen);
       guard(gen);
     }
   })().catch((e) => {
     if (!(e instanceof Aborted)) console.error(e);
   });
+}
+
+/** Next pressed while a step is still playing: go straight to the next step, its scene rebuilt at once. */
+function skipAhead() {
+  const target = stepIndex + 1;
+  if (target >= STEPS.length) return;
+  stopTutorial();
+  startTutorial(target);
 }
 
 /** Back: rewind to the start of the previous step and replay it. */

@@ -50,7 +50,7 @@ export interface Caption {
   tone: CaptionTone;
   /** Optional button shown in the caption bar (tutorial "Next" etc.). */
   /** Main button. `pending`: the step it advances isn't ready yet (its scene is
-   *  still playing); the button shows anyway, and a click is queued (see nextQueued). */
+   *  still playing); the button shows anyway, and a click skips ahead (see skip). */
   action?: { label: string; onClick: () => void; pending?: boolean };
   /** Optional quieter button next to it (e.g. Replay). */
   secondary?: { label: string; onClick: () => void };
@@ -97,10 +97,10 @@ export interface Game {
   stepping: boolean;
   /** Tutorial: real frogs carry a tag with their variables, animated as they change. */
   frogTags: boolean;
-  /** Tutorial: Next was clicked before its step was ready; advance as soon as it is. */
-  nextQueued: boolean;
   /** Tutorial: go back to the previous step (null on the first one). */
   back: (() => void) | null;
+  /** Tutorial: jump straight to the next step, its scene rebuilt at once (Next pressed mid-animation). */
+  skip: (() => void) | null;
   /** Tutorial: the current step is waiting for the learner to press Check. */
   awaitingCheck: boolean;
   /** Tutorial: the Next action the script is currently waiting on (so replays can restore it). */
@@ -160,8 +160,8 @@ export const useGame = create<Game>((set, get) => ({
   callouts: [],
   stepping: false,
   frogTags: false,
-  nextQueued: false,
   back: null,
+  skip: null,
   awaitingCheck: false,
   tutorialAllow: { step: false, run: false, eggs: false },
   nextAction: null,
@@ -194,8 +194,8 @@ export const useGame = create<Game>((set, get) => ({
       callouts: [],
       stepping: false,
       frogTags: false,
-      nextQueued: false,
       back: null,
+      skip: null,
       awaitingCheck: false,
       tutorialAllow: { step: false, run: false, eggs: false },
       nextAction: null,
@@ -240,17 +240,17 @@ export const game = () => useGame.getState();
 
 /**
  * A Next button for a step that isn't ready yet (its scene is still playing).
- * It shows right away; a click is remembered and the step advances as soon as
- * it is ready. Clicks in the very first moment are ignored, so a double click
- * on the previous Next doesn't also skip this one.
+ * It shows right away; pressing it skips ahead to the next step at once
+ * instead of waiting. Clicks in the very first moment are ignored, so a double
+ * click on the previous Next doesn't also skip this one.
  */
-export function queuedNextAction(label = 'Next') {
+export function earlyNextAction(label = 'Next') {
   const shownAt = performance.now();
   return {
     label,
     pending: true,
     onClick: () => {
-      if (performance.now() - shownAt >= 120) useGame.getState().patch({ nextQueued: true });
+      if (performance.now() - shownAt >= 120) useGame.getState().skip?.();
     },
   };
 }
