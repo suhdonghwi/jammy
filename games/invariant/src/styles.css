@@ -96,8 +96,6 @@
   --animate-blink: blink 0.35s infinite alternate;
   --animate-shake: shake 0.32s ease-in-out;
   --animate-tag-in: tag-in 0.2s ease-out;
-  /* a code line opening in place (the tutorial's assert line) */
-  --animate-row-open: row-open 0.35s ease-out;
   /* exits last EXIT_MS (ui/presence.ts) */
   --animate-fade-out: fade-out 0.15s ease-in forwards;
   --animate-pop-out: pop-out 0.15s ease-in forwards;
@@ -273,16 +271,6 @@
 
 /* scene tags: in and out, and a changed value (the old one slips up and away,
    the new one rises into place with a brief warm tint) */
-@keyframes row-open {
-  from {
-    max-height: 0;
-    opacity: 0;
-  }
-  to {
-    max-height: 2em;
-    opacity: 1;
-  }
-}
 @keyframes tag-in {
   from {
     opacity: 0;

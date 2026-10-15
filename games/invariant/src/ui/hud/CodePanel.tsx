@@ -101,7 +101,7 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   if (beat.assert && headerLine >= 0) {
     const indent = stmts.length ? src.slice(lines[bodyFirst].from).match(/^\s*/)?.[0] ?? '  ' : '  ';
     rows.splice(headerLine + 1, 0, (
-      <div key="assert" className="-mx-2 flex animate-row-open overflow-hidden px-2 text-faint">
+      <div key="assert" className="-mx-2 flex px-2 text-faint">
         <span>
           {indent}
           <span className="font-semibold">assert</span>(?);
