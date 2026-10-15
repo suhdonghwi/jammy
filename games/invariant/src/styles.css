@@ -1370,7 +1370,7 @@ code {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(90deg, rgba(244, 246, 250, 0.94) 0%, rgba(244, 246, 250, 0.75) 38%, rgba(244, 246, 250, 0) 58%);
+  background: linear-gradient(90deg, rgba(244, 246, 250, 0.94) 0%, rgba(244, 246, 250, 0.7) 26%, rgba(244, 246, 250, 0) 42%);
   pointer-events: none;
 }
 /* tall or narrow windows: copy at the bottom, the vignette above it */
