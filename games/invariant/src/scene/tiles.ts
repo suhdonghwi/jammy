@@ -1,9 +1,14 @@
 import type { FastFn } from '../lang/eval';
 import type { CompiledLevel } from '../levels/level';
 
-/** Tile (X, Y) → world (x, z). +Y goes away from the camera. */
-export function tileToWorld(x: number, y: number): [number, number] {
-  return [x, -y];
+// Tiles are the plane's integer points: tile (x, y) sits at world (x, 0, -y),
+// so +y goes away from the camera.
+
+/** A square of tiles: centre (cx, cy), half-size R. */
+export interface TileWindow {
+  cx: number;
+  cy: number;
+  R: number;
 }
 
 export function tileState(level: CompiledLevel, x: number, y: number, pond: number): Record<string, number> {

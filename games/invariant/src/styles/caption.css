@@ -1,0 +1,75 @@
+/* The caption bar (ui/hud/CaptionBar). */
+.caption {
+  display: flex;
+  /* the text gets the full width; the buttons sit on their own row below */
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 14px 16px 12px 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  font-size: 15.5px;
+  line-height: 1.5;
+  animation: rise 0.2s ease-out;
+}
+.caption-text {
+  flex: 1;
+}
+.caption-text p,
+.caption-text ul,
+.caption-text ol {
+  margin: 0;
+}
+/* space between paragraphs and lists (more specific than the margin reset above) */
+.caption-text > :is(p, ul, ol) + :is(p, ul, ol) {
+  margin-top: 10px;
+}
+.caption-text ul,
+.caption-text ol {
+  padding-left: 22px;
+}
+.caption-text li + li {
+  margin-top: 2px;
+}
+.caption-text li::marker {
+  color: var(--muted);
+}
+.caption-text strong {
+  font-weight: 700;
+  color: var(--text);
+}
+.caption.fail {
+  border-color: rgba(229, 72, 77, 0.25);
+  background: rgba(255, 247, 247, 0.94);
+}
+.caption.success {
+  border-color: rgba(63, 174, 55, 0.3);
+  background: rgba(245, 252, 243, 0.95);
+}
+.caption.muted {
+  color: var(--muted);
+}
+.caption-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex: none;
+}
+.caption-actions .spacer {
+  flex: 1;
+}
+
+/* inline code (states, formulas) never breaks across lines */
+.caption-text code {
+  white-space: nowrap;
+}
+
+.caption-pitfall {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}

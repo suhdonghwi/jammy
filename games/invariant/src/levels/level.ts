@@ -3,6 +3,9 @@ import { compileFast, evaluate, holds, step, symbolicStep, type FastFn } from '.
 import { LangError, parseFormula, parseProgram } from '../lang/parser';
 import { checkCondition, checkProgram } from '../lang/typecheck';
 
+// The level format, compiling a level's program for play (exact and fast
+// evaluation), and helpers for program states.
+
 export type Rule = 'init' | 'pres' | 'exit';
 export const RULES: Rule[] = ['init', 'pres', 'exit'];
 export const RULE_NAMES: Record<Rule, string> = { init: 'Init', pres: 'Preservation', exit: 'Exit' };

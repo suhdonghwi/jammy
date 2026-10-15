@@ -4,6 +4,9 @@ import { hop, startState, type CompiledLevel, type Rule } from '../levels/level'
 import { brokenConjunct } from './box';
 import type { Counterexample } from './types';
 
+// Rules and formulas as Z3 queries: proving rules, finding counterexamples
+// anywhere, and checking two formulas are equivalent.
+
 type Ctx = Context<'main'>;
 type Z = Arith<'main'> | Bool<'main'>;
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { sceneNow } from './sceneTime';
-import { MAX_EVENTS } from './shaders';
+import { MAX_EVENTS } from './shaders/common';
 
 // Frogs arriving on a goal send out a ripple. The floor and slab shaders read
 // the most recent arrivals as a small uniform array of (x, y, time).

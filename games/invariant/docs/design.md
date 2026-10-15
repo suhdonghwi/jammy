@@ -436,20 +436,32 @@ The counter (§8).
 
 **Area rendering:** the formula is compiled to GLSL and evaluated per tile on the GPU, so the plane is genuinely unbounded. Frogs, eggs, goal markers, and the hand are ordinary meshes.
 
+The code as built (see the README for a fuller tree):
+
 ```
 src/
-  lang/        Lezer grammar (program + formula), type checker, AST,
-               interpreter (BigInt), → SMT, → GLSL
-  checker/     box search, Z3 Web Worker, counterexample ranking,
-               verdicts + undecided fallbacks
-  levels/      defineLevel() + one file per level
-  scene/       Plane, Slabs, Egg, GoalMarker, Frog, Hand, PondStack, CameraRig
-  choreo/      GSAP timelines: replays, frog rain, bridge cinematic
-  tutorial/    step-based script engine
-  ui/          code panel, formula box, lights, caption bar, pond slider
-  store/       zustand store
-scripts/
-  validate-levels.ts
+  main.tsx, App.tsx   entry point and the page's top-level layout
+  lang/        parser, type checker, AST, interpreter, symbolic body execution
+  checker/     box search (nice counterexamples) + Z3 (proofs), verdicts
+  levels/      the level format (level.ts) and every level (catalog.ts)
+  game/        the zustand store, and what the app's buttons do (actions.ts)
+  director/    scripted sequences: the hand, Step/Run, check playback, the pond cinematic
+  tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
+  scene/       the 3D world (react-three-fiber)
+    floor/       the infinite floor, drawn per pixel from the level's formulas
+    area/        the learner's slabs, eggs and goal columns
+    frogs/       frog state, motion, rendering, hatching
+    hand/        the skeptical hand
+    labels/      tags over tiles and frogs (callouts, failures, frog values)
+    level/       a level's scene, the pond elevator, hover preview, cinematic
+    home/        the home screen's scene
+    shaders/     shared GLSL and formulas → GLSL
+  ui/          the DOM over the scene
+    hud/         level screen: top bar, code panel, caption, formula box, controls
+    home/        title (3D lettering), home copy, level list
+    rules/       the rules card
+  styles/      CSS, one file per part of the UI (index.css imports them in order)
+scripts/       validate-levels.ts, copy-z3.mjs
 ```
 
 ---

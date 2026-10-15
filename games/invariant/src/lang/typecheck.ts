@@ -1,6 +1,8 @@
 import type { Expr, Program, Stmt } from './ast';
 import { LangError } from './parser';
 
+// Type checking: every name is an int; conditions must be true/false.
+
 export type Type = 'int' | 'bool';
 
 const ARITH = new Set(['+', '-', '*', '/', '%']);

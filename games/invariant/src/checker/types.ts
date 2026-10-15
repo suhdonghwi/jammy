@@ -1,6 +1,8 @@
 import type { State } from '../lang/ast';
 import type { Rule } from '../levels/level';
 
+// What a check reports for each rule.
+
 export interface Counterexample {
   rule: Rule;
   /** The frog's state (for init: the start state). */

@@ -3,6 +3,9 @@ import { compileFast, holds, type FastFn } from '../lang/eval';
 import { hop, startState, toBig, type CompiledLevel, type Rule } from '../levels/level';
 import type { Counterexample } from './types';
 
+// Brute-force search of the states around the camera: finds the nicest
+// counterexamples quickly, before the solver has to.
+
 export interface Box {
   cx: number;
   cy: number;

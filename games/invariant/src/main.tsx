@@ -4,22 +4,21 @@ import { App } from './App';
 import '@fontsource-variable/nunito';
 import '@fontsource/fredoka/500.css';
 import '@fontsource/fredoka/600.css';
-import './styles.css';
+import './styles/index.css';
 import { cameraRig } from './scene/cameraRig';
-import { useGame } from './store/game';
-import { openLevel, openTutorial, check } from './director/play';
-import { allLevels } from './levels/defs';
-import { director } from './director/director';
-import { frogWorld } from './scene/frogSim';
-import { handState } from './scene/handState';
+import { useGame } from './game/store';
+import { check, openLevel, openTutorial } from './game/actions';
+import { levels } from './levels/catalog';
+import { frogWorld } from './scene/frogs/frogWorld';
+import { handState } from './scene/hand/handState';
 
+// handles for poking at the game from the console
 if (import.meta.env.DEV) {
   Object.assign(window, {
     __rig: cameraRig,
     __game: useGame,
-    __open: (id: string) => (id === 'tutorial' ? openTutorial() : openLevel(allLevels.find((l) => l.id === id)!)),
+    __open: (id: string) => (id === 'tutorial' ? openTutorial() : openLevel(levels.find((l) => l.id === id)!)),
     __check: check,
-    __director: director,
     __frogs: frogWorld,
     __hand: handState,
   });

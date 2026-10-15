@@ -1,0 +1,70 @@
+import { playBridge } from '../director/bridge';
+import { resetLevel } from '../director/frogs';
+import { playCounterexample, playRain, playShrug, runChecker } from '../director/verdicts';
+import { levels, tutorialLevel } from '../levels/catalog';
+import { RULES, type LevelDef } from '../levels/level';
+import { frogWorld } from '../scene/frogs/frogWorld';
+import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';
+import { useGame } from './store';
+
+// What the app's buttons do: open a level or the tutorial, go back to the
+// menu, and check the learner's area.
+
+export function openLevel(def: LevelDef) {
+  stopTutorial();
+  resetLevel();
+  useGame.getState().openLevel(def, 'level');
+  if (def.bridge) {
+    void playBridge().then(() => useGame.setState({ caption: def.intro ? { text: def.intro, tone: 'info' } : null }));
+  }
+}
+
+export function openTutorial() {
+  resetLevel();
+  useGame.getState().openLevel(tutorialLevel, 'tutorial');
+  // when it's done, on to the first level
+  startTutorial(() => openLevel(levels[0]));
+}
+
+export function goMenu(view: 'home' | 'levels' = 'home') {
+  stopTutorial();
+  resetLevel();
+  useGame.getState().backToMenu(view);
+}
+
+export async function check() {
+  const g = useGame.getState();
+  if (g.busy || g.checking || !g.level) return;
+  if (g.mode === 'tutorial') {
+    tutorialCheck();
+    return;
+  }
+  if (!g.formula || !g.formula.ok) {
+    // the formula box shows the error itself; don't duplicate it in the caption
+    useGame.setState((s) => ({ errorNudge: s.errorNudge + 1 }));
+    return;
+  }
+  frogWorld.clear('test');
+  useGame.setState({ caption: { text: 'Checking…', tone: 'muted' } });
+  const res = await runChecker(RULES);
+  if (!res) return;
+  const failure = RULES.map((r) => res.verdicts[r]).find((v) => v?.status === 'fail');
+  if (failure?.status === 'fail') {
+    await playCounterexample(failure.cex, { extra: res.pitfall?.message });
+    return;
+  }
+  if (RULES.some((r) => res.verdicts[r]?.status === 'undecided')) {
+    const tip = g.formulaText.includes('/') ? ' Try avoiding division — for example `2 * s == …` instead of `s == … / 2`.' : '';
+    await playShrug(`I couldn't find a frog that breaks this nearby — but I couldn't prove it either.${tip}`);
+    return;
+  }
+  await playRain();
+  const next = levels[levels.findIndex((l) => l.id === g.level!.id) + 1];
+  useGame.setState({
+    caption: {
+      text: 'Proved. Every frog, everywhere you claimed — for every input.',
+      tone: 'success',
+      action: next ? { label: `Next: ${next.title}`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
+    },
+  });
+}

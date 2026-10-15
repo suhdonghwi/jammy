@@ -33,12 +33,26 @@ the same headers. `pnpm install` copies Z3's browser build into `public/z3/`.
 
 ```
 src/
+  main.tsx, App.tsx   entry point and the page's top-level layout
   lang/        parser, type checker, AST, interpreter, symbolic body execution
   checker/     box search (nice counterexamples) + Z3 (proofs), verdicts
-  levels/      level format + all v1 levels (defs/index.ts)
-  scene/       react-three-fiber scene: tiles, slabs, eggs, frogs, hand, pond stack
-  director/    choreography (hand, frog rain, replays) and the level check flow
-  tutorial/    the scripted counter tutorial
-  ui/          panels: code, caption, formula box, lights, pond slider, menu
+  levels/      the level format (level.ts) and every level (catalog.ts)
+  game/        the zustand store, and what the app's buttons do (actions.ts)
+  director/    scripted sequences: the hand, Step/Run, check playback, the pond cinematic
+  tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
+  scene/       the 3D world (react-three-fiber)
+    floor/       the infinite floor, drawn per pixel from the level's formulas
+    area/        the learner's slabs, eggs and goal columns
+    frogs/       frog state, motion, rendering, hatching
+    hand/        the skeptical hand
+    labels/      tags over tiles and frogs (callouts, failures, frog values)
+    level/       a level's scene, the pond elevator, hover preview, cinematic
+    home/        the home screen's scene
+    shaders/     shared GLSL and formulas → GLSL
+  ui/          the DOM over the scene
+    hud/         level screen: top bar, code panel, caption, formula box, controls
+    home/        title (3D lettering), home copy, level list
+    rules/       the rules card
+  styles/      CSS, one file per part of the UI (index.css imports them in order)
 scripts/       validate-levels.ts, copy-z3.mjs
 ```

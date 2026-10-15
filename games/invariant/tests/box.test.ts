@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { boxSearch } from '../src/checker/box';
-import { tutorialLevel, levels } from '../src/levels/defs';
+import { tutorialLevel, levels } from '../src/levels/catalog';
 import { compileFormula, compileLevel } from '../src/levels/level';
 
 const tut = compileLevel(tutorialLevel);

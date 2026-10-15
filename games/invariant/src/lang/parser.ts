@@ -1,5 +1,8 @@
 import { COMPARISON_OPS, spanOf, type BinOp, type BuiltinFn, type Expr, type Program, type Span, type Stmt, type VarDecl } from './ast';
 
+// Tokenizer and recursive-descent parser for programs and area formulas,
+// with friendly errors that point at a span of the source.
+
 export class LangError extends Error {
   constructor(message: string, public span: Span) {
     super(message);

@@ -1,0 +1,99 @@
+/* The pond stack: the elevator toast and the input gauge (ui/hud/PondGauge). */
+.hud-center {
+  position: relative;
+}
+.elevator-toast {
+  position: absolute;
+  top: 26vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 26px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: white;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 30px;
+  box-shadow: 0 5px 0 var(--blue-deep), 0 16px 40px rgba(59, 130, 246, 0.35);
+  animation: pop 0.25s ease-out;
+  white-space: nowrap;
+}
+.elevator-arrow {
+  font-size: 18px;
+  opacity: 0.85;
+}
+.elevator-name {
+  opacity: 0.8;
+}
+
+/* elevator gauge */
+.gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 12px 10px;
+  width: 108px;
+  align-self: center;
+  animation: slide-left 0.4s ease-out;
+}
+.gauge .card-label {
+  text-align: center;
+}
+.gauge-arrow {
+  border: none;
+  background: var(--blue-soft);
+  color: var(--blue);
+  border-radius: 12px;
+  padding: 6px 0;
+  cursor: pointer;
+  font-size: 13px;
+}
+.gauge-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.gauge-floors {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 4px 0;
+}
+.gauge-floor {
+  border: none;
+  background: transparent;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--faint);
+  padding: 6px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gauge-floor:hover:not(:disabled) {
+  background: rgba(32, 44, 70, 0.05);
+  color: var(--text);
+}
+.gauge-floor.current {
+  background: var(--blue);
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 3px 0 var(--blue-deep);
+}
+.gauge.moving .gauge-floor.current {
+  animation: blink 0.35s infinite alternate;
+}
+.gauge-name {
+  opacity: 0.8;
+}
+.gauge-hint {
+  font-size: 11px;
+  color: var(--faint);
+  text-align: center;
+  margin-top: 6px;
+  line-height: 1.3;
+}

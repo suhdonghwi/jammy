@@ -1,6 +1,7 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { tileToWorld } from './tiles';
+
+// The camera, for code outside the canvas: where it looks and gliding it to tiles.
 
 type Controls = CameraControls;
 
@@ -29,8 +30,7 @@ export const cameraRig = {
   /** Glide so the given tile (in the focused pond) is centered. */
   async lookAtTile(x: number, y: number, distance?: number, smooth = true) {
     if (!controls) return;
-    const [wx, wz] = tileToWorld(x, y);
-    const moves: Promise<void>[] = [controls.moveTo(wx, this.layerY, wz, smooth)];
+    const moves: Promise<void>[] = [controls.moveTo(x, this.layerY, -y, smooth)];
     if (distance !== undefined) moves.push(controls.dollyTo(distance, smooth));
     await Promise.all(moves);
   },

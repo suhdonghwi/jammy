@@ -2,9 +2,9 @@
 // every pitfall fails, and real frogs terminate.
 import { checkFormula } from '../src/checker/check';
 import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
-import { allLevels } from '../src/levels/defs';
-import { compileFormula, compileLevel, hop, isEgg, running, startState, type CompiledLevel } from '../src/levels/level';
 import type { State } from '../src/lang/ast';
+import { allLevels } from '../src/levels/catalog';
+import { compileFormula, compileLevel, hop, isEgg, running, startState, type CompiledLevel } from '../src/levels/level';
 
 const ctx = await nodeZ3();
 let failures = 0;

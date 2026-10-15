@@ -108,3 +108,18 @@ export function outlineMaterial(thickness: number, color = COLORS.outline): THRE
       }`,
   });
 }
+
+/** An egg, standing on its base at the origin. */
+export function eggGeometry() {
+  const pts: THREE.Vector2[] = [];
+  const N = 22;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N; // 0 bottom → 1 top
+    const a = Math.PI * t;
+    // egg profile: wider near the bottom
+    const r = Math.sin(a) * (0.19 - 0.042 * t);
+    const y = (1 - Math.cos(a)) * 0.182;
+    pts.push(new THREE.Vector2(Math.max(r, 0.0001), y));
+  }
+  return new THREE.LatheGeometry(pts, 28);
+}

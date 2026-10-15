@@ -6,6 +6,8 @@ import { boxSearch, sameOnBox, type Box } from './box';
 import { cexFromModel, equivalent, ruleQuery, solve } from './smt';
 import type { RuleVerdict, Verdicts } from './types';
 
+// Checking an area against the three rules.
+
 export interface Formula {
   expr: Expr;
   fast: FastFn;

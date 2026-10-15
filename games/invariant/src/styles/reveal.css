@@ -1,0 +1,45 @@
+/* Smooth reveal of HUD rows (ui/RevealSlot). */
+.reveal-slot {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.4s ease;
+}
+.reveal-slot.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+  /* room for focus rings and shadows once settled */
+  margin: -8px;
+  padding: 8px;
+}
+.reveal-slot.settled .reveal-inner {
+  overflow: visible;
+}
+.reveal-slot:not(.open) {
+  pointer-events: none;
+}
+
+.formula-row.shake {
+  animation: shake 0.32s ease-in-out;
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
