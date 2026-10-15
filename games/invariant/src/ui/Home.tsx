@@ -108,10 +108,6 @@ export function RulesCard() {
           <Rule n={2} name="Preservation" text="A frog on your area that hops lands on your area." art={<ArtPres />} />
           <Rule n={3} name="Exit" text="A frog that stops on your area is on a goal." art={<ArtExit />} />
         </div>
-        <p className="modal-foot">
-          Frogs start on your area (1) and no hop can leave it (2), so they never leave — and when they stop, they stop on a goal
-          (3).
-        </p>
         <button className="btn toy primary icon-btn" onClick={close}>
           <Check size={17} strokeWidth={2.6} /> Got it
         </button>

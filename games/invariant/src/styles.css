@@ -881,8 +881,7 @@ code {
   font-weight: 600;
   font-size: 26px;
 }
-.modal-sub,
-.modal-foot {
+.modal-sub {
   color: var(--muted);
   line-height: 1.55;
 }
