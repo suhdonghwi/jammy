@@ -94,7 +94,7 @@ function holdCaption(gen: number, label = 'Next'): Promise<void> {
   return next(gen, c?.text ?? '', label, null, (c?.tone as 'info' | 'fail' | 'success') ?? 'info');
 }
 
-function waitEvent(gen: number, name: 'stepped' | 'runDone' | 'eggRun', until?: () => boolean): Promise<void> {
+function waitEvent(gen: number, name: 'stepped' | 'runDone', until?: () => boolean): Promise<void> {
   return new Promise((resolve, reject) => {
     const off = events.on((e) => {
       if (gen !== generation) {
@@ -151,7 +151,7 @@ async function attempt(gen: number, formula: string, alternatives: string[], rul
     display: formula,
     accepted: [formula, ...alternatives].map((t) => normalize(t)).filter((t): t is string => !!t),
   };
-  game().patch({ ghost: formula, showMe: formula, callouts: [] });
+  game().patch({ suggestion: formula, callouts: [] });
   for (;;) {
     await new Promise<void>((resolve, reject) => {
       pendingCheck = () => {
@@ -169,7 +169,7 @@ async function attempt(gen: number, formula: string, alternatives: string[], rul
     guard(gen);
     if (res) {
       expected = null;
-      game().patch({ ghost: null, showMe: null });
+      game().patch({ suggestion: null });
       return res;
     }
   }
@@ -482,8 +482,7 @@ function restore(gen: number, scene: Scene) {
     frogTags: !!scene.tags,
     callouts: [],
     spotlight: null,
-    ghost: null,
-    showMe: null,
+    suggestion: null,
     awaitingCheck: false,
   });
   game().setFormula(scene.formula ?? '');

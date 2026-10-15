@@ -29,7 +29,7 @@ export function goMenu(view: 'home' | 'levels' = 'home') {
   game().backToMenu(view);
 }
 
-export function nextLevelDef(id: string): LevelDef | null {
+function nextLevelDef(id: string): LevelDef | null {
   const i = levels.findIndex((l) => l.id === id);
   return i >= 0 && i + 1 < levels.length ? levels[i + 1] : null;
 }

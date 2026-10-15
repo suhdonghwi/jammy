@@ -31,10 +31,6 @@ export interface LevelDef {
   bridge?: boolean;
 }
 
-export function defineLevel(def: LevelDef): LevelDef {
-  return def;
-}
-
 export interface CompiledLevel extends LevelDef {
   program: Program;
   inputs: string[];
@@ -143,10 +139,6 @@ export function startState(level: CompiledLevel, free: State): State {
   const s: State = { ...free };
   for (const [v, e] of Object.entries(level.initExprs)) s[v] = evaluate(e, free) as bigint;
   return s;
-}
-
-export function exists(level: CompiledLevel, s: State): boolean {
-  return holds(level.pondReq, s);
 }
 
 export function isEgg(level: CompiledLevel, start: State): boolean {

@@ -13,7 +13,7 @@ export interface TileFlags {
   goal: boolean;
 }
 
-export interface SlabAnim extends TileFlags {
+interface SlabAnim extends TileFlags {
   from: number;
   to: number;
   t0: number;
@@ -22,12 +22,12 @@ export interface SlabAnim extends TileFlags {
 const key = (x: number, y: number) => `${x},${y}`;
 const ease = (u: number) => u * u * (3 - 2 * u);
 
-export function animValue(a: { from: number; to: number; t0: number }, t: number): number {
+function animValue(a: { from: number; to: number; t0: number }, t: number): number {
   const u = Math.min(1, Math.max(0, (t - a.t0) / RISE_DUR));
   return a.from + (a.to - a.from) * ease(u);
 }
 
-export class AreaField {
+class AreaField {
   anims = new Map<string, SlabAnim>();
   version = 0;
 

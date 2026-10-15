@@ -52,15 +52,18 @@ const errorField = StateField.define<DecorationSet>({
 
 const singleLine = EditorState.transactionFilter.of((tr) => (tr.newDoc.lines > 1 ? [] : tr));
 
+/** In the tutorial the area can only be edited while a step asks for it. */
 const isLocked = (g: { mode: string; awaitingCheck: boolean }) => g.mode === 'tutorial' && !g.awaitingCheck;
 const lockExt = (locked: boolean): Extension => [EditorState.readOnly.of(locked), EditorView.editable.of(!locked)];
+/** The suggested formula shows as placeholder text, with a hint that Tab fills it in. */
+const placeholderExt = (suggestion: string | null): Extension => placeholder(suggestion ? `${suggestion}   ⇥ Tab` : 'type a condition');
 
 export function FormulaBox() {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
-  const ghostComp = useRef(new Compartment());
+  const placeholderComp = useRef(new Compartment());
   const lockComp = useRef(new Compartment());
-  const ghost = useGame((s) => s.ghost);
+  const suggestion = useGame((s) => s.suggestion);
   const formula = useGame((s) => s.formula);
   const formulaText = useGame((s) => s.formulaText);
   const levelId = useGame((s) => s.level?.id);
@@ -68,6 +71,7 @@ export function FormulaBox() {
   const checking = useGame((s) => s.checking);
   const mode = useGame((s) => s.mode);
   const awaitingCheck = useGame((s) => s.awaitingCheck);
+  const locked = isLocked({ mode, awaitingCheck });
   const spot = useGame((s) => s.spotlight);
   // errors appear only once typing pauses, so half-typed input doesn't flash errors
   const [settledError, setSettledError] = useState<{ message: string; span: { from: number; to: number } } | null>(null);
@@ -100,7 +104,6 @@ export function FormulaBox() {
   }, [errorNudge]);
 
   useEffect(() => {
-    const ghostExt = (g: string | null): Extension => placeholder(g ? `${g}   ⇥ Tab` : 'type a condition');
     const v = new EditorView({
       parent: host.current!,
       state: EditorState.create({
@@ -111,16 +114,16 @@ export function FormulaBox() {
           errorField,
           exprLanguage,
           syntaxHighlighting(highlight),
-          ghostComp.current.of(ghostExt(useGame.getState().ghost)),
+          placeholderComp.current.of(placeholderExt(useGame.getState().suggestion)),
           lockComp.current.of(lockExt(isLocked(useGame.getState()))),
           keymap.of([
             { key: 'Enter', run: () => (void check(), true) },
             {
               key: 'Tab',
               run: (view) => {
-                const g = useGame.getState().ghost;
-                if (view.state.doc.length === 0 && g) {
-                  view.dispatch({ changes: { from: 0, insert: g }, selection: { anchor: g.length } });
+                const s = useGame.getState().suggestion;
+                if (view.state.doc.length === 0 && s) {
+                  view.dispatch({ changes: { from: 0, insert: s }, selection: { anchor: s.length } });
                   return true;
                 }
                 return false;
@@ -142,25 +145,16 @@ export function FormulaBox() {
       }),
     });
     view.current = v;
-    (window as unknown as { __formulaView?: EditorView }).__formulaView = v;
     return () => v.destroy();
   }, []);
 
-  // In the tutorial the area can only be edited while a step asks for it;
-  // otherwise it stays what the caption is talking about.
-  const locked = mode === 'tutorial' && !awaitingCheck;
   useEffect(() => {
     view.current?.dispatch({ effects: lockComp.current.reconfigure(lockExt(locked)) });
   }, [locked]);
 
-  // ghost text changes
   useEffect(() => {
-    const v = view.current;
-    if (!v) return;
-    v.dispatch({
-      effects: ghostComp.current.reconfigure(placeholder(ghost ? `${ghost}   ⇥ Tab` : 'type a condition')),
-    });
-  }, [ghost]);
+    view.current?.dispatch({ effects: placeholderComp.current.reconfigure(placeholderExt(suggestion)) });
+  }, [suggestion]);
 
   // external text changes (level switch, "show me")
   useEffect(() => {

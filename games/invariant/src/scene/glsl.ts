@@ -7,7 +7,7 @@ import type { CompiledLevel } from '../levels/level';
 
 const ident = (name: string) => `v_${name}`;
 
-export function exprToGlsl(e: Expr): string {
+function exprToGlsl(e: Expr): string {
   switch (e.kind) {
     case 'num':
       return e.value.toString();

@@ -1,7 +1,6 @@
 import gsap from 'gsap';
 import * as THREE from 'three';
 import type { State } from '../lang/ast';
-import { holds } from '../lang/eval';
 import { checkFormula, type CheckResult, type Formula } from '../checker/check';
 import type { Counterexample } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
@@ -58,26 +57,15 @@ function markFailure(x: number, y: number, label: string) {
   game().patch({ failMark: { x, y, label, t0: performance.now() } });
 }
 
-function inArea(s: State): boolean {
-  const v = game().valid;
-  return !!v && holds(v.expr, s);
-}
-
-/** World position just above a tile in the focused pond. */
-function above(x: number, y: number) {
-  return { x, z: -y };
-}
-
 // ---------------------------------------------------------------------------
 // The hand
 // ---------------------------------------------------------------------------
 
 export async function handIn(x: number, y: number, h = 1.8, pose: Partial<typeof handState> = {}) {
-  const p = above(x, y);
   if (handState.visible < 0.05) {
-    Object.assign(handState, { x: p.x + 1.5, y: h + 5, z: p.z - 3, curl: 0.25, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0 });
+    Object.assign(handState, { x: x + 1.5, y: h + 5, z: -y - 3, curl: 0.25, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0 });
   }
-  await tween(handState, { visible: 1, x: p.x, y: h, z: p.z, duration: 0.7, ease: 'power3.out', ...pose });
+  await tween(handState, { visible: 1, x, y: h, z: -y, duration: 0.7, ease: 'power3.out', ...pose });
 }
 
 export async function handOut() {
@@ -97,13 +85,12 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
   const base = field.heightAt(x, y) * SLAB_H;
-  const p = above(x, y);
   // the frog rides on the palm: its height follows the hand
   const f = frogWorld.add(L, 'test', s, { carried: 6, carryOff: { dx: 0, dy: BEHIND } });
   const follow = () => {
     f.carried = handState.y + PALM_TOP - base;
   };
-  Object.assign(handState, { x: p.x, y: base + 6, z: p.z - BEHIND, curl: 0.45, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.3, palmUp: 1, visible: 0 });
+  Object.assign(handState, { x, y: base + 6, z: -y - BEHIND, curl: 0.45, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0.3, palmUp: 1, visible: 0 });
   follow();
   await tween(handState, { visible: 1, y: base + SET_DOWN - PALM_TOP + 0.6, duration: 0.65, ease: 'power3.out', onUpdate: follow });
   if (!tok.alive) return null;
@@ -115,7 +102,7 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
   f.drop = { t0: now(), dur: 0.5, from: SET_DOWN, arc: 0.32, dx: 0, dy: BEHIND };
   await sleep(380);
   if (!tok.alive) return null;
-  await tween(handState, { palmUp: 0, tilt: 0, curl: 0.15, y: base + 2.2, z: p.z - BEHIND - 0.8, duration: 0.45, ease: 'power2.inOut' });
+  await tween(handState, { palmUp: 0, tilt: 0, curl: 0.15, y: base + 2.2, z: -y - BEHIND - 0.8, duration: 0.45, ease: 'power2.inOut' });
   return f;
 }
 
@@ -249,7 +236,7 @@ export const director = {
     hatchFx.clear();
     Object.assign(handState, { visible: 0 });
     bridgeState.active = false;
-    game().patch({ busy: false, running: false, selected: null, lastFailure: null, cinematic: false, failMark: null });
+    game().patch({ busy: false, running: false, selected: null, cinematic: false, failMark: null });
   },
 
   /**
@@ -262,7 +249,7 @@ export const director = {
     occupancy.eggs = new Set();
     hatchFx.clear();
     Object.assign(handState, { visible: 0 });
-    game().patch({ busy: false, running: false, stepping: false, checking: false, selected: null, lastFailure: null, failMark: null });
+    game().patch({ busy: false, running: false, stepping: false, checking: false, selected: null, failMark: null });
   },
 
   clearFrogs() {
@@ -357,7 +344,6 @@ export const director = {
     } finally {
       game().patch({ stepping: false });
     }
-    events.emit('eggRun');
   },
 
   clickTile(x: number, y: number) {
@@ -390,7 +376,7 @@ export const director = {
     const tapTimer = setTimeout(() => {
       tapping = true;
       const tt = cameraRig.target();
-      void handIn(tt.x / 1 + 2.5, -tt.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
+      void handIn(tt.x + 2.5, -tt.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
     }, 350);
     try {
       const ctx = await browserZ3();
@@ -411,7 +397,7 @@ export const director = {
   async playCounterexample(cex: Counterexample, opts: { prefix?: string; extra?: string; reserveNext?: boolean } = {}) {
     const tok = begin();
     const L = lvl();
-    game().patch({ busy: true, lastFailure: cex, running: false, failMark: null });
+    game().patch({ busy: true, running: false, failMark: null });
     frogWorld.clear();
     const x = Number(cex.state[L.view.x]);
     const y = Number(cex.state[L.view.y]);
@@ -426,9 +412,8 @@ export const director = {
         await handIn(x + 0.4, y - 1.3, 1.6, { curl: 0.2 });
         if (!tok.alive) return;
         await pointAt(x, y);
-        const f = hatch(cex.state);
+        hatch(cex.state);
         await sleep(450);
-        void f;
         markFailure(x, y, 'starts outside your area');
         game().patch({ selected: cex.state });
         text = `${prefix}This frog starts at ${fmt(cex.state)} — outside your area.${broken}`;
@@ -495,7 +480,6 @@ export const director = {
     game().patch({ busy: true, running: false, selected: null });
     frogWorld.clear();
     try {
-      const t0 = cameraRig.target();
       await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
       const inv = game().valid;
       if (!inv) return;
@@ -529,35 +513,6 @@ export const director = {
       // Every frog on the continue region hops once — and lands on the area again.
       const movers = frogs.filter((f) => running(L, f.state));
       await Promise.all(movers.map((f) => frogWorld.hopTo(L, f, hop(L, f.state), 0.45)));
-      void t0;
-    } finally {
-      if (tok.alive) game().patch({ busy: false });
-    }
-  },
-
-  /** Tutorial "why" beat: one real frog, slab after slab. */
-  async whyBeat(start: State, lines: { hop: string; stop: string }) {
-    const tok = begin();
-    const L = lvl();
-    game().patch({ busy: true });
-    frogWorld.clear();
-    try {
-      await focusState(start);
-      const f = hatch(start);
-      game().patch({ selected: start });
-      caption('It hatches on your area (Init).', 'info');
-      await sleep(1400);
-      let k = 0;
-      while (!f.stopped && k < 12 && tok.alive) {
-        const n = hop(L, f.state);
-        await frogWorld.hopTo(L, f, n, 0.5);
-        f.stopped = !running(L, n);
-        game().patch({ selected: n });
-        caption(k === 0 ? lines.hop : `${lines.hop} Again — still on your area.`, 'info');
-        await sleep(900);
-        k++;
-      }
-      if (tok.alive) caption(lines.stop, 'info');
     } finally {
       if (tok.alive) game().patch({ busy: false });
     }
@@ -592,7 +547,6 @@ export const director = {
     }
   },
 
-  isInArea: inArea,
   sleep,
 };
 
@@ -600,7 +554,7 @@ export const director = {
 // Events (the tutorial listens to these)
 // ---------------------------------------------------------------------------
 
-type EventName = 'stepped' | 'runDone' | 'eggRun';
+type EventName = 'stepped' | 'runDone';
 const listeners = new Set<(e: EventName) => void>();
 export const events = {
   emit(e: EventName) {

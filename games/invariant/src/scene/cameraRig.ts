@@ -13,11 +13,6 @@ export const VIEW = { polar: 0.8, azimuth: 0.26 };
 export const cameraRig = {
   /** World y of the focused pond's floor. */
   layerY: 0,
-  debug() {
-    if (!controls) return null;
-    const t = controls.getTarget(new THREE.Vector3());
-    return { target: t.toArray(), distance: controls.distance, polar: controls.polarAngle, azimuth: controls.azimuthAngle };
-  },
   attach(c: Controls | null) {
     controls = c;
   },

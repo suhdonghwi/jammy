@@ -1,5 +1,5 @@
 import { CameraControls } from '@react-three/drei';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useGame } from '../store/game';
 import { cameraRig, VIEW } from './cameraRig';
@@ -169,14 +169,6 @@ function LevelScene() {
   );
 }
 
-function DevExpose() {
-  const three = useThree();
-  useEffect(() => {
-    if (import.meta.env.DEV) Object.assign(window, { __three: three });
-  }, [three]);
-  return null;
-}
-
 function SceneSwitch() {
   const mode = useGame((s) => s.mode);
   const level = useGame((s) => s.level);
@@ -195,7 +187,6 @@ export function World() {
     >
       <Lights />
       <Controls />
-      <DevExpose />
       <SceneSwitch />
     </Canvas>
   );

@@ -72,7 +72,7 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
-uniform vec3 uTop, uSide, uStopTop, uHoverCol, uLabelOn;
+uniform vec3 uTop, uSide, uStopTop, uLabelOn;
 uniform vec2 uHover;
 uniform float uHoverOn;
 uniform float uDim;
@@ -362,7 +362,6 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
           uSide: colorUniform('slabSide'),
           uStopTop: colorUniform('slabStopTop'),
           ...goalUniforms(),
-          uHoverCol: colorUniform('hover'),
           uLabelOn: { value: new THREE.Color('#ffffff') },
           uHover: { value: new THREE.Vector2() },
           uHoverOn: { value: 0 },

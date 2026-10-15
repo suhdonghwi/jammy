@@ -7,7 +7,7 @@ const ARITH = new Set(['+', '-', '*', '/', '%']);
 const REL = new Set(['<', '<=', '>', '>=']);
 
 /** Type-check an expression; every name in `scope` is an int. */
-export function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
+function typeOf(e: Expr, scope: ReadonlySet<string>, src: string): Type {
   const text = (x: Expr) => src.slice(x.span.from, x.span.to);
   const want = (x: Expr, t: Type, ctx: string): void => {
     const got = typeOf(x, scope, src);

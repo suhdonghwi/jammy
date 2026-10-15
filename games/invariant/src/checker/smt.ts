@@ -7,7 +7,7 @@ import type { Counterexample } from './types';
 type Ctx = Context<'main'>;
 type Z = Arith<'main'> | Bool<'main'>;
 
-export function toZ3(ctx: Ctx, e: Expr, env: Record<string, Arith<'main'>>): Z {
+function toZ3(ctx: Ctx, e: Expr, env: Record<string, Arith<'main'>>): Z {
   const A = (x: Expr) => toZ3(ctx, x, env) as Arith<'main'>;
   const B = (x: Expr) => toZ3(ctx, x, env) as Bool<'main'>;
   switch (e.kind) {
@@ -48,9 +48,9 @@ export function toZ3(ctx: Ctx, e: Expr, env: Record<string, Arith<'main'>>): Z {
   }
 }
 
-export type SolveResult = { kind: 'sat'; state: State } | { kind: 'unsat' } | { kind: 'unknown' };
+type SolveResult = { kind: 'sat'; state: State } | { kind: 'unsat' } | { kind: 'unknown' };
 
-export interface SolveOptions {
+interface SolveOptions {
   /** Per-query timeout in ms. */
   timeout: number;
   /** Try bounded queries first so counterexamples are small. */

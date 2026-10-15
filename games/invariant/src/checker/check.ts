@@ -12,7 +12,7 @@ export interface Formula {
   text: string;
 }
 
-export interface CheckOptions {
+interface CheckOptions {
   /** Per-query solver timeout (ms). */
   timeout?: number;
   rules?: Rule[];

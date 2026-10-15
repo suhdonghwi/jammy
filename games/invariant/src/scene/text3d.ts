@@ -43,45 +43,17 @@ function glyphShapes(path: opentype.Path): THREE.Shape[] {
   return sp.toShapes();
 }
 
-export interface TextGeomOptions {
+interface LetterOptions {
   size: number;
   depth: number;
-  bevel?: number;
-  letterSpacing?: number;
-}
-
-/** Extruded text geometry, centered on the origin (x, y) with the front face at z = depth/2. */
-export function textGeometry(font: opentype.Font, text: string, o: TextGeomOptions): THREE.BufferGeometry {
-  const glyphs = font.stringToGlyphs(text);
-  const scale = o.size / font.unitsPerEm;
-  let x = 0;
-  const shapes: THREE.Shape[] = [];
-  glyphs.forEach((g, i) => {
-    shapes.push(...glyphShapes(g.getPath(x, 0, o.size)));
-    x += (g.advanceWidth ?? 0) * scale + (o.letterSpacing ?? 0);
-    const next = glyphs[i + 1];
-    if (next) x += font.getKerningValue(g, next) * scale;
-  });
-  const bevel = o.bevel ?? o.size * 0.045;
-  const geom = new THREE.ExtrudeGeometry(shapes, {
-    depth: o.depth,
-    bevelEnabled: true,
-    bevelThickness: bevel,
-    bevelSize: bevel * 0.8,
-    bevelSegments: 5,
-    curveSegments: 10,
-  });
-  geom.computeBoundingBox();
-  const bb = geom.boundingBox!;
-  geom.translate(-(bb.min.x + bb.max.x) / 2, -(bb.min.y + bb.max.y) / 2, -(bb.min.z + bb.max.z) / 2);
-  return geom;
+  letterSpacing: number;
 }
 
 /** One extruded geometry per glyph (for per-letter animation), laid out and centered as a word. */
-export function letterGeometries(font: opentype.Font, text: string, o: TextGeomOptions): { geom: THREE.BufferGeometry; x: number }[] {
+export function letterGeometries(font: opentype.Font, text: string, o: LetterOptions): { geom: THREE.BufferGeometry; x: number }[] {
   const glyphs = font.stringToGlyphs(text);
   const scale = o.size / font.unitsPerEm;
-  const bevel = o.bevel ?? o.size * 0.045;
+  const bevel = o.size * 0.045;
   let x = 0;
   const out: { geom: THREE.BufferGeometry; x: number }[] = [];
   glyphs.forEach((g, i) => {
@@ -98,12 +70,12 @@ export function letterGeometries(font: opentype.Font, text: string, o: TextGeomO
       geom.translate(0, 0, -o.depth / 2);
       out.push({ geom, x });
     }
-    x += (g.advanceWidth ?? 0) * scale + (o.letterSpacing ?? 0);
+    x += (g.advanceWidth ?? 0) * scale + o.letterSpacing;
     const next = glyphs[i + 1];
     if (next) x += font.getKerningValue(g, next) * scale;
   });
   // center the word horizontally; baseline stays at y = 0
-  const width = x - (o.letterSpacing ?? 0);
+  const width = x - o.letterSpacing;
   out.forEach((l) => (l.x -= width / 2));
   return out;
 }

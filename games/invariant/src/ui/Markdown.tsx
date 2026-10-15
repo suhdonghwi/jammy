@@ -48,7 +48,7 @@ function renderBlock(block: string, key: number): ReactNode {
 // code first, so nothing inside backticks is treated as emphasis
 const INLINE = /(`[^`]+`|\*\*.+?\*\*|(?<![\w*])\*(?!\s)[^*]+?\*(?!\w)|(?<!\w)_(?!\s)[^_]+?_(?!\w))/g;
 
-export function renderInline(text: string): ReactNode[] {
+function renderInline(text: string): ReactNode[] {
   return text.split(INLINE).map((part, i) => {
     if (!part) return null;
     if (part.length > 2 && part.startsWith('`') && part.endsWith('`')) return <code key={i}>{part.slice(1, -1)}</code>;

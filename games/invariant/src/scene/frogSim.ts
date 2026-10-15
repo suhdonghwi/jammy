@@ -5,7 +5,7 @@ import { useGame } from '../store/game';
 import { goalEvents } from './goalEvents';
 import { after, sceneNow } from './sceneTime';
 
-export type FrogKind = 'real' | 'test';
+type FrogKind = 'real' | 'test';
 
 export interface FrogSim {
   id: number;
@@ -17,7 +17,6 @@ export interface FrogSim {
   x: number;
   y: number;
   hop?: { fx: number; fy: number; tx: number; ty: number; t0: number; dur: number };
-  /** Dropping from a height (placed by the hand). */
   /** Falling/hopping down; (dx, dy) is a starting tile offset that eases to 0. */
   drop?: { t0: number; dur: number; from: number; arc?: number; dx?: number; dy?: number };
   /** Tile offset while carried (e.g. sitting on a palm behind the tile). */
@@ -105,7 +104,6 @@ class FrogWorld {
   /** Egg tiles that have hatched (key "x,y"); their eggs are hidden. */
   hatched = new Set<string>();
   hatchVersion = 0;
-  version = 0;
 
   markHatched(x: number, y: number) {
     this.hatched.add(`${x},${y}`);
@@ -128,13 +126,7 @@ class FrogWorld {
       ...opts,
     };
     this.frogs.push(f);
-    this.version++;
     return f;
-  }
-
-  remove(f: FrogSim) {
-    this.frogs = this.frogs.filter((g) => g !== f);
-    this.version++;
   }
 
   clear(kind?: FrogKind) {
@@ -143,7 +135,6 @@ class FrogWorld {
       this.hatched.clear();
       this.hatchVersion++;
     }
-    this.version++;
   }
 
   /** Animate a hop to the frog's next state. */

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { State } from '../lang/ast';
 import type { Formula } from '../checker/check';
-import type { Counterexample, Verdicts } from '../checker/types';
+import type { Verdicts } from '../checker/types';
 import { compileFormula, compileLevel, type CompiledLevel, type FormulaResult, type LevelDef, type Rule } from '../levels/level';
 
 export interface Reveal {
@@ -48,7 +48,6 @@ export type CaptionTone = 'info' | 'fail' | 'success' | 'muted';
 export interface Caption {
   text: string;
   tone: CaptionTone;
-  /** Optional button shown in the caption bar (tutorial "Next" etc.). */
   /** Main button. `pending`: the step it advances isn't ready yet (its scene is
    *  still playing); the button shows anyway, and a click skips ahead (see skip). */
   action?: { label: string; onClick: () => void; pending?: boolean };
@@ -84,9 +83,8 @@ export interface Game {
   /** Increments when frogs land (the loop condition is checked). */
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
-  lastFailure: Counterexample | null;
-  ghost: string | null;
-  showMe: string | null;
+  /** Tutorial: the formula the current step asks for (Tab fills it in, "Show me" types it). */
+  suggestion: string | null;
   showRules: boolean;
   pitfallMessage: string | null;
   /** A cinematic is playing; the level scene is hidden. */
@@ -109,7 +107,6 @@ export interface Game {
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
   /** Bumped when Check is pressed with an invalid formula (shows the inline error at once). */
   errorNudge: number;
-  /** Tutorial: small labelled tags on tiles. */
   /** Tutorial labels: over tile (x, y), or riding along with a frog when `frog` (its id) is set. */
   callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' }[];
   /** Where the last check failed (tile in the focused pond) and why. */
@@ -145,9 +142,7 @@ export const useGame = create<Game>((set, get) => ({
   hopDur: 0.42,
   landTick: 0,
   landGuard: 'true',
-  lastFailure: null,
-  ghost: null,
-  showMe: null,
+  suggestion: null,
   showRules: false,
   pitfallMessage: null,
   cinematic: false,
@@ -179,9 +174,7 @@ export const useGame = create<Game>((set, get) => ({
       caption: def.intro ? { text: def.intro, tone: 'info' } : null,
       reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
       selected: null,
-      lastFailure: null,
-      ghost: null,
-      showMe: null,
+      suggestion: null,
       pitfallMessage: null,
       elevating: false,
       failMark: null,

@@ -1,6 +1,6 @@
-import { defineLevel, type LevelDef } from '../level';
+import type { LevelDef } from '../level';
 
-export const tutorialLevel = defineLevel({
+export const tutorialLevel: LevelDef = {
   id: 'tutorial',
   title: 'Tutorial',
   chapter: 0,
@@ -21,11 +21,11 @@ ensures i == n;`,
     { formula: 'i >= 0', message: 'Real frogs never pass n — but your area allows it.' },
   ],
   camera: { x: 2, y: 2, distance: 13 },
-});
+};
 
 export const levels: LevelDef[] = [
   // ---------------- Chapter 1: One plane ----------------
-  defineLevel({
+  {
     id: '1-1',
     title: 'Countdown',
     chapter: 1,
@@ -43,8 +43,8 @@ ensures i == 0;`,
     pitfalls: [{ formula: 'i <= n', message: 'That bound held in the tutorial — but which way does this frog move?' }],
     intro: 'Same idea as the tutorial — but this frog counts down. You are on your own now.',
     camera: { x: 2, y: 2, distance: 13 },
-  }),
-  defineLevel({
+  },
+  {
     id: '1-2',
     title: 'Parity',
     chapter: 1,
@@ -65,8 +65,8 @@ ensures y % 2 == 0;`,
     ],
     intro: 'Eggs everywhere on a checkerboard. Every frog hops diagonally until x reaches 0.',
     camera: { x: 2, y: 2, distance: 15 },
-  }),
-  defineLevel({
+  },
+  {
     id: '1-3',
     title: 'Step by Two',
     chapter: 1,
@@ -87,10 +87,10 @@ ensures i == n;`,
     ],
     intro: 'Frogs hop two tiles at a time. Only even rows exist.',
     camera: { x: 2, y: 3, distance: 14 },
-  }),
+  },
 
   // ---------------- Chapter 2: Stacked ponds ----------------
-  defineLevel({
+  {
     id: '2-1',
     title: 'Doubling',
     chapter: 2,
@@ -112,8 +112,8 @@ ensures y == 2 * n;`,
     intro: 'Each input n is now its own pond, stacked like floors. Use the Input panel (or PageUp/PageDown) to ride between them.',
     camera: { x: 2, y: 3, distance: 14 },
     bridge: true,
-  }),
-  defineLevel({
+  },
+  {
     id: '2-2',
     title: 'Transfer',
     chapter: 2,
@@ -134,8 +134,8 @@ ensures y == n;`,
     pitfalls: [{ formula: 'x + y == n', message: 'Right line — but your area lets x go below 0.' }],
     intro: 'Move every unit from x to y.',
     camera: { x: 2, y: 2, distance: 13 },
-  }),
-  defineLevel({
+  },
+  {
     id: '2-3',
     title: 'Division by 3',
     chapter: 2,
@@ -156,8 +156,8 @@ ensures a == 3 * q + r && 0 <= r && r < 3;`,
     pitfalls: [{ formula: 'a == 3 * q + r', message: 'The equation is right — but a remainder must not be negative.' }],
     intro: 'Integer division, the slow way: take away 3 until you can’t.',
     camera: { x: 1, y: 3, distance: 14 },
-  }),
-  defineLevel({
+  },
+  {
     id: '2-4',
     title: 'Sum 1..n',
     chapter: 2,
@@ -178,10 +178,10 @@ ensures 2 * s == n * (n + 1);`,
     pitfalls: [{ formula: '2 * s == i * (i + 1)', message: 'Right curve — but your area keeps going past i = n.' }],
     intro: 'Add 1 + 2 + … + n. Solvers prefer formulas without division.',
     camera: { x: 2, y: 4, distance: 15 },
-  }),
+  },
 
   // ---------------- Chapter 3: Branches ----------------
-  defineLevel({
+  {
     id: '3-1',
     title: 'Absolute Value',
     chapter: 3,
@@ -205,8 +205,8 @@ ensures y == abs(a);`,
     pitfalls: [{ formula: 'y == a - x', message: 'That works for frogs hopping left — but some frogs take the else branch.' }],
     intro: 'The body has an if. Your area must survive both branches.',
     camera: { x: 0, y: 2, distance: 14 },
-  }),
-  defineLevel({
+  },
+  {
     id: '3-2',
     title: 'Even Out',
     chapter: 3,
@@ -230,7 +230,7 @@ ensures x == y && x >= 0;`,
     ],
     intro: 'Two numbers step toward each other until they meet.',
     camera: { x: 3, y: 3, distance: 15 },
-  }),
+  },
 ];
 
 export const allLevels = [tutorialLevel, ...levels];

@@ -48,7 +48,6 @@ float numberMask(vec2 f, int v) {
 export const MAX_EVENTS = 24;
 export const GLSL_GOAL = /* glsl */ `
 uniform vec3 uGoal;
-uniform vec3 uGoalGlow;
 uniform vec3 uPoolLight;
 uniform vec3 uPoolDeep;
 uniform float uTime;
@@ -141,7 +140,6 @@ vec3 drawGoal(vec3 col, vec2 f, float fwr, vec2 tc) {
 export function goalUniforms(): Record<string, THREE.IUniform> {
   return {
     uGoal: { value: new THREE.Color(COLORS.goal) },
-    uGoalGlow: { value: new THREE.Color(COLORS.goalGlow) },
     uPoolLight: { value: new THREE.Color(COLORS.poolLight) },
     uPoolDeep: { value: new THREE.Color(COLORS.poolDeep) },
     uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },

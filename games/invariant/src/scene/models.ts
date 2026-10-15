@@ -6,7 +6,7 @@ import { COLORS } from './constants';
 // `aPart` id so a single draw call can tint the body per frog while keeping
 // eyes, pupils, mouth and cheeks their own colors.
 
-export const PART = { body: 0, belly: 1, sclera: 2, pupil: 3, shine: 4, mouth: 5, cheek: 6 } as const;
+const PART = { body: 0, belly: 1, sclera: 2, pupil: 3, shine: 4, mouth: 5, cheek: 6 } as const;
 
 function tag(g: THREE.BufferGeometry, part: number): THREE.BufferGeometry {
   const geo = g.index ? g.toNonIndexed() : g;
@@ -46,7 +46,7 @@ export function frogGeometry(): THREE.BufferGeometry {
 }
 
 /** MeshStandardMaterial that colors frog parts by `aPart`, tinting the body by instance color. */
-export function frogMaterial(opts: { ghost?: boolean; tint?: string } = {}): THREE.MeshStandardMaterial {
+export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({
     vertexColors: true,
     roughness: 0.45,
@@ -56,7 +56,7 @@ export function frogMaterial(opts: { ghost?: boolean; tint?: string } = {}): THR
     depthWrite: !opts.ghost,
   });
   m.onBeforeCompile = (shader) => {
-    shader.uniforms.uTint = { value: new THREE.Color(opts.tint ?? COLORS.frog) };
+    shader.uniforms.uTint = { value: new THREE.Color(COLORS.frog) };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute float aPart;\nuniform vec3 uTint;')
       .replace(

@@ -14,8 +14,6 @@ export interface Box {
   pondR: number;
 }
 
-export const DEFAULT_BOX: Omit<Box, 'cx' | 'cy' | 'pond'> = { r: 20, pondR: 20 };
-
 /** Which conjunct of `inv` is false in state s (source text). */
 export function brokenConjunct(inv: Expr, src: string, s: State): string | undefined {
   const cs = conjuncts(inv);

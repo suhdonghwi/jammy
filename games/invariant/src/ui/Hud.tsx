@@ -331,7 +331,7 @@ export function RunControls() {
   const busy = useGame((s) => s.busy);
   const stepping = useGame((s) => s.stepping);
   const mode = useGame((s) => s.mode);
-  const showMe = useGame((s) => s.showMe);
+  const suggestion = useGame((s) => s.suggestion);
   const spot = useGame((s) => s.spotlight);
   const allow = useGame((s) => s.tutorialAllow);
   const tut = mode === 'tutorial';
@@ -366,8 +366,8 @@ export function RunControls() {
         </button>
       )}
       <span className="spacer" />
-      {mode === 'tutorial' && showMe && reveal.formula && (
-        <button className="btn ghost icon-btn" onClick={() => useGame.getState().setFormula(showMe)}>
+      {tut && suggestion && reveal.formula && (
+        <button className="btn ghost icon-btn" onClick={() => useGame.getState().setFormula(suggestion)}>
           <Wand2 size={16} strokeWidth={2.2} /> Show me
         </button>
       )}

@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { sceneNow } from './sceneTime';
 
 // Visual language: everything the level fixes is quiet grayscale; the learner's
@@ -19,7 +18,6 @@ export const COLORS = {
   slabSide: '#3a78d8',
   slabStopTop: '#93b2dc',
   goal: '#f2a91f',
-  goalGlow: '#ffc94d',
   poolLight: '#ffe6ad',
   poolDeep: '#ffcf73',
   egg: '#f8efd9',
@@ -29,14 +27,11 @@ export const COLORS = {
   glove: '#ffffff',
   outline: '#2a3142',
   label: '#9aa4b4',
-  labelStrong: '#5d6878',
 };
 
 export const SLAB_H = 0.24;
 export const TILE = 0.9;
 export const POND_SPACING = 6;
-
-export const color = (c: string) => new THREE.Color(c);
 
 export const clock = {
   /** Seconds since start, in scene time (paused while the page is hidden) — used by GPU-side animations. */

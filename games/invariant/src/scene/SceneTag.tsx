@@ -13,7 +13,7 @@ import type { FrogSim } from './frogSim';
 export type TagTone = 'info' | 'good' | 'fail';
 
 /** Where a tag hangs: over a tile, or over a frog (following it as it hops). */
-export type TagAnchor = { tile: [number, number] } | { frog: FrogSim };
+type TagAnchor = { tile: [number, number] } | { frog: FrogSim };
 
 /** Height of the sitting frog model (its bounding box top). */
 const FROG_TOP = 0.53;
@@ -23,7 +23,7 @@ const GAP = 0.07;
 const v = new THREE.Vector3();
 
 /** The point the tag's pointer touches: just above the frog's head (or a tile). */
-export function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
+function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
   if ('tile' in a) {
     const [x, y] = a.tile;
     return v.set(x, field.heightAt(x, y) * SLAB_H + TILE_TAG_Y, -y);

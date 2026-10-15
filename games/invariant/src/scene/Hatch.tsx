@@ -14,7 +14,7 @@ import { colorUniform, GLSL_COMMON } from './shaders';
 // shell pieces are drawn here.
 
 /** Wobble before the crack. */
-export const HATCH_WOBBLE = 0.16;
+const HATCH_WOBBLE = 0.16;
 /** The frog starts to climb out a beat after the cap has popped off. */
 export const HATCH_EMERGE = HATCH_WOBBLE + 0.05;
 const CAP_LIFE = 0.5;

@@ -71,7 +71,6 @@ interface Pose {
   sy: number;
   yaw: number;
   pitch: number;
-  roll: number;
 }
 
 /** Shortest signed angle from a to b. */
@@ -263,7 +262,7 @@ function pose(f: FrogSim, t: number): Pose {
   }
   const sy = (1 + squash + breath) * s;
   const sx = (1 - squash * 0.45 - breath * 0.5) * s;
-  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, roll: 0 };
+  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch };
 }
 
 /** The tile a frog is on, or is landing on. */
@@ -354,7 +353,7 @@ export function Frogs() {
       f.drawn.z = pz;
       f.drawn.scale = os * Math.max(0, p.sx);
       dummy.position.set(px, p.y, pz);
-      dummy.rotation.set(p.pitch, p.yaw, p.roll, 'YXZ');
+      dummy.rotation.set(p.pitch, p.yaw, 0, 'YXZ');
       dummy.scale.set(p.sx * os, p.sy * os, p.sx * os);
       dummy.updateMatrix();
       b.setMatrixAt(n, dummy.matrix);
