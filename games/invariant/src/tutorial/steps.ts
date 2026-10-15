@@ -454,13 +454,11 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
-      useGame.setState({ callouts: [] });
-      await playRain();
-      guard(gen);
+      // the caption first, then the rain it celebrates; Finish once the rain has fallen
       await beat(
         gen,
         `Your area ${mine()} passes all three rules:\n\n- **${RULE_NAMES.init}:** every egg sits on it.\n- **${RULE_NAMES.pres}:** no hop leaves it.\n- **${RULE_NAMES.exit}:** every frog that stops on it is on a goal.\n\nIt is a loop invariant strong enough to prove the postcondition: every run that stops, stops on a goal — for every \`n\`, without watching any of them.`,
-        { label: 'Finish' },
+        { label: 'Finish', prepare: () => playRain() },
       );
       // the three rules, as a card; the tutorial ends (and the first level
       // opens) once it is closed, after its exit animation, not underneath it
