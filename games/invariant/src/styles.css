@@ -806,6 +806,9 @@ code {
   border: none;
   padding: 9px 20px;
   box-shadow: 0 3px 0 var(--blue-deep);
+  /* centre the button *with* its 3px bottom edge, so the gaps above and below match */
+  position: relative;
+  top: -1.5px;
 }
 .formula-row .btn:hover:not(:disabled) {
   background: #4a8cf7;
