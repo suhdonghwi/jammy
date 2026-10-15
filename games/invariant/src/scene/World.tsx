@@ -28,6 +28,8 @@ function Lights() {
 
 function Controls() {
   const ref = useRef<CameraControls>(null);
+  // the home screen drives its own camera; user input there would only fight it
+  const interactive = useGame((s) => s.mode !== 'menu');
   useEffect(() => {
     cameraRig.attach(ref.current);
     const c = ref.current;
@@ -43,6 +45,7 @@ function Controls() {
     <CameraControls
       ref={ref}
       makeDefault
+      enabled={interactive}
       minDistance={6}
       maxDistance={60}
       minPolarAngle={0.25}
