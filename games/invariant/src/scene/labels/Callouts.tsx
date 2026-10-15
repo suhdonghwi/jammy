@@ -22,8 +22,8 @@ export function Callouts() {
   return (
     <>
       {callouts.map(({ item: c, key, leaving }) => {
-        // an outline alone (no text) also washes the tile, so it reads on a blue slab
-        if (c.frog === undefined) return <TileTag key={key} x={c.x} y={c.y} label={c.text} tone={c.tone} wash={c.text === ''} leaving={leaving} />;
+        // every tile callout washes its tile too (like failure marks), so the outline reads on a blue slab
+        if (c.frog === undefined) return <TileTag key={key} x={c.x} y={c.y} label={c.text} tone={c.tone} wash leaving={leaving} />;
         const frog = frogWorld.frogs.find((f) => f.id === c.frog) ?? frogs.current.get(c.frog);
         if (!frog) return null;
         frogs.current.set(c.frog, frog);
