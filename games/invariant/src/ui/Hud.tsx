@@ -285,10 +285,8 @@ export function CaptionBar() {
           )}
           {caption.action && (
             <button
-              className={`btn toy primary small icon-btn caption-main ${caption.action.pending ? 'pending' : ''}`}
-              tabIndex={caption.action.pending ? -1 : 0}
-              aria-hidden={caption.action.pending}
-              onClick={() => !caption.action!.pending && caption.action!.onClick()}
+              className="btn toy primary small icon-btn caption-main"
+              onClick={() => caption.action!.onClick()}
             >
               {caption.action.label === 'Replay' ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
               {caption.action.label}

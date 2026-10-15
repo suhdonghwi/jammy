@@ -49,8 +49,8 @@ export interface Caption {
   text: string;
   tone: CaptionTone;
   /** Optional button shown in the caption bar (tutorial "Next" etc.). */
-  /** Main button. `pending`: shown invisible to reserve its space, so the caption
-   *  doesn't reflow when it becomes available. */
+  /** Main button. `pending`: the step it advances isn't ready yet (its scene is
+   *  still playing); the button shows anyway, and a click is queued (see nextQueued). */
   action?: { label: string; onClick: () => void; pending?: boolean };
   /** Optional quieter button next to it (e.g. Replay). */
   secondary?: { label: string; onClick: () => void };
@@ -97,6 +97,8 @@ export interface Game {
   stepping: boolean;
   /** Tutorial: real frogs carry a tag with their variables, animated as they change. */
   frogTags: boolean;
+  /** Tutorial: Next was clicked before its step was ready; advance as soon as it is. */
+  nextQueued: boolean;
   /** Tutorial: the current step is waiting for the learner to press Check. */
   awaitingCheck: boolean;
   /** Tutorial: the Next action the script is currently waiting on (so replays can restore it). */
@@ -156,6 +158,7 @@ export const useGame = create<Game>((set, get) => ({
   callouts: [],
   stepping: false,
   frogTags: false,
+  nextQueued: false,
   awaitingCheck: false,
   tutorialAllow: { step: false, run: false, eggs: false },
   nextAction: null,
@@ -188,6 +191,7 @@ export const useGame = create<Game>((set, get) => ({
       callouts: [],
       stepping: false,
       frogTags: false,
+      nextQueued: false,
       awaitingCheck: false,
       tutorialAllow: { step: false, run: false, eggs: false },
       nextAction: null,
@@ -229,3 +233,20 @@ export const useGame = create<Game>((set, get) => ({
 }));
 
 export const game = () => useGame.getState();
+
+/**
+ * A Next button for a step that isn't ready yet (its scene is still playing).
+ * It shows right away; a click is remembered and the step advances as soon as
+ * it is ready. Clicks in the first moment are ignored, so a double click on the
+ * previous Next doesn't also skip this one.
+ */
+export function queuedNextAction(label = 'Next') {
+  const shownAt = performance.now();
+  return {
+    label,
+    pending: true,
+    onClick: () => {
+      if (performance.now() - shownAt >= 350) useGame.getState().patch({ nextQueued: true });
+    },
+  };
+}

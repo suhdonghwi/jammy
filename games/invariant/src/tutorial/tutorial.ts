@@ -1,6 +1,6 @@
 import { show } from '../lang/ast';
 import { compileFormula, type Rule } from '../levels/level';
-import { game, useGame, type Game } from '../store/game';
+import { game, queuedNextAction, useGame, type Game } from '../store/game';
 import { director, events } from '../director/director';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogSim';
@@ -32,16 +32,22 @@ function guard(gen: number) {
 
 type Spot = Game['spotlight'];
 
-/** Show a caption. `reserve`: the label of a button that will appear later —
- *  its space is kept from the start so the caption never reflows. */
+/** Show a caption. `reserve`: the label of the button that will advance it (see queuedNextAction). */
 function say(text: string, spot: Spot = null, tone: 'info' | 'fail' | 'success' | 'muted' = 'info', reserve?: string) {
-  game().setCaption({ text, tone, action: reserve ? { label: reserve, onClick: () => {}, pending: true } : undefined });
-  game().patch({ spotlight: spot });
+  game().setCaption({ text, tone, action: reserve ? queuedNextAction(reserve) : undefined });
+  game().patch({ spotlight: spot, nextQueued: false });
 }
 
 /** Show a caption with a button and wait for it. */
 function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone: 'info' | 'fail' | 'success' = 'info'): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Next was already clicked while this step was getting ready
+    if (game().nextQueued) {
+      game().patch({ nextQueued: false, spotlight: null, nextAction: null });
+      if (gen !== generation) reject(new Aborted());
+      else resolve();
+      return;
+    }
     const shownAt = performance.now();
     pendingNext = () => {
       // a fast double click must not also press the next caption's button
@@ -137,7 +143,7 @@ export function stopTutorial() {
   pendingCheck = null;
   pendingNext = null;
   expected = null;
-  useGame.setState({ awaitingCheck: false, spotlight: null, nextAction: null, tutorialAllow: { step: false, run: false, eggs: false } });
+  useGame.setState({ awaitingCheck: false, spotlight: null, nextAction: null, nextQueued: false, tutorialAllow: { step: false, run: false, eggs: false } });
 }
 
 /** Ask for one specific formula, wait for Check, and run the given rules. */

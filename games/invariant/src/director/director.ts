@@ -6,7 +6,7 @@ import { checkFormula, type CheckResult, type Formula } from '../checker/check';
 import type { Counterexample } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
 import { hop, RULES, running, showState, toBig, type CompiledLevel, type Rule } from '../levels/level';
-import { game, type CaptionTone } from '../store/game';
+import { game, queuedNextAction, type CaptionTone } from '../store/game';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, now, type FrogSim } from '../scene/frogSim';
 import { handState } from '../scene/handState';
@@ -430,12 +430,13 @@ export const director = {
       const replay = { label: 'Replay', onClick: () => void director.playCounterexample(cex, opts) };
       if (opts.reserveNext) {
         // The tutorial adds Next here: if it's already waiting (this is a replay),
-        // keep its live button; otherwise reserve the space so nothing shifts.
+        // keep its live button; otherwise show one that queues a click until then.
         const waiting = game().nextAction;
+        if (!waiting) game().patch({ nextQueued: false });
         game().setCaption({
           text,
           tone: 'fail',
-          action: waiting ?? { label: 'Next', onClick: () => {}, pending: true },
+          action: waiting ?? queuedNextAction(),
           secondary: replay,
         });
       } else caption(text, 'fail', replay);

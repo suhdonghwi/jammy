@@ -699,16 +699,6 @@ code {
   white-space: nowrap;
 }
 
-/* the main button keeps its space while it isn't available yet, then fades in */
-.caption-main {
-  transition:
-    opacity 0.3s ease,
-    transform 0.08s;
-}
-.caption-main.pending {
-  opacity: 0;
-  pointer-events: none;
-}
 .caption-pitfall {
   margin-top: 6px;
   font-size: 14px;
