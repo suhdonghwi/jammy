@@ -2,7 +2,8 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { COLORS } from './constants';
+import { COLORS, SLAB_H } from './constants';
+import { field } from './field';
 import { handState } from './handState';
 import { outlineMaterial } from './models';
 import { getBlobTexture } from './shaders';
@@ -76,8 +77,12 @@ export function Hand() {
     // soft shadow on the ground under the hand: larger and lighter when high
     const sh = shadow.current;
     if (sh) {
-      const height = Math.max(0.2, h.y);
-      sh.position.set(h.x, 0.01 - h.y + 0.0, h.z);
+      // straight below the hand, on whatever surface is there (floor or slab).
+      // The shadow is a child of the hand's group, so this is in its local
+      // frame: no x/z offset, and undo the group's height (bob included) and scale.
+      const surface = field.heightAt(Math.round(h.x), Math.round(-h.z)) * SLAB_H;
+      const height = Math.max(0.2, h.y - surface);
+      sh.position.set(0, (surface + 0.012 - (h.y + bob)) / s, 0);
       sh.scale.setScalar((0.9 + height * 0.25) / s);
       (sh.material as THREE.MeshBasicMaterial).opacity = Math.min(1, 1.6 / (1 + height)) * h.visible;
     }
