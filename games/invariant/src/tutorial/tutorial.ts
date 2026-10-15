@@ -5,6 +5,7 @@ import { director, events } from '../director/director';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogSim';
 import { levels } from '../levels/defs';
+import { EXIT_MS } from '../ui/presence';
 import type { CheckResult } from '../checker/check';
 
 // The tutorial is a scripted story on the counter program.
@@ -450,7 +451,19 @@ const STEPS: Step[] = [
         'Your area passes all three rules:\n\n- **Init:** every egg starts on it.\n- **Preservation:** no hop leaves it.\n- **Exit:** every frog that stops on it is on a goal.\n\nThat area is a **loop invariant**, and you just proved the loop correct for every `n`.',
         { label: 'Finish' },
       );
+      // the three rules, as a card; the first level opens once it is closed
+      // (after its exit animation), not underneath it
       useGame.setState({ showRules: true });
+      await new Promise<void>((resolve) => {
+        const off = useGame.subscribe((st) => {
+          if (!st.showRules) {
+            off();
+            resolve();
+          }
+        });
+      });
+      await director.sleep(EXIT_MS + 60);
+      guard(gen);
       const { openLevel } = await import('../director/play');
       guard(gen);
       openLevel(levels[0]);
