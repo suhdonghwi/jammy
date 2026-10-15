@@ -33,6 +33,7 @@ export function FrogTags() {
 
 function FrogTag({ frog, level }: { frog: FrogSim; level: CompiledLevel }) {
   const group = useRef<THREE.Group>(null);
+  const box = useRef<HTMLDivElement>(null);
   // the values shown change when the frog lands, not when it takes off
   const [shown, setShown] = useState<State>(frog.state);
   useFrame(() => {
@@ -40,11 +41,16 @@ function FrogTag({ frog, level }: { frog: FrogSim; level: CompiledLevel }) {
     const p = frog.drawn;
     if (g && p) g.position.set(p.x, p.ground + 0.92, p.z);
     if (!frog.hop && frog.state !== shown) setShown(frog.state);
+    // step aside for a callout or failure tag on the same tile (they sit in the same spot)
+    const { callouts, failMark } = useGame.getState();
+    const onTile = (x: number, y: number) => !frog.hop && x === frog.x && y === frog.y;
+    const covered = callouts.some((c) => onTile(c.x, c.y)) || (!!failMark && onTile(failMark.x, failMark.y));
+    box.current?.classList.toggle('covered', covered);
   });
   return (
     <group ref={group}>
       <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="frog-tag">
+        <div ref={box} className="frog-tag">
           {level.names
             .filter((n) => n in shown)
             .map((n, i) => (

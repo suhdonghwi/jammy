@@ -1088,6 +1088,13 @@ code {
   white-space: nowrap;
   box-shadow: var(--shadow);
   animation: fade 0.3s ease-out;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+.frog-tag.covered {
+  opacity: 0;
+  transform: translateY(4px) scale(0.9);
 }
 .frog-tag-sep {
   margin-right: 0.6ch;
