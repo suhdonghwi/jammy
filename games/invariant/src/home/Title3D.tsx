@@ -22,7 +22,9 @@ const PHASE2 = 1.4;
 /** The frog, relative to the letters. */
 const FROG_SCALE = 1.12;
 
-const letterOpts = { size: SIZE, depth: SIZE * 0.42, letterSpacing: SIZE * 0.02 };
+/** Room between letters: their bevel and outline make them a little wider than the glyphs, and they tilt in the wave. */
+const SPACING = 0.075;
+const letterOpts = { size: SIZE, depth: SIZE * 0.42, letterSpacing: SIZE * SPACING };
 
 /**
  * A word's ink extents relative to its centre (as Word lays it out), and where
@@ -128,9 +130,9 @@ function TitleScene({ font }: { font: opentype.Font }) {
   const frogHeight = 0.53 * FROG_SCALE;
   return (
     <group>
-      <Word font={font} text={LINE1} size={SIZE} position={[L.x1, LINE_GAP, 0]} face={COLORS.slabTop} side={COLORS.slabSide} wave={WAVE} outline={0.02} />
+      <Word font={font} text={LINE1} size={SIZE} position={[L.x1, LINE_GAP, 0]} face={COLORS.slabTop} side={COLORS.slabSide} wave={WAVE} outline={0.02} spacing={SPACING} />
       {/* a deeper green than the frog itself, so the frog peeking over it stands out */}
-      <Word font={font} text={LINE2} size={SIZE} position={[L.x2, 0, 0]} face="#46b83e" side="#2f8a29" wave={WAVE} phase={PHASE2} outline={0.02} />
+      <Word font={font} text={LINE2} size={SIZE} position={[L.x2, 0, 0]} face="#46b83e" side="#2f8a29" wave={WAVE} phase={PHASE2} outline={0.02} spacing={SPACING} />
       <PeekingFrog x={L.o.x} y={L.o.top - frogHeight * 0.6} letterIndex={L.o.index} />
     </group>
   );

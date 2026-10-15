@@ -65,11 +65,13 @@ export interface WordProps {
   wave?: number;
   phase?: number;
   depth?: number;
+  /** Extra space between letters, as a fraction of the size. */
+  spacing?: number;
 }
 
 /** An extruded word with a gentle wave running through its letters. */
-export function Word({ font, text, size, position, face, side, emissive = 0, outline = 0.028, outlineColor, wave = 0.12, phase = 0, depth = 0.42 }: WordProps) {
-  const letters = useMemo(() => letterGeometries(font, text, { size, depth: size * depth, letterSpacing: size * 0.02 }), [font, text, size, depth]);
+export function Word({ font, text, size, position, face, side, emissive = 0, outline = 0.028, outlineColor, wave = 0.12, phase = 0, depth = 0.42, spacing = 0.02 }: WordProps) {
+  const letters = useMemo(() => letterGeometries(font, text, { size, depth: size * depth, letterSpacing: size * spacing }), [font, text, size, depth, spacing]);
   const mats = useMemo(
     () => [
       new THREE.MeshStandardMaterial({ color: face, roughness: 0.45, emissive: face, emissiveIntensity: emissive }),
