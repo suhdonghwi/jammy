@@ -7,7 +7,11 @@ An interactive, visual website that teaches programmers what loop invariants are
 - A skeptical **hand** checks three rules — Init, Preservation, Exit — and places a frog that breaks your area when one fails.
 - Inputs that never change (like `n`) become **stacked ponds**, one per value.
 
-See [docs/design.md](docs/design.md) for the full design.
+Docs:
+
+- [docs/design.md](docs/design.md) — what the game teaches and the rules of its world
+- [docs/experience.md](docs/experience.md) — how the interface should look, move and respond
+- [docs/architecture.md](docs/architecture.md) — how the code is organised, and the rules that keep it working
 
 ## Running
 
@@ -28,31 +32,3 @@ the same headers. `pnpm install` copies Z3's browser build into `public/z3/`.
 | `pnpm test` | Unit tests (parser, types, integer semantics, box search) |
 | `pnpm validate` | Proves every level's solutions with Z3, checks every pitfall fails the intended rule, and checks real frogs terminate |
 | `pnpm build` | Typecheck + production build |
-
-## Layout
-
-```
-src/
-  main.tsx, App.tsx   entry point and the page's top-level layout
-  lang/        parser, type checker, AST, interpreter, symbolic body execution
-  checker/     box search (nice counterexamples) + Z3 (proofs), verdicts
-  levels/      the level format (level.ts) and every level (catalog.ts)
-  game/        the zustand store, and what the app's buttons do (actions.ts)
-  director/    scripted sequences: the hand, Step/Run, check playback, the pond cinematic
-  tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
-  scene/       the 3D world (react-three-fiber)
-    floor/       the infinite floor, drawn per pixel from the level's formulas
-    area/        the learner's slabs, eggs and goal columns
-    frogs/       frog state, motion, rendering, hatching
-    hand/        the skeptical hand
-    labels/      tags over tiles and frogs (callouts, failures, frog values)
-    level/       a level's scene, the pond elevator, hover preview, cinematic
-    home/        the home screen's scene
-    shaders/     shared GLSL and formulas → GLSL
-  ui/          the DOM over the scene, styled with Tailwind classes (shared ones in classes.ts)
-    hud/         level screen: top bar, code panel, caption, formula box, controls
-    home/        title (3D lettering), home copy, level list
-    rules/       the rules card
-  styles.css   Tailwind setup: design tokens, keyframes, the page, the tutorial spotlight
-scripts/       validate-levels.ts, copy-z3.mjs
-```

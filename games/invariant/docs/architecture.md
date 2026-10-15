@@ -1,0 +1,131 @@
+# Invariant Frog — Architecture
+
+How the code is organised, and the rules that keep it working. For what the
+game is, see [design.md](design.md); for how it should feel, see
+[experience.md](experience.md).
+
+Stack: Vite, React, TypeScript, react-three-fiber (three.js) with drei,
+zustand, GSAP, CodeMirror 6, Tailwind CSS v4, z3-solver (WebAssembly).
+
+## Layout
+
+```
+src/
+  main.tsx, App.tsx   entry point and the page's top-level layout
+  lang/        parser, type checker, AST, interpreter, symbolic body execution
+  checker/     box search (nice counterexamples) + Z3 (proofs), verdicts
+  levels/      the level format (level.ts) and every level (catalog.ts)
+  game/        the zustand store, and what the app's buttons do (actions.ts)
+  director/    scripted sequences: the hand, Step/Run, check playback, the pond cinematic
+  tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
+  scene/       the 3D world
+    floor/       the infinite floor, drawn per pixel from the level's formulas
+    area/        the learner's slabs, eggs and goal columns
+    frogs/       frog state, motion, rendering, hatching
+    hand/        the skeptical hand
+    labels/      tags over tiles and frogs (callouts, failures, frog values)
+    level/       a level's scene, the pond elevator, hover preview, cinematic
+    home/        the home screen's scene
+    shaders/     shared GLSL, and formulas → GLSL
+  ui/          the DOM over the scene
+    hud/         level screen: top bar, code panel, caption, formula box, controls
+    home/        title (3D lettering), home copy, level list
+    rules/       the rules card
+  styles.css   Tailwind setup: design tokens, keyframes, the page, the spotlight
+scripts/       validate-levels.ts, copy-z3.mjs
+tests/         unit tests (language, box search)
+```
+
+Dependencies point downward: `lang` knows nothing of levels; `levels` and
+`checker` know nothing of the UI; `scene` and `ui` render state; `director`,
+`tutorial` and `game/actions` drive it.
+
+## One language, three backends
+
+A level's program and the learner's formula are parsed once into one AST, which
+feeds:
+
+- an **exact interpreter** (BigInt) for frog hops, eggs and the box search;
+- **fast float functions** for building thousands of tiles per frame;
+- **Z3** for proofs;
+- **GLSL**, compiled into the floor shader (32-bit ints: visual only).
+
+Change semantics (operators, division, types) in `lang/` and make every backend
+agree. `pnpm validate` and the tests are the safety net.
+
+## State
+
+- **The store** (`game/store.ts`, zustand) holds what the UI and the sequences
+  share: mode, level, formula, verdicts, caption, reveal flags, tutorial state.
+  Components read it with selectors; other code reads `useGame.getState()` and
+  writes `useGame.setState()`. Store actions exist only where there is logic
+  (opening a level, compiling a formula).
+- **Per-frame scene data lives outside the store**, in plain module objects read
+  in `useFrame`: the frogs (`frogWorld`), slab heights (`field`), the hand's
+  pose (`handState`), tile occupancy, goal ripples, the hovered tile. Never put
+  per-frame data in zustand.
+- **Slab height has one source**: `field`. Slabs animate on the GPU from
+  `(from, to, t0)`, and `field.heightAt` gives the same height on the CPU, so
+  anything standing on the floor (frogs, eggs, tags, the hand's shadow) uses it.
+
+## Time
+
+- **Everything in the scene runs on scene time** (`scene/sceneTime.ts`):
+  `sceneNow()` for timestamps and shader uniforms, `after()` / `sleep()` for
+  waits. Scene time stops while the page is hidden, so the scene pauses instead
+  of jumping ahead. Don't use `performance.now()` or `setTimeout` for anything
+  that animates in the scene.
+- **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`).
+
+## Sequences
+
+- Anything scripted — the hand's demonstrations, Run, frog rain, the
+  cinematic — is a `director/` function. Each starts with `begin()`, which
+  cancels whatever was playing; after every `await` it checks `tok.alive` and
+  stops if it was superseded. `busy` locks the learner's input while one plays.
+- **Tutorial steps declare the scene they start from** (reveal flags, frogs,
+  formula, camera), so Back and skip-ahead can rebuild any step instantly. A
+  step runs under a generation number and calls `guard(gen)` after every
+  `await`; stopping or rewinding the tutorial aborts the old generation.
+- The tutorial reacts to the learner through events (`stepped`, `runDone`) and
+  through Check; it never polls.
+
+## Rendering
+
+- The floor is **one shader plane**: the level's precondition, guard and
+  postcondition are evaluated per pixel, so the plane is truly infinite.
+- Slabs, eggs, goal columns, frogs and hatching shells are **instanced**; only
+  the tiles near the camera are built, in a window that moves in steps.
+- Shadows are soft blobs, not shadow maps. Models are procedural (no assets
+  except the bundled fonts).
+
+## Styling
+
+- Components style themselves with **Tailwind classes**. `src/styles.css` holds
+  only what is clearer as CSS: the design tokens (`@theme`), keyframes, the page
+  base, and the tutorial's spotlight ring.
+- Class lists used in many places live in `ui/classes.ts`: cards, card labels,
+  and `button(variant, size)`. Variants are complete and never override each
+  other — don't append utilities that conflict with a variant's.
+- Use the theme's tokens (colours, `text-md`, shadows, animations) and
+  Tailwind's scales before arbitrary values.
+
+## The solver
+
+Z3 runs as WebAssembly with threads, so the page must be **cross-origin
+isolated**: every host must send `Cross-Origin-Opener-Policy: same-origin` and
+`Cross-Origin-Embedder-Policy: require-corp`. Its browser build is copied into
+`public/z3/` on install, loaded lazily, and warmed up shortly after start.
+
+## Conventions
+
+- Components are `PascalCase.tsx`, other modules `camelCase.ts`; one focused
+  concern per file — split a file when it grows several.
+- Each module opens with a short comment saying what it is for; comments say
+  *why*, not what.
+- Imports: packages first, then local modules, each alphabetical by path.
+- Remove dead code rather than leaving it behind.
+- Before committing: `pnpm typecheck`, `pnpm test`, `pnpm validate` (when
+  levels, the language or the checker changed), `pnpm build`.
+- In development, `window.__game`, `__open(id)`, `__check()`, `__frogs`,
+  `__hand` and `__rig` are available in the console.
