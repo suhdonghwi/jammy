@@ -132,7 +132,7 @@ export function CodePanel() {
       <pre className="m-0 font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]">{nodes}</pre>
       {/* one fixed height for both texts, so selecting a frog doesn't grow the panel */}
       <div
-        className={`mt-2.5 flex h-7.25 items-center gap-1.5 border-t border-dashed border-shade/12 ${selected ? 'font-mono text-sm font-semibold text-pass' : 'text-xs text-faint'}`}
+        className={`mt-2.5 flex h-7.25 items-center gap-1.5 border-t border-dashed border-shade/12 pt-2 ${selected ? 'font-mono text-sm font-semibold text-pass' : 'text-xs text-faint'}`}
       >
         {selected ? (
           <>
