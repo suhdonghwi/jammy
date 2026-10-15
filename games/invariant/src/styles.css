@@ -691,6 +691,22 @@ code {
   gap: 6px;
   flex: none;
 }
+/* inline code (states, formulas) never breaks across lines */
+.caption-text code {
+  white-space: nowrap;
+}
+/* narrow screens: the text gets the full width, the buttons a row of their own */
+@media (max-width: 600px) {
+  .caption {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 13px 14px 12px 16px;
+  }
+  .caption-actions {
+    justify-content: flex-end;
+  }
+}
 /* the main button keeps its space while it isn't available yet, then fades in */
 .caption-main {
   transition:
