@@ -3,6 +3,7 @@ import { holds, step } from '../lang/eval';
 import type { CompiledLevel } from '../levels/level';
 import { useGame } from '../store/game';
 import { goalEvents } from './goalEvents';
+import { after, sceneNow } from './sceneTime';
 
 export type FrogKind = 'real' | 'test';
 
@@ -46,7 +47,8 @@ export interface FrogSim {
   touched?: boolean;
 }
 
-export const now = () => performance.now() / 1000;
+/** Scene time in seconds (paused while the page is hidden). */
+export const now = sceneNow;
 
 /** Facing toward tile (tx, ty) from (fx, fy); 0 faces the viewer. */
 export const yawToward = (fx: number, fy: number, tx: number, ty: number) => Math.atan2(tx - fx, -(ty - fy));
@@ -153,7 +155,7 @@ class FrogWorld {
     f.hop = { fx: f.x, fy: f.y, tx, ty, t0: now(), dur };
     const batch = quiet ? null : joinHopBatch(dur);
     return new Promise((res) =>
-      setTimeout(() => {
+      after(dur * 1000, () => {
         f.x = tx;
         f.y = ty;
         f.hop = undefined;
@@ -165,7 +167,7 @@ class FrogWorld {
           f.cheerT0 = now();
         }
         res();
-      }, dur * 1000),
+      }),
     );
   }
 }

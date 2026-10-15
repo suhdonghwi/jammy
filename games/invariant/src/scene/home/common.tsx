@@ -5,6 +5,7 @@ import type opentype from 'opentype.js';
 import { field } from '../field';
 import { outlineMaterial } from '../models';
 import { letterGeometries, loadTitleFont } from '../text3d';
+import { sceneNow } from '../sceneTime';
 
 // Pieces shared by the home screen: the title font and lettering, and the slab area.
 
@@ -81,8 +82,8 @@ export function Word({ font, text, size, position, face, side, emissive = 0, out
   );
   const line = outline > 0 ? sharedOutline(outline, outlineColor) : null;
   const refs = useRef<(THREE.Group | null)[]>([]);
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
+  useFrame(() => {
+    const t = sceneNow();
     refs.current.forEach((g, i) => {
       if (!g) return;
       const w = Math.sin(t * 1.6 - i * 0.55 + phase);

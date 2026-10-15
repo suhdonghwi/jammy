@@ -16,6 +16,7 @@ import { HATCH_EMERGE, hatchFx } from '../scene/Hatch';
 import { SLAB_H } from '../scene/constants';
 import { areaNear, eggsNear, tileState } from '../scene/tiles';
 import { bridgeState } from '../scene/Bridge';
+import { after, sceneSleep } from '../scene/sceneTime';
 
 // ---------------------------------------------------------------------------
 // Sequencing: every sequence gets a token; starting a new one cancels the old.
@@ -35,7 +36,7 @@ function begin(): Token {
   };
 }
 
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const sleep = sceneSleep;
 
 function tween(target: object, vars: gsap.TweenVars): Promise<void> {
   return new Promise((resolve) => {
@@ -312,7 +313,7 @@ export const director = {
     if (activeReal().length === 0) {
       frogWorld.clear('real');
       const eggs = eggStatesNear(140, Math.max(8, Math.min(22, cameraRig.distance() * 0.9)));
-      eggs.forEach((s, i) => setTimeout(() => tok.alive && hatch(s), i * 6));
+      eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatch(s)));
       await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
     }
     let beats = 0;
@@ -516,11 +517,11 @@ export const director = {
       void tween(handState, { x: tx + 9, z: -ty - 2, duration: 1.8, ease: 'sine.inOut' });
       const frogs: FrogSim[] = [];
       pick.forEach((s, i) => {
-        setTimeout(() => {
+        after((i / pick.length) * 1600 + Math.random() * 120, () => {
           if (!tok.alive) return;
           const f = frogWorld.add(L, 'test', s, { drop: { t0: now(), dur: 0.5 + Math.random() * 0.3, from: 5 + Math.random() * 2 } });
           frogs.push(f);
-        }, (i / pick.length) * 1600 + Math.random() * 120);
+        });
       });
       await sleep(2400);
       if (!tok.alive) return;

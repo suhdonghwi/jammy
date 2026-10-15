@@ -10,6 +10,7 @@ import { hover } from './hover';
 import { field } from './field';
 import { goalEvents } from './goalEvents';
 import { SLAB_H } from './constants';
+import { sceneMs } from './sceneTime';
 
 const vertex = /* glsl */ `
 varying vec3 vWorld;
@@ -257,9 +258,11 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
 
   const target = useRef(opacity);
   target.current = opacity;
-  const born = useRef(performance.now());
+  const born = useRef(sceneMs());
 
-  useFrame((_, dt) => {
+  useFrame((_, frameDt) => {
+    // the first frame after the page was hidden carries the whole gap: don't let fades jump
+    const dt = Math.min(frameDt, 0.1);
     const m = mesh.current;
     if (!m) return;
     const t = cameraRig.target();
@@ -281,7 +284,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     u.uShowStop.value = towards(u.uShowStop.value, shows.current.stop);
     u.uShowGoal.value = towards(u.uShowGoal.value, shows.current.goal);
     u.uShowAxes.value = towards(u.uShowAxes.value, shows.current.axes);
-    if ((performance.now() - born.current) / 1000 >= fadeDelay) {
+    if ((sceneMs() - born.current) / 1000 >= fadeDelay) {
       const k = 1 - Math.exp(-dt * fadeSpeed);
       u.uOpacity.value += (target.current - u.uOpacity.value) * k;
       if (Math.abs(target.current - u.uOpacity.value) < 0.002) u.uOpacity.value = target.current;

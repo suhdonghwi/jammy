@@ -8,6 +8,7 @@ import { field } from './field';
 import { useHover } from './hover';
 import { frogGeometry, frogMaterial } from './models';
 import { tileState } from './tiles';
+import { sceneNow } from './sceneTime';
 
 /** Where would a frog on the hovered tile hop? A dashed arc and a ghost frog. */
 export function HoverPreview() {
@@ -31,11 +32,11 @@ export function HoverPreview() {
     return { from: tile, to: [n[level.view.x], n[level.view.y]] as [number, number] };
   }, [tile, level, pond]);
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     const g = ghost.current;
     if (!g || !hop) return;
     const h = field.heightAt(hop.to[0], hop.to[1]) * SLAB_H;
-    g.position.set(hop.to[0], h + 0.02 + Math.abs(Math.sin(clock.elapsedTime * 3)) * 0.05, -hop.to[1]);
+    g.position.set(hop.to[0], h + 0.02 + Math.abs(Math.sin(sceneNow() * 3)) * 0.05, -hop.to[1]);
     g.rotation.y = Math.atan2(hop.to[0] - hop.from[0], -(hop.to[1] - hop.from[1]));
   });
 

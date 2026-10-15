@@ -6,6 +6,7 @@ import { COLORS } from '../scene/constants';
 import { frogGeometry, frogMaterial, outlineMaterial } from '../scene/models';
 import { letterGeometries } from '../scene/text3d';
 import { useTitleFont, Word } from '../scene/home/common';
+import { sceneNow } from '../scene/sceneTime';
 
 // The home screen's title as 3D lettering, in its own small transparent canvas
 // so the page layout places it (left-aligned, above the copy) at any size.
@@ -84,8 +85,8 @@ function PeekingFrog({ x, y, letterIndex }: { x: number; y: number; letterIndex:
     line.frustumCulled = false;
     return { body, line };
   }, []);
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
+  useFrame(() => {
+    const t = sceneNow();
     // the same wave as Word gives this letter
     const ride = Math.max(0, Math.sin(t * 1.6 - letterIndex * 0.55 + PHASE2)) * WAVE;
     const breath = 0.02 * Math.sin(t * 2.4);

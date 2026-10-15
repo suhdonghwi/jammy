@@ -16,6 +16,7 @@ import { BridgeCinematic } from './Bridge';
 import { director } from '../director/director';
 import { useHover } from './hover';
 import { Callouts, FailMarker } from './FailMarker';
+import { after } from './sceneTime';
 
 function Lights() {
   return (
@@ -97,8 +98,7 @@ function useElevator() {
       await c?.moveTo(t.x, layerY, t.z, true);
       useGame.setState({ elevating: false });
     })();
-    const timer = setTimeout(() => setLeaving((l) => l.filter((q) => q !== p.pond)), 1200);
-    return () => clearTimeout(timer);
+    return after(1200, () => setLeaving((l) => l.filter((q) => q !== p.pond)));
   }, [level, pond, layerY, hasPonds]);
 
   return { layerY, leaving };

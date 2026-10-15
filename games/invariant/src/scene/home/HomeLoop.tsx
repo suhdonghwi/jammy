@@ -14,6 +14,7 @@ import { goalEvents } from '../goalEvents';
 import { eggGeometry, Slabs } from '../AreaLayer';
 import { useArea } from './common';
 import { DIAGONAL } from './decor';
+import { after } from '../sceneTime';
 
 // The home screen's scene, in the counter program's world: striped tiles below
 // a diagonal of goal pools (where the loop would stop), and above it a ring of
@@ -104,14 +105,14 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
     // On arrival each frog starts as an egg on its tile: the egg pops up,
     // then (one after another) wobbles, cracks and the frog climbs out.
     const t0 = now();
-    const timers: number[] = [];
+    const timers: (() => void)[] = [];
     eggs.current = [];
     const frogs = pos.map((k, j) => {
       const [x, y] = path[k];
       const appear = t0 + EGG_IN + j * 0.1;
       const hatch = t0 + EGG_IN + EGG_HOLD + j * EGG_STAGGER;
       eggs.current.push({ x, y, appear, hatch });
-      timers.push(window.setTimeout(() => hatchFx.push({ x, y, dx: 0, dy: 0, s: 1 }), (hatch - t0) * 1000));
+      timers.push(after((hatch - t0) * 1000, () => hatchFx.push({ x, y, dx: 0, dy: 0, s: 1 })));
       const f = frogWorld.add(level, 'real', { x: BigInt(x), y: BigInt(y) }, { hatchT0: hatch + HATCH_EMERGE });
       const [nx, ny] = path[(k + 1) % path.length];
       f.face = f.yaw = yawToward(x, y, nx, ny);
@@ -119,7 +120,10 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
     });
     // everyone starts hopping together, on the same beat, once the last frog is out
     const lastOut = Math.max(...frogs.map((f) => f.hatchT0 ?? t0)) + 0.6;
-    const timer = setInterval(() => {
+    const BEAT = 950;
+    // a beat in scene time, so a hidden page doesn't pile up hops
+    const beat = () => {
+      timers.push(after(BEAT, beat));
       if (now() < lastOut) return;
       frogs.forEach((f, j) => {
         pos[j] = (pos[j] + 1) % path.length;
@@ -130,11 +134,11 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
           f.face = yawToward(x, y, nx, ny);
         });
       });
-    }, 950);
+    };
+    timers.push(after(BEAT, beat));
 
     return () => {
-      clearInterval(timer);
-      timers.forEach((t) => window.clearTimeout(t));
+      timers.forEach((cancel) => cancel());
       hatchFx.clear();
       frogWorld.clear();
       goalEvents.clear();
@@ -165,9 +169,9 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
 
   // Decide where the glide starts before the first frame is drawn, and on a
   // fresh page load put the camera there right away (no default-camera frame).
-  const { camera, size, clock } = useThree();
+  const { camera, size } = useThree();
   useLayoutEffect(() => {
-    const t = clock.elapsedTime;
+    const t = now();
     pose(t, size.width / size.height);
     const c = cameraRig.controls;
     if (firstArrival) {
@@ -187,10 +191,10 @@ export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useFrame(({ clock, size, camera }) => {
+  useFrame(({ size, camera }) => {
     if (mode !== 'menu' || !intro.current) return;
     const c = cameraRig.controls;
-    const t = clock.elapsedTime;
+    const t = now();
     pose(t, size.width / size.height);
     const u = Math.min(1, (t - intro.current.t0) / INTRO_SECONDS);
     // ease in and out, so the glide neither jerks off nor stops dead

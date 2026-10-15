@@ -7,6 +7,7 @@ import { field } from './field';
 import { handState } from './handState';
 import { outlineMaterial } from './models';
 import { getBlobTexture } from './shaders';
+import { sceneNow } from './sceneTime';
 
 // A puffy cartoon glove — the skeptic. Palm faces down, fingers point along -z.
 // Every part has an inverted-hull outline so it reads clearly on the white world.
@@ -47,11 +48,11 @@ export function Hand() {
     return { mat, cuffMat, outline, palm, seg, wrist, cuff, shadowMat };
   }, []);
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     const g = root.current;
     const h = handState;
     if (!g || !inner.current) return;
-    const t = clock.elapsedTime;
+    const t = sceneNow();
     g.visible = h.visible > 0.01;
     const s = (0.25 + 0.75 * h.visible) * 0.95;
     g.scale.setScalar(s);

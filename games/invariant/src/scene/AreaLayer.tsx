@@ -15,6 +15,7 @@ import { eggsNear, tileState } from './tiles';
 import { occupancy, slotFor, type Slot } from './occupancy';
 import { goalEvents } from './goalEvents';
 import { GoalColumns } from './GoalColumns';
+import { after } from './sceneTime';
 
 const HEIGHT_GLSL = /* glsl */ `
 attribute vec2 aTile;
@@ -303,8 +304,7 @@ export function AreaLayer({ level, pond, inv, dim, showStop, showGoal, showEggs,
     }
     field.update(tiles, animate);
     setVersion((v) => v + 1);
-    const timer = setTimeout(() => field.prune() && setVersion((v) => v + 1), RISE_DUR * 1000 + 60);
-    return () => clearTimeout(timer);
+    return after(RISE_DUR * 1000 + 60, () => field.prune() && setVersion((v) => v + 1));
   }, [level, pond, inv, win, showArea]);
 
   return (
@@ -386,7 +386,9 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
       }),
     [],
   );
-  useFrame((_, dt) => {
+  useFrame((_, frameDt) => {
+    // the first frame after the page was hidden carries the whole gap: don't let fades jump
+    const dt = Math.min(frameDt, 0.1);
     const t = clock.now();
     material.uniforms.uTime.value = t;
     shadowMat.uniforms.uTime.value = t;
