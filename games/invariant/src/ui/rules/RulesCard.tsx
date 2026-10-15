@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { useGame } from '../../game/store';
+import { button } from '../classes';
 import { usePresence } from '../presence';
 import { ArtExit, ArtInit, ArtPres } from './RuleArt';
 
@@ -10,16 +11,22 @@ export function RulesCard() {
   if (!mounted) return null;
   const close = () => useGame.setState({ showRules: false });
   return (
-    <div className={`modal-backdrop ${leaving ? 'leaving' : ''}`} onClick={close}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>The three rules</h2>
-        <p className="modal-sub">If your area passes all three, every frog — for every input — stops on a goal.</p>
-        <div className="rules">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-horizon/55 p-4 backdrop-blur-xs ${leaving ? 'pointer-events-none animate-fade-out' : 'animate-[fade_0.15s]'}`}
+      onClick={close}
+    >
+      <div
+        className={`max-h-full w-full max-w-185 overflow-y-auto rounded-3xl bg-white px-7.5 pt-7 pb-6 text-center shadow-float ${leaving ? 'animate-pop-out' : 'animate-[pop_0.18s_ease-out]'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="mb-1.5 font-display text-2xl font-semibold">The three rules</h2>
+        <p className="my-4 leading-[1.55] text-muted">If your area passes all three, every frog — for every input — stops on a goal.</p>
+        <div className="my-4.5 grid grid-cols-3 gap-3 max-sm:grid-cols-1">
           <Rule n={1} name="Init" text="Every egg sits on your area." art={<ArtInit />} />
           <Rule n={2} name="Preservation" text="A frog on your area that hops lands on your area." art={<ArtPres />} />
           <Rule n={3} name="Exit" text="A frog that stops on your area is on a goal." art={<ArtExit />} />
         </div>
-        <button className="btn toy primary icon-btn" onClick={close}>
+        <button className={button('primary')} onClick={close}>
           <Check size={17} strokeWidth={2.6} /> Got it
         </button>
       </div>
@@ -29,12 +36,12 @@ export function RulesCard() {
 
 function Rule({ n, name, text, art }: { n: number; name: string; text: string; art: React.ReactNode }) {
   return (
-    <div className="rule">
-      <div className="rule-art">{art}</div>
-      <div className="rule-name">
-        <span className="rule-n">{n}</span> {name}
+    <div className="rounded-2xl bg-sky p-3">
+      <div className="flex justify-center">{art}</div>
+      <div className="mt-1 font-display text-lg font-semibold">
+        <span className="mr-1 inline-grid size-5.5 place-items-center rounded-md bg-brand text-sm text-white">{n}</span> {name}
       </div>
-      <div className="rule-text">{text}</div>
+      <div className="mt-1 text-sm leading-snug text-muted">{text}</div>
     </div>
   );
 }

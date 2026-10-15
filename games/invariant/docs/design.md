@@ -456,11 +456,11 @@ src/
     level/       a level's scene, the pond elevator, hover preview, cinematic
     home/        the home screen's scene
     shaders/     shared GLSL and formulas → GLSL
-  ui/          the DOM over the scene
+  ui/          the DOM over the scene, styled with Tailwind classes (shared ones in classes.ts)
     hud/         level screen: top bar, code panel, caption, formula box, controls
     home/        title (3D lettering), home copy, level list
     rules/       the rules card
-  styles/      CSS, one file per part of the UI (index.css imports them in order)
+  styles.css   Tailwind setup: design tokens, keyframes, the page, the tutorial spotlight
 scripts/       validate-levels.ts, copy-z3.mjs
 ```
 

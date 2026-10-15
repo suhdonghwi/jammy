@@ -1,6 +1,7 @@
 import { Pause, Play, RotateCcw, StepForward, Wand2 } from 'lucide-react';
 import { pauseRun, resetFrogs, runFrogs, stepFrogs } from '../../director/frogs';
 import { useGame } from '../../game/store';
+import { button } from '../classes';
 
 // Run / Pause, Step and Reset (and, in the tutorial, "Show me").
 
@@ -15,15 +16,15 @@ export function RunControls() {
   const allow = useGame((s) => s.tutorialAllow);
   const tut = mode === 'tutorial';
   return (
-    <div className="run-controls">
+    <div className="flex items-center gap-1.5">
       {reveal.run &&
         (runningNow ? (
-          <button className="btn icon-btn" onClick={pauseRun}>
+          <button className={button()} onClick={pauseRun}>
             <Pause size={16} strokeWidth={2.4} /> Pause
           </button>
         ) : (
           <button
-            className={`btn icon-btn ${spot === 'run' ? 'spotlight' : ''}`}
+            className={`${button()} ${spot === 'run' ? 'spotlight' : ''}`}
             disabled={busy || stepping || (tut && !allow.run)}
             onClick={() => void runFrogs()}
           >
@@ -32,7 +33,7 @@ export function RunControls() {
         ))}
       {reveal.step && (
         <button
-          className={`btn icon-btn ${spot === 'step' ? 'spotlight' : ''}`}
+          className={`${button()} ${spot === 'step' ? 'spotlight' : ''}`}
           disabled={busy || runningNow || stepping || (tut && !allow.step)}
           onClick={() => void stepFrogs()}
         >
@@ -40,13 +41,13 @@ export function RunControls() {
         </button>
       )}
       {reveal.run && !tut && (
-        <button className="btn ghost icon-btn" disabled={busy} title="Put every frog back in its egg (your area stays)" onClick={resetFrogs}>
+        <button className={button('glass')} disabled={busy} title="Put every frog back in its egg (your area stays)" onClick={resetFrogs}>
           <RotateCcw size={16} strokeWidth={2.2} /> Reset
         </button>
       )}
-      <span className="spacer" />
+      <span className="flex-1" />
       {tut && suggestion && reveal.formula && (
-        <button className="btn ghost icon-btn" onClick={() => useGame.getState().setFormula(suggestion)}>
+        <button className={button('glass')} onClick={() => useGame.getState().setFormula(suggestion)}>
           <Wand2 size={16} strokeWidth={2.2} /> Show me
         </button>
       )}

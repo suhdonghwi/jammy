@@ -33,6 +33,15 @@ function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
   return p ? v.set(p.x, p.y + FROG_TOP * p.scale + GAP, p.z) : null;
 }
 
+/** A dark pill with a pointer underneath (both in --tag-bg); a covered tag fades and dips away. */
+const TAG =
+  'relative origin-bottom rounded-full bg-(--tag-bg) px-3.25 pt-1 pb-1.25 font-display text-md font-semibold whitespace-nowrap text-white tabular-nums transition-[opacity,translate,scale] duration-250 data-covered:translate-y-1 data-covered:scale-90 data-covered:opacity-0 after:absolute after:-bottom-1.25 after:left-1/2 after:-ml-1.5 after:border-6 after:border-b-0 after:border-transparent after:border-t-(--tag-bg)';
+const TONE: Record<TagTone, string> = {
+  info: '[--tag-bg:var(--color-tag)]',
+  good: '[--tag-bg:var(--color-tag-good)]',
+  fail: '[--tag-bg:var(--color-tag-fail)]',
+};
+
 export function SceneTag({
   anchor,
   tone = 'info',
@@ -60,13 +69,14 @@ export function SceneTag({
       const k = THREE.MathUtils.clamp(14 / camera.position.distanceTo(p), 0.7, 1);
       holder.current.style.transform = `translate(-50%, -100%) scale(${k.toFixed(3)})`;
     }
-    box.current?.classList.toggle('covered', !!hidden?.());
+    box.current?.toggleAttribute('data-covered', !!hidden?.());
   });
   return (
     <group ref={group}>
       <Html zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-        <div ref={holder} className="scene-tag-holder">
-          <div ref={box} className={`scene-tag ${tone} ${leaving ? 'leaving' : ''}`}>
+        {/* positioned (above) so the pointer's tip sits on the anchor */}
+        <div ref={holder} className="origin-bottom pb-1.5">
+          <div ref={box} className={`${TAG} ${TONE[tone]} ${leaving ? 'animate-tag-out' : 'animate-tag-in'}`}>
             {children}
           </div>
         </div>

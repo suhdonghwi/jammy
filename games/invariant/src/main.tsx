@@ -4,7 +4,7 @@ import { App } from './App';
 import '@fontsource-variable/nunito';
 import '@fontsource/fredoka/500.css';
 import '@fontsource/fredoka/600.css';
-import './styles/index.css';
+import './styles.css';
 import { cameraRig } from './scene/cameraRig';
 import { useGame } from './game/store';
 import { check, openLevel, openTutorial } from './game/actions';

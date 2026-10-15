@@ -19,8 +19,9 @@ export function App() {
   }, []);
 
   return (
-    <div className="app">
-      <div className="world">
+    <div className="fixed inset-0">
+      {/* the 3D world fades in on load rather than popping in */}
+      <div className="fixed inset-0 bg-linear-to-b from-sky via-horizon via-60% to-[#e3e8ef] [&_canvas]:animate-[fade_0.8s_ease-out_both]">
         <World />
       </div>
       {mode === 'menu' && <HomeOverlay />}

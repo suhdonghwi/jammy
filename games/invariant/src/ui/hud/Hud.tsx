@@ -14,17 +14,18 @@ export function Hud() {
   // during a cinematic only the top bar, caption and toasts stay
   const cinematic = useGame((s) => s.cinematic);
   return (
-    <div className="hud">
+    <div className="pointer-events-none fixed inset-0 flex flex-col gap-3 px-4 pt-3.5 pb-4 *:pointer-events-auto">
       <TopBar />
-      <div className="hud-middle">
+      <div className="pointer-events-none! relative flex min-h-0 flex-1 items-start gap-3 *:pointer-events-auto">
         {!cinematic && <CodePanel />}
-        <div className="hud-center">
+        {/* centred on the screen, not in the space left beside the side panels */}
+        <div className="pointer-events-none! absolute inset-x-0 top-0 flex flex-col items-center gap-2 *:pointer-events-none">
           {!cinematic && <HoverReadout />}
           <ElevatorToast />
         </div>
         {!cinematic && <PondGauge />}
       </div>
-      <div className="hud-bottom">
+      <div className="pointer-events-none! flex flex-col items-center gap-2 *:w-full *:max-w-200 *:pointer-events-auto">
         <CaptionBar />
         <RevealSlot open={reveal.formula}>
           <FormulaBox />

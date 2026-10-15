@@ -7,6 +7,7 @@ import { Check, LoaderCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { check } from '../../game/actions';
 import { useGame } from '../../game/store';
+import { button } from '../classes';
 
 // The area formula: a one-line CodeMirror editor with highlighting, the
 // tutorial's suggested formula as placeholder text, errors once typing pauses,
@@ -45,7 +46,7 @@ const errorField = StateField.define<DecorationSet>({
           const len = tr.state.doc.length;
           const from = Math.min(e.value.from, len);
           const to = Math.min(Math.max(e.value.to, from + 1), len);
-          deco = from < to ? Decoration.set([Decoration.mark({ class: 'cm-error-mark' }).range(from, to)]) : Decoration.none;
+          deco = from < to ? Decoration.set([Decoration.mark({ class: 'underline decoration-fail decoration-wavy underline-offset-4' }).range(from, to)]) : Decoration.none;
         }
       }
     }
@@ -178,24 +179,28 @@ export function FormulaBox() {
 
   const canCheck = !busy && !checking && (mode !== 'tutorial' || awaitingCheck);
   return (
-    <div className={`formula ${spot === 'formula' ? 'spotlight-wrap' : ''}`}>
+    <div className="animate-[rise_0.4s_ease-out]">
       <div
-        className={`formula-row ${settledError ? 'has-error' : ''} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'shake' : ''} ${locked ? 'locked' : ''}`}
+        className={`flex items-center gap-2.5 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card transition-colors duration-150 ${settledError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'animate-shake' : ''}`}
       >
-        <span className="formula-label">area</span>
-        <div className="formula-editor" ref={host} />
+        {/* a little slab, like the area's in the scene */}
+        <span className="flex items-center gap-1.75 font-display text-xs font-semibold tracking-[0.08em] text-brand uppercase before:size-3 before:rounded-sm before:bg-slab before:shadow-[0_2px_0_var(--color-slab-side)]">
+          area
+        </span>
+        {/* read-only (faded) while the tutorial isn't asking for a formula */}
+        <div className={`min-w-0 flex-1 ${locked ? 'cursor-default opacity-60' : ''}`} ref={host} />
         {/* inside the box: never covers the caption, never changes the layout */}
         {settledError && (
-          <span className="formula-error" title={settledError.message}>
+          <span className="max-w-[46%] flex-[0_1_auto] animate-fade truncate rounded-lg bg-[#fff1f0] px-2.5 py-1 text-xs text-[#b42318]" title={settledError.message}>
             {settledError.message}
           </span>
         )}
         <button
-          className={`btn primary icon-btn ${spot === 'check' ? 'spotlight' : ''}`}
+          className={`${button('check', 'none')} ${spot === 'check' ? 'spotlight spotlight-glow' : ''}`}
           disabled={!canCheck}
           onClick={() => void check()}
         >
-          {slow ? <LoaderCircle size={16} strokeWidth={2.6} className="spin" /> : <Check size={16} strokeWidth={2.8} />}
+          {slow ? <LoaderCircle size={16} strokeWidth={2.6} className="animate-spin" /> : <Check size={16} strokeWidth={2.8} />}
           Check
         </button>
       </div>

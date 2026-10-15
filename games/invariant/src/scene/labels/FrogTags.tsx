@@ -8,8 +8,8 @@ import { frogWorld, type FrogSim } from '../frogs/frogWorld';
 import { SceneTag } from './SceneTag';
 
 // A little tag over each real frog listing its variables. When a hop changes a
-// variable, the tag updates as the frog lands: the old value is struck out and
-// drifts away while the new one pops in, highlighted.
+// variable, the tag updates as the frog lands: the old value slips up and away
+// while the new one rises into place with a brief warm tint.
 
 const MAX_TAGS = 3;
 
@@ -68,13 +68,14 @@ function Value({ value }: { value: string }) {
   const [cur, setCur] = useState({ v: value, k: 0, old: null as string | null });
   if (cur.v !== value) setCur({ v: value, k: cur.k + 1, old: cur.v });
   return (
-    <span className="frog-tag-val">
+    // both share one cell, so the width holds
+    <span className="inline-grid justify-items-center overflow-hidden align-bottom *:[grid-area:1/1]">
       {cur.old !== null && (
-        <span key={`o${cur.k}`} className="old">
+        <span key={`o${cur.k}`} className="animate-[tag-old_0.28s_ease-in_forwards]">
           {cur.old}
         </span>
       )}
-      <span key={`n${cur.k}`} className={cur.old !== null ? 'new' : ''}>
+      <span key={`n${cur.k}`} className={cur.old !== null ? 'animate-[tag-new_0.7s_ease-out]' : ''}>
         {cur.v}
       </span>
     </span>

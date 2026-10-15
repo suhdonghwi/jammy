@@ -2,9 +2,24 @@ import { Fragment, useMemo } from 'react';
 import { useGame } from '../../game/store';
 import { BUILTINS, KEYWORDS, tokenize } from '../../lang/parser';
 import { showState, type CompiledLevel } from '../../levels/level';
+import { CARD, CARD_LABEL } from '../classes';
 
 // The program, with the loop lighting up as frogs hop, and the selected frog's
 // values shown underneath like a debugger.
+
+const TOKEN = {
+  keyword: 'font-semibold text-[#7c4ddb]',
+  name: 'text-[#1f63c4]',
+  num: 'text-[#c06a00]',
+  op: 'text-muted',
+};
+
+/** The loop condition's flash when frogs land: keep looping, stop, or some of each. */
+const LANDED = {
+  true: 'animate-[check-true_0.9s_ease-out]',
+  false: 'animate-[check-false_1.4s_ease-out_forwards]',
+  mixed: 'animate-[check-mixed_0.9s_ease-out]',
+};
 
 interface Beat {
   hopTick: number;
@@ -30,7 +45,7 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
     toks.forEach((t, i) => {
       if (t.span.from < from || t.span.to > to) return;
       if (t.span.from > p) out.push(<Fragment key={`${keyBase}g${i}`}>{src.slice(p, t.span.from)}</Fragment>);
-      const cls = t.kind === 'num' ? 'tok-num' : t.kind === 'ident' ? (KEYWORDS.has(t.text) || BUILTINS.has(t.text) ? 'tok-kw' : 'tok-var') : 'tok-op';
+      const cls = t.kind === 'num' ? TOKEN.num : t.kind === 'ident' ? (KEYWORDS.has(t.text) || BUILTINS.has(t.text) ? TOKEN.keyword : TOKEN.name) : TOKEN.op;
       out.push(
         <span key={`${keyBase}t${i}`} className={cls}>
           {t.text}
@@ -53,21 +68,22 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   const bodyFirst = stmts.length ? lineOf(stmts[0].span.from) : -1;
   const bodyLast = stmts.length ? lineOf(stmts[stmts.length - 1].span.to) : -2;
   return lines.map((l, i) => {
-    let cls = 'code-line';
+    let cls = '-mx-2 flex px-2';
     let key = `l${i}`;
     let style: React.CSSProperties | undefined;
     if (i === headerLine) {
-      cls += ` loop-header${beat.landTick > 0 ? ` check-${beat.landGuard}` : ''}`;
+      cls += ` rounded-md ${beat.landTick > 0 ? LANDED[beat.landGuard] : ''}`;
       key += `h${beat.landTick}`;
     } else if (i >= bodyFirst && i <= bodyLast) {
-      cls += ` loop-body${beat.hopTick > 0 ? ' running' : ''}${i === bodyFirst ? ' first' : ''}${i === bodyLast ? ' last' : ''}`;
+      cls += `${i === bodyFirst ? ' rounded-t-md' : ''}${i === bodyLast ? ' rounded-b-md' : ''}`;
       key += `b${beat.hopTick}`;
-      style = { animationDuration: `${Math.max(0.3, beat.hopDur + 0.15)}s` };
+      // as long as the hop itself
+      if (beat.hopTick > 0) style = { animation: `body-run ${Math.max(0.3, beat.hopDur + 0.15)}s ease-out` };
     }
     return (
       <div key={key} className={cls} style={style}>
-        <span className="code-ln">{i + 1}</span>
-        <span className="code-text">{piece(l.from, l.to, `l${i}`)}</span>
+        <span className="mr-3 w-[2ch] flex-none text-right text-[#b8bfcc] select-none">{i + 1}</span>
+        <span>{piece(l.from, l.to, `l${i}`)}</span>
       </div>
     );
   });
@@ -88,13 +104,16 @@ export function CodePanel() {
   const spot = useGame((s) => s.spotlight);
   if (!reveal.code) return null;
   return (
-    <div className={`card code-card ${spot === 'code' ? 'spotlight' : ''}`}>
-      <div className="card-label">Program</div>
-      <pre className="code">{nodes}</pre>
-      <div className={`debugger ${selected ? '' : 'empty'}`}>
+    <div className={`${CARD} max-w-85 animate-slide-in px-4 pt-3.25 pb-3 max-md:max-w-52 max-md:p-2.5 ${spot === 'code' ? 'spotlight' : ''}`}>
+      <div className={CARD_LABEL}>Program</div>
+      <pre className="m-0 font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]">{nodes}</pre>
+      <div
+        className={`mt-2.5 flex items-center gap-1.5 border-t border-dashed border-shade/12 pt-2.25 ${selected ? 'font-mono text-sm font-semibold text-pass' : 'text-xs text-faint'}`}
+      >
         {selected ? (
           <>
-            <span className="frog-dot" /> {showState(level, selected)}
+            {/* nudged onto the lowercase and operators rather than the taller digits */}
+            <span className="size-2.25 flex-none translate-y-[0.75px] rounded-full bg-frog" /> {showState(level, selected)}
           </>
         ) : (
           'Click a frog to see its values'

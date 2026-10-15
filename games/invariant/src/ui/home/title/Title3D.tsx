@@ -151,7 +151,8 @@ const TITLE_ASPECT = 1.89;
 export function Title3D() {
   const font = useTitleFont();
   return (
-    <div className="title3d" style={{ aspectRatio: TITLE_ASPECT }}>
+    // the title rises into place once its font is ready, instead of popping in
+    <div className="w-full max-w-125 narrow:mx-auto narrow:max-w-85 [&_canvas]:animate-[title-in_0.7s_ease-out_both]" style={{ aspectRatio: TITLE_ASPECT }}>
       {font && (
         <Canvas flat dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: 18, near: 0.1, far: 200 }}>
           <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
