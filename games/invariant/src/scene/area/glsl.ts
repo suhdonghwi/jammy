@@ -41,4 +41,3 @@ float appearNow() {
   return a <= 0.0 ? 0.0 : 1.0 + c3 * pow(a - 1.0, 3.0) + c1 * pow(a - 1.0, 2.0);
 }
 `;
-

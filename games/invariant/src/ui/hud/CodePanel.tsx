@@ -1,12 +1,10 @@
 import { Fragment, useMemo } from 'react';
 import { useGame } from '../../game/store';
-import { tokenize } from '../../lang/parser';
+import { BUILTINS, KEYWORDS, tokenize } from '../../lang/parser';
 import { showState, type CompiledLevel } from '../../levels/level';
 
 // The program, with the loop lighting up as frogs hop, and the selected frog's
 // values shown underneath like a debugger.
-
-const KW = new Set(['input', 'var', 'requires', 'ensures', 'while', 'if', 'else', 'true', 'false', 'abs', 'min', 'max']);
 
 interface Beat {
   hopTick: number;
@@ -32,7 +30,7 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
     toks.forEach((t, i) => {
       if (t.span.from < from || t.span.to > to) return;
       if (t.span.from > p) out.push(<Fragment key={`${keyBase}g${i}`}>{src.slice(p, t.span.from)}</Fragment>);
-      const cls = t.kind === 'num' ? 'tok-num' : t.kind === 'ident' ? (KW.has(t.text) ? 'tok-kw' : 'tok-var') : 'tok-op';
+      const cls = t.kind === 'num' ? 'tok-num' : t.kind === 'ident' ? (KEYWORDS.has(t.text) || BUILTINS.has(t.text) ? 'tok-kw' : 'tok-var') : 'tok-op';
       out.push(
         <span key={`${keyBase}t${i}`} className={cls}>
           {t.text}

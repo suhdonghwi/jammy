@@ -30,7 +30,6 @@ const angleDelta = (a: number, b: number) => {
   return d;
 };
 
-
 // Hop timeline (fractions of the hop). The frog crouches, pushes off over
 // [TAKEOFF − PUSH, TAKEOFF], flies a parabola until TOUCH, absorbs the landing
 // over [TOUCH, TOUCH + PUSH], and settles. Every channel is continuous in both

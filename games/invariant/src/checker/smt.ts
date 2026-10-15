@@ -129,4 +129,3 @@ export async function equivalent(ctx: Ctx, level: CompiledLevel, a: Expr, b: Exp
   const r = await solve(ctx, level.names, and(level.pondReq, differ), { timeout, bounds: [] });
   return r.kind === 'unsat';
 }
-

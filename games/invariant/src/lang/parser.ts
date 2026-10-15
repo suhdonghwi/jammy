@@ -21,8 +21,8 @@ const OPS = [
   '<', '>', '+', '-', '*', '/', '%', '!', '=', '(', ')', '{', '}', ',', ';',
 ];
 
-const KEYWORDS = new Set(['input', 'var', 'requires', 'ensures', 'while', 'if', 'else', 'true', 'false']);
-const BUILTINS: ReadonlySet<string> = new Set<BuiltinFn>(['abs', 'min', 'max']);
+export const KEYWORDS: ReadonlySet<string> = new Set(['input', 'var', 'requires', 'ensures', 'while', 'if', 'else', 'true', 'false']);
+export const BUILTINS: ReadonlySet<string> = new Set<BuiltinFn>(['abs', 'min', 'max']);
 
 export function tokenize(src: string): Token[] {
   const toks: Token[] = [];

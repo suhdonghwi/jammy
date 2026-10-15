@@ -195,5 +195,3 @@ export function Eggs({ level, pond, win, version }: { level: CompiledLevel; pond
     </>
   );
 }
-
-

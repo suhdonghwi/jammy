@@ -219,4 +219,3 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     </>
   );
 }
-

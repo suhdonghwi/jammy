@@ -149,4 +149,3 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     </mesh>
   );
 }
-
