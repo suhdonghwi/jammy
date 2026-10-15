@@ -7,12 +7,12 @@ export function HomeScene() {
   const draft = useHomeDraft((s) => s.draft);
   switch (draft) {
     case 'b':
-      return <LoopArea key="b" variant="stripes" />;
+      return <LoopArea key="b" variant="through" />;
     case 'c':
-      return <LoopArea key="c" variant="garden" />;
+      return <LoopArea key="c" variant="ring" />;
     case 'd':
-      return <LoopArea key="d" variant="plain" />;
+      return <LoopArea key="d" variant="diagonal" />;
     default:
-      return <LoopArea key="a" variant="pools" />;
+      return <LoopArea key="a" variant="edge" />;
   }
 }

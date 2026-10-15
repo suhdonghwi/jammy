@@ -4,10 +4,10 @@ import { create } from 'zustand';
 // scene. The choice is remembered per browser; ?home=<id> picks one directly.
 
 export const HOME_DRAFTS = [
-  { id: 'a', name: 'Pools & eggs', note: 'Frogs loop the area and splash through two goal pools on its corners; eggs rest inside.' },
-  { id: 'b', name: 'Stripes', note: 'Beside the area, a striped zone where the loop would stop, with goal pools on its edge.' },
-  { id: 'c', name: 'Garden', note: 'A pond in the middle of the area, frogs circling it; eggs waiting around the outside.' },
-  { id: 'd', name: 'Before', note: 'The previous draft: just the loop.' },
+  { id: 'a', name: 'Edge', note: 'The striped zone starts right at the edge of the area, with two goal pools on it.' },
+  { id: 'b', name: 'Through', note: "The area's last column lies in the striped zone; frogs splash through its pools every lap." },
+  { id: 'c', name: 'Ring', note: 'Frogs circle a ring of slabs around a small striped pond with two pools.' },
+  { id: 'd', name: 'Diagonal', note: "The counter's world: stripes below a diagonal of pools, the loop above it." },
 ] as const;
 
 export type HomeDraftId = (typeof HOME_DRAFTS)[number]['id'];

@@ -15,7 +15,7 @@ import { useTitleFont, Word } from '../scene/home/common';
 const SIZE = 1;
 const LINE1 = 'Invariant';
 const LINE2 = 'Frog';
-const LINE_GAP = 1.32;
+const LINE_GAP = 1.18;
 /** The wave through the letters (see Word): height, and the phase of "Frog". */
 const WAVE = 0.08;
 const PHASE2 = 1.4;
@@ -24,7 +24,10 @@ const FROG_SCALE = 1.12;
 
 const letterOpts = { size: SIZE, depth: SIZE * 0.42, letterSpacing: SIZE * 0.02 };
 
-/** Width of a word, and where its "o" is (letter index, centre x and top), relative to the word's centre. */
+/**
+ * A word's ink extents relative to its centre (as Word lays it out), and where
+ * its "o" is (letter index, centre x and top).
+ */
 function measure(font: opentype.Font, text: string) {
   const ls = letterGeometries(font, text, letterOpts);
   let min = Infinity;
@@ -38,20 +41,27 @@ function measure(font: opentype.Font, text: string) {
     if (o.index < 0 && text[i] === 'o') o = { index: i, x: l.x + (bb.min.x + bb.max.x) / 2, top: bb.max.y };
     l.geom.dispose();
   });
-  return { width: max - min, o };
+  return { min, max, o };
 }
 
+/**
+ * Both words are placed so their ink starts exactly at x = 0 (not at the
+ * glyphs' built-in side bearing), so the title's left edge lines up with the
+ * text below it.
+ */
 function layout(font: opentype.Font) {
   const m1 = measure(font, LINE1);
   const m2 = measure(font, LINE2);
+  const OUTLINE = 0.02;
   return {
-    w1: m1.width,
-    w2: m2.width,
-    o: m2.o,
-    left: -0.05,
-    right: Math.max(m1.width, m2.width) + 0.25,
-    bottom: -0.35,
-    top: LINE_GAP + 0.95,
+    /** Word centres, so each word's ink starts at x = 0. */
+    x1: -m1.min,
+    x2: -m2.min,
+    o: { ...m2.o, x: m2.o.x - m2.min },
+    left: -OUTLINE,
+    right: Math.max(m1.max - m1.min, m2.max - m2.min) + OUTLINE,
+    bottom: -0.32,
+    top: LINE_GAP + 0.9,
   };
 }
 
@@ -101,7 +111,7 @@ function TitleScene({ font }: { font: opentype.Font }) {
   // A gentle perspective lens straight in front of the title: the letters face
   // the viewer and their sides show just a little toward the edges.
   useFrame(() => {
-    const pad = 0.15;
+    const pad = 0.04;
     const W = L.right - L.left + pad * 2;
     const H = L.top - L.bottom + pad * 2;
     const cam = camera as THREE.PerspectiveCamera;
@@ -118,10 +128,10 @@ function TitleScene({ font }: { font: opentype.Font }) {
   const frogHeight = 0.53 * FROG_SCALE;
   return (
     <group>
-      <Word font={font} text={LINE1} size={SIZE} position={[L.w1 / 2, LINE_GAP, 0]} face={COLORS.slabTop} side={COLORS.slabSide} wave={WAVE} outline={0.02} />
+      <Word font={font} text={LINE1} size={SIZE} position={[L.x1, LINE_GAP, 0]} face={COLORS.slabTop} side={COLORS.slabSide} wave={WAVE} outline={0.02} />
       {/* a deeper green than the frog itself, so the frog peeking over it stands out */}
-      <Word font={font} text={LINE2} size={SIZE} position={[L.w2 / 2, 0, 0]} face="#46b83e" side="#2f8a29" wave={WAVE} phase={PHASE2} outline={0.02} />
-      <PeekingFrog x={L.w2 / 2 + L.o.x} y={L.o.top - frogHeight * 0.6} letterIndex={L.o.index} />
+      <Word font={font} text={LINE2} size={SIZE} position={[L.x2, 0, 0]} face="#46b83e" side="#2f8a29" wave={WAVE} phase={PHASE2} outline={0.02} />
+      <PeekingFrog x={L.o.x} y={L.o.top - frogHeight * 0.6} letterIndex={L.o.index} />
     </group>
   );
 }
@@ -132,7 +142,7 @@ export function Title3D() {
   const aspect = useMemo(() => {
     if (!font) return 2.2;
     const L = layout(font);
-    return (L.right - L.left + 0.3) / (L.top - L.bottom + 0.3);
+    return (L.right - L.left + 0.08) / (L.top - L.bottom + 0.08);
   }, [font]);
   return (
     <div className="title3d" style={{ aspectRatio: aspect }}>
