@@ -1,6 +1,6 @@
-import fredokaUrl from '@fontsource/fredoka/files/fredoka-latin-600-normal.woff?url';
 import * as THREE from 'three';
 import { cameraRig } from '../cameraRig';
+import type { CompiledLevel } from '../../levels/level';
 import { COLORS } from '../constants';
 
 // Shared GLSL snippets and textures for the custom tile / slab / egg shaders.
@@ -18,28 +18,139 @@ vec3 shadeLit(vec3 base, vec3 n) {
 }
 `;
 
-/** Draws a number in the near-left corner of a tile (local coords f in [-0.5, 0.5]). */
+/**
+ * The glyph atlas's characters, in order (see getDigitTexture): the digits and
+ * minus, the equals sign, and the lowercase letters that variable names use.
+ */
+const GLYPHS = '0123456789-=abcdefghijklmnopqrstuvwxyz';
+/** An atlas cell's width in tile units, with its glyph centred in it. */
+const CELL = 0.14;
+/** Each glyph's advance in tile units, measured in the font the atlas is drawn in (set when it is drawn). */
+const advance: number[] = [...GLYPHS].map(() => CELL * 0.8);
+/** The labels' size, relative to the atlas's full-size glyphs (a little smaller, so they stay quiet). */
+const LABEL_SIZE = 0.82;
+/** Bumped when the atlas is drawn, so the label layouts are measured again. */
+let atlasVersion = 0;
+
+/**
+ * The axes' labels in the near-left corner of a tile (local coords f in
+ * [-0.5, 0.5]): "i=3" along the row y = 0 and "n=3" up the column x = 0, with
+ * both on the corner tile, the second just above the first. Letters sit at
+ * their own widths, digits at the widest digit's; a label too long for the
+ * tile shrinks to fit. The names come from setAxisNames; without them (no
+ * level) a label is just its number.
+ */
 export const GLSL_DIGITS = /* glsl */ `
 uniform sampler2D uDigits;
-float numberMask(vec2 f, int v) {
+uniform ivec3 uNameX, uNameY;
+uniform int uNameXLen, uNameYLen;
+/** Where each glyph of "name=" is centred, and the whole prefix's width. */
+uniform vec4 uNameXMid, uNameYMid;
+uniform float uNameXW, uNameYW;
+uniform float uDigitW;
+int nameGlyph(ivec3 name, int k) { return k == 0 ? name.x : (k == 1 ? name.y : name.z); }
+float pick(vec4 v, int k) { return k == 0 ? v.x : (k == 1 ? v.y : (k == 2 ? v.z : v.w)); }
+/** A glyph's ink at dx from its centre (tile units), at height vy (0 to 1). */
+float glyphMask(int glyph, float dx, float vy) {
+  float u = 0.5 + dx / ${CELL.toFixed(2)};
+  if (u < 0.0 || u > 1.0) return 0.0;
+  return texture2D(uDigits, vec2((float(glyph) + u) / ${GLYPHS.length.toFixed(1)}, vy)).a;
+}
+/** "name=v" on line \`row\` of the corner (0 at the bottom). */
+float labelMask(vec2 f, ivec3 name, int nameLen, vec4 mid, float nameW, int v, float row) {
   int a = v < 0 ? -v : v;
   int digits = a >= 100 ? 3 : (a >= 10 ? 2 : 1);
-  int n = digits + (v < 0 ? 1 : 0);
-  vec2 o = vec2(-0.41, -0.42);
-  vec2 cs = vec2(0.14, 0.23);
-  vec2 q = (f - o) / cs;
-  if (q.y < 0.0 || q.y > 1.0 || q.x < 0.0 || q.x >= float(n)) return 0.0;
-  int k = int(floor(q.x));
+  int numLen = digits + (v < 0 ? 1 : 0);
+  float pw = nameLen > 0 ? nameW : 0.0;
+  float w = pw + uDigitW * float(numLen);
+  vec2 q = (f - vec2(-0.41, -0.42 + row * ${(0.26 * LABEL_SIZE).toFixed(3)})) / min(${LABEL_SIZE.toFixed(2)}, 0.82 / w);
+  if (q.y < 0.0 || q.y > 0.23 || q.x < 0.0 || q.x >= w) return 0.0;
+  float vy = q.y / 0.23;
+  if (q.x < pw) {
+    // the nearest of the name's letters and its '='
+    int k = 0;
+    for (int i = 1; i < 4; i++) {
+      if (i <= nameLen && abs(q.x - pick(mid, i)) < abs(q.x - pick(mid, k))) k = i;
+    }
+    return glyphMask(k < nameLen ? nameGlyph(name, k) : 11, q.x - pick(mid, k), vy);
+  }
+  float x = (q.x - pw) / uDigitW;
+  int j = int(floor(x));
   int glyph = 10;
-  if (!(v < 0 && k == 0)) {
-    int pos = n - 1 - k;
+  if (!(v < 0 && j == 0)) {
+    int pos = numLen - 1 - j;
     int p10 = pos == 0 ? 1 : (pos == 1 ? 10 : 100);
     glyph = a / p10 - (a / (p10 * 10)) * 10;
   }
-  vec2 uv = vec2((float(glyph) + fract(q.x)) / 11.0, q.y);
-  return texture2D(uDigits, uv).a;
+  return glyphMask(glyph, (fract(x) - 0.5) * uDigitW, vy);
+}
+float axisLabelMask(vec2 f, ivec2 t) {
+  float m = 0.0;
+  if (t.y == 0) m = labelMask(f, uNameX, uNameXLen, uNameXMid, uNameXW, t.x, 0.0);
+  // the corner tile carries both (unnamed, just the one number)
+  if (t.x == 0 && (t.y != 0 || uNameYLen > 0)) m = max(m, labelMask(f, uNameY, uNameYLen, uNameYMid, uNameYW, t.y, t.y == 0 ? 1.0 : 0.0));
+  return m;
 }
 `;
+
+/** Uniforms for the axes' labels in GLSL_DIGITS (set them with setAxisNames). */
+export function axisNameUniforms() {
+  return {
+    uNameX: { value: [0, 0, 0] },
+    uNameXLen: { value: 0 },
+    uNameXMid: { value: [0, 0, 0, 0] },
+    uNameXW: { value: 0 },
+    uNameY: { value: [0, 0, 0] },
+    uNameYLen: { value: 0 },
+    uNameYMid: { value: [0, 0, 0, 0] },
+    uNameYW: { value: 0 },
+    uDigitW: { value: CELL },
+  };
+}
+
+interface NameLayout {
+  glyphs: number[];
+  len: number;
+  mid: number[];
+  width: number;
+}
+const NO_NAME: NameLayout = { glyphs: [0, 0, 0], len: 0, mid: [0, 0, 0, 0], width: 0 };
+const layouts = new Map<string, NameLayout>();
+
+/** "name=" laid out at its letters' widths; a name the atlas can't write (or too long) gets none, and its labels are bare numbers. */
+function nameLayout(name: string | undefined): NameLayout {
+  const key = `${name}|${atlasVersion}`;
+  const known = layouts.get(key);
+  if (known) return known;
+  const glyphs = [...(name ?? '')].map((c) => GLYPHS.indexOf(c));
+  let out = NO_NAME;
+  if (glyphs.length && glyphs.length <= 3 && !glyphs.includes(-1)) {
+    const mid: number[] = [];
+    let x = 0;
+    for (const g of [...glyphs, GLYPHS.indexOf('=')]) {
+      mid.push(x + advance[g] / 2);
+      x += advance[g];
+    }
+    out = { glyphs: [...glyphs, 0, 0].slice(0, 3), len: glyphs.length, mid: [...mid, 0, 0, 0].slice(0, 4), width: x };
+  }
+  layouts.set(key, out);
+  return out;
+}
+
+/** Write the level's axis names into the labels (none: bare numbers). Cheap enough to call every frame. */
+export function setAxisNames(u: Record<string, THREE.IUniform>, level: CompiledLevel | null) {
+  const x = nameLayout(level?.view.x);
+  const y = nameLayout(level?.view.y);
+  u.uNameX.value = x.glyphs;
+  u.uNameXLen.value = x.len;
+  u.uNameXMid.value = x.mid;
+  u.uNameXW.value = x.width;
+  u.uNameY.value = y.glyphs;
+  u.uNameYLen.value = y.len;
+  u.uNameYMid.value = y.mid;
+  u.uNameYW.value = y.width;
+  u.uDigitW.value = Math.max(...advance.slice(0, 10));
+}
 
 /**
  * Goal tiles: a soft, recessed pool of amber water (a light column rises over
@@ -150,81 +261,40 @@ export function goalUniforms(): Record<string, THREE.IUniform> {
 
 let digitTexture: THREE.CanvasTexture | null = null;
 
-/** Glyph atlas for 0-9 and '-', drawn with the UI font once it has loaded. */
+/**
+ * The code font, as in the code panel: an axis label like `lo=-1` reads as the
+ * assignment it is. All system fonts, so the atlas is drawn once, at once.
+ */
+const CODE_FONT = "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace";
+
+/** Glyph atlas for GLYPHS (digits, minus, '=' and the letters), in the code font. */
 export function getDigitTexture(): THREE.CanvasTexture {
   if (digitTexture) return digitTexture;
   const canvas = document.createElement('canvas');
   const cw = 64;
   const chh = 104;
-  canvas.width = cw * 11;
+  canvas.width = cw * GLYPHS.length;
   canvas.height = chh;
   const tex = new THREE.CanvasTexture(canvas);
   // sampled inside branches: no mipmaps, so no implicit derivatives are needed
   tex.generateMipmaps = false;
   tex.minFilter = THREE.LinearFilter;
   tex.colorSpace = THREE.SRGBColorSpace;
-  const draw = (family: string) => {
-    const g = canvas.getContext('2d')!;
-    g.clearRect(0, 0, canvas.width, canvas.height);
-    g.fillStyle = '#ffffff';
-    g.font = `600 84px ${family}`;
-    g.textAlign = 'center';
-    g.textBaseline = 'alphabetic';
-    const glyphs = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '−'];
-    glyphs.forEach((c, i) => g.fillText(c, i * cw + cw / 2, chh - 18));
-    tex.needsUpdate = true;
-  };
-  draw(FALLBACK_FONT);
-  void sceneFont().then(draw);
+  const g = canvas.getContext('2d')!;
+  g.fillStyle = '#ffffff';
+  g.font = `600 84px ${CODE_FONT}`;
+  g.textAlign = 'center';
+  g.textBaseline = 'alphabetic';
+  [...GLYPHS].forEach((c, i) => {
+    g.fillText(c, i * cw + cw / 2, chh - 18);
+    advance[i] = (g.measureText(c).width / cw) * CELL;
+  });
+  atlasVersion++;
+  tex.needsUpdate = true;
   digitTexture = tex;
   return tex;
 }
 
-const FALLBACK_FONT = 'ui-rounded, system-ui, sans-serif';
-let fontLoad: Promise<string> | null = null;
-/** The UI's display font for text drawn into textures: resolves with the family name once it has loaded. */
-export function sceneFont(): Promise<string> {
-  if (!fontLoad) {
-    fontLoad = new FontFace('FredokaScene', `url(${fredokaUrl})`)
-      .load()
-      .then((f) => {
-        document.fonts.add(f);
-        return 'FredokaScene';
-      })
-      .catch(() => FALLBACK_FONT);
-  }
-  return fontLoad;
-}
-
-/**
- * A short text in a texture, for labels lying flat on the floor in the same
- * font as the tile numbers. `aspect` is width / height of the text's box.
- */
-export function textTexture(text: string, color: string): { tex: THREE.CanvasTexture; aspect: number } {
-  const canvas = document.createElement('canvas');
-  const h = 104;
-  const g = canvas.getContext('2d')!;
-  g.font = `600 84px ${FALLBACK_FONT}`;
-  const w = Math.ceil(g.measureText(text).width) + 8;
-  canvas.width = w;
-  canvas.height = h;
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.generateMipmaps = false;
-  tex.minFilter = THREE.LinearFilter;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const draw = (family: string) => {
-    g.clearRect(0, 0, w, h);
-    g.fillStyle = color;
-    g.font = `600 84px ${family}`;
-    g.textAlign = 'center';
-    g.textBaseline = 'alphabetic';
-    g.fillText(text, w / 2, h - 18);
-    tex.needsUpdate = true;
-  };
-  draw(FALLBACK_FONT);
-  void sceneFont().then(draw);
-  return { tex, aspect: w / h };
-}
 
 let blobTexture: THREE.Texture | null = null;
 /** Soft round shadow. */

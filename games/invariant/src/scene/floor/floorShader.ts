@@ -68,8 +68,7 @@ void main() {
       float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
       tcol = mix(uTile, mix(uStop, uHatch, hatch * 0.55), uShowStop);
     }
-    // the axes: the row and column that carry the numbers are a soft band
-    // (AxisLabels names them just past their ends)
+    // the axes: the row and column that carry the labels are a soft band
     if (uShowAxes > 0.002 && (t.x == 0 || t.y == 0)) tcol = mix(tcol, uCross, (st ? 0.35 : 0.6) * uShowAxes);
     bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
     // the hovered tile's row and column, across striped tiles too (tinted
@@ -77,10 +76,7 @@ void main() {
     if (onCross) tcol = st ? mix(tcol, uCross * vec3(0.9, 0.94, 1.0), 0.7) : mix(tcol, uCross, 0.9);
     if (st && uShowGoal > 0.002 && L_goal(t)) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
     if (uShowAxes > 0.002) {
-      // the tile before each axis's 0 carries the axis's name instead (AxisLabels)
-      float m = 0.0;
-      if (t.y == 0 && t.x != -1) m = numberMask(f, t.x);
-      else if (t.x == 0 && t.y != -1) m = numberMask(f, t.y);
+      float m = axisLabelMask(f, t.xy);
       tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
     }
     col = mix(uGap, tcol, inside);

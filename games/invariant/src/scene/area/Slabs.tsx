@@ -11,12 +11,14 @@ import {
   colorUniform,
   fadeUniforms,
   getBlobTexture,
+  axisNameUniforms,
   getDigitTexture,
   GLSL_COMMON,
   GLSL_DIGITS,
   GLSL_FADE,
   GLSL_GOAL,
   goalUniforms,
+  setAxisNames,
   updateFade,
 } from '../shaders/common';
 import { field } from './field';
@@ -86,10 +88,7 @@ void main() {
     if (stop && vFlags.y > 0.5 && uGoalAmt > 0.002) col = mix(col, drawGoal(col, vF, fwr, vTile), uGoalAmt);
     if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.45 * uGoalAmt);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
-    float m = 0.0;
-    if (t.y == 0) m = numberMask(vF, t.x);
-    else if (t.x == 0) m = numberMask(vF, t.y);
-    col = mix(col, uLabelOn, m * 0.85);
+    col = mix(col, uLabelOn, axisLabelMask(vF, t) * 0.85);
     if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
       col = mix(col, vec3(1.0), (1.0 - smoothstep(-fwRing, fwRing, ringD)) * 0.95);
     }
@@ -179,6 +178,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
           uGoalAmt: { value: showGoal ? 1 : 0 },
           uDigits: { value: getDigitTexture() },
           ...fadeUniforms(),
+          ...axisNameUniforms(),
         },
       }),
     [],
@@ -201,6 +201,8 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     material.uniforms.uTime.value = t;
     shadowMat.uniforms.uTime.value = t;
     const g = useGame.getState();
+    // the slabs are shared by every scene: the names follow whichever level is open (none on the home screen)
+    setAxisNames(material.uniforms, g.level);
     material.uniforms.uLastEvent.value = goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.plane ? g.plane : undefined);
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;

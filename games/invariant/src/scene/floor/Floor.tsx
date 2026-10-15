@@ -8,7 +8,7 @@ import { SLAB_H } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
-import { colorUniform, getDigitTexture, goalUniforms, updateFade } from '../shaders/common';
+import { axisNameUniforms, colorUniform, getDigitTexture, goalUniforms, setAxisNames, updateFade } from '../shaders/common';
 import { floorFragment, floorVertex } from './floorShader';
 
 // The floor of a plane: one quad shaded per pixel (see floorShader), which
@@ -57,7 +57,7 @@ export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fa
   const mesh = useRef<THREE.Mesh>(null);
   const canvas = useThree((s) => s.gl.domElement);
   const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
+    const m = new THREE.ShaderMaterial({
       vertexShader: floorVertex,
       fragmentShader: floorFragment(level),
       transparent: true,
@@ -75,6 +75,7 @@ export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fa
         uDigits: { value: getDigitTexture() },
         ...goalUniforms(),
         uTime: { value: 0 },
+        ...axisNameUniforms(),
         uGap: colorUniform('gap'),
         uVoid: colorUniform('void'),
         uTile: colorUniform('tile'),
@@ -86,6 +87,8 @@ export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fa
         uLabel: colorUniform('label'),
       },
     });
+    setAxisNames(m.uniforms, level);
+    return m;
     // the program only depends on the level
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
@@ -111,6 +114,8 @@ export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fa
     m.position.set(Math.round(t.x), 0, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
     u.uTime.value = sceneNow();
+    // measured once the font has loaded, so set again as it may change
+    setAxisNames(u, level);
     u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.plane ? plane : undefined);
     // revealed elements fade in rather than popping
     const kr = 1 - Math.exp(-dt * 3.2);
