@@ -7,9 +7,9 @@ import { textTexture } from '../shaders/common';
 // tile just before the row's 0, and "n ↑" just before the column's 0, in the
 // numbers' font and place (the near-left corner, see GLSL_DIGITS), so the row
 // reads "i → 0 1 2 3" and the column "n ↑ 0 1 2 3". The hovered tile gets a
-// small compass of its own: "i →" along its near edge and "n →" turned to run
-// along its left edge, pointing away, so the directions can be read anywhere
-// on the plane. Like the numbers, none of this hides a tile.
+// small compass of its own: "i →" along its near edge and "n ↑" along its far
+// edge, both upright, so the directions can be read anywhere on the plane.
+// Like the numbers, none of this hides a tile.
 
 /** The tiles that carry the names (the floor leaves their numbers out). */
 const X_TILE: [number, number] = [-1, 0];
@@ -36,11 +36,11 @@ function cached(text: string, color: string) {
   return t;
 }
 
-/** Flat text on the floor, centred at (x, y), `turn` radians anticlockwise. */
-function FloorText({ at, text, size, color, turn = 0 }: { at: [number, number]; text: string; size: number; color: string; turn?: number }) {
+/** Flat text on the floor, centred at (x, y). */
+function FloorText({ at, text, size, color }: { at: [number, number]; text: string; size: number; color: string }) {
   const label = useMemo(() => cached(text, color), [text, color]);
   return (
-    <mesh position={[at[0], 0.012, -at[1]]} rotation={[-Math.PI / 2, 0, turn]} renderOrder={7}>
+    <mesh position={[at[0], 0.012, -at[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={7}>
       <planeGeometry args={[size * label.aspect, size]} />
       <meshBasicMaterial map={label.tex} transparent depthWrite={false} />
     </mesh>
@@ -68,8 +68,7 @@ export function AxisLabels() {
       {tile && (
         <>
           <FloorText at={[tile[0], tile[1] - COMPASS_INSET]} text={`${x} →`} size={COMPASS_SIZE} color={COMPASS_COLOR} />
-          {/* turned a quarter anticlockwise: reads from near to far, and its arrow points away */}
-          <FloorText at={[tile[0] - COMPASS_INSET, tile[1]]} text={`${y} →`} size={COMPASS_SIZE} color={COMPASS_COLOR} turn={Math.PI / 2} />
+          <FloorText at={[tile[0], tile[1] + COMPASS_INSET]} text={`${y} ↑`} size={COMPASS_SIZE} color={COMPASS_COLOR} />
         </>
       )}
     </>

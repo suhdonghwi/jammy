@@ -248,9 +248,10 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
     if (waitFirst) await waitCheck(gen);
     askNow = false;
     waitFirst = true;
+    // no "Checking…" caption: most checks finish before one could be read,
+    // and the Check button's spinner and the lights show a slow one
     useGame.setState({ spotlight: null });
     frogWorld.clear('test');
-    say('Checking…', null, 'muted');
     const res = await runChecker(o.rules);
     guard(gen);
     if (!res) {

@@ -45,8 +45,9 @@ export async function check() {
     useGame.setState((s) => ({ errorNudge: s.errorNudge + 1 }));
     return;
   }
+  // the caption stays as it is while the check runs (most finish at once);
+  // the Check button's spinner and the lights show a slow one
   frogWorld.clear('test');
-  useGame.setState({ caption: { text: 'Checking…', tone: 'muted' } });
   const res = await runChecker(RULES);
   if (!res) return;
   const failure = RULES.map((r) => res.verdicts[r]).find((v) => v?.status === 'fail');
