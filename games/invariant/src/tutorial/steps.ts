@@ -1,5 +1,4 @@
 import { hatchFrog, resetFrogs, stepFrogs } from '../director/frogs';
-import { handIn, handOut, pointAt } from '../director/hand';
 import { sleep } from '../director/sequence';
 import { playRain } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
@@ -264,15 +263,6 @@ export const STEPS: Step[] = [
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
       useGame.getState().setReveal({ awake: ['init'] });
-      say('This **hand** checks your area. It looks for a frog that breaks a rule.', 'lights');
-      const t = cameraRig.target();
-      await handIn(t.x + 1.5, -t.z + 2, 2.2, { curl: 0.2 });
-      guard(gen);
-      await pointAt(0, 2);
-      guard(gen);
-      await sleep(300);
-      guard(gen);
-      void handOut();
       await stage(gen, {
         ask: 'First rule: every egg must sit on your area, because the assert runs before the first hop.\n\nDraw an area every egg sits on, then press **Check**.',
         rules: ['init'],

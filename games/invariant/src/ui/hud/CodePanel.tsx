@@ -96,10 +96,12 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   // the invariant, as the assert it stands for: a ghost line at the top of the loop body
   if (beat.assert !== null && headerLine >= 0) {
     const indent = stmts.length ? src.slice(lines[bodyFirst].from).match(/^\s*/)?.[0] ?? '  ' : '  ';
+    // w-0 + min-w-full: the line takes the panel's width but never widens
+    // it, so a long area doesn't make the panel grow; it is clipped instead
     rows.splice(headerLine + 1, 0, (
-      <div key="assert" className="-mx-2 flex animate-fade px-2 text-faint">
+      <div key="assert" className="-mx-2 flex w-0 min-w-full animate-row-open overflow-hidden px-2 text-faint">
         <span className="mr-3 w-[2ch] flex-none select-none" />
-        <span>
+        <span className="truncate">
           {indent}
           <span className="font-semibold">assert</span>({beat.assert});
         </span>
@@ -130,13 +132,13 @@ export function CodePanel() {
     <div className={`${CARD} max-w-85 animate-slide-in px-4 pt-3.25 pb-3 max-md:max-w-52 max-md:p-2.5 ${spot === 'code' ? 'spotlight' : ''}`}>
       <div className={CARD_LABEL}>Program</div>
       <pre className="m-0 font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]">{nodes}</pre>
+      {/* one fixed height for both texts, so selecting a frog doesn't grow the panel */}
       <div
-        className={`mt-2.5 flex items-center gap-1.5 border-t border-dashed border-shade/12 pt-2.25 ${selected ? 'font-mono text-sm font-semibold text-pass' : 'text-xs text-faint'}`}
+        className={`mt-2.5 flex h-7.25 items-center gap-1.5 border-t border-dashed border-shade/12 ${selected ? 'font-mono text-sm font-semibold text-pass' : 'text-xs text-faint'}`}
       >
         {selected ? (
           <>
-            {/* nudged onto the lowercase and operators rather than the taller digits */}
-            <span className="size-2.25 flex-none translate-y-[0.75px] rounded-full bg-frog" /> {showState(level, selected)}
+            <span className="size-2.25 flex-none rounded-full bg-frog" /> {showState(level, selected)}
           </>
         ) : (
           'Click a frog to see its values'

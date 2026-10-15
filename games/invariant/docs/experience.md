@@ -11,9 +11,13 @@ behind many small decisions; keep them when changing or adding UI.
   `ui/presence.ts` rather than unmounting things outright.
 - **Quick, never sluggish.** Dialog and caption animations are short; the
   learner should never wait on decoration.
-- **No layout shift.** Reserve space up front (the 3D title has a fixed aspect),
-  open new rows smoothly (`RevealSlot`), and show errors inside the box they
-  belong to rather than pushing things around.
+- **No layout shift.** Reserve space up front (the 3D title has a fixed aspect;
+  a caption's button row is always as tall as a primary button with its 3D
+  edge; the code panel's frog footer has one height for both of its texts),
+  open new rows smoothly (`RevealSlot`, the code panel's assert line), keep a
+  panel's width from following its content (the assert line clips instead),
+  and show errors inside the box they belong to rather than pushing things
+  around.
 - **The first frame is already right.** The camera is placed before anything is
   drawn, and the world and title fade in instead of jumping into place.
 - **Screens hand over, they don't cut.** Opening the level list fades the home

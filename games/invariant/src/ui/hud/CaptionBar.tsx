@@ -34,7 +34,8 @@ export function CaptionBar() {
         )}
       </div>
       {(caption.secondary || caption.action || caption.choices || back) && (
-        <div className="flex items-center justify-end gap-1.5">
+        // as tall as the primary button with its 3D edge (mb-1), so a Next joining a lone Back shifts nothing
+        <div className="flex min-h-8.5 items-center justify-end gap-1.5">
           {/* tutorial: back to the previous step (left), then the step's own buttons */}
           {back && (
             <button className={button('quiet', 'sm')} onClick={back}>

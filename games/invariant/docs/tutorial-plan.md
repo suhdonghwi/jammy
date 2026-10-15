@@ -198,10 +198,9 @@ name the rule**. The attempt loop is specified in full under "The attempt
 loop" below; the stages here only give the wording and the pitfall.
 
 **2.1 Stage 1: every egg.** The Init light wakes (the other two stay dim).
-The hand appears briefly, pointing at the eggs.
+The hand needs no introduction of its own: it appears at the first failure
+or demo, and the captions name it then.
 
-> This **hand** checks your area. It looks for a frog that breaks a rule.
->
 > First rule: every egg must sit on your area, because the assert runs before
 > the first hop. Draw an area every egg sits on, then press **Check**.
 
