@@ -68,6 +68,9 @@ void main() {
       float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
       tcol = mix(uTile, mix(uStop, uHatch, hatch * 0.55), uShowStop);
     }
+    // the axes: the row and column that carry the numbers are a soft band
+    // (AxisLabels names them just past their ends)
+    if (uShowAxes > 0.002 && (t.x == 0 || t.y == 0)) tcol = mix(tcol, uCross, (st ? 0.35 : 0.6) * uShowAxes);
     bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
     // the hovered tile's row and column, across striped tiles too (tinted
     // more lightly there, so the stripes still show through)
@@ -157,15 +160,6 @@ void main() {
     col = mix(col, uEdge, line * uShowStop);
   }
 
-  // The axes: a thin line in the gap just before the row of numbers (y = -0.5)
-  // and just before the column (x = -0.5). AxisLabels puts an arrowhead and
-  // the variable's name at their ends.
-  if (uShowAxes > 0.002) {
-    float aw = 0.03;
-    float ax = 1.0 - smoothstep(aw - fw.y, aw + fw.y, abs(p.y + 0.5));
-    float ay = 1.0 - smoothstep(aw - fw.x, aw + fw.x, abs(p.x + 0.5));
-    col = mix(col, uLabel, max(ax, ay) * 0.85 * uShowAxes);
-  }
 
   // hover cursor: a crisp rounded outline around the inspected tile
   if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {

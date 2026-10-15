@@ -26,7 +26,7 @@ float numberMask(vec2 f, int v) {
   int digits = a >= 100 ? 3 : (a >= 10 ? 2 : 1);
   int n = digits + (v < 0 ? 1 : 0);
   vec2 o = vec2(-0.41, -0.42);
-  vec2 cs = vec2(0.105, 0.17);
+  vec2 cs = vec2(0.14, 0.23);
   vec2 q = (f - o) / cs;
   if (q.y < 0.0 || q.y > 1.0 || q.x < 0.0 || q.x >= float(n)) return 0.0;
   int k = int(floor(q.x));
@@ -174,17 +174,61 @@ export function getDigitTexture(): THREE.CanvasTexture {
     glyphs.forEach((c, i) => g.fillText(c, i * cw + cw / 2, chh - 18));
     tex.needsUpdate = true;
   };
-  draw('ui-rounded, system-ui, sans-serif');
-  const face = new FontFace('FredokaDigits', `url(${fredokaUrl})`);
-  face
-    .load()
-    .then((f) => {
-      document.fonts.add(f);
-      draw('FredokaDigits');
-    })
-    .catch(() => {});
+  draw(FALLBACK_FONT);
+  void sceneFont().then(draw);
   digitTexture = tex;
   return tex;
+}
+
+const FALLBACK_FONT = 'ui-rounded, system-ui, sans-serif';
+let fontLoad: Promise<string> | null = null;
+/** The UI's display font for text drawn into textures: resolves with the family name once it has loaded. */
+export function sceneFont(): Promise<string> {
+  if (!fontLoad) {
+    fontLoad = new FontFace('FredokaScene', `url(${fredokaUrl})`)
+      .load()
+      .then((f) => {
+        document.fonts.add(f);
+        return 'FredokaScene';
+      })
+      .catch(() => FALLBACK_FONT);
+  }
+  return fontLoad;
+}
+
+/**
+ * A short text as a chip (a pill with the text inside) in a texture, for
+ * labels lying flat on the floor in the same font as the tile numbers.
+ * `aspect` is width / height of the chip.
+ */
+export function chipTexture(text: string, color: string, fill: string): { tex: THREE.CanvasTexture; aspect: number } {
+  const canvas = document.createElement('canvas');
+  const h = 112;
+  const g = canvas.getContext('2d')!;
+  g.font = `600 72px ${FALLBACK_FONT}`;
+  const w = Math.ceil(g.measureText(text).width) + 72;
+  canvas.width = w;
+  canvas.height = h;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.generateMipmaps = false;
+  tex.minFilter = THREE.LinearFilter;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const draw = (family: string) => {
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = fill;
+    g.beginPath();
+    g.roundRect(2, 2, w - 4, h - 4, h / 2);
+    g.fill();
+    g.fillStyle = color;
+    g.font = `600 72px ${family}`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, w / 2, h / 2 + 4);
+    tex.needsUpdate = true;
+  };
+  draw(FALLBACK_FONT);
+  void sceneFont().then(draw);
+  return { tex, aspect: w / h };
 }
 
 let blobTexture: THREE.Texture | null = null;
