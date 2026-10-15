@@ -1,4 +1,5 @@
 import gsap from 'gsap';
+import * as THREE from 'three';
 import type { State } from '../lang/ast';
 import { holds } from '../lang/eval';
 import { checkFormula, type CheckResult, type Formula } from '../checker/check';
@@ -118,14 +119,32 @@ async function placeTestFrog(tok: Token, s: State): Promise<FrogSim | null> {
 }
 
 /** Point at a tile from its right side, so the hand never hides the frog. */
+// The pointing pose, and where the index fingertip sits relative to the hand's
+// origin in it. From the glove in Hand.tsx: the index finger's base is at
+// (-0.235, -0.01, -0.24), it is splayed out by 0.12 rad, and straight it reaches
+// 0.395 further (two segments plus the rounded tip); the glove is drawn at 0.95.
+const POINT_POSE = { point: 1, curl: 0.2, tilt: -0.32, yaw: -1.45 };
+const INDEX_DIR = new THREE.Vector3(-Math.sin(0.12), 0, -Math.cos(0.12));
+const FINGERTIP = new THREE.Vector3(-0.235, -0.01, -0.24).addScaledVector(INDEX_DIR, 0.395).multiplyScalar(0.95);
+function fingertipFrame() {
+  const e = new THREE.Euler(-0.3 + POINT_POSE.tilt, Math.PI + POINT_POSE.yaw, 0, 'YXZ');
+  return { tip: FINGERTIP.clone().applyEuler(e), dir: INDEX_DIR.clone().applyEuler(e) };
+}
+
+/**
+ * Point at whatever sits on tile (x, y) — an egg or a frog: the fingertip stops
+ * just short of it, angled down at its middle, then jabs at it a few times.
+ */
 async function pointAt(x: number, y: number) {
-  const p = above(x, y);
-  await tween(handState, {
-    visible: 1, x: p.x + 1.05, y: 0.95, z: p.z - 0.15,
-    point: 1, curl: 0.2, tilt: 0.25, yaw: -1.45,
-    duration: 0.5, ease: 'power2.out',
-  });
-  await tween(handState, { x: p.x + 0.9, duration: 0.18, yoyo: true, repeat: 3, ease: 'sine.inOut' });
+  const slot = occupancy.eggSlots.get(`${x},${y}`);
+  const ground = field.heightAt(x, y) * SLAB_H;
+  const target = new THREE.Vector3(x + (slot?.dx ?? 0), ground + 0.2, -y - (slot?.dy ?? 0));
+  const { tip, dir } = fingertipFrame();
+  // fingertip a little way back from the target's middle, along the finger
+  const at = target.clone().addScaledVector(dir, -0.3).sub(tip);
+  const back = at.clone().addScaledVector(dir, -0.12);
+  await tween(handState, { visible: 1, x: back.x, y: back.y, z: back.z, ...POINT_POSE, duration: 0.5, ease: 'power2.out' });
+  await tween(handState, { x: at.x, y: at.y, z: at.z, duration: 0.16, yoyo: true, repeat: 3, ease: 'sine.inOut' });
 }
 
 // ---------------------------------------------------------------------------

@@ -95,6 +95,8 @@ export interface Game {
   cinematic: boolean;
   /** A single Step is animating. */
   stepping: boolean;
+  /** Tutorial: real frogs carry a tag with their variables, animated as they change. */
+  frogTags: boolean;
   /** Tutorial: the current step is waiting for the learner to press Check. */
   awaitingCheck: boolean;
   /** Tutorial: the Next action the script is currently waiting on (so replays can restore it). */
@@ -152,6 +154,7 @@ export const useGame = create<Game>((set, get) => ({
   errorNudge: 0,
   callouts: [],
   stepping: false,
+  frogTags: false,
   awaitingCheck: false,
   tutorialAllow: { step: false, run: false, eggs: false },
   nextAction: null,
@@ -183,6 +186,7 @@ export const useGame = create<Game>((set, get) => ({
       failMark: null,
       callouts: [],
       stepping: false,
+      frogTags: false,
       awaitingCheck: false,
       tutorialAllow: { step: false, run: false, eggs: false },
       nextAction: null,

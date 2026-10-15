@@ -266,6 +266,11 @@ export function Frogs() {
       const os = f.os!;
       const px = p.x + f.ox;
       const pz = p.z - f.oy!;
+      if (f.drawn) {
+        f.drawn.x = px;
+        f.drawn.ground = p.ground;
+        f.drawn.z = pz;
+      } else f.drawn = { x: px, ground: p.ground, z: pz };
       dummy.position.set(px, p.y, pz);
       dummy.rotation.set(p.pitch, p.yaw, p.roll, 'YXZ');
       dummy.scale.set(p.sx * os, p.sy * os, p.sx * os);

@@ -207,6 +207,7 @@ async function script(gen: number) {
 
   g().setReveal({ step: true });
   allow({ step: true });
+  g().patch({ frogTags: true });
   say('Press Step to run the loop body once.', 'step');
   await waitEvent(gen, 'stepped');
   say('One hop = one run of the loop body: `i` went from `0` to `1`. Keep pressing Step until the frog stops.', 'step');
@@ -227,6 +228,7 @@ async function script(gen: number) {
     callouts: [{ x: 0, y: 2, text: 'egg: input n = 2', tone: 'info' }],
     prepare: () => {
       director.clearFrogs();
+      g().patch({ frogTags: false });
       g().setReveal({ eggs: true });
     },
     settle: 1100,

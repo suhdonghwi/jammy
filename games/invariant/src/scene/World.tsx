@@ -8,6 +8,7 @@ import { Floor } from './Floor';
 import { AreaLayer } from './AreaLayer';
 import { Frogs } from './Frogs';
 import { HatchShells } from './Hatch';
+import { FrogTags } from './FrogTags';
 import { Hand } from './Hand';
 import { HoverPreview } from './HoverPreview';
 import { HomeScene } from './HomeScene';
@@ -156,6 +157,7 @@ function LevelScene() {
         />
         <Frogs />
         <HatchShells />
+        <FrogTags />
         {reveal.hover && <HoverPreview />}
         <FailMarker />
         <Callouts />

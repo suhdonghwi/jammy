@@ -38,6 +38,8 @@ export interface FrogSim {
   ox?: number;
   oy?: number;
   os?: number;
+  /** Where the frog was last drawn (world), for things that follow it. */
+  drawn?: { x: number; ground: number; z: number };
   /** A dropped frog has touched down (fires once). */
   touched?: boolean;
 }

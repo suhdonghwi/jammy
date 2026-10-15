@@ -1075,3 +1075,75 @@ code {
     transform: translateX(-2px);
   }
 }
+
+/* ---------- tutorial: variable tag over a frog ---------- */
+.frog-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(28, 35, 51, 0.88);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  animation: fade 0.3s ease-out;
+}
+.frog-tag-sep {
+  margin-right: 0.6ch;
+  color: #9aa4b4;
+}
+.frog-tag-name {
+  color: #b7c9ff;
+}
+/* old and new values share one cell, so the tag never changes width mid-swap */
+.frog-tag-val {
+  display: inline-grid;
+  justify-items: center;
+}
+.frog-tag-val > span {
+  grid-area: 1 / 1;
+}
+.frog-tag-val .old {
+  color: #ff9a9e;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  animation: tag-old 0.55s ease-in forwards;
+}
+.frog-tag-val .new {
+  border-radius: 4px;
+  animation: tag-new 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+@keyframes tag-old {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.8);
+  }
+}
+@keyframes tag-new {
+  0%,
+  30% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
+    background: rgba(255, 214, 102, 0);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(0) scale(1.3);
+    color: #1c2333;
+    background: rgba(255, 214, 102, 1);
+  }
+  100% {
+    transform: none;
+    color: #fff;
+    background: rgba(255, 214, 102, 0);
+  }
+}
