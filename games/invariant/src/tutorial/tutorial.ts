@@ -62,11 +62,11 @@ function play(from: number, rewound = false) {
   });
 }
 
-/** Start the tutorial from its first step; `finish` runs once the learner has gone through it all. */
-export function startTutorial(finish: () => void) {
+/** Start the tutorial from its first step (or `from`, for playtesting); `finish` runs once the learner has gone through it all. */
+export function startTutorial(finish: () => void, from = 0) {
   onFinish = finish;
   resetProgress();
-  play(0);
+  play(Math.min(Math.max(0, from), STEPS.length - 1));
 }
 
 export function stopTutorial() {

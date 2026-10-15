@@ -22,8 +22,9 @@ export function openLevel(def: LevelDef) {
 export function openTutorial() {
   resetLevel();
   useGame.getState().openLevel(tutorialLevel, 'tutorial');
-  // when it's done, on to the first level
-  startTutorial(() => openLevel(levels[0]));
+  // when it's done, on to the first level; `?step=N` starts partway in (playtesting)
+  const from = Number(new URLSearchParams(location.search).get('step') ?? 0);
+  startTutorial(() => openLevel(levels[0]), from);
 }
 
 export function goMenu(view: 'home' | 'levels' = 'home') {

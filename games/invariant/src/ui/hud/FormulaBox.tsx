@@ -4,9 +4,10 @@ import { Compartment, EditorState, StateEffect, StateField, type Extension } fro
 import { Decoration, EditorView, keymap, placeholder, type DecorationSet } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { Check, LoaderCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { check } from '../../game/actions';
 import { useGame } from '../../game/store';
+import { displayNames } from '../../levels/level';
 import { button } from '../classes';
 
 // The area formula: a one-line CodeMirror editor with highlighting, the
@@ -74,7 +75,9 @@ export function FormulaBox() {
   const placeholderComp = useRef(new Compartment());
   const lockComp = useRef(new Compartment());
   const hint = useGame(hintFormula);
-  const names = useGame((s) => s.level?.names ?? []);
+  const level = useGame((s) => s.level);
+  // a fresh array would re-render forever: memoised on the level
+  const names = useMemo(() => (level ? displayNames(level) : []), [level]);
   const formula = useGame((s) => s.formula);
   const formulaText = useGame((s) => s.formulaText);
   const levelId = useGame((s) => s.level?.id);
@@ -126,7 +129,7 @@ export function FormulaBox() {
           errorField,
           exprLanguage,
           syntaxHighlighting(highlight),
-          placeholderComp.current.of(placeholderExt(hintFormula(useGame.getState()), useGame.getState().level?.names ?? [])),
+          placeholderComp.current.of(placeholderExt(hintFormula(useGame.getState()), useGame.getState().level ? displayNames(useGame.getState().level!) : [])),
           lockComp.current.of(lockExt(isLocked(useGame.getState()))),
           keymap.of([
             { key: 'Enter', run: () => (void check(), true) },

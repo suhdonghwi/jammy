@@ -87,8 +87,18 @@ agree. `pnpm validate` and the tests are the safety net.
   formula, camera), so Back and skip-ahead can rebuild any step instantly. A
   step runs under a generation number and calls `guard(gen)` after every
   `await`; stopping or rewinding the tutorial aborts the old generation.
-- The tutorial reacts to the learner through events (`stepped`, `runDone`) and
-  through Check; it never polls.
+- The tutorial reacts to the learner through events (`stepped`, `runDone`),
+  through Check and through caption buttons; it never polls.
+- **A stage accepts any formula.** `stage()` in `tutorial/script.ts` waits for
+  Check, runs the rules introduced so far, acts out the first failing rule and
+  waits again; it returns on the first pass. `demo()` has the hand type a
+  pitfall formula and act out its failure, then restores the learner's area.
+  Steps after the formula box opens declare `formula: 'learner'`: the area the
+  learner last had pass a stage, kept in `tutorial/steps.ts` so Back restores
+  it. A rule the learner saw fail on their own area is remembered there too,
+  and the hand's demo of that rule is skipped.
+- **Playtesting:** `?step=N` on the URL starts the tutorial at step N (the
+  index in `STEPS`), with an empty area.
 
 ## Rendering
 

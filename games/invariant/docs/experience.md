@@ -74,6 +74,14 @@ behind many small decisions; keep them when changing or adding UI.
   step's starting scene immediately.
 - **Only what the step asks for is enabled.** Step, Run, eggs and the formula
   box are locked otherwise, so the learner can't break the story.
+- **Any formula is a valid move** once a stage asks for one: the story
+  branches on which rule failed, never on what was typed. A failure's caption
+  stays (with Replay) while the learner fixes the area; the ask is not
+  repeated.
+- **Hints are a ladder**, climbed one press at a time: a nudge, a formula to
+  try, then filling it in. The button says which rung is next.
+- **Predict before you see.** Before the hand demos a pitfall, the caption asks
+  Passes or Fails. Never scored; it only makes the learner commit.
 - **Spotlight** whatever the caption is talking about.
 - A very fast double click must not press two buttons.
 

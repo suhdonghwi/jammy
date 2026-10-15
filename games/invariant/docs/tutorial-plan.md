@@ -1,8 +1,12 @@
 # Invariant Frog — Tutorial overhaul plan
 
-A new tutorial, from the ground up. This replaces the "The tutorial" section
-of [design.md](design.md) once built; the rest of design.md (the world, the
-rules, the hand, the checker) stays as it is.
+A new tutorial, from the ground up. **Built:** `src/tutorial/steps.ts` follows
+the script below, and `src/tutorial/script.ts` holds the stage, demo and
+prediction machinery; this document is the reference for why it is the way it
+is. The "The tutorial" section of [design.md](design.md) summarises it; the
+rest of design.md (the world, the rules, the hand, the checker) is unchanged.
+
+Playtesting: `?step=N` on the URL starts the tutorial at step N.
 
 See also [experience.md](experience.md) for pacing and motion rules, which
 still apply, and [architecture.md](architecture.md) for how steps are written.
@@ -385,8 +389,8 @@ Tutorial engine (`src/tutorial/`):
 
 Levels and docs:
 
-- `catalog.ts`: level 1-1's intro as above. Pitfall messages stay; they are
-  used in levels, and in the tutorial only for stages 1 and 2.
+- `catalog.ts`: level 1-1's intro as above. Pitfall messages stay for the
+  levels; the tutorial's own explanations replace them in every stage.
 - `design.md`: replace "The tutorial" with a pointer to this plan (or fold the
   Principles and Vocabulary sections in once built).
 
