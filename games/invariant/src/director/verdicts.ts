@@ -84,6 +84,8 @@ export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | n
 interface CounterexampleOptions {
   /** Said before the explanation (default: a note when the frog was found far away). */
   prefix?: string;
+  /** Whose area it is: "your area" (the learner's, the default) or "this area" (one the tutorial is trying). */
+  area?: string;
   /** A paragraph added after it. */
   extra?: string;
   /** The caption's main button; by default it is Replay. Called when the caption is shown. */
@@ -103,6 +105,7 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
     await focusState(cex.state, cex.far);
     if (!tok.alive) return;
     const prefix = opts.prefix ?? (cex.far ? 'Everything nearby looked fine — but far away: ' : '');
+  const area = opts.area ?? 'your area';
     const broken = cex.broken ? ` \`${cex.broken}\` ${cex.rule === 'pres' ? 'no longer holds' : 'is false there'}.` : '';
     let text: string;
     if (cex.rule === 'init') {
@@ -111,9 +114,9 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
       await pointAt(x, y);
       hatch(cex.state);
       await sleep(450);
-      markFailure(x, y, 'starts outside your area');
+      markFailure(x, y, `starts outside ${area}`);
       useGame.setState({ selected: cex.state });
-      text = `${prefix}This frog starts at ${fmt(cex.state)} — outside your area.${broken}`;
+      text = `${prefix}This frog starts at ${fmt(cex.state)} — outside ${area}.${broken}`;
     } else {
       const f = await placeTestFrog(tok, cex.state);
       if (!f || !tok.alive) return;
@@ -124,10 +127,10 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
         const ny = Number(cex.next[L.view.y]);
         await frogWorld.hopTo(L, f, cex.next, 0.55);
         useGame.setState({ selected: cex.next });
-        markFailure(nx, ny, 'lands outside your area');
+        markFailure(nx, ny, `lands outside ${area}`);
         if (!tok.alive) return;
         await pointAt(nx, ny);
-        text = `${prefix}From ${fmt(cex.state)}, one hop lands at ${fmt(cex.next)} — outside your area.${broken}`;
+        text = `${prefix}From ${fmt(cex.state)}, one hop lands at ${fmt(cex.next)} — outside ${area}.${broken}`;
       } else {
         markFailure(x, y, 'stops, but not on a goal');
         await pointAt(x, y);

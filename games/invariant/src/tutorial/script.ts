@@ -354,7 +354,8 @@ export async function demo(gen: number, formula: string, rules: Rule[], opts: { 
   const cex = res && failing ? failureOf(res, failing) : null;
   if (cex) {
     useGame.setState({ pitfallMessage: null });
-    await playCounterexample(cex, { extra: opts.extra, action: nextAfterCounterexample });
+    // the area on the plane is the one being tried, not the learner's
+    await playCounterexample(cex, { extra: opts.extra, area: 'this area', action: nextAfterCounterexample });
     guard(gen);
     await holdCaption(gen);
   }

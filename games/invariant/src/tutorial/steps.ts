@@ -127,9 +127,11 @@ async function witness(
   }
 }
 
-/** The objection every learner raises at Exit, and its answer. */
+/** The objection every learner raises at Exit, and its answer (for the learner's own area, and for one the tutorial tries). */
 const OBJECTION =
   '“But `i` never passes `n`!” — Your area doesn’t say that. It claims a frog could be anywhere on it, and the hand takes you at your word. To fix it, **shrink** your area so it stops claiming impossible frogs.';
+const OBJECTION_DEMO =
+  '“But `i` never passes `n`!” — This area doesn’t say that. It claims a frog could be anywhere on it, and the hand takes the claim at its word. The fix would be to **shrink** it so it stops claiming impossible frogs.';
 
 export const STEPS: Step[] = [
   // ======================= Act 1: The world =======================
@@ -433,7 +435,7 @@ export const STEPS: Step[] = [
         afterDemo:
           '**Rule 3 · Exit**: a frog that stops on your area is on a goal. `i >= 0` is a true invariant — every run really does keep `i ≥ 0` — but too weak to prove the goal.',
         afterOwn: `**Rule 3 · Exit**: a frog that stops on your area is on a goal. Your earlier area was a true invariant, but too weak to prove the goal; ${mine()} is strong enough.`,
-        extra: OBJECTION,
+        extra: OBJECTION_DEMO,
       }),
   },
   // 2.5 too small, too large
