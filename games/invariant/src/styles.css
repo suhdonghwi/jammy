@@ -536,7 +536,6 @@ code {
 .readout-tag.none {
   background: rgba(255, 255, 255, 0.06);
   color: #9aa3b5;
-  font-style: italic;
 }
 
 /* elevator toast */
@@ -664,8 +663,9 @@ code {
 .caption-text ol {
   margin: 0;
 }
-.caption-text > * + * {
-  margin-top: 9px;
+/* space between paragraphs and lists (more specific than the margin reset above) */
+.caption-text > :is(p, ul, ol) + :is(p, ul, ol) {
+  margin-top: 10px;
 }
 .caption-text ul,
 .caption-text ol {
