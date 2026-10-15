@@ -1,29 +1,18 @@
 import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
 import { CHAPTERS, levels } from '../levels/defs';
-import { useEffect } from 'react';
 import { useGame } from '../store/game';
-import { HOME_DRAFTS, useHomeDraft } from '../home/drafts';
+import { useCompactHome } from '../home/compact';
 import { Title3D } from '../home/Title3D';
 import { openLevel, openTutorial } from '../director/play';
 
 export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
-  const draft = useHomeDraft((s) => s.draft);
-  // the page background (sky) follows the draft
-  useEffect(() => {
-    document.documentElement.dataset.home = draft;
-    return () => {
-      delete document.documentElement.dataset.home;
-    };
-  }, [draft]);
+  const compact = useCompactHome();
   if (view === 'levels') return <LevelPicker />;
   return (
-    <>
-      <DraftSwitcher />
-      <div className={`home home-e`} key={draft}>
-        <EditorialCopy />
-      </div>
-    </>
+    <div className={`home ${compact ? 'compact' : ''}`}>
+      <HeroCopy />
+    </div>
   );
 }
 
@@ -40,36 +29,17 @@ function HomeButtons() {
   );
 }
 
-function EditorialCopy() {
+/** The title, a line about the game, and the way in. */
+function HeroCopy() {
   return (
-    <div className="editorial">
-      <p className="editorial-eyebrow">A little game about loop invariants</p>
-      <h1 className="editorial-title-3d">
+    <div className="hero">
+      <p className="hero-eyebrow">A little game about loop invariants</p>
+      <h1 className="hero-title">
         <span className="sr-only">Invariant Frog</span>
         <Title3D />
       </h1>
-      <p className="editorial-lede">Draw an area no frog can hop out of. Then convince a skeptical hand it holds for every input.</p>
+      <p className="hero-lede">Draw an area no frog can hop out of. Then convince a skeptical hand it holds for every input.</p>
       <HomeButtons />
-    </div>
-  );
-}
-
-/** Pick a home screen draft (exploration only). */
-function DraftSwitcher() {
-  const draft = useHomeDraft((s) => s.draft);
-  const setDraft = useHomeDraft((s) => s.setDraft);
-  const note = HOME_DRAFTS.find((d) => d.id === draft)?.note;
-  return (
-    <div className="draft-switcher">
-      <div className="draft-pills">
-        <span className="draft-label">Home draft</span>
-        {HOME_DRAFTS.map((d) => (
-          <button key={d.id} className={`draft-pill ${d.id === draft ? 'on' : ''}`} onClick={() => setDraft(d.id)} title={d.note}>
-            <b>{d.id.toUpperCase()}</b> {d.name}
-          </button>
-        ))}
-      </div>
-      <p className="draft-note">{note}</p>
     </div>
   );
 }

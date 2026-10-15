@@ -506,7 +506,7 @@ Where the build differs from the plan above, and why:
 | Real-time shadow maps | Soft blob shadows (slabs, eggs, frogs, hand) | Cheap, and reads better in a white world |
 | Z3 in our own Web Worker | Z3's async API on the main thread | z3-solver already runs `check()` on Emscripten worker threads |
 | Pond stack with sliding layers | **Elevator**: ponds are floors at `y = n × 6`; changing `n` moves only the camera, the old floor fades out and the new one fades in as the camera arrives, with an "▲ n = 5" toast and an elevator-style Input panel (PageUp/PageDown) | Nothing else moves, so it's clear what happened |
-| Home as an HTML menu | 3D home scene: extruded Fredoka title (opentype.js → `ExtrudeGeometry`, bundled font, no CDN), frogs hopping around a loop of slabs; **Tutorial** and **Levels** buttons. No progress is persisted | |
+| Home as an HTML menu | Title and copy on the left: the extruded Fredoka title (opentype.js → `ExtrudeGeometry`, bundled font, no CDN) in its own small canvas, with a frog peeking over the "o" of *Frog*; **Tutorial** and **Levels** buttons. On the right, the counter program's world (stripes below a diagonal of goal pools, drawn from a tiny decorative program) and a ring of slabs above it, frogs hatching from eggs and then hopping round it. Narrow screens stack the scene above the copy; very small ones show only the copy. No progress is persisted | |
 
 **Models:** frogs are a merged procedural mesh (body, belly, big eyes with pupils and highlights, smile, cheeks, folded legs) tinted per instance, with an inverted-hull outline; the hand is a puffy cartoon glove (two-segment fingers, thumb, rolled cuff) with the same outline.
 

@@ -87,17 +87,13 @@ export function GoalColumns({
   pond,
   win,
   version,
-  only,
 }: {
   level: CompiledLevel;
   pond: number;
   win: { cx: number; cy: number; R: number };
   version: number;
-  /** Just these goal tiles (the home screen's small scene), instead of every goal in the window. */
-  only?: [number, number][];
 }) {
   const tiles = useMemo(() => {
-    if (only) return only;
     const out: [number, number][] = [];
     const f = level.fast;
     const R = Math.min(win.R, 24);
@@ -108,7 +104,7 @@ export function GoalColumns({
       }
     }
     return out;
-  }, [level, pond, win, only]);
+  }, [level, pond, win]);
 
   const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
   const geom = useMemo(() => {

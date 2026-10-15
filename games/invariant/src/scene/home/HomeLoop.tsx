@@ -1,7 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import type { CompiledLevel } from '../../levels/level';
 import { useGame } from '../../store/game';
 import { cameraRig } from '../cameraRig';
 import { COLORS, SLAB_H } from '../constants';
@@ -14,35 +13,21 @@ import { GoalColumns } from '../GoalColumns';
 import { goalEvents } from '../goalEvents';
 import { eggGeometry, Slabs } from '../AreaLayer';
 import { useArea } from './common';
-import { DIAGONAL, EDGE, RING, THROUGH } from './decor';
+import { DIAGONAL } from './decor';
 
-// The home screen's scene: area slabs with frogs hopping round and round their
-// edge (they never leave), beside or around a striped zone where the loop
-// would stop, with goal pools in it. Each draft arranges these differently.
+// The home screen's scene, in the counter program's world: striped tiles below
+// a diagonal of goal pools (where the loop would stop), and above it a ring of
+// area slabs with frogs hopping round and round it. They never leave. When
+// the page opens, each frog first hatches from an egg on its tile.
 
-export type LoopVariant = 'edge' | 'through' | 'ring' | 'diagonal';
-
-interface Setup {
-  /** The striped zone and its goal pools: a decorative program. */
-  world: CompiledLevel;
-  rect: { x0: number; y0: number; w: number; h: number };
-  /** Only the rectangle's edge is slabs (its inside is the striped zone). */
-  ring?: boolean;
-  frogs: number;
-  /** What the camera frames: centre tile and width in tiles. */
-  focus: { x: number; y: number; span: number };
-}
-
-const SETUPS: Record<LoopVariant, Setup> = {
-  edge: { world: EDGE, rect: { x0: 3, y0: 1, w: 6, h: 4 }, frogs: 4, focus: { x: 7, y: 2.5, span: 9 } },
-  through: { world: THROUGH, rect: { x0: 3, y0: 1, w: 6, h: 4 }, frogs: 4, focus: { x: 6.5, y: 2.5, span: 8 } },
-  ring: { world: RING, rect: { x0: 4, y0: 2, w: 5, h: 4 }, ring: true, frogs: 4, focus: { x: 6, y: 3.5, span: 9.5 } },
-  // a ring of slabs (hollow, like 'ring'), wholly above the diagonal: every tile has x < y
-  diagonal: { world: DIAGONAL, rect: { x0: 1, y0: 8, w: 7, h: 5 }, ring: true, frogs: 5, focus: { x: 4.6, y: 9, span: 11 } },
-};
+/** The ring of slabs: wholly above the diagonal (every tile has x < y), off the axes. */
+const RING = { x0: 1, y0: 8, w: 7, h: 5 };
+const FROGS = 5;
+/** What the camera frames: centre tile and width in tiles. */
+const FOCUS = { x: 4.6, y: 9, span: 11 };
 
 /** The rectangle's edge, clockwise as seen from the camera. */
-function edgePath({ x0, y0, w, h }: Setup['rect']): [number, number][] {
+function edgePath({ x0, y0, w, h }: typeof RING): [number, number][] {
   const p: [number, number][] = [];
   for (let x = x0; x < x0 + w; x++) p.push([x, y0 + h - 1]);
   for (let y = y0 + h - 2; y >= y0; y--) p.push([x0 + w - 1, y]);
@@ -93,19 +78,11 @@ function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
   return <primitive object={mesh} />;
 }
 
-export function LoopArea({ variant, shift = 1.25 }: { variant: LoopVariant; shift?: number }) {
-  const setup = SETUPS[variant];
-  const level = setup.world;
-  const { rect } = setup;
-  const tiles = useMemo(() => {
-    const out: [number, number][] = [];
-    for (let y = rect.y0; y < rect.y0 + rect.h; y++)
-      for (let x = rect.x0; x < rect.x0 + rect.w; x++) {
-        const edge = x === rect.x0 || x === rect.x0 + rect.w - 1 || y === rect.y0 || y === rect.y0 + rect.h - 1;
-        if (edge || !setup.ring) out.push([x, y]);
-      }
-    return out;
-  }, [rect, setup]);
+export function HomeLoop({ shift = 1.25 }: { shift?: number }) {
+  const level = DIAGONAL;
+  const rect = RING;
+  // the ring: the rectangle's edge only
+  const tiles = useMemo(() => edgePath(rect), [rect]);
   // slabs inside the striped zone are striped too, and carry its pools
   const version = useArea(tiles, (x, y) => {
     const s = { x, y };
@@ -117,7 +94,7 @@ export function LoopArea({ variant, shift = 1.25 }: { variant: LoopVariant; shif
   useEffect(() => {
     frogWorld.clear();
     const path = edgePath(rect);
-    const pos = Array.from({ length: setup.frogs }, (_, j) => Math.floor((j * path.length) / setup.frogs));
+    const pos = Array.from({ length: FROGS }, (_, j) => Math.floor((j * path.length) / FROGS));
     // On arrival each frog starts as an egg on its tile: the egg pops up,
     // then (one after another) wobbles, cracks and the frog climbs out.
     const t0 = now();
@@ -156,11 +133,11 @@ export function LoopArea({ variant, shift = 1.25 }: { variant: LoopVariant; shif
       frogWorld.clear();
       goalEvents.clear();
     };
-  }, [level, rect, setup]);
+  }, [level, rect]);
 
   // camera: beside the copy on wide screens, above it on narrow ones
   const mode = useGame((s) => s.mode);
-  const centre = setup.focus;
+  const centre = FOCUS;
   useFrame(({ clock, size }) => {
     const c = cameraRig.controls;
     if (!c || mode !== 'menu') return;
