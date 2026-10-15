@@ -1,11 +1,10 @@
-import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useRef, useState } from 'react';
-import * as THREE from 'three';
+import { useState } from 'react';
 import type { State } from '../lang/ast';
 import { displayNames, type CompiledLevel } from '../levels/level';
 import { useGame } from '../store/game';
 import { frogWorld, type FrogSim } from './frogSim';
+import { SceneTag } from './SceneTag';
 
 // A little tag over each real frog listing its variables. When a hop changes a
 // variable, the tag updates as the frog lands: the old value is struck out and
@@ -32,36 +31,32 @@ export function FrogTags() {
 }
 
 function FrogTag({ frog, level }: { frog: FrogSim; level: CompiledLevel }) {
-  const group = useRef<THREE.Group>(null);
-  const box = useRef<HTMLDivElement>(null);
   // the values shown change when the frog lands, not when it takes off
   const [shown, setShown] = useState<State>(frog.state);
   useFrame(() => {
-    const g = group.current;
-    const p = frog.drawn;
-    if (g && p) g.position.set(p.x, p.ground + 0.98, p.z);
     if (!frog.hop && frog.state !== shown) setShown(frog.state);
-    // step aside for a callout or failure tag on the same tile (they sit in the same spot)
+  });
+  // step aside for another tag in the same spot: a callout or failure label on
+  // this frog or on the tile it sits on
+  const covered = () => {
     const { callouts, failMark } = useGame.getState();
     const onTile = (x: number, y: number) => !frog.hop && x === frog.x && y === frog.y;
-    const covered = callouts.some((c) => onTile(c.x, c.y)) || (!!failMark && onTile(failMark.x, failMark.y));
-    box.current?.classList.toggle('covered', covered);
-  });
+    return (
+      callouts.some((c) => c.frog === frog.id || (c.frog === undefined && onTile(c.x, c.y))) ||
+      (!!failMark && onTile(failMark.x, failMark.y))
+    );
+  };
   return (
-    <group ref={group}>
-      <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-        <div ref={box} className="frog-tag">
-          {displayNames(level)
-            .filter((n) => n in shown)
-            .map((n, i) => (
-              <span key={n} className="frog-tag-var">
-                {i > 0 && ', '}
-                {n} = <Value value={String(shown[n])} />
-              </span>
-            ))}
-        </div>
-      </Html>
-    </group>
+    <SceneTag anchor={{ frog }} hidden={covered}>
+      {displayNames(level)
+        .filter((n) => n in shown)
+        .map((n, i) => (
+          <span key={n}>
+            {i > 0 && ', '}
+            {n} = <Value value={String(shown[n])} />
+          </span>
+        ))}
+    </SceneTag>
   );
 }
 

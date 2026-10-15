@@ -1144,25 +1144,31 @@ code {
   }
 }
 
-/* ---------- tutorial: variable tag over a frog ---------- */
-.frog-tag {
-  /* same look as the in-scene callouts (FailMarker.tsx TileTag) */
+/* ---------- labels in the scene (SceneTag): callouts, failures, frog state ---------- */
+.scene-tag {
+  --tag-bg: #2b3445;
   position: relative;
   padding: 4px 13px 5px;
   border-radius: 999px;
-  background: #2b3445;
+  background: var(--tag-bg);
   color: #fff;
   font-family: var(--display);
   font-size: 15px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  animation: fade 0.3s ease-out;
+  animation: tag-in 0.3s ease-out;
   transition:
     opacity 0.25s ease,
     transform 0.25s ease;
 }
-.frog-tag::after {
+.scene-tag.good {
+  --tag-bg: #2f9e44;
+}
+.scene-tag.fail {
+  --tag-bg: #f04f55;
+}
+.scene-tag::after {
   content: '';
   position: absolute;
   left: 50%;
@@ -1170,60 +1176,53 @@ code {
   margin-left: -6px;
   border: 6px solid transparent;
   border-bottom: 0;
-  border-top-color: #2b3445;
+  border-top-color: var(--tag-bg);
 }
-.frog-tag.covered {
+.scene-tag.covered {
   opacity: 0;
   transform: translateY(4px) scale(0.9);
 }
-/* old and new values share one cell, so the tag never changes width mid-swap */
+@keyframes tag-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+}
+/* A changed value: the old one slips up and away, the new one rises into
+   place with a brief warm tint. Both share one cell, so the width holds. */
 .frog-tag-val {
   display: inline-grid;
   justify-items: center;
+  overflow: hidden;
+  vertical-align: bottom;
 }
 .frog-tag-val > span {
   grid-area: 1 / 1;
 }
 .frog-tag-val .old {
-  color: #ff9a9e;
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-  animation: tag-old 0.55s ease-in forwards;
+  animation: tag-old 0.28s ease-in forwards;
 }
 .frog-tag-val .new {
-  border-radius: 4px;
-  animation: tag-new 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  animation: tag-new 0.7s ease-out;
 }
 @keyframes tag-old {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  35% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
+  to {
     opacity: 0;
-    transform: translateY(-14px) scale(0.8);
+    transform: translateY(-70%);
   }
 }
 @keyframes tag-new {
-  0%,
-  30% {
+  0% {
     opacity: 0;
-    transform: translateY(10px) scale(0.6);
-    background: rgba(255, 214, 102, 0);
+    transform: translateY(70%);
+    color: #ffd98a;
   }
-  55% {
+  35% {
     opacity: 1;
-    transform: translateY(0) scale(1.3);
-    color: #1c2333;
-    background: rgba(255, 214, 102, 1);
+    transform: none;
+    color: #ffd98a;
   }
   100% {
-    transform: none;
     color: #fff;
-    background: rgba(255, 214, 102, 0);
   }
 }

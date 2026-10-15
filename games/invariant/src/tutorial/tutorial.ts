@@ -323,8 +323,9 @@ async function script(gen: number) {
     await director.sleep(650);
     await director.step(true);
     guard(gen);
-    const f = frogWorld.frogs[0];
-    if (f) useGame.setState({ callouts: [{ x: f.x, y: f.y, text: 'still on your area', tone: 'good' }] });
+    // after the first landing, the label rides along with the frog
+    const f = frogWorld.frogs.find((fr) => fr.kind === 'real');
+    if (k === 0 && f) useGame.setState({ callouts: [{ x: f.x, y: f.y, frog: f.id, text: 'still on your area', tone: 'good' }] });
   }
   await director.sleep(500);
   await beat(gen, 'So it can never leave your area, no matter how many hops. When the loop ends, it is still somewhere on your area.\n\nIs that enough?', {
