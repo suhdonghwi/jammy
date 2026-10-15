@@ -75,27 +75,23 @@ float rippleAt(vec2 p) {
   return acc;
 }
 
-// Splash rings that run out of the pool across the tile and onto its
-// neighbours (p in tile space). Drawn on every surface, so they read even when
-// the landed frog hides the pool itself.
+// A single soft ring that runs out of the pool to about the tile's edge (p in
+// tile space). Drawn on every surface, so it reads even when the landed frog
+// hides the pool itself.
 float splashAt(vec2 p) {
-  if (uTime - uLastEvent > 1.3) return 0.0;
+  if (uTime - uLastEvent > 0.8) return 0.0;
   float acc = 0.0;
   for (int i = 0; i < ${MAX_EVENTS}; i++) {
     vec3 e = uEvents[i];
-    float age = uTime - e.z;
-    if (age < 0.0 || age > 1.3) continue;
+    float a = uTime - e.z;
+    if (a < 0.0 || a > 0.8) continue;
     float d = length(p - e.xy);
-    if (d > 1.6) continue;
-    for (int k = 0; k < 2; k++) {
-      float a = age - float(k) * 0.16;
-      if (a < 0.0) continue;
-      // fast at first, easing out
-      float rr = 0.3 + 1.15 * (1.0 - exp(-a * 3.2));
-      float w = 0.03 + 0.03 * a;
-      float fade = pow(max(0.0, 1.0 - a / 1.1), 1.6);
-      acc = max(acc, exp(-pow((d - rr) / w, 2.0)) * fade * (k == 0 ? 1.0 : 0.55));
-    }
+    if (d > 1.0) continue;
+    // fast at first, easing out
+    float rr = 0.3 + 0.45 * (1.0 - exp(-a * 4.0));
+    float w = 0.02 + 0.02 * a;
+    float fade = pow(max(0.0, 1.0 - a / 0.8), 2.0);
+    acc = max(acc, exp(-pow((d - rr) / w, 2.0)) * fade);
   }
   return acc;
 }

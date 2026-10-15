@@ -98,7 +98,7 @@ void main() {
       col = mix(uTop, mix(uStopTop, uStopTop * 0.9, hatch), uStopAmt);
     }
     if (stop && vFlags.y > 0.5 && uGoalAmt > 0.002) col = mix(col, drawGoal(col, vF, fwr, vTile), uGoalAmt);
-    if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.75 * uGoalAmt);
+    if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.45 * uGoalAmt);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
     float m = 0.0;
     if (t.y == 0) m = numberMask(vF, t.x);

@@ -81,7 +81,7 @@ void main() {
       tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
     }
     col = mix(uGap, tcol, inside);
-    if (uShowGoal > 0.002) col = mix(col, SPLASH, splashAt(p) * 0.75 * uShowGoal);
+    if (uShowGoal > 0.002) col = mix(col, SPLASH, splashAt(p) * 0.45 * uShowGoal);
 
   } else {
     col = uVoid;
