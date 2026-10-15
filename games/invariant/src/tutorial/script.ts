@@ -163,14 +163,28 @@ export function waitStore(gen: number, test: (g: Game) => boolean): Promise<void
 }
 
 /** A question with a few answers as buttons; resolves with the chosen key. */
-export function choose<K extends string>(gen: number, text: string, choices: { key: K; label: string }[]): Promise<K> {
+export function choose<K extends string>(gen: number, text: string, choices: { key: K; label: string; tone?: 'yes' | 'no' }[]): Promise<K> {
   return new Promise((resolve, reject) => {
     const pick = (k: K) => () => {
       if (gen !== generation) reject(new Aborted());
       else resolve(k);
     };
-    useGame.setState({ caption: { text, tone: 'info', choices: choices.map((c) => ({ label: c.label, onClick: pick(c.key) })) }, spotlight: null });
+    // the previous beat's tags go: the question stands on its own
+    useGame.setState({
+      caption: { text, tone: 'info', choices: choices.map((c) => ({ label: c.label, tone: c.tone, onClick: pick(c.key) })) },
+      spotlight: null,
+      callouts: [],
+    });
   });
+}
+
+/** A yes-or-no question; resolves with true for Yes. */
+export async function ask(gen: number, text: string): Promise<boolean> {
+  const k = await choose(gen, text, [
+    { key: 'yes', label: 'Yes', tone: 'yes' },
+    { key: 'no', label: 'No', tone: 'no' },
+  ]);
+  return k === 'yes';
 }
 
 // ---- Check, and the hint ladder ----
@@ -299,7 +313,7 @@ export async function demo(gen: number, formula: string, rules: Rule[], extra?: 
   const mine = g.formulaText;
   useGame.setState({ busy: true, callouts: [] });
   frogWorld.clear('test');
-  say(`The hand tries \`${formula}\`…`, 'formula', 'muted');
+  say(`Trying \`${formula}\`…`, 'formula', 'muted');
   const t = cameraRig.target();
   void handIn(t.x + 2.5, -t.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
   await sleep(500);

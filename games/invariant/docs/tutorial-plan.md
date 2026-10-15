@@ -210,8 +210,8 @@ Check runs **Init** only. Pitfall for the demo: `i == n`.
 
 - *Fails Init:* the hand hatches the egg outside (as today). Caption names the
   frog and the rule, then "Fix your area and Check again." Loop.
-- *Passes:* "Every egg sits on it. Before we go on, let me try one that
-  doesn't." → predict → demo `i == n` → the counterexample. Then:
+- *Passes:* the pass beat (eggs tagged) → predict → demo `i == n` → the
+  counterexample. Then:
 
 > **Rule 1 · Init** (initialization): every egg sits on your area. `i == n`
 > only covers the egg at `n = 0`.
@@ -229,8 +229,9 @@ Check runs **Init + Preservation**. Pitfall: `i == 0 || i == n`.
   today). The first time a purple frog appears, a callout rides with it:
   "**test frog**: a state the hand imagines". Caption: "From `…`, one hop
   lands at `…` — outside your area." Loop.
-- *Passes:* predict → demo `i == 0 || i == n` → counterexample ("frogs pass
-  through the tiles in between").
+- *Passes:* the pass beat (a light shower) → predict → demo
+  `i == 0 || i == n` → counterexample ("frogs pass through the tiles in
+  between").
 
 Then name it:
 
@@ -267,8 +268,8 @@ Pitfall: `i >= 0`.
   The pitfall line from the level ("Real frogs never pass n — but your area
   allows it") is dropped here; it duplicates the paragraph. Loop: the learner
   edits and Checks again (all three rules).
-- *Passes:* predict → demo `i >= 0` → the counterexample with the same
-  objection paragraph.
+- *Passes:* the pass beat (stop tiles tagged) → predict → demo `i >= 0` →
+  the counterexample with the same objection paragraph.
 
 **2.5 Too small, too large.** Once the learner's area passes all three.
 
@@ -317,7 +318,7 @@ formula and runs the checker on `rules` (cumulative: stage 1 `['init']`, stage
 | Parse or type error | As in levels: the box shows the error and shakes; no caption change. |
 | A rule fails | The hand plays the counterexample for the *first* failing rule in order. The caption names the frog and the rule. If the failing rule is from an earlier stage, prefix "Rule *k* held a moment ago; this change lost it." Then wait for Check again. |
 | Undecided | Cannot happen on this program (no `*` between variables); if it ever does, the hand shrugs and the hint ladder opens at rung 2. |
-| All current rules pass | Lights go green. Caption: "Passes. Before we go on, let me try one that doesn't." → `predict` → `demo(pitfall)`. Then the stage ends. |
+| All current rules pass | Lights go green; the pass beat shows the rule's evidence in the scene; then `predict` → `demo(pitfall)`. Then the stage ends. |
 
 A stage ends only on a pass. There is no attempt limit; the hint ladder is
 how a stuck learner finishes.
@@ -337,16 +338,25 @@ Each press climbs one rung; the rung resets each stage.
 The Tab hint is shown only while the box is empty (today it stays while Tab
 does nothing).
 
-**Predict.** A caption with two secondary buttons, e.g.:
+**Pass.** When a stage passes, a beat says so with the rule's own evidence in
+the scene before anything else happens: "on your area" tags on the eggs
+(Init), a light shower of test frogs that all land on the area again
+(Preservation), "stops on a goal" tags on the area's stop tiles (Exit). Then
+Next.
 
-> The hand will try `i == n`. Does it pass rule 1? **Passes** · **Fails**
+**Predict.** A yes-or-no question, with Yes and No as buttons that carry a
+green tick and a red cross:
 
-After the demo: "Right — …" or "Not quite — …" followed by the rule's
-explanation. For stage 3, the question is "Does `i >= 0` pass all three?".
-Predictions are never scored or remembered; they exist to make the learner
-commit. They are plain buttons, not clicks in the scene, and the demo cannot
-be skipped: a learner who passes every stage first try still sees all three
-failures, because the demos are where the rules get their names.
+> Before we move on: what if we had tried `i == n`? Would every egg sit on
+> it? **✓ Yes** · **✕ No**
+
+The hand is not named here (the learner may not have met it yet). After the
+demo: "Right: no." or "Not quite: no." followed by the rule's explanation.
+For stage 3, the question is "Would it pass all three rules?". Predictions
+are never scored or remembered; they exist to make the learner commit. They
+are plain buttons, not clicks in the scene, and the demo cannot be skipped: a
+learner who passes every stage first try still sees all three failures,
+because the demos are where the rules get their names.
 
 **Demo.** `demo(gen, formula, rule)`: the learner's formula is saved; the hand
 comes in; the formula box types out `formula` character by character (slabs

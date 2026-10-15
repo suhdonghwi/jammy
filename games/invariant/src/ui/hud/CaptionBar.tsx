@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, RotateCcw, X } from 'lucide-react';
 import { useGame, type CaptionTone } from '../../game/store';
 import { button } from '../classes';
 import { Markdown } from '../Markdown';
@@ -46,6 +46,8 @@ export function CaptionBar() {
           {/* a question: its answers, side by side */}
           {caption.choices?.map((c) => (
             <button key={c.label} className={button('plain', 'sm')} onClick={c.onClick}>
+              {c.tone === 'yes' && <Check size={15} strokeWidth={2.6} className="text-pass" />}
+              {c.tone === 'no' && <X size={15} strokeWidth={2.6} className="text-fail" />}
               {c.label}
             </button>
           ))}

@@ -63,8 +63,8 @@ export interface Caption {
   action?: { label: string; onClick: () => void; disabled?: boolean };
   /** Optional quieter button next to it (e.g. Replay). */
   secondary?: { label: string; onClick: () => void };
-  /** A question: these buttons instead of a main one (the tutorial's predictions). */
-  choices?: { label: string; onClick: () => void }[];
+  /** A question: these buttons instead of a main one (the tutorial's predictions); `tone` gives Yes and No their marks. */
+  choices?: { label: string; onClick: () => void; tone?: 'yes' | 'no' }[];
 }
 
 /** The tutorial's hint ladder for the current stage: a nudge, then a formula to try, then filling it in. */

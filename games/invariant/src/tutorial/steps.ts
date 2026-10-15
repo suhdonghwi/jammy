@@ -5,8 +5,9 @@ import { useGame, type Reveal } from '../game/store';
 import { RULE_NAMES, type Rule } from '../levels/level';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
+import { eggsNear, tileState } from '../scene/tiles';
 import { EXIT_MS } from '../ui/presence';
-import { allow, beat, choose, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
+import { allow, ask, beat, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
 
 // The story, as steps. Each step knows the scene it starts from, so Back can
 // rebuild it and replay the step; moving forward just runs the next one.
@@ -58,10 +59,47 @@ const upTo = (r: Rule): Rule[] => ALL.slice(0, ALL.indexOf(r) + 1);
 /** The learner's area, as inline code. */
 const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
+/** Tiles near the camera's home that satisfy `test`, nearest first, at most `n`. */
+function tilesWhere(test: (x: number, y: number) => boolean, n: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let y = 0; y <= 7; y++) for (let x = 0; x <= 9; x++) if (test(x, y)) out.push([x, y]);
+  return out.sort((a, b) => Math.hypot(a[0] - 2, a[1] - 2) - Math.hypot(b[0] - 2, b[1] - 2)).slice(0, n);
+}
+
+/**
+ * A stage passed: say so, with the rule's own evidence in the scene — the eggs
+ * on the area, a shower of frogs that all land on it again, or the stop tiles
+ * on it that are goals.
+ */
+async function passed(gen: number, rule: Rule) {
+  const L = useGame.getState().level!;
+  const { pond, valid } = useGame.getState();
+  const inArea = (x: number, y: number) => !!valid && valid.fast(tileState(L, x, y, pond)) === true;
+  if (rule === 'init') {
+    const eggs = eggsNear(L, pond, 2, 2, 4).slice(0, 3);
+    await beat(gen, 'Every egg sits on your area: the first rule holds.', {
+      spot: 'lights',
+      callouts: eggs.map(([x, y]) => ({ x, y, text: 'on your area', tone: 'good' as const })),
+    });
+  } else if (rule === 'pres') {
+    await beat(gen, 'No hop leaves your area: the second rule holds. A frog anywhere on it lands on it again.', {
+      spot: 'lights',
+      prepare: () => playRain({ max: 28, zoomOut: false }),
+    });
+    frogWorld.clear('test');
+  } else {
+    const stops = tilesWhere((x, y) => L.fast.pondReq(tileState(L, x, y, pond)) === true && L.fast.guard(tileState(L, x, y, pond)) !== true && inArea(x, y), 3);
+    await beat(gen, 'Every frog that stops on your area is on a goal: the third rule holds.', {
+      spot: 'lights',
+      callouts: stops.map(([x, y]) => ({ x, y, text: 'stops on a goal', tone: 'good' as const })),
+    });
+  }
+}
+
 /**
  * A rule's failure, witnessed: if the learner already saw it on an area of
- * their own, the rule is simply named; otherwise the hand demos the stage's
- * pitfall after the learner predicts the outcome.
+ * their own, the rule is simply named; otherwise a pitfall formula is tried
+ * before their eyes, after they predict the outcome.
  */
 async function witness(
   gen: number,
@@ -70,14 +108,11 @@ async function witness(
   o: { question: string; afterDemo: string; afterOwn: string; extra?: string },
 ) {
   if (!witnessed.has(rule)) {
-    const guess = await choose(gen, `Your area passes. Before we go on, the hand will try \`${pitfall}\`. ${o.question}`, [
-      { key: 'pass', label: 'Passes' },
-      { key: 'fail', label: 'Fails' },
-    ]);
+    const yes = await ask(gen, `Before we move on: what if we had tried \`${pitfall}\`? ${o.question}`);
     guard(gen);
     await demo(gen, pitfall, upTo(rule), o.extra);
     guard(gen);
-    const verdict = guess === 'fail' ? 'Right: it fails.' : 'Not quite: it fails.';
+    const verdict = yes ? 'Not quite: no.' : 'Right: no.';
     await beat(gen, `${verdict} ${o.afterDemo}`, { spot: 'lights' });
   } else {
     await beat(gen, o.afterOwn, { spot: 'lights' });
@@ -271,6 +306,7 @@ export const STEPS: Step[] = [
         onFail: (r) => witnessed.add(r),
       });
       learnerFormula = useGame.getState().formulaText;
+      await passed(gen, 'init');
     },
   },
   // 2.1b witness: Init
@@ -278,7 +314,7 @@ export const STEPS: Step[] = [
     scene: { reveal: { ...DRAW, awake: ['init'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
       witness(gen, 'init', 'i == n', {
-        question: 'Does every egg sit on it?',
+        question: 'Would every egg sit on it?',
         afterDemo: `**Rule 1 · Init** (initialization): every egg sits on your area. \`i == n\` only covers the egg at \`n = 0\`; yours, ${mine()}, covers them all.`,
         afterOwn: `**Rule 1 · Init** (initialization): every egg sits on your area. Your first try missed one; ${mine()} covers them all.`,
       }),
@@ -297,6 +333,7 @@ export const STEPS: Step[] = [
         onFail: (r) => witnessed.add(r),
       });
       learnerFormula = useGame.getState().formulaText;
+      await passed(gen, 'pres');
     },
   },
   // 2.2b witness: Preservation
@@ -304,7 +341,7 @@ export const STEPS: Step[] = [
     scene: { reveal: { ...DRAW, awake: ['init', 'pres'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
       witness(gen, 'pres', 'i == 0 || i == n', {
-        question: 'Does every hop from it land on it?',
+        question: 'Would every hop from it land on it?',
         afterDemo:
           '**Rule 2 · Preservation**: a frog on your area that hops lands on your area. Frogs pass through the tiles in between!\n\nThe hand may start its purple **test frog** on *any* tile of your area, not only ones a real run reaches. Your area is a claim, and the hand tests the claim.',
         afterOwn:
@@ -372,6 +409,7 @@ export const STEPS: Step[] = [
         onFail: (r) => witnessed.add(r),
       });
       learnerFormula = useGame.getState().formulaText;
+      await passed(gen, 'exit');
     },
   },
   // 2.4b witness: Exit
@@ -379,7 +417,7 @@ export const STEPS: Step[] = [
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
       witness(gen, 'exit', 'i >= 0', {
-        question: 'Does it pass all three?',
+        question: 'Would it pass all three rules?',
         afterDemo:
           '**Rule 3 · Exit**: a frog that stops on your area is on a goal. `i >= 0` is a true invariant — every run really does keep `i ≥ 0` — but too weak to prove the goal.',
         afterOwn: `**Rule 3 · Exit**: a frog that stops on your area is on a goal. Your earlier area was a true invariant, but too weak to prove the goal; ${mine()} is strong enough.`,

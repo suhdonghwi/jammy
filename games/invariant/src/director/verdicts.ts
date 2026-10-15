@@ -164,14 +164,18 @@ export async function playShrug(text: string) {
   }
 }
 
-/** Success: the hand scatters frogs everywhere on the area, and every one that can hop lands on it again. */
-export async function playRain() {
+/**
+ * Success: the hand scatters frogs everywhere on the area, and every one that
+ * can hop lands on it again. `max` caps the frogs (a light shower, for a
+ * stage's pass), and `zoomOut` pulls the camera back for the full one.
+ */
+export async function playRain({ max = 160, zoomOut = true }: { max?: number; zoomOut?: boolean } = {}) {
   const tok = begin();
   const L = currentLevel();
   useGame.setState({ busy: true, running: false, selected: null });
   frogWorld.clear();
   try {
-    await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
+    if (zoomOut) await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
     const { valid: inv, pond } = useGame.getState();
     if (!inv) return;
     const t = cameraRig.target();
@@ -185,7 +189,7 @@ export async function playRain() {
       const j = Math.floor(Math.random() * (i + 1));
       [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
     }
-    const pick = tiles.slice(0, 160);
+    const pick = tiles.slice(0, max);
     // the hand sweeps across while sprinkling
     Object.assign(handState, { x: tx - 9, y: 5, z: -ty + 2, curl: 0.55, tap: 0.6, point: 0, shrug: 0, palmUp: 0, yaw: 0 });
     void tween(handState, { visible: 1, duration: 0.3 });
