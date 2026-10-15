@@ -6,11 +6,13 @@ import { useLingering } from '../presence';
 
 // What the game is saying: the caption, with its buttons (and Back, in the tutorial).
 
+// the same card as the area box (a 2px border on frosted white); only the
+// border's colour carries the tone, so the card never changes size or feel
 const TONE: Record<CaptionTone, string> = {
-  info: 'border-line bg-card',
-  muted: 'border-line bg-card text-muted',
-  fail: 'border-fail/25 bg-[#fff7f7]/94',
-  success: 'border-pass/30 bg-[#f5fcf3]/95',
+  info: 'border-line',
+  muted: 'border-line text-muted',
+  fail: 'border-fail/35',
+  success: 'border-pass/40',
 };
 
 export function CaptionBar() {
@@ -23,7 +25,7 @@ export function CaptionBar() {
     <div
       key={caption.text}
       // the text gets the full width; the buttons sit on their own row below
-      className={`flex flex-col gap-2.5 rounded-2xl border py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
+      className={`flex flex-col gap-2.5 rounded-2xl border-2 bg-card py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md transition-colors duration-200 ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
     >
       <div>
         <Markdown text={caption.text} />
