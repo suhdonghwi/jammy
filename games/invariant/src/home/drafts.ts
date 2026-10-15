@@ -7,7 +7,7 @@ export const HOME_DRAFTS = [
   { id: 'a', name: 'Edge', note: 'The striped zone starts right at the edge of the area, with two goal pools on it.' },
   { id: 'b', name: 'Through', note: "The area's last column lies in the striped zone; frogs splash through its pools every lap." },
   { id: 'c', name: 'Ring', note: 'Frogs circle a ring of slabs around a small striped pond with two pools.' },
-  { id: 'd', name: 'Diagonal', note: "The counter's world: stripes below a diagonal of pools, the loop above it." },
+  { id: 'd', name: 'Diagonal', note: "The counter's world: stripes below a diagonal of pools; frogs circle a ring of slabs above it." },
 ] as const;
 
 export type HomeDraftId = (typeof HOME_DRAFTS)[number]['id'];
