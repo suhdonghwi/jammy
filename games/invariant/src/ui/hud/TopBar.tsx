@@ -20,7 +20,8 @@ export function TopBar() {
   const spot = useGame((s) => s.spotlight);
   if (!level) return null;
   return (
-    <div className="pointer-events-none! flex flex-wrap items-center justify-between gap-3">
+    // .topbar and .pill-group: HoverReadout measures them to lift itself into this row when the middle is free
+    <div className="topbar pointer-events-none! flex flex-wrap items-center justify-between gap-3">
       <div className={PILLS}>
         {/* just an arrow: the level's name is what this pill is about */}
         <button
@@ -67,7 +68,7 @@ export function TopBar() {
 type LightStatus = 'dim' | 'idle' | 'checking' | 'pass' | 'fail' | 'undecided';
 
 /** A rounded bar of controls floating over the scene. */
-const PILLS = 'pointer-events-auto flex items-center gap-1.5 rounded-full border border-line bg-card p-1.25 shadow-card backdrop-blur-md';
+const PILLS = 'pill-group pointer-events-auto flex items-center gap-1.5 rounded-full border border-line bg-card p-1.25 shadow-card backdrop-blur-md';
 
 const LIGHT: Record<LightStatus, string> = {
   // revealed, but its stage hasn't come yet
