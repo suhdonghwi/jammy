@@ -125,7 +125,12 @@ export function cexFromModel(level: CompiledLevel, inv: Expr, invText: string, r
 
 /** Is `a` equivalent to `b` on every existing state? */
 export async function equivalent(ctx: Ctx, level: CompiledLevel, a: Expr, b: Expr, timeout: number): Promise<boolean> {
+  return (await sameArea(ctx, level, a, b, timeout)) === true;
+}
+
+/** Do `a` and `b` describe the same area on every existing state? `undefined` when the solver can't tell. */
+export async function sameArea(ctx: Ctx, level: CompiledLevel, a: Expr, b: Expr, timeout: number): Promise<boolean | undefined> {
   const differ: Expr = { kind: 'binary', op: '!=', left: a, right: b, span: a.span };
   const r = await solve(ctx, level.names, and(level.planeReq, differ), { timeout, bounds: [] });
-  return r.kind === 'unsat';
+  return r.kind === 'unsat' ? true : r.kind === 'sat' ? false : undefined;
 }

@@ -4,7 +4,6 @@ import { openLevel, openTutorial } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { GROUPS, levelNumber } from '../../levels/catalog';
 import { button } from '../classes';
-import { MarkdownInline } from '../Markdown';
 import { usePresence } from '../presence';
 import { Title3D } from './title/Title3D';
 import { useCompactHome } from './useCompactHome';
@@ -92,25 +91,17 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
         <div className="overflow-y-auto px-6 pt-1.5 pb-6">
           {GROUPS.map((g) => (
             <section key={g.name}>
-              {/* the group names the kind of fact its areas need; the numbers run on across groups */}
-              <h3 className="mt-4 font-display text-lg font-semibold">{g.name}</h3>
-              <p className="mb-2.5 text-sm text-muted">
-                <MarkdownInline text={g.blurb} />
-              </p>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2.5">
+              {/* the group's name says what kind of fact its areas need; the numbers run on across groups */}
+              <h3 className="mt-4 mb-2.5 font-display text-lg font-semibold">{g.name}</h3>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-2.5">
                 {g.levels.map((l) => (
                   <button
                     key={l.id}
-                    className="flex cursor-pointer flex-col items-start gap-0.75 rounded-2xl border border-line bg-white px-3.5 pt-3 pb-3.25 text-left shadow-[0_3px_0_#e2e6ee] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_5px_0_#dfe4ec,0_10px_20px_rgb(32_44_70/0.08)]"
+                    className="flex cursor-pointer items-baseline gap-2.5 rounded-2xl border border-line bg-white px-3.5 py-3 text-left shadow-[0_3px_0_#e2e6ee] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_5px_0_#dfe4ec,0_10px_20px_rgb(32_44_70/0.08)]"
                     onClick={() => openLevel(l)}
                   >
                     <span className="font-mono text-xs text-faint">{levelNumber(l.id)}</span>
-                    <span className="font-display text-lg font-semibold">{l.title}</span>
-                    {l.intro && (
-                      <span className="text-sm leading-snug text-muted">
-                        <MarkdownInline text={l.intro} />
-                      </span>
-                    )}
+                    <span className="font-display text-md font-semibold">{l.title}</span>
                   </button>
                 ))}
               </div>

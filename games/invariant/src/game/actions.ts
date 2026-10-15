@@ -1,3 +1,5 @@
+import { compareToModel, type ModelMatch } from '../checker/check';
+import { browserZ3 } from '../checker/z3-browser';
 import { resetLevel } from '../director/frogs';
 import { playCounterexample, playRain, playShrug, runChecker } from '../director/verdicts';
 import { levels, tutorialLevel } from '../levels/catalog';
@@ -81,13 +83,36 @@ export async function check() {
     await playShrug(`I couldn't find a frog that breaks this nearby — but I couldn't prove it either.${tip}`);
     return;
   }
+  // compared while the frogs rain, so the caption doesn't wait on it
+  const level = g.level;
+  const match = browserZ3()
+    .then((ctx) => compareToModel(ctx, level, g.valid!))
+    .catch((): ModelMatch => 'unknown');
   await playRain();
-  const next = levels[levels.findIndex((l) => l.id === g.level!.id) + 1];
+  const model = modelNote(level.solutions[0], await match);
+  // left for another level (or the menu) while it rained
+  if (useGame.getState().level !== level) return;
+  const next = levels[levels.findIndex((l) => l.id === level.id) + 1];
   useGame.setState({
     caption: {
-      text: 'Proved. Every frog, everywhere you claimed — for every input.',
+      text: `Proved. Every frog, everywhere you claimed — for every input.${model ? `\n\n${model}` : ''}`,
       tone: 'success',
       action: next ? { label: `Next: ${next.title}`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
     },
   });
+}
+
+/** A line about the model answer for the success caption; nothing when the learner typed it. */
+function modelNote(model: string, match: ModelMatch): string | null {
+  const m = `\`${model}\``;
+  switch (match) {
+    case 'typed':
+      return null;
+    case 'same':
+      return `The model answer, ${m}, is the same area written another way.`;
+    case 'different':
+      return `The model answer is ${m} — a different area. Both pass all three rules, so both prove the goal: a loop can have more than one invariant.`;
+    case 'unknown':
+      return `The model answer: ${m}.`;
+  }
 }

@@ -28,15 +28,12 @@ ensures i == n;`,
 
 export interface LevelGroup {
   name: string;
-  /** What the group's areas need, in a sentence. */
-  blurb: string;
   levels: LevelDef[];
 }
 
 export const GROUPS: LevelGroup[] = [
   {
     name: 'Fences',
-    blurb: 'Find the line real frogs never cross.',
     levels: [
       {
         id: 'countdown',
@@ -125,7 +122,6 @@ ensures hi <= lo && lo <= hi + 1;`,
   },
   {
     name: 'Rhythm',
-    blurb: 'Frogs that hop several tiles land only on some of them. Say which.',
     levels: [
       {
         id: 'step-by-two',
@@ -211,7 +207,6 @@ ensures i % 3 == 0 && n <= i && i < n + 3;`,
   },
   {
     name: 'Balance',
-    blurb: 'Every hop changes the variables, but some combination of them stays the same. Write it as an equation, then fence it.',
     levels: [
       {
         id: 'transfer',
@@ -333,7 +328,6 @@ ensures a == b && a == 2 * n;`,
   },
   {
     name: 'Forks',
-    blurb: 'The loop body has an `if`. Your area must survive every branch.',
     levels: [
       {
         id: 'even-out',
@@ -467,7 +461,6 @@ ensures c == n / 3;`,
   },
   {
     name: 'Curves',
-    blurb: 'Some variables grow faster with every hop. The equation that stays true has a product in it.',
     levels: [
       {
         id: 'odd-squares',

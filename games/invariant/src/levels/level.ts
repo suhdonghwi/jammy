@@ -21,9 +21,10 @@ export interface LevelDef {
   source: string;
   /** Which variables go on the plane's axes. A leftover input becomes the plane slider: one plane per value. */
   view: { x: string; y: string };
+  /** Known-good areas; the first is the model answer, shown once the learner proves a different formula. */
   solutions: string[];
   pitfalls?: Pitfall[];
-  /** Caption shown when the level opens (and its line in the level list). */
+  /** Caption shown when the level opens. */
   intro?: string;
   /** For a stuck learner, revealed one at a time: from what to look at, to the shape of the area. Never the formula itself. */
   hints?: string[];
