@@ -108,16 +108,25 @@ function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone
 export async function beat(
   gen: number,
   text: string,
-  opts: { prepare?: () => Promise<void> | void; label?: string; spot?: Spot; settle?: number; callouts?: Game['callouts']; lines?: number[] } = {},
+  opts: {
+    prepare?: () => Promise<void> | void;
+    label?: string;
+    spot?: Spot;
+    settle?: number;
+    callouts?: Game['callouts'];
+    lines?: number[];
+    tone?: CaptionTone;
+  } = {},
 ): Promise<void> {
   // small labelled tags in the scene for what this beat talks about (cleared otherwise)
   useGame.setState({ callouts: opts.callouts ?? [], spotLines: opts.lines ?? [] });
-  say(text, opts.spot ?? null, 'info', opts.label ?? 'Next');
+  const tone = opts.tone ?? 'info';
+  say(text, opts.spot ?? null, tone, opts.label ?? 'Next');
   if (opts.prepare) await opts.prepare();
   guard(gen);
   await sleep(opts.settle ?? 300);
   guard(gen);
-  await next(gen, text, opts.label ?? 'Next', opts.spot ?? null);
+  await next(gen, text, opts.label ?? 'Next', opts.spot ?? null, tone);
 }
 
 /** Keep the caption currently shown (e.g. a counterexample) until Next. */

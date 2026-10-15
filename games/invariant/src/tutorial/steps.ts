@@ -79,20 +79,23 @@ async function passed(gen: number, rule: Rule) {
   const { pond, valid } = useGame.getState();
   const inArea = (x: number, y: number) => !!valid && valid.fast(tileState(L, x, y, pond)) === true;
   if (rule === 'init') {
-    await beat(gen, 'Every egg sits on your area: the first rule holds.', {
+    await beat(gen, 'Correct! Every egg sits on your area: the first rule holds.', {
       spot: 'lights',
+      tone: 'success',
       callouts: outlines(eggsNear(L, pond, 4, 4, 6)),
     });
   } else if (rule === 'pres') {
-    await beat(gen, 'No hop leaves your area: the second rule holds. A frog anywhere on it lands on it again.', {
+    await beat(gen, 'Correct! No hop leaves your area: the second rule holds. A frog anywhere on it lands on it again.', {
       spot: 'lights',
+      tone: 'success',
       prepare: () => playRain({ max: 28, zoomOut: false }),
     });
     frogWorld.clear('test');
   } else {
     const stops = tilesWhere((x, y) => L.fast.pondReq(tileState(L, x, y, pond)) === true && L.fast.guard(tileState(L, x, y, pond)) !== true && inArea(x, y));
-    await beat(gen, 'Every frog that stops on your area is on a goal: the third rule holds.', {
+    await beat(gen, 'Correct! Every frog that stops on your area is on a goal: the third rule holds.', {
       spot: 'lights',
+      tone: 'success',
       callouts: outlines(stops),
     });
   }

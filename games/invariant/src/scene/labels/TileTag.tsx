@@ -12,7 +12,8 @@ import { SceneTag, type TagTone } from './SceneTag';
 
 const TONE_COLORS: Record<TagTone, string> = {
   info: '#2b3445',
-  good: '#2f9e44',
+  // bright enough to read on a blue slab as well as a white tile
+  good: '#34d058',
   fail: COLORS.fail,
 };
 export const TONE_PREFIX: Record<TagTone, string> = { info: '', good: '✓ ', fail: '✕ ' };
@@ -74,7 +75,7 @@ export function TileTag({ x, y, label, tone, pulse = false, wash = false, leavin
       ring.current.scale.setScalar(0.9 + 0.1 * pop + (pulse ? 0.035 * beat : 0));
       (ring.current.material as THREE.MeshBasicMaterial).opacity = pop * (pulse ? 0.75 + 0.25 * beat : 0.85);
     }
-    if (washRef.current) (washRef.current.material as THREE.MeshBasicMaterial).opacity = pop * (0.12 + 0.1 * beat);
+    if (washRef.current) (washRef.current.material as THREE.MeshBasicMaterial).opacity = pop * (pulse ? 0.12 + 0.1 * beat : 0.3);
   });
 
   return (

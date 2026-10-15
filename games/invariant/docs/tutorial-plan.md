@@ -338,11 +338,12 @@ Each press climbs one rung; the rung resets each stage.
 The Tab hint is shown only while the box is empty (today it stays while Tab
 does nothing).
 
-**Pass.** When a stage passes, a beat says so with the rule's own evidence in
-the scene before anything else happens: green outlines on the eggs (Init), a
-light shower of test frogs that all land on the area again (Preservation),
-green outlines on the area's stop tiles (Exit). Outlines only, no tags: the
-caption says what they show. Then Next.
+**Pass.** When a stage passes, a beat opens with "Correct!" in the success
+tone and shows the rule's own evidence in the scene before anything else
+happens: green outlines and a green wash on the eggs (Init), a light shower
+of test frogs that all land on the area again (Preservation), the same marks
+on the area's stop tiles (Exit). No tags: the caption says what they show.
+Then Next.
 
 **Predict.** A yes-or-no question, with Yes and No as buttons that carry a
 green tick and a red cross. While it is asked, the pitfall formula sits in
