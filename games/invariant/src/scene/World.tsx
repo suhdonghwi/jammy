@@ -23,21 +23,23 @@ function Lights() {
   const inMenu = useGame((s) => s.mode === 'menu');
   const draft = useHomeDraft((s) => s.draft);
   const night = inMenu && draft === 'c';
+  // Separate keyed sets, and every colour given explicitly: if React reused a
+  // light and a prop like `color` disappeared, it would be reset to black.
   if (night) {
     return (
-      <>
+      <group key="night">
         <hemisphereLight args={['#9db0ff', '#141b33', 1.1]} />
         <directionalLight position={[-4, 9, 6]} intensity={1.0} color="#d6deff" />
         <directionalLight position={[6, 3, -4]} intensity={0.3} color="#ffcf8a" />
-      </>
+      </group>
     );
   }
   return (
-    <>
+    <group key="day">
       <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
-      <directionalLight position={[4, 10, 6]} intensity={1.6} />
-      <directionalLight position={[-6, 4, -4]} intensity={0.35} />
-    </>
+      <directionalLight position={[4, 10, 6]} intensity={1.6} color="#ffffff" />
+      <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
+    </group>
   );
 }
 
