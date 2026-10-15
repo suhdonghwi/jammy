@@ -87,8 +87,12 @@ void main() {
 
   } else {
     // no state can be here (ruled out by the precondition): a faint ghost of a
-    // tile, so the plane doesn't just end, yet clearly not a place frogs go
-    col = mix(uVoid, uTile, inside * 0.3);
+    // tile, so the plane doesn't just end, yet clearly not a place frogs go.
+    // It still takes part in hovering (the row/column band, faintly).
+    vec3 ghost = mix(uVoid, uTile, 0.3);
+    bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
+    if (onCross) ghost = mix(ghost, uCross, 0.55);
+    col = mix(uVoid, ghost, inside);
   }
 
   // Boundary between the continue and stop regions. Drawn from the grid lines
@@ -157,7 +161,7 @@ void main() {
   }
 
   // hover cursor: a crisp rounded outline around the inspected tile
-  if (ex && uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
+  if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
     float a = 1.0 - smoothstep(-fwRing, fwRing, ringD);
     col = mix(col, uHoverCol, a);
   }

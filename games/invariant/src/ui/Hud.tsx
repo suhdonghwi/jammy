@@ -236,8 +236,16 @@ export function HoverReadout() {
   useTopRowPlacement(ref);
   if (!tile || !reveal.axes) return null;
   const s = tileState(level, tile[0], tile[1], pond);
-  // tiles outside the precondition's inputs don't exist — nothing to inspect
-  if (!level.fast.pondReq(s)) return null;
+  const vals = displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
+  // tiles the precondition rules out: there is no such state, so nothing more to say
+  if (!level.fast.pondReq(s)) {
+    return (
+      <div className="readout" ref={ref}>
+        <span className="readout-vals">{vals}</span>
+        <span className="readout-tag none">not a possible state</span>
+      </div>
+    );
+  }
   const cont = level.fast.guard(s) === true;
   let next: string | null = null;
   if (cont) {
@@ -249,7 +257,7 @@ export function HoverReadout() {
   const goal = !cont && level.fast.post(s) === true;
   return (
     <div className="readout" ref={ref}>
-      <span className="readout-vals">{displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ')}</span>
+      <span className="readout-vals">{vals}</span>
       {reveal.stop && (
         <span className={`readout-tag ${cont ? 'go' : 'stop'}`}>{cont ? `hops to ${next}` : goal && reveal.goals ? 'stops · goal ✓' : 'stops here'}</span>
       )}
