@@ -468,7 +468,7 @@ const STEPS: Step[] = [
 const TUTORIAL_CAMERA: [number, number, number] = [2, 2, 13];
 
 /** Put the board in the state a step starts from (used when going back). */
-async function restore(gen: number, scene: Scene) {
+function restore(gen: number, scene: Scene) {
   director.interrupt();
   allow({});
   game().patch({
@@ -481,20 +481,22 @@ async function restore(gen: number, scene: Scene) {
     awaitingCheck: false,
   });
   game().setFormula(scene.formula ?? '');
+  // instant: frogs are simply put back, and the camera glides back while the
+  // step's caption is already showing
+  for (const [i, n] of scene.frogs ?? []) director.placeReal(st(i, n));
   const [x, y, d] = scene.camera ?? TUTORIAL_CAMERA;
-  const camera = cameraRig.lookAtTile(x, y, d);
-  for (const [i, n] of scene.frogs ?? []) director.spawnReal(st(i, n));
-  await camera;
+  void cameraRig.lookAtTile(x, y, d);
   guard(gen);
 }
 
 let stepIndex = 0;
 
-export function startTutorial(from = 0) {
+export function startTutorial(from = 0, rewound = false) {
   const gen = ++generation;
   void (async () => {
-    if (from > 0) await restore(gen, STEPS[from].scene);
-    else {
+    if (from > 0) restore(gen, STEPS[from].scene);
+    else if (!rewound) {
+      // a moment to take in the empty plane before the story starts
       allow({});
       await director.sleep(500);
       guard(gen);
@@ -516,6 +518,7 @@ function goBack() {
   stopTutorial();
   if (target === 0) {
     // the very beginning: a fresh board
-    void restore(generation, STEPS[0].scene).then(() => startTutorial(0));
+    restore(generation, STEPS[0].scene);
+    startTutorial(0, true);
   } else startTutorial(target);
 }

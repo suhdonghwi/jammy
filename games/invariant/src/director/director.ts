@@ -270,6 +270,16 @@ export const director = {
     game().patch({ running: false, selected: null, failMark: null });
   },
 
+  /** Put a real frog straight on its tile (no hatching): rebuilding a scene. */
+  placeReal(s: State): FrogSim {
+    const L = lvl();
+    frogWorld.markHatched(Number(s[L.view.x]), Number(s[L.view.y]));
+    const f = frogWorld.add(L, 'real', s);
+    f.stopped = !running(L, s);
+    game().patch({ selected: s });
+    return f;
+  },
+
   /** Hatch one real frog (tutorial beat 1). */
   spawnReal(s: State): FrogSim {
     const f = hatch(s);
