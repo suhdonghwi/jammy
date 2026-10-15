@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo } from 'react';
-import { RULE_NAMES, showState, type CompiledLevel, type Rule } from '../levels/level';
+import { displayNames, RULE_NAMES, showState, type CompiledLevel, type Rule } from '../levels/level';
 import { useGame } from '../store/game';
 import { director } from '../director/director';
 import { goMenu, showHint } from '../director/play';
@@ -218,7 +218,7 @@ export function HoverReadout() {
   const goal = !cont && level.fast.post(s) === true;
   return (
     <div className="readout">
-      <span className="readout-vals">{level.names.map((n) => `${n} = ${s[n]}`).join(', ')}</span>
+      <span className="readout-vals">{displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ')}</span>
       {reveal.stop && (
         <span className={`readout-tag ${cont ? 'go' : 'stop'}`}>{cont ? `hops to ${next}` : goal && reveal.goals ? 'stops · goal ✓' : 'stops here'}</span>
       )}

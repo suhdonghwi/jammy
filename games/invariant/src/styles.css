@@ -308,6 +308,7 @@ code {
   pointer-events: auto;
 }
 .hud-middle {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: flex-start;
@@ -315,10 +316,20 @@ code {
   min-height: 0;
   pointer-events: none;
 }
+/* the input gauge stays on the right even without the program panel */
+.hud-middle > .gauge {
+  margin-left: auto;
+}
+/* centred on the screen, not in the space left over beside the side panels */
 .hud-middle > .hud-center {
-  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   pointer-events: none;
 }
 .hud-center > * {
@@ -524,13 +535,16 @@ code {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 8px 7px 14px;
+  padding: 7px 14px;
   border-radius: 999px;
   background: rgba(28, 35, 51, 0.86);
   color: white;
   font-size: 13.5px;
   box-shadow: var(--shadow);
   animation: fade 0.15s ease-out;
+}
+.readout:has(.readout-tag) {
+  padding-right: 8px;
 }
 .readout-vals {
   font-family: var(--mono);
