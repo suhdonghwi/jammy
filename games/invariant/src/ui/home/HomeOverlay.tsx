@@ -4,6 +4,7 @@ import { openLevel, openTutorial } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { CHAPTERS, levels } from '../../levels/catalog';
 import { button } from '../classes';
+import { MarkdownInline } from '../Markdown';
 import { usePresence } from '../presence';
 import { Title3D } from './title/Title3D';
 import { useCompactHome } from './useCompactHome';
@@ -107,7 +108,11 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
                     >
                       <span className="font-mono text-xs text-faint">{l.id}</span>
                       <span className="font-display text-lg font-semibold">{l.title}</span>
-                      {l.intro && <span className="text-sm leading-snug text-muted">{l.intro}</span>}
+                      {l.intro && (
+                        <span className="text-sm leading-snug text-muted">
+                          <MarkdownInline text={l.intro} />
+                        </span>
+                      )}
                     </button>
                   ))}
               </div>

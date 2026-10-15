@@ -39,7 +39,7 @@ int emod(int a, int k) { return a - k * fdiv(a, k); }
 `;
 
 /**
- * Functions over a tile (X, Y) in pond P:
+ * Functions over a tile (X, Y) in plane P:
  *   bool L_exists(ivec3 t), bool L_stop(ivec3 t), bool L_goal(ivec3 t)
  */
 export function levelGlsl(level: CompiledLevel | null): string {
@@ -53,10 +53,10 @@ bool L_goal(ivec3 t) { return false; }
   const decls = [
     `int ${ident(level.view.x)} = t.x;`,
     `int ${ident(level.view.y)} = t.y;`,
-    level.pond ? `int ${ident(level.pond)} = t.z;` : '',
+    level.plane ? `int ${ident(level.plane)} = t.z;` : '',
   ].join(' ');
   return `
-bool L_exists(ivec3 t) { ${decls} return ${exprToGlsl(level.pondReq)}; }
+bool L_exists(ivec3 t) { ${decls} return ${exprToGlsl(level.planeReq)}; }
 bool L_stop(ivec3 t) { ${decls} return !(${exprToGlsl(level.guard)}); }
 bool L_goal(ivec3 t) { ${decls} return ${exprToGlsl(level.post)}; }
 `;

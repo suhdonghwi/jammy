@@ -11,6 +11,11 @@ export function Markdown({ text }: { text: string }) {
   return <>{blocks.map((b, i) => renderBlock(b, i))}</>;
 }
 
+/** One line of inline Markdown (code, bold, italic) with no paragraph around it, for text inside a button or span. */
+export function MarkdownInline({ text }: { text: string }) {
+  return <>{renderInline(text)}</>;
+}
+
 /** Space between paragraphs and lists. */
 const gap = (key: number) => (key > 0 ? 'mt-2.5' : '');
 

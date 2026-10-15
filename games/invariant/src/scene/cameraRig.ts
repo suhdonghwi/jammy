@@ -13,8 +13,6 @@ const onScreen = new THREE.Vector3();
 export const VIEW = { polar: 0.8, azimuth: 0.26 };
 
 export const cameraRig = {
-  /** World y of the focused pond's floor. */
-  layerY: 0,
   attach(c: Controls | null) {
     controls = c;
   },
@@ -29,19 +27,19 @@ export const cameraRig = {
     return controls ? controls.distance : 14;
   },
   /**
-   * Is the tile (in the focused pond) well inside the view, clear of its edges
+   * Is the tile well inside the view, clear of its edges
    * where a label on it would be cut off? A larger `reach` accepts tiles nearer
    * the edges.
    */
   inView(x: number, y: number, reach = 1): boolean {
     if (!controls) return true;
-    const p = onScreen.set(x, this.layerY, -y).project(controls.camera);
+    const p = onScreen.set(x, 0, -y).project(controls.camera);
     return Math.abs(p.x) < 0.65 * reach && Math.abs(p.y) < 0.5 * reach;
   },
-  /** Glide so the given tile (in the focused pond) is centered. */
+  /** Glide so the given tile is centered. */
   async lookAtTile(x: number, y: number, distance?: number, smooth = true) {
     if (!controls) return;
-    const moves: Promise<void>[] = [controls.moveTo(x, this.layerY, -y, smooth)];
+    const moves: Promise<void>[] = [controls.moveTo(x, 0, -y, smooth)];
     if (distance !== undefined) moves.push(controls.dollyTo(distance, smooth));
     await Promise.all(moves);
   },

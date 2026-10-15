@@ -20,7 +20,7 @@ ensures i == n;`,
   pitfalls: [
     { formula: 'i == n', message: 'That only covers frogs that are already done.' },
     { formula: 'i == 0 || i == n', message: 'Frogs also pass through the tiles in between.' },
-    { formula: 'i >= 0', message: 'Real frogs never pass n — but your area allows it.' },
+    { formula: 'i >= 0', message: 'Real frogs never pass `n` — but your area allows it.' },
   ],
   camera: { x: 2, y: 2, distance: 13 },
 };
@@ -62,10 +62,10 @@ ensures y % 2 == 0;`,
     view: { x: 'x', y: 'y' },
     solutions: ['x >= 0 && (x + y) % 2 == 0'],
     pitfalls: [
-      { formula: '(x + y) % 2 == 0', message: 'The hop keeps x + y even — but your area also lets x go negative.' },
+      { formula: '(x + y) % 2 == 0', message: 'The hop keeps `x + y` even — but your area also lets `x` go negative.' },
       { formula: 'y % 2 == 0', message: 'That is just the goal. Do all eggs sit there?' },
     ],
-    intro: 'Eggs everywhere on a checkerboard. Every frog hops diagonally until x reaches 0.',
+    intro: 'Eggs everywhere on a checkerboard. Every frog hops diagonally until `x` reaches `0`.',
     camera: { x: 2, y: 2, distance: 15 },
   },
   {
@@ -84,14 +84,14 @@ ensures i == n;`,
     view: { x: 'i', y: 'n' },
     solutions: ['i <= n && i % 2 == 0', '0 <= i <= n && i % 2 == 0'],
     pitfalls: [
-      { formula: 'i <= n', message: 'From an odd i, a hop of 2 can jump right past n.' },
-      { formula: '0 <= i <= n', message: 'From an odd i, a hop of 2 can jump right past n.' },
+      { formula: 'i <= n', message: 'From an odd `i`, a hop of 2 can jump right past `n`.' },
+      { formula: '0 <= i <= n', message: 'From an odd `i`, a hop of 2 can jump right past `n`.' },
     ],
     intro: 'Frogs hop two tiles at a time. Only even rows exist.',
     camera: { x: 2, y: 3, distance: 14 },
   },
 
-  // ---------------- Chapter 2: Stacked ponds ----------------
+  // ---------------- Chapter 2: A plane per input ----------------
   {
     id: '2-1',
     title: 'Doubling',
@@ -108,12 +108,11 @@ while (x < n) {
 
 ensures y == 2 * n;`,
     view: { x: 'x', y: 'y' },
-    ponds: { min: 0, max: 30, start: 3 },
+    planes: { min: 0, max: 30, start: 3 },
     solutions: ['y == 2 * x && x <= n', 'y == 2 * x && 0 <= x <= n'],
-    pitfalls: [{ formula: 'y == 2 * x', message: 'Right line — but your area keeps going past x = n.' }],
-    intro: 'Each input n is now its own pond, stacked like floors. Use the Input panel (or PageUp/PageDown) to ride between them.',
+    pitfalls: [{ formula: 'y == 2 * x', message: 'Right line — but your area keeps going past `x = n`.' }],
+    intro: 'In the tutorial, `n` was an axis. Now it’s an input you set: each value of `n` is its own plane, and the slider on the right switches between them.',
     camera: { x: 2, y: 3, distance: 14 },
-    bridge: true,
   },
   {
     id: '2-2',
@@ -131,10 +130,10 @@ while (x > 0) {
 
 ensures y == n;`,
     view: { x: 'x', y: 'y' },
-    ponds: { min: 0, max: 30, start: 4 },
+    planes: { min: 0, max: 30, start: 4 },
     solutions: ['x + y == n && x >= 0'],
-    pitfalls: [{ formula: 'x + y == n', message: 'Right line — but your area lets x go below 0.' }],
-    intro: 'Move every unit from x to y.',
+    pitfalls: [{ formula: 'x + y == n', message: 'Right line — but your area lets `x` go below `0`.' }],
+    intro: 'Move every unit from `x` to `y`.',
     camera: { x: 2, y: 2, distance: 13 },
   },
   {
@@ -153,7 +152,7 @@ while (r >= 3) {
 
 ensures a == 3 * q + r && 0 <= r && r < 3;`,
     view: { x: 'q', y: 'r' },
-    ponds: { min: 0, max: 40, start: 7 },
+    planes: { min: 0, max: 40, start: 7 },
     solutions: ['a == 3 * q + r && r >= 0'],
     pitfalls: [{ formula: 'a == 3 * q + r', message: 'The equation is right — but a remainder must not be negative.' }],
     intro: 'Integer division, the slow way: take away 3 until you can’t.',
@@ -175,10 +174,10 @@ while (i < n) {
 
 ensures 2 * s == n * (n + 1);`,
     view: { x: 'i', y: 's' },
-    ponds: { min: 0, max: 20, start: 4 },
+    planes: { min: 0, max: 20, start: 4 },
     solutions: ['2 * s == i * (i + 1) && i <= n', '2 * s == i * (i + 1) && 0 <= i <= n'],
-    pitfalls: [{ formula: '2 * s == i * (i + 1)', message: 'Right curve — but your area keeps going past i = n.' }],
-    intro: 'Add 1 + 2 + … + n. Solvers prefer formulas without division.',
+    pitfalls: [{ formula: '2 * s == i * (i + 1)', message: 'Right curve — but your area keeps going past `i = n`.' }],
+    intro: 'Add `1 + 2 + … + n`. Solvers prefer formulas without division.',
     camera: { x: 2, y: 4, distance: 15 },
   },
 
@@ -202,7 +201,7 @@ while (x != 0) {
 
 ensures y == abs(a);`,
     view: { x: 'x', y: 'y' },
-    ponds: { min: -15, max: 15, start: 3 },
+    planes: { min: -15, max: 15, start: 3 },
     solutions: ['y + abs(x) == abs(a)'],
     pitfalls: [{ formula: 'y == a - x', message: 'That works for frogs hopping left — but some frogs take the else branch.' }],
     intro: 'The body has an if. Your area must survive both branches.',
@@ -227,8 +226,8 @@ ensures x == y && x >= 0;`,
     view: { x: 'x', y: 'y' },
     solutions: ['x >= 0 && y >= 0', 'min(x, y) >= 0'],
     pitfalls: [
-      { formula: 'x >= 0', message: 'When x shrinks, what keeps it from dropping below 0? Look at y.' },
-      { formula: 'y >= 0', message: 'When y shrinks, what keeps it from dropping below 0? Look at x.' },
+      { formula: 'x >= 0', message: 'When `x` shrinks, what keeps it from dropping below `0`? Look at `y`.' },
+      { formula: 'y >= 0', message: 'When `y` shrinks, what keeps it from dropping below `0`? Look at `x`.' },
     ],
     intro: 'Two numbers step toward each other until they meet.',
     camera: { x: 3, y: 3, distance: 15 },
@@ -239,6 +238,6 @@ export const allLevels = [tutorialLevel, ...levels];
 
 export const CHAPTERS: Record<number, string> = {
   1: 'One plane',
-  2: 'Stacked ponds',
+  2: 'A plane per input',
   3: 'Branches',
 };

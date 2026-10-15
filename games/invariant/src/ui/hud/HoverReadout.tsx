@@ -43,17 +43,17 @@ function useTopRowPlacement(ref: React.RefObject<HTMLDivElement | null>) {
 
 export function HoverReadout() {
   const level = useGame((s) => s.level)!;
-  const pond = useGame((s) => s.pond);
+  const plane = useGame((s) => s.plane);
   const reveal = useGame((s) => s.reveal);
   const valid = useGame((s) => s.valid);
   const tile = useHover((s) => s.tile);
   const ref = useRef<HTMLDivElement>(null);
   useTopRowPlacement(ref);
   if (!tile || !reveal.axes) return null;
-  const s = tileState(level, tile[0], tile[1], pond);
+  const s = tileState(level, tile[0], tile[1], plane);
   const vals = displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
   // tiles the precondition rules out: there is no such state, so nothing more to say
-  if (!level.fast.pondReq(s)) {
+  if (!level.fast.planeReq(s)) {
     return (
       <div className={READOUT} ref={ref}>
         <span className="font-mono font-semibold">{vals}</span>

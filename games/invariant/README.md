@@ -5,7 +5,7 @@ An interactive, visual website that teaches programmers what loop invariants are
 - Each tile on an endless white plane is one program state; a **frog** hops once per loop iteration.
 - You write a formula for an **area** (the loop invariant); tiles inside it rise as slabs.
 - A skeptical **hand** checks three rules — Initialization, Maintenance, Termination — and places a frog that breaks your area when one fails.
-- Inputs that never change (like `n`) become **stacked ponds**, one per value.
+- Inputs that never change (like `n`) become **planes**, one per value, picked with a slider.
 
 Docs:
 

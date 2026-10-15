@@ -8,7 +8,7 @@ import { handState } from '../scene/hand/handState';
 import { sceneNow } from '../scene/sceneTime';
 import { currentLevel, sleep, tween, type Token } from './sequence';
 
-// The skeptical hand's moves. Positions are tiles (x, y) in the focused pond.
+// The skeptical hand's moves. Positions are tiles (x, y) in the focused plane.
 
 type HandPose = Partial<typeof handState>;
 

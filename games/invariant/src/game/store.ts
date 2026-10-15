@@ -78,11 +78,8 @@ export interface Game {
   mode: 'menu' | 'level' | 'tutorial';
   /** On the home screen: the title, or the level picker. */
   menuView: 'home' | 'levels';
-  /** The camera is riding between ponds (and in which direction). */
-  elevating: boolean;
-  elevatorDir: number;
   level: CompiledLevel | null;
-  pond: number;
+  plane: number;
   formulaText: string;
   formula: FormulaResult | null;
   /** Last valid formula — the slabs follow it. */
@@ -106,8 +103,6 @@ export interface Game {
   /** The syntax reference card is open. */
   showSyntax: boolean;
   pitfallMessage: string | null;
-  /** A cinematic is playing; the level scene is hidden. */
-  cinematic: boolean;
   /** A single Step is animating. */
   stepping: boolean;
   /** Tutorial: real frogs carry a tag with their variables, animated as they change. */
@@ -130,7 +125,7 @@ export interface Game {
   errorNudge: number;
   /** Tutorial labels: over tile (x, y), or riding along with a frog when `frog` (its id) is set; an empty text is an outline alone. */
   callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' }[];
-  /** Where the last check failed (tile in the focused pond) and why. */
+  /** Where the last check failed (tile in the focused plane) and why. */
   failMark: { x: number; y: number; label: string; t0: number } | null;
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
@@ -142,10 +137,8 @@ export interface Game {
 export const useGame = create<Game>((set, get) => ({
   mode: 'menu',
   menuView: 'home',
-  elevating: false,
-  elevatorDir: 1,
   level: null,
-  pond: 0,
+  plane: 0,
   formulaText: '',
   formula: null,
   valid: null,
@@ -163,7 +156,6 @@ export const useGame = create<Game>((set, get) => ({
   showRules: false,
   showSyntax: false,
   pitfallMessage: null,
-  cinematic: false,
   failMark: null,
   errorNudge: 0,
   callouts: [],
@@ -182,7 +174,7 @@ export const useGame = create<Game>((set, get) => ({
     set({
       mode,
       level,
-      pond: def.ponds?.start ?? 0,
+      plane: def.planes?.start ?? 0,
       formulaText: '',
       formula: null,
       valid: null,
@@ -194,7 +186,6 @@ export const useGame = create<Game>((set, get) => ({
       reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
           hint: null,
       pitfallMessage: null,
-      elevating: false,
       failMark: null,
       callouts: [],
       stepping: false,

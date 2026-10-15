@@ -102,13 +102,13 @@ export function ruleQuery(level: CompiledLevel, inv: Expr, rule: Rule): { dims: 
   if (rule === 'initialization') {
     return {
       dims: level.freeDims,
-      query: and(subst(level.pondReq, level.initExprs), subst(level.eggReq, level.initExprs), not(subst(inv, level.initExprs))),
+      query: and(subst(level.planeReq, level.initExprs), subst(level.eggReq, level.initExprs), not(subst(inv, level.initExprs))),
     };
   }
   if (rule === 'maintenance') {
-    return { dims: level.names, query: and(level.pondReq, inv, level.guard, not(subst(inv, level.next))) };
+    return { dims: level.names, query: and(level.planeReq, inv, level.guard, not(subst(inv, level.next))) };
   }
-  return { dims: level.names, query: and(level.pondReq, inv, not(level.guard), not(level.post)) };
+  return { dims: level.names, query: and(level.planeReq, inv, not(level.guard), not(level.post)) };
 }
 
 export function cexFromModel(level: CompiledLevel, inv: Expr, invText: string, rule: Rule, s: State): Counterexample {
@@ -126,6 +126,6 @@ export function cexFromModel(level: CompiledLevel, inv: Expr, invText: string, r
 /** Is `a` equivalent to `b` on every existing state? */
 export async function equivalent(ctx: Ctx, level: CompiledLevel, a: Expr, b: Expr, timeout: number): Promise<boolean> {
   const differ: Expr = { kind: 'binary', op: '!=', left: a, right: b, span: a.span };
-  const r = await solve(ctx, level.names, and(level.pondReq, differ), { timeout, bounds: [] });
+  const r = await solve(ctx, level.names, and(level.planeReq, differ), { timeout, bounds: [] });
   return r.kind === 'unsat';
 }

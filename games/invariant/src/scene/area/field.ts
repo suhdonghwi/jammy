@@ -83,5 +83,5 @@ class AreaField {
   }
 }
 
-/** The field for the focused pond. */
+/** The field for the focused plane. */
 export const field = new AreaField();

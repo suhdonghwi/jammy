@@ -3,6 +3,7 @@ import { useGame } from '../../game/store';
 import { displayNames } from '../../levels/level';
 import { button } from '../classes';
 import { closeDialog, Dialog } from '../Dialog';
+import { MarkdownInline } from '../Markdown';
 
 // What can be typed into the area box, as a card over everything (from the
 // top bar). The examples use the open level's own variables.
@@ -18,10 +19,10 @@ export function SyntaxCard() {
         A condition on the program's variables{c ? ` (${a}, ${b} and ${c})` : ` (${a} and ${b})`}. The tiles where it is true are your area.
       </p>
       <div className="my-4.5 grid gap-2 text-left">
-        <Row name="Compare" code={[`${a} == ${b}`, `${a} != ${b}`, `${a} < ${b}`, `${a} <= ${b}`]} note="also > and >=" />
-        <Row name="Chain" code={[`0 <= ${a} <= ${b}`]} note={`the same as 0 <= ${a} && ${a} <= ${b}`} />
+        <Row name="Compare" code={[`${a} == ${b}`, `${a} != ${b}`, `${a} < ${b}`, `${a} <= ${b}`]} note="also `>` and `>=`" />
+        <Row name="Chain" code={[`0 <= ${a} <= ${b}`]} note={`the same as \`0 <= ${a} && ${a} <= ${b}\``} />
         <Row name="Combine" code={[`${a} >= 0 && ${a} <= ${b}`, `${a} == 0 || ${a} == ${b}`, `!(${a} > ${b})`]} note="and, or, not" />
-        <Row name="Arithmetic" code={[`${b} == 2 * ${a}`, `(${a} + ${b}) % 2 == 0`, `${a} / 3 == 1`]} note="+ − * and, by a positive number, / and %" />
+        <Row name="Arithmetic" code={[`${b} == 2 * ${a}`, `(${a} + ${b}) % 2 == 0`, `${a} / 3 == 1`]} note="`+` `-` `*` and, by a positive number, `/` and `%`" />
         <Row name="Functions" code={[`abs(${a})`, `min(${a}, ${b})`, `max(${a}, ${b})`]} />
         <Row name="Constants" code={['true', 'false']} note="whole numbers, with no limit and no overflow" />
       </div>
@@ -44,7 +45,11 @@ function Row({ name, code, note }: { name: string; code: string[]; note?: string
             </code>
           ))}
         </div>
-        {note && <div className="mt-1 text-sm text-muted">{note}</div>}
+        {note && (
+          <div className="mt-1 text-sm text-muted">
+            <MarkdownInline text={note} />
+          </div>
+        )}
       </div>
     </div>
   );

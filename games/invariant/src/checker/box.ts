@@ -11,10 +11,10 @@ export interface Box {
   cy: number;
   /** Half-size of the tile box. */
   r: number;
-  /** Focused pond (if the level has ponds). */
-  pond?: number;
-  /** How many ponds to search on each side of the focused one. */
-  pondR: number;
+  /** Focused plane (if the level has planes). */
+  plane?: number;
+  /** How many planes to search on each side of the focused one. */
+  planeR: number;
 }
 
 /** Which conjunct of `inv` is false in state s (source text). */
@@ -33,12 +33,12 @@ function ranges(level: CompiledLevel, box: Box): Record<string, number[]> {
     [level.view.x]: span(Math.round(box.cx), box.r),
     [level.view.y]: span(Math.round(box.cy), box.r),
   };
-  if (level.pond) {
-    const p = box.pond ?? 0;
-    // nearest ponds first
+  if (level.plane) {
+    const p = box.plane ?? 0;
+    // nearest planes first
     const ps = [p];
-    for (let d = 1; d <= box.pondR; d++) ps.push(p - d, p + d);
-    out[level.pond] = ps;
+    for (let d = 1; d <= box.planeR; d++) ps.push(p - d, p + d);
+    out[level.plane] = ps;
   }
   return out;
 }
@@ -60,7 +60,7 @@ function* product(dims: string[], rs: Record<string, number[]>): Generator<NumSt
 
 /**
  * Search a box of states for the nicest counterexample to each rule:
- * nearest pond first, then smallest values, then closest to the camera.
+ * nearest plane first, then smallest values, then closest to the camera.
  */
 export function boxSearch(
   level: CompiledLevel,
@@ -70,9 +70,9 @@ export function boxSearch(
 ): Partial<Record<Rule, Counterexample>> {
   const rs = ranges(level, box);
   const f = level.fast;
-  const focus = box.pond ?? 0;
+  const focus = box.plane ?? 0;
   const score = (s: NumState) => {
-    const pd = level.pond ? Math.abs(s[level.pond] - focus) : 0;
+    const pd = level.plane ? Math.abs(s[level.plane] - focus) : 0;
     const x = s[level.view.x];
     const y = s[level.view.y];
     const mag = Math.abs(x) + Math.abs(y);
@@ -87,9 +87,9 @@ export function boxSearch(
   };
 
   if (rules.includes('initialization')) {
-    // Enumerate free dims; free dims are always on an axis or the pond.
+    // Enumerate free dims; free dims are always on an axis or on the slider.
     for (const free of product(level.freeDims, rs)) {
-      if (!f.pondReq(free)) continue;
+      if (!f.planeReq(free)) continue;
       const start: NumState = { ...free };
       for (const v in f.init) start[v] = f.init[v](free) as number;
       if (!f.eggReq(start)) continue;
@@ -98,7 +98,7 @@ export function boxSearch(
   }
   if (rules.includes('maintenance') || rules.includes('termination')) {
     for (const s of product(level.names, rs)) {
-      if (!f.pondReq(s)) continue;
+      if (!f.planeReq(s)) continue;
       if (!inv.fast(s)) continue;
       if (f.guard(s)) {
         if (!rules.includes('maintenance')) continue;
@@ -138,9 +138,9 @@ export function boxSearch(
 /** Truth table of a formula over a box — used to cheaply rule out equivalence. */
 export function sameOnBox(level: CompiledLevel, a: FastFn, b: Expr, box: Box): boolean {
   const fb = compileFast(b);
-  const rs = ranges(level, { ...box, r: Math.min(box.r, 8), pondR: Math.min(box.pondR, 6) });
+  const rs = ranges(level, { ...box, r: Math.min(box.r, 8), planeR: Math.min(box.planeR, 6) });
   for (const s of product(level.names, rs)) {
-    if (!level.fast.pondReq(s)) continue;
+    if (!level.fast.planeReq(s)) continue;
     if (a(s) !== fb(s)) return false;
   }
   return true;

@@ -15,7 +15,7 @@ import { Slabs } from './Slabs';
 
 interface AreaLayerProps {
   level: CompiledLevel;
-  pond: number;
+  plane: number;
   inv: FastFn | null;
   dim: boolean;
   showStop: boolean;
@@ -43,27 +43,29 @@ function useTileWindow(): TileWindow {
   return win;
 }
 
-export function AreaLayer({ level, pond, inv, dim, showStop, showGoal, showEggs, showArea }: AreaLayerProps) {
+export function AreaLayer({ level, plane, inv, dim, showStop, showGoal, showEggs, showArea }: AreaLayerProps) {
   const win = useTileWindow();
   const [version, setVersion] = useState(0);
-  const last = useRef<{ key: string; inv: FastFn | null; showArea: boolean } | null>(null);
+  const last = useRef<{ level: string; plane: number; inv: FastFn | null; showArea: boolean } | null>(null);
 
-  // Recompute the area for the window. Slabs animate when the formula (or the
-  // pond) changes — not when the window merely follows the camera.
+  // Recompute the area for the window. Slabs animate when the level or the
+  // formula changes — not when the window merely follows the camera, and not
+  // when the slider moves to another plane: that switches at once, so a slider
+  // dragged through values doesn't replay the slabs rising at every step.
   useEffect(() => {
-    const key = `${level.id}|${pond}`;
     const prev = last.current;
-    if (!prev || prev.key !== key) field.reset();
-    const animate = !prev || prev.key !== key || prev.inv !== inv || prev.showArea !== showArea;
-    last.current = { key, inv, showArea };
+    const fresh = !prev || prev.level !== level.id;
+    if (fresh) field.reset();
+    const animate = fresh || prev.inv !== inv || prev.showArea !== showArea;
+    last.current = { level: level.id, plane, inv, showArea };
     const tiles: TileFlags[] = [];
     if (inv && showArea) {
       const f = level.fast;
       const { cx, cy, R } = win;
       for (let y = cy - R; y <= cy + R; y++) {
         for (let x = cx - R; x <= cx + R; x++) {
-          const s = tileState(level, x, y, pond);
-          if (!f.pondReq(s) || inv(s) !== true) continue;
+          const s = tileState(level, x, y, plane);
+          if (!f.planeReq(s) || inv(s) !== true) continue;
           const stop = f.guard(s) !== true;
           tiles.push({ x, y, stop, goal: stop && f.post(s) === true });
         }
@@ -72,13 +74,13 @@ export function AreaLayer({ level, pond, inv, dim, showStop, showGoal, showEggs,
     field.update(tiles, animate);
     setVersion((v) => v + 1);
     return after(RISE_DUR * 1000 + 60, () => field.prune() && setVersion((v) => v + 1));
-  }, [level, pond, inv, win, showArea]);
+  }, [level, plane, inv, win, showArea]);
 
   return (
     <group>
       <Slabs version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
-      {showEggs && <Eggs level={level} pond={pond} win={win} version={version} />}
-      {showGoal && <GoalColumns level={level} pond={pond} win={win} version={version} />}
+      {showEggs && <Eggs level={level} plane={plane} win={win} version={version} />}
+      {showGoal && <GoalColumns level={level} plane={plane} win={win} version={version} />}
     </group>
   );
 }

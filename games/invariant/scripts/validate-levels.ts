@@ -37,7 +37,7 @@ for (const def of allLevels) {
     fail(`does not compile: ${(e as Error).message}`);
     continue;
   }
-  const box = { cx: 0, cy: 0, r: 12, pondR: 8, pond: def.ponds?.start };
+  const box = { cx: 0, cy: 0, r: 12, planeR: 8, plane: def.planes?.start };
 
   const eggs = sampleEggs(level);
   if (eggs.length === 0) fail('no starting states');

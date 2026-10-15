@@ -22,7 +22,7 @@ export function floorFragment(level: CompiledLevel | null) {
 precision highp float;
 precision highp int;
 varying vec3 vWorld;
-uniform int uPond;
+uniform int uPlane;
 uniform vec2 uHover;
 uniform float uHoverOn;
 uniform vec2 uCenter;
@@ -46,7 +46,7 @@ void main() {
   vec2 p = vec2(vWorld.x, -vWorld.z);
   vec2 tc = floor(p + 0.5);
   vec2 f = p - tc;
-  ivec3 t = ivec3(int(tc.x), int(tc.y), uPond);
+  ivec3 t = ivec3(int(tc.x), int(tc.y), uPlane);
   bool ex = L_exists(t);
 
   // derivatives are taken up front (uniform control flow)
@@ -109,7 +109,7 @@ void main() {
     const float RC = 0.15;
     vec2 V = floor(p) + 0.5;
     vec2 local = p - V;
-    ivec3 cSW = ivec3(int(floor(p.x)), int(floor(p.y)), uPond);
+    ivec3 cSW = ivec3(int(floor(p.x)), int(floor(p.y)), uPlane);
     ivec3 cSE = cSW + ivec3(1, 0, 0);
     ivec3 cNW = cSW + ivec3(0, 1, 0);
     ivec3 cNE = cSW + ivec3(1, 1, 0);
@@ -140,10 +140,10 @@ void main() {
       float dx = abs(p.x - (float(kx) + 0.5));
       int ty = int(floor(p.y + 0.5));
       float fy = p.y - float(ty);
-      bool edgeV = edgeBetween(ivec3(kx, ty, uPond), ivec3(kx + 1, ty, uPond));
+      bool edgeV = edgeBetween(ivec3(kx, ty, uPlane), ivec3(kx + 1, ty, uPlane));
       if (!edgeV && abs(fy) > 0.5 - w) {
         int ty2 = ty + (fy > 0.0 ? 1 : -1);
-        edgeV = edgeBetween(ivec3(kx, ty2, uPond), ivec3(kx + 1, ty2, uPond));
+        edgeV = edgeBetween(ivec3(kx, ty2, uPlane), ivec3(kx + 1, ty2, uPlane));
       }
       if (edgeV) line = max(line, 1.0 - smoothstep(w - fw.x, w + fw.x, dx));
       // nearest horizontal grid line y = ky + 0.5, between tiles ky and ky + 1
@@ -151,10 +151,10 @@ void main() {
       float dy = abs(p.y - (float(ky) + 0.5));
       int tx = int(floor(p.x + 0.5));
       float fx = p.x - float(tx);
-      bool edgeH = edgeBetween(ivec3(tx, ky, uPond), ivec3(tx, ky + 1, uPond));
+      bool edgeH = edgeBetween(ivec3(tx, ky, uPlane), ivec3(tx, ky + 1, uPlane));
       if (!edgeH && abs(fx) > 0.5 - w) {
         int tx2 = tx + (fx > 0.0 ? 1 : -1);
-        edgeH = edgeBetween(ivec3(tx2, ky, uPond), ivec3(tx2, ky + 1, uPond));
+        edgeH = edgeBetween(ivec3(tx2, ky, uPlane), ivec3(tx2, ky + 1, uPlane));
       }
       if (edgeH) line = max(line, 1.0 - smoothstep(w - fw.y, w + fw.y, dy));
     }

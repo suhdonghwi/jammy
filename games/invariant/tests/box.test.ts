@@ -4,7 +4,7 @@ import { tutorialLevel, levels } from '../src/levels/catalog';
 import { compileFormula, compileLevel } from '../src/levels/level';
 
 const tut = compileLevel(tutorialLevel);
-const box = { cx: 0, cy: 0, r: 20, pondR: 20 };
+const box = { cx: 0, cy: 0, r: 20, planeR: 20 };
 const search = (lvl: ReturnType<typeof compileLevel>, f: string, b = box) => {
   const r = compileFormula(lvl, f);
   if (!r.ok) throw r.error;
@@ -39,7 +39,7 @@ describe('levels', () => {
     const lvl = compileLevel(levels.find((l) => l.id === '1-2')!);
     expect(num(search(lvl, '(x + y) % 2 == 0', { ...box, cx: 2, cy: 2 }).termination!.state)).toEqual({ x: -1, y: 1 });
   });
-  it('abs: prefers the focused pond and names the broken conjunct', () => {
+  it('abs: prefers the focused plane and names the broken conjunct', () => {
     const lvl = compileLevel(levels.find((l) => l.id === '3-2')!);
     const c = search(lvl, 'x >= 0 && x == x');
     expect(c.maintenance).toBeDefined();

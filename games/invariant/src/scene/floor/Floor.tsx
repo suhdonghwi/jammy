@@ -11,7 +11,7 @@ import { sceneNow } from '../sceneTime';
 import { colorUniform, getDigitTexture, goalUniforms, updateFade } from '../shaders/common';
 import { floorFragment, floorVertex } from './floorShader';
 
-// The floor of a pond: one plane drawn per pixel (see floorShader), which
+// The floor of a plane: one quad shaded per pixel (see floorShader), which
 // fades in and out, follows the camera, and reports the tile under the pointer.
 
 const _p = new THREE.Vector3();
@@ -20,10 +20,10 @@ const _p = new THREE.Vector3();
  * with the slab-top plane and keep that tile if it is raised; otherwise use the
  * floor hit.
  */
-function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>, floorY: number): [number, number] {
+function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
   const ray = e.ray;
   if (Math.abs(ray.direction.y) > 1e-4) {
-    const t = (floorY + SLAB_H - ray.origin.y) / ray.direction.y;
+    const t = (SLAB_H - ray.origin.y) / ray.direction.y;
     if (t > 0) {
       ray.at(t, _p);
       const tx = Math.round(_p.x);
@@ -36,8 +36,7 @@ function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>, floorY: number): [nu
 
 export interface FloorProps {
   level: CompiledLevel | null;
-  pond: number;
-  y: number;
+  plane: number;
   opacity: number;
   /** Opacity to start from (fades toward `opacity`). */
   initialOpacity?: number;
@@ -54,7 +53,7 @@ export interface FloorProps {
   clickable?: (x: number, y: number) => boolean;
 }
 
-export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, clickable }: FloorProps) {
+export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, clickable }: FloorProps) {
   const mesh = useRef<THREE.Mesh>(null);
   const canvas = useThree((s) => s.gl.domElement);
   const material = useMemo(() => {
@@ -64,7 +63,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
       transparent: true,
       depthWrite: true,
       uniforms: {
-        uPond: { value: pond },
+        uPlane: { value: plane },
         uHover: { value: new THREE.Vector2() },
         uHoverOn: { value: 0 },
         uCenter: { value: new THREE.Vector2() },
@@ -93,7 +92,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
   useEffect(() => () => material.dispose(), [material]);
 
   const u = material.uniforms;
-  u.uPond.value = pond;
+  u.uPlane.value = plane;
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 
@@ -109,10 +108,10 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     // the plane follows the camera (snapped to whole tiles), as far as the fade reaches
     const R = updateFade(u);
     const t = cameraRig.target();
-    m.position.set(Math.round(t.x), y, Math.round(t.z));
+    m.position.set(Math.round(t.x), 0, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
     u.uTime.value = sceneNow();
-    u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.pond ? pond : undefined);
+    u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.plane ? plane : undefined);
     // revealed elements fade in rather than popping
     const kr = 1 - Math.exp(-dt * 3.2);
     const towards = (cur: number, on: boolean) => {
@@ -145,11 +144,11 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
 
   const handlers = interactive
     ? {
-        onPointerMove: (e: ThreeEvent<PointerEvent>) => hover.set(pickTile(e, y)),
+        onPointerMove: (e: ThreeEvent<PointerEvent>) => hover.set(pickTile(e)),
         onPointerOut: () => hover.set(null),
         onClick: (e: ThreeEvent<MouseEvent>) => {
           if (e.delta > 4) return;
-          const [tx, ty] = pickTile(e, y);
+          const [tx, ty] = pickTile(e);
           onTile?.(tx, ty);
         },
       }

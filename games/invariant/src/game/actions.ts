@@ -1,4 +1,3 @@
-import { playBridge } from '../director/bridge';
 import { resetLevel } from '../director/frogs';
 import { playCounterexample, playRain, playShrug, runChecker } from '../director/verdicts';
 import { levels, tutorialLevel } from '../levels/catalog';
@@ -14,9 +13,6 @@ export function openLevel(def: LevelDef) {
   stopTutorial();
   resetLevel();
   useGame.getState().openLevel(def, 'level');
-  if (def.bridge) {
-    void playBridge().then(() => useGame.setState({ caption: def.intro ? { text: def.intro, tone: 'info' } : null }));
-  }
 }
 
 export function openTutorial() {

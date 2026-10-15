@@ -13,7 +13,7 @@ import { tileState } from '../tiles';
 /** Where would a frog on the hovered tile hop? A dashed arc and a ghost frog. */
 export function HoverPreview() {
   const level = useGame((s) => s.level)!;
-  const pond = useGame((s) => s.pond);
+  const plane = useGame((s) => s.plane);
   const enabled = useGame((s) => s.reveal.hover && !s.busy);
   const tile = useHover((s) => s.tile);
   const ghost = useRef<THREE.Mesh>(null);
@@ -25,12 +25,12 @@ export function HoverPreview() {
 
   const hop = useMemo(() => {
     if (!tile) return null;
-    const s = tileState(level, tile[0], tile[1], pond);
-    if (!level.fast.pondReq(s) || level.fast.guard(s) !== true) return null;
+    const s = tileState(level, tile[0], tile[1], plane);
+    if (!level.fast.planeReq(s) || level.fast.guard(s) !== true) return null;
     const n: Record<string, number> = { ...s };
     for (const v in level.fast.next) n[v] = level.fast.next[v](s) as number;
     return { from: tile, to: [n[level.view.x], n[level.view.y]] as [number, number] };
-  }, [tile, level, pond]);
+  }, [tile, level, plane]);
 
   useFrame(() => {
     const g = ghost.current;

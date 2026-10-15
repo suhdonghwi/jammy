@@ -16,7 +16,7 @@ src/
   checker/     box search (nice counterexamples) + Z3 (proofs), verdicts
   levels/      the level format (level.ts) and every level (catalog.ts)
   game/        the zustand store, and what the app's buttons do (actions.ts)
-  director/    scripted sequences: the hand, Step/Run, check playback, the pond cinematic
+  director/    scripted sequences: the hand, Step/Run, check playback
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
   scene/       the 3D world
     floor/       the infinite floor, drawn per pixel from the level's formulas
@@ -24,7 +24,7 @@ src/
     frogs/       frog state, motion, rendering, hatching
     hand/        the skeptical hand
     labels/      tags over tiles and frogs (callouts, failures, frog values)
-    level/       a level's scene, the pond elevator, hover preview, cinematic
+    level/       a level's scene and hover preview
     home/        the home screen's scene
     shaders/     shared GLSL, and formulas → GLSL
   ui/          the DOM over the scene
@@ -79,8 +79,8 @@ agree. `pnpm validate` and the tests are the safety net.
 
 ## Sequences
 
-- Anything scripted — the hand's demonstrations, Run, frog rain, the
-  cinematic — is a `director/` function. Each starts with `begin()`, which
+- Anything scripted — the hand's demonstrations, Run, frog rain — is a
+  `director/` function. Each starts with `begin()`, which
   cancels whatever was playing; after every `await` it checks `tok.alive` and
   stops if it was superseded. `busy` locks the learner's input while one plays.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,

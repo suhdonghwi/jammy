@@ -1,5 +1,5 @@
 // The hand is driven by GSAP tweens on this plain object and read every frame.
-// Positions are in the focused pond's local space (y = 0 is the floor).
+// Positions are in the focused plane's local space (y = 0 is the floor).
 export const handState = {
   /** 0 = gone, 1 = fully visible */
   visible: 0,

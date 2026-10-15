@@ -201,7 +201,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     material.uniforms.uTime.value = t;
     shadowMat.uniforms.uTime.value = t;
     const g = useGame.getState();
-    material.uniforms.uLastEvent.value = goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.pond ? g.pond : undefined);
+    material.uniforms.uLastEvent.value = goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.plane ? g.plane : undefined);
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);

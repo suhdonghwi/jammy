@@ -29,4 +29,3 @@ export const COLORS = {
 
 export const SLAB_H = 0.24;
 export const TILE = 0.9;
-export const POND_SPACING = 6;

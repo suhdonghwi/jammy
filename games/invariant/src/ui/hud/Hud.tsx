@@ -4,26 +4,23 @@ import { CaptionBar } from './CaptionBar';
 import { CodePanel } from './CodePanel';
 import { FormulaBox } from './FormulaBox';
 import { HoverReadout } from './HoverReadout';
-import { ElevatorToast, PondGauge } from './PondGauge';
+import { PlaneSlider } from './PlaneSlider';
 import { RunControls } from './RunControls';
 import { TopBar } from './TopBar';
 
 /** Everything over the scene while a level (or the tutorial) is open. */
 export function Hud() {
   const reveal = useGame((s) => s.reveal);
-  // during a cinematic only the top bar, caption and toasts stay
-  const cinematic = useGame((s) => s.cinematic);
   return (
     <div className="pointer-events-none fixed inset-0 flex flex-col gap-3 px-4 pt-3.5 pb-4 *:pointer-events-auto">
       <TopBar />
       <div className="pointer-events-none! relative flex min-h-0 flex-1 items-start gap-3 *:pointer-events-auto">
-        {!cinematic && <CodePanel />}
+        <CodePanel />
         {/* centred on the screen, not in the space left beside the side panels */}
         <div className="pointer-events-none! absolute inset-x-0 top-0 flex flex-col items-center gap-2 *:pointer-events-none">
-          {!cinematic && <HoverReadout />}
-          <ElevatorToast />
+          <HoverReadout />
         </div>
-        {!cinematic && <PondGauge />}
+        <PlaneSlider />
       </div>
       {/* data-frame: on phones the scene centres itself in the gap between the top and bottom parts (scene/PhoneFraming) */}
       <div className="pointer-events-none! flex flex-col items-center gap-2 *:w-full *:max-w-200 *:pointer-events-auto" data-frame="bottom">

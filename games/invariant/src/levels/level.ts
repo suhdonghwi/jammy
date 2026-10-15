@@ -20,7 +20,7 @@ export interface LevelDef {
   title: string;
   chapter: number;
   source: string;
-  /** Which variables go on the plane's axes. A leftover input becomes the pond stack. */
+  /** Which variables go on the plane's axes. A leftover input becomes the plane slider: one plane per value. */
   view: { x: string; y: string };
   solutions: string[];
   pitfalls?: Pitfall[];
@@ -28,10 +28,8 @@ export interface LevelDef {
   intro?: string;
   /** Camera target tile and distance. */
   camera?: { x: number; y: number; distance?: number };
-  /** Slider range and starting pond for the pond stack. */
-  ponds?: { min: number; max: number; start: number };
-  /** Play the "rows lift into ponds" cinematic on arrival. */
-  bridge?: boolean;
+  /** Slider range and starting plane. */
+  planes?: { min: number; max: number; start: number };
 }
 
 export interface CompiledLevel extends LevelDef {
@@ -39,13 +37,13 @@ export interface CompiledLevel extends LevelDef {
   inputs: string[];
   vars: string[];
   names: string[];
-  pond?: string;
+  plane?: string;
   /** Inputs + variables without an initializer: what a start state is chosen from. */
   freeDims: string[];
   /** Initial value of each initialized variable, in terms of free dims. */
   initExprs: Record<string, Expr>;
-  /** Input-only part of `requires`: which ponds / rows exist. */
-  pondReq: Expr;
+  /** Input-only part of `requires`: which planes / rows exist. */
+  planeReq: Expr;
   /** The rest of `requires`, evaluated after initialization. */
   eggReq: Expr;
   guard: Expr;
@@ -53,7 +51,7 @@ export interface CompiledLevel extends LevelDef {
   /** Symbolic next-state expressions. */
   next: Record<string, Expr>;
   fast: {
-    pondReq: FastFn;
+    planeReq: FastFn;
     eggReq: FastFn;
     guard: FastFn;
     post: FastFn;
@@ -74,8 +72,8 @@ export function compileLevel(def: LevelDef): CompiledLevel {
   }
   const rest = names.filter((n) => n !== x && n !== y);
   if (rest.length > 1) throw new Error(`[${def.id}] at most one name may be off-axis`);
-  const pond = rest[0];
-  if (pond && !inputs.includes(pond)) throw new Error(`[${def.id}] off-axis '${pond}' must be an input`);
+  const plane = rest[0];
+  if (plane && !inputs.includes(plane)) throw new Error(`[${def.id}] off-axis '${plane}' must be an input`);
 
   const initExprs: Record<string, Expr> = {};
   const freeDims = [...inputs];
@@ -86,7 +84,7 @@ export function compileLevel(def: LevelDef): CompiledLevel {
   const inputSet = new Set(inputs);
   const reqs = program.requires.flatMap(conjuncts);
   const isInputOnly = (e: Expr) => [...freeVars(e)].every((n) => inputSet.has(n));
-  const pondReq = mk.andAll(reqs.filter(isInputOnly));
+  const planeReq = mk.andAll(reqs.filter(isInputOnly));
   const eggReq = mk.andAll(reqs.filter((e) => !isInputOnly(e)));
   const guard = program.loop.guard;
   const post = mk.andAll(program.ensures);
@@ -101,16 +99,16 @@ export function compileLevel(def: LevelDef): CompiledLevel {
     inputs,
     vars,
     names,
-    pond,
+    plane,
     freeDims,
     initExprs,
-    pondReq,
+    planeReq,
     eggReq,
     guard,
     post,
     next,
     fast: {
-      pondReq: compileFast(pondReq),
+      planeReq: compileFast(planeReq),
       eggReq: compileFast(eggReq),
       guard: compileFast(guard),
       post: compileFast(post),
@@ -145,7 +143,7 @@ export function startState(level: CompiledLevel, free: State): State {
 }
 
 export function isEgg(level: CompiledLevel, start: State): boolean {
-  return holds(level.pondReq, start) && holds(level.eggReq, start);
+  return holds(level.planeReq, start) && holds(level.eggReq, start);
 }
 
 export function hop(level: CompiledLevel, s: State): State {

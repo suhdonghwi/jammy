@@ -42,8 +42,8 @@ export function Frogs() {
     () => new THREE.MeshBasicMaterial({ map: getBlobTexture(), transparent: true, depthWrite: false }),
     [],
   );
-  const pond = useGame((s) => s.pond);
-  const hasPonds = useGame((s) => !!s.level?.pond);
+  const plane = useGame((s) => s.plane);
+  const hasPlanes = useGame((s) => !!s.level?.plane);
   const visibleList = useRef<FrogSim[]>([]);
   const lastT = useRef<number | undefined>(undefined);
   const badgeRefs = useRef<(THREE.Sprite | null)[]>([]);
@@ -60,7 +60,7 @@ export function Frogs() {
     // Which frogs share which tile (for slot layout). A hopping frog already
     // counts on the tile it is landing on, so the frogs there make room while
     // it is in the air and it touches down straight into its own slot.
-    const visible = frogWorld.frogs.filter((f) => !hasPonds || f.pond === pond);
+    const visible = frogWorld.frogs.filter((f) => !hasPlanes || f.plane === plane);
     const groups = new Map<string, FrogSim[]>();
     for (const f of visible) {
       if (f.carried !== undefined) continue;
@@ -139,7 +139,7 @@ export function Frogs() {
     if (level) {
       for (const f of dropLandings) {
         if (level.fast.guard(toNum(f.state)) !== true && level.fast.post(toNum(f.state)) === true) {
-          goalEvents.push(f.x, f.y, f.pond);
+          goalEvents.push(f.x, f.y, f.plane);
           f.cheerT0 = sceneNow();
         }
       }

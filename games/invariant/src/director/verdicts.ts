@@ -25,17 +25,17 @@ function markFailure(x: number, y: number, label: string) {
   useGame.setState({ failMark: { x, y, label, t0: sceneNow() } });
 }
 
-/** Bring state s into view: ride to its pond, then glide (or, when it is far away, fly) over to it. */
+/** Bring state s into view: switch to its plane, then glide (or, when it is far away, fly) over to it. */
 async function focusState(s: State, far = false) {
   const L = currentLevel();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
-  if (L.pond) {
-    const p = Number(s[L.pond]);
-    if (p !== useGame.getState().pond) {
-      useGame.setState({ pond: p });
-      await sleep(80);
-      while (useGame.getState().elevating) await sleep(60);
+  if (L.plane) {
+    const p = Number(s[L.plane]);
+    if (p !== useGame.getState().plane) {
+      useGame.setState({ plane: p });
+      // a beat for the switch to register (the slider shows it) before the camera moves
+      await sleep(250);
     }
   }
   if (far) {
@@ -56,7 +56,7 @@ export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | n
   const inv = g.valid;
   if (!g.level || !inv || (g.formula && !g.formula.ok)) return null;
   const t = cameraRig.target();
-  const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, pondR: 20, pond: g.pond };
+  const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, planeR: 20, plane: g.plane };
   const keep = { ...g.verdicts };
   for (const r of rules) delete keep[r];
   useGame.setState({ checking: true, verdicts: keep, failMark: null });
@@ -178,14 +178,14 @@ export async function playRain({ max = 160, zoomOut = true }: { max?: number; zo
   frogWorld.clear();
   try {
     if (zoomOut) await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
-    const { valid: inv, pond } = useGame.getState();
+    const { valid: inv, plane } = useGame.getState();
     if (!inv) return;
     const t = cameraRig.target();
     const tx = t.x;
     const ty = -t.z;
-    const tiles: State[] = areaNear(L, pond, inv.fast, Math.round(tx), Math.round(ty), 16)
+    const tiles: State[] = areaNear(L, plane, inv.fast, Math.round(tx), Math.round(ty), 16)
       .filter(([x, y]) => Math.hypot(x - tx, y - ty) <= 15)
-      .map(([x, y]) => toBig(tileState(L, x, y, pond)));
+      .map(([x, y]) => toBig(tileState(L, x, y, plane)));
     // shuffle and cap
     for (let i = tiles.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

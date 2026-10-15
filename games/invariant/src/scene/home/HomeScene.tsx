@@ -111,9 +111,9 @@ function HomeRing() {
 
   return (
     <group>
-      <Floor level={DIAGONAL} pond={0} y={0} opacity={1} initialOpacity={0} fadeSpeed={2.6} showAxes={false} />
+      <Floor level={DIAGONAL} plane={0} opacity={1} initialOpacity={0} fadeSpeed={2.6} showAxes={false} />
       <Slabs version={version} dim={false} showStop showGoal />
-      <GoalColumns level={DIAGONAL} pond={0} win={WINDOW} version={version} />
+      <GoalColumns level={DIAGONAL} plane={0} win={WINDOW} version={version} />
       <StartEggs eggs={eggs} />
       <Frogs />
       <HatchShells />

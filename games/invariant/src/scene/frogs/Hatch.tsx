@@ -25,7 +25,7 @@ const MAX = 256;
 interface HatchFx {
   x: number;
   y: number;
-  pond?: number;
+  plane?: number;
   t0: number;
   dx: number;
   dy: number;
@@ -107,8 +107,8 @@ export function HatchShells() {
       ),
     [],
   );
-  const hasPonds = useGame((s) => !!s.level?.pond);
-  const pond = useGame((s) => s.pond);
+  const hasPlanes = useGame((s) => !!s.level?.plane);
+  const plane = useGame((s) => s.plane);
 
   useFrame(() => {
     const a = cup.current;
@@ -119,7 +119,7 @@ export function HatchShells() {
     let na = 0;
     let nb = 0;
     for (const fx of active) {
-      if (hasPonds && fx.pond !== pond) continue;
+      if (hasPlanes && fx.plane !== plane) continue;
       const u = t - fx.t0;
       const base = field.heightAt(fx.x, fx.y) * SLAB_H;
       const bx = fx.x + fx.dx;

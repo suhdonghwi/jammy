@@ -42,7 +42,7 @@ bound*.
 | States the precondition rules out | Faint ghost tiles — not possible states |
 | Postcondition | **Goal** pools, shown only in the stop region |
 | Loop invariant | The learner's **area**, raised as blue slabs |
-| An input the loop never changes | A **pond**: one floor in a vertical stack |
+| An input the loop never changes | A **plane** per value, picked with a slider |
 
 **Visual language.** Everything the level fixes is quiet grayscale; the
 learner's area is the only saturated surface (blue slabs, height). Other colours
@@ -72,31 +72,34 @@ the hand is allowed to test any part of the claim. If you don't want a frog
 there, shrink the claim — that is **strengthening**. The hand is the only
 adversary; it has no face or name.
 
-## Ponds
+## Planes
 
 Most invariants mention an input (e.g. `n`) that the loop never changes. Inputs
-are a direction frogs can never hop in, so the state space is a **stack of
-independent ponds**, one per input value, and all three rules hold for every
-input exactly when they hold in every pond. Showing one pond at a time loses
-nothing.
+are a direction frogs can never hop in, so the state space is a set of
+**independent planes**, one per input value, and all three rules hold for every
+input exactly when they hold in every plane. Showing one plane at a time loses
+nothing: a vertical **slider** picks the value, and the plane switches at
+once. (They used to be "ponds", floors stacked in 3D with the camera riding
+between them; the picture added a metaphor to learn and taught nothing about
+invariants.)
 
 - **Inputs are never mutated**; programs copy them into loop variables. The
   type checker enforces this.
-- **The input-only part of `requires` decides which ponds exist.** The hand can
-  never use a pond the precondition rules out.
-- **Initialisation code decides where the eggs sit** in each pond.
+- **The input-only part of `requires` decides which planes exist.** The hand can
+  never use a plane the precondition rules out.
+- **Initialisation code decides where the eggs sit** in each plane.
 - A level plots two of its names on the plane's axes (`view`); at most one
-  input is left over, and it becomes the pond stack. An input can also go on an
-  axis, so its ponds lie side by side as rows (the tutorial's rows are its
+  input is left over, and it becomes the plane slider. An input can also go on an
+  axis, so its planes lie side by side as rows (the tutorial's rows are its
   values of `n`).
 
 ## The checker
 
-- **A rule passes only if it is proved.** Z3 decides every rule over every pond
+- **A rule passes only if it is proved.** Z3 decides every rule over every plane
   and tile. A large search never silently stands in for a proof — that would
   contradict what the game teaches.
 - **On failure, show one concrete frog**, and prefer a nice one: the current
-  pond first, then small values, then near the camera. A fast search of the
+  plane first, then small values, then near the camera. A fast search of the
   states around the camera finds these; the solver finds the rest, starting
   with small bounds so its counterexamples are small too. If the only
   counterexample is far away, the camera flies to it: "everything you could see
@@ -135,7 +138,7 @@ A level is a small program: inputs, variables (with or without initial
 values), `requires`, one `while` loop whose body has assignments and `if/else`,
 and `ensures`. No nested loops, no calls. **Eggs are every state satisfying
 `requires` after the initialisation code** — one rule that covers a single egg
-per row, whole egg regions, and one egg per pond.
+per row, whole egg regions, and one egg per plane.
 
 Every level carries:
 
@@ -152,8 +155,8 @@ touching levels, the language or the checker.
 - each level teaches one idea, and its pitfall is the tempting formula that
   misses that idea (often the previous level's answer — *don't pattern-match*);
 - the usual fix is **strengthening**: add the bound or fact the pitfall forgot;
-- chapters build up: one plane (the rules alone) → stacked ponds (a preserved
-  equation + a bound) → branches (Maintenance must hold on every branch).
+- chapters build up: one plane (the rules alone) → a plane per input (a
+  preserved equation + a bound) → branches (Maintenance must hold on every branch).
 
 ## The tutorial
 
@@ -173,7 +176,8 @@ vocabulary it introduces and the engine changes it needs are in
   learner predicts the outcome.
 - Each stage has one hint: a sentence behind a Hint button that names the fact
   that matters, without giving the formula.
-- No ponds. It ends with the rules card, then the first level.
+- No slider: its input `n` is an axis. It ends with the rules card, then the
+  first level.
 
 ## Scope
 

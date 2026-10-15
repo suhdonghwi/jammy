@@ -76,10 +76,10 @@ const outlines = (tiles: [number, number][], tone: 'good' | 'info' = 'good') => 
 /** Stop tiles on the learner's area, in the tutorial's view: the only places a run on the area can end. */
 function stopsOnArea(): [number, number][] {
   const L = useGame.getState().level!;
-  const { pond, valid } = useGame.getState();
+  const { plane, valid } = useGame.getState();
   return tilesWhere((x, y) => {
-    const s = tileState(L, x, y, pond);
-    return L.fast.pondReq(s) === true && L.fast.guard(s) !== true && !!valid && valid.fast(s) === true;
+    const s = tileState(L, x, y, plane);
+    return L.fast.planeReq(s) === true && L.fast.guard(s) !== true && !!valid && valid.fast(s) === true;
   });
 }
 
@@ -90,12 +90,12 @@ function stopsOnArea(): [number, number][] {
  */
 async function passed(gen: number, rule: Rule) {
   const L = useGame.getState().level!;
-  const { pond } = useGame.getState();
+  const { plane } = useGame.getState();
   if (rule === 'initialization') {
     await beat(gen, 'Correct! Every egg sits on your area: the first rule holds.', {
       spot: 'lights',
       tone: 'success',
-      callouts: outlines(eggsNear(L, pond, 4, 4, 6)),
+      callouts: outlines(eggsNear(L, plane, 4, 4, 6)),
     });
   } else if (rule === 'maintenance') {
     await beat(gen, 'Correct! No hop leaves your area: the second rule holds. A frog anywhere on it lands on it again.', {

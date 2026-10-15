@@ -15,8 +15,8 @@ export interface FrogSim {
   id: number;
   kind: FrogKind;
   state: State;
-  /** Pond this frog lives in (undefined when the level has no ponds). */
-  pond?: number;
+  /** Plane this frog lives in (undefined when the level has no planes). */
+  plane?: number;
   /** Visual tile position (floats while animating). */
   x: number;
   y: number;
@@ -83,7 +83,7 @@ class FrogWorld {
       id: this.nextId++,
       kind,
       state,
-      pond: level.pond ? Number(state[level.pond]) : undefined,
+      plane: level.plane ? Number(state[level.plane]) : undefined,
       x: Number(state[level.view.x]),
       y: Number(state[level.view.y]),
       stopped: false,
@@ -121,7 +121,7 @@ class FrogWorld {
         f.face = facingFor(level, next, f.face);
         if (batch) landInBatch(batch, holds(level.guard, next));
         if (!holds(level.guard, next) && holds(level.post, next)) {
-          goalEvents.push(tx, ty, f.pond);
+          goalEvents.push(tx, ty, f.plane);
           f.cheerT0 = sceneNow();
         }
         res();

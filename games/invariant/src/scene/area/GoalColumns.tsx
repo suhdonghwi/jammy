@@ -79,12 +79,12 @@ void main() {
 
 export function GoalColumns({
   level,
-  pond,
+  plane,
   win,
   version,
 }: {
   level: CompiledLevel;
-  pond: number;
+  plane: number;
   win: TileWindow;
   version: number;
 }) {
@@ -94,12 +94,12 @@ export function GoalColumns({
     const R = Math.min(win.R, 24);
     for (let y = win.cy - R; y <= win.cy + R; y++) {
       for (let x = win.cx - R; x <= win.cx + R; x++) {
-        const s = tileState(level, x, y, pond);
-        if (f.pondReq(s) && f.guard(s) !== true && f.post(s) === true) out.push([x, y]);
+        const s = tileState(level, x, y, plane);
+        if (f.planeReq(s) && f.guard(s) !== true && f.post(s) === true) out.push([x, y]);
       }
     }
     return out;
-  }, [level, pond, win]);
+  }, [level, plane, win]);
 
   const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
   const geom = useMemo(() => {
@@ -140,7 +140,7 @@ export function GoalColumns({
   useFrame(() => {
     material.uniforms.uTime.value = sceneNow();
     const g = useGame.getState();
-    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.pond ? g.pond : undefined);
+    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.plane ? g.plane : undefined);
   });
   return <mesh geometry={geom} material={material} frustumCulled={false} renderOrder={6} />;
 }
