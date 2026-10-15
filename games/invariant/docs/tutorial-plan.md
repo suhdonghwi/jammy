@@ -356,7 +356,7 @@ looking at the area; afterwards the learner's own area comes back.
 The hand is not named here (the learner may not have met it yet). The
 counterexample's caption opens with the verdict, "Right, no." in the success
 tone or "Not quite." in the failure tone, then says what the frog did ("this
-frog starts at … — outside this area"); the rule's explanation follows on
+frog starts at … — outside the area"); the rule's explanation follows on
 Next.
 For stage 3, the question is "Would it pass all three rules?". Predictions
 are never scored or remembered; they exist to make the learner commit. They

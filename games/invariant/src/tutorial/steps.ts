@@ -130,7 +130,7 @@ async function witness(
 const OBJECTION =
   '“But `i` never passes `n`!” — Your area doesn’t say that. It claims a frog could be anywhere on it, and the hand takes you at your word. To fix it, **shrink** your area so it stops claiming impossible frogs.';
 const OBJECTION_DEMO =
-  '“But `i` never passes `n`!” — This area doesn’t say that. It claims a frog could be anywhere on it, and the hand takes the claim at its word. The fix would be to **shrink** it so it stops claiming impossible frogs.';
+  '“But `i` never passes `n`!” — The area doesn’t say that. It claims a frog could be anywhere on it, and the hand takes the claim at its word. The fix would be to **shrink** it so it stops claiming impossible frogs.';
 
 export const STEPS: Step[] = [
   // ======================= Act 1: The world =======================

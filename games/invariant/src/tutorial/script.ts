@@ -364,7 +364,7 @@ export async function demo(
     // verdict on their prediction leads, so the failure doesn't read as theirs
     const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? 'Right, no. ' : 'Not quite. ';
     const tone = opts.guessedRight ? 'success' : 'fail';
-    await playCounterexample(cex, { prefix: verdict, tone, extra: opts.extra, area: 'this area', action: nextAfterCounterexample });
+    await playCounterexample(cex, { prefix: verdict, tone, extra: opts.extra, area: 'the area', action: nextAfterCounterexample });
     guard(gen);
     await holdCaption(gen);
   }

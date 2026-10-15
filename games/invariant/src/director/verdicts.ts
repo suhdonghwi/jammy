@@ -84,7 +84,7 @@ export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | n
 interface CounterexampleOptions {
   /** Said before the explanation (default: a note when the frog was found far away). */
   prefix?: string;
-  /** Whose area it is: "your area" (the learner's, the default) or "this area" (one the tutorial is trying). */
+  /** Whose area it is: "your area" (the learner's, the default) or "the area" (one the tutorial is trying). */
   area?: string;
   /** The caption's tone (default: a failure). A demo the learner predicted right uses success. */
   tone?: CaptionTone;
