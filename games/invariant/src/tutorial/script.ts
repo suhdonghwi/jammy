@@ -74,6 +74,12 @@ export function say(text: string, spot: Spot = null, tone: CaptionTone = 'info',
   useGame.setState({ caption: { text, tone, action: reserve ? earlyNext(reserve) : undefined }, spotlight: spot });
 }
 
+/** Show a caption whose Next is there but greyed: the step waits for the learner to do something first. */
+export function sayWaiting(text: string, spot: Spot = null) {
+  captionShownAt = performance.now();
+  useGame.setState({ caption: { text, tone: 'info', action: { label: 'Next', onClick: () => {}, disabled: true } }, spotlight: spot });
+}
+
 /** Show a caption with a button and wait for it. */
 function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone: CaptionTone = 'info'): Promise<void> {
   return new Promise((resolve, reject) => {

@@ -6,7 +6,7 @@ import { RULE_NAMES, type Rule } from '../levels/level';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { EXIT_MS } from '../ui/presence';
-import { allow, beat, choose, demo, guard, say, stage, waitEvent, waitStore } from './script';
+import { allow, beat, choose, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
 
 // The story, as steps. Each step knows the scene it starts from, so Back can
 // rebuild it and replay the step; moving forward just runs the next one.
@@ -247,12 +247,12 @@ export const STEPS: Step[] = [
     run: async (gen) => {
       useGame.getState().setReveal({ formula: true });
       allow({ formula: true });
-      say('Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**. That is the `assert(?)` drawn on the plane.\n\nTry two or three, and watch the plane.', 'formula');
-      // Next once there is something to look at
+      // Next is there from the start, greyed until there is something to look at
+      sayWaiting('Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**. That is the `assert(?)` drawn on the plane.\n\nTry `i == 2` first, then one or two of your own. **Syntax**, top right, lists what you can write.', 'formula');
       await waitStore(gen, (g) => g.valid !== null && g.formulaText.trim() !== '');
       await sleep(900);
       guard(gen);
-      await beat(gen, 'Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**. That is the `assert(?)` drawn on the plane.\n\nTry two or three, and watch the plane.', { spot: 'formula' });
+      await beat(gen, 'Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**. That is the `assert(?)` drawn on the plane.\n\nTry `i == 2` first, then one or two of your own. **Syntax**, top right, lists what you can write.', { spot: 'formula' });
       allow({});
     },
   },

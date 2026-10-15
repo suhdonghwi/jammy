@@ -5,6 +5,7 @@ import { World } from './scene/World';
 import { HomeOverlay } from './ui/home/HomeOverlay';
 import { Hud } from './ui/hud/Hud';
 import { RulesCard } from './ui/rules/RulesCard';
+import { SyntaxCard } from './ui/rules/SyntaxCard';
 
 // The page: the 3D world behind everything, and the home screen or the level's HUD over it.
 
@@ -27,6 +28,7 @@ export function App() {
       {mode === 'menu' && <HomeOverlay />}
       {mode !== 'menu' && level && <Hud />}
       <RulesCard />
+      <SyntaxCard />
     </div>
   );
 }

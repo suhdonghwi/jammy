@@ -59,8 +59,8 @@ export type CaptionTone = 'info' | 'fail' | 'success' | 'muted';
 export interface Caption {
   text: string;
   tone: CaptionTone;
-  /** Main button (Next, Replay, …). */
-  action?: { label: string; onClick: () => void };
+  /** Main button (Next, Replay, …); `disabled` shows it greyed, for a step that waits on the learner first. */
+  action?: { label: string; onClick: () => void; disabled?: boolean };
   /** Optional quieter button next to it (e.g. Replay). */
   secondary?: { label: string; onClick: () => void };
   /** A question: these buttons instead of a main one (the tutorial's predictions). */
@@ -107,6 +107,8 @@ export interface Game {
   /** Tutorial: the hint ladder while a stage waits for Check. */
   hint: Hint | null;
   showRules: boolean;
+  /** The syntax reference card is open. */
+  showSyntax: boolean;
   pitfallMessage: string | null;
   /** A cinematic is playing; the level scene is hidden. */
   cinematic: boolean;
@@ -164,6 +166,7 @@ export const useGame = create<Game>((set, get) => ({
   landGuard: 'true',
   hint: null,
   showRules: false,
+  showSyntax: false,
   pitfallMessage: null,
   cinematic: false,
   failMark: null,

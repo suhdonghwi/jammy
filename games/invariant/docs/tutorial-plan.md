@@ -185,8 +185,9 @@ appear in the top bar, dim.
 **1.10 Draw before you check.** Formula box appears; Check stays disabled.
 
 > Type any condition on `i` and `n`. The tiles where it's true rise as
-> **slabs**. That is the `assert(?)` drawn on the plane. Try two or three,
-> and watch the plane.
+> **slabs**. That is the `assert(?)` drawn on the plane. Try `i == 2` first,
+> then one or two of your own. **Syntax**, top right, lists what you can
+> write.
 
 Next appears after the first valid formula. Hover readout shows "in your
 area / outside your area" as today. No suggestion placeholder here; the
@@ -381,6 +382,10 @@ Scene and HUD:
   rung.
 - **Caption choices**: `Caption.choices?: { label; onClick }[]` rendered as
   secondary buttons, for `predict`.
+- **Syntax card**: a reference for the formula language (compare, chain,
+  combine, arithmetic, functions, constants), with examples in the open
+  level's own variables. Opened from a **Syntax** button in the top bar beside
+  Rules, shown once the area box exists; in levels too.
 - **Rules card** text:
   - subtitle: "An area that passes all three is a loop invariant strong enough
     to prove the postcondition: every run that stops, stops on a goal."

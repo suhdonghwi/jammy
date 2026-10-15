@@ -56,7 +56,7 @@ export function CaptionBar() {
             </button>
           )}
           {caption.action && (
-            <button className={button('primary', 'sm')} onClick={() => caption.action!.onClick()}>
+            <button className={button('primary', 'sm')} disabled={caption.action.disabled} onClick={() => caption.action!.onClick()}>
               {caption.action.label === 'Replay' ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
               {caption.action.label}
               {caption.action.label !== 'Replay' ? <ArrowRight size={15} strokeWidth={2.4} /> : null}

@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, CircleCheck, CircleDashed, CircleHelp, CircleX, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, Braces, CircleCheck, CircleDashed, CircleHelp, CircleX, LoaderCircle } from 'lucide-react';
 import { playCounterexample } from '../../director/verdicts';
 import { goMenu } from '../../game/actions';
 import { useGame } from '../../game/store';
@@ -6,13 +6,14 @@ import { RULE_NAMES, RULES } from '../../levels/level';
 import { button } from '../classes';
 
 // The top bar: back, the level's name, the three rule lights (dim until the
-// tutorial reaches them; a failed one replays its counterexample) and the
-// rules card.
+// tutorial reaches them; a failed one replays its counterexample), the syntax
+// reference (once there is an area box) and the rules card.
 
 export function TopBar() {
   const level = useGame((s) => s.level);
   const mode = useGame((s) => s.mode);
   const lights = useGame((s) => s.reveal.lights);
+  const showSyntax = useGame((s) => s.reveal.formula);
   const awake = useGame((s) => s.reveal.awake);
   const verdicts = useGame((s) => s.verdicts);
   const checking = useGame((s) => s.checking);
@@ -56,6 +57,11 @@ export function TopBar() {
               </button>
             );
           })}
+        {showSyntax && (
+          <button className={button('quiet')} title="What you can type into the area box" onClick={() => useGame.setState({ showSyntax: true })}>
+            <Braces size={16} strokeWidth={2.2} /> Syntax
+          </button>
+        )}
         <button className={button('quiet')} onClick={() => useGame.setState({ showRules: true })}>
           <BookOpen size={16} strokeWidth={2.2} /> Rules
         </button>

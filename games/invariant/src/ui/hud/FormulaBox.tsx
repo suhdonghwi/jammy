@@ -194,7 +194,8 @@ export function FormulaBox() {
         className={`flex items-center gap-2.5 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card transition-colors duration-150 ${settledError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'animate-shake' : ''}`}
       >
         {/* a little slab, like the area's in the scene */}
-        <span className="flex items-center gap-1.75 font-display text-xs font-semibold tracking-[0.08em] text-brand uppercase before:size-3 before:rounded-sm before:bg-slab before:shadow-[0_2px_0_var(--color-slab-side)]">
+        {/* the slab sits a touch high: the capitals' optical centre is above the line box's */}
+        <span className="flex items-center gap-1.75 font-display text-xs font-semibold tracking-[0.08em] text-brand uppercase before:size-3 before:-translate-y-px before:rounded-sm before:bg-slab before:shadow-[0_2px_0_var(--color-slab-side)]">
           area
         </span>
         {/* read-only (faded) while the tutorial isn't asking for a formula */}
