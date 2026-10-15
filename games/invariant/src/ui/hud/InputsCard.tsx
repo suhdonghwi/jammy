@@ -14,8 +14,12 @@ import { CARD, CARD_LABEL } from '../classes';
 /** An array as the field shows it. */
 const showArray = (a: number[]) => `[${a.join(', ')}]`;
 
+/** A field with nothing typed yet (or only the opening bracket): the plane stays as it was, with no error shown. */
+const incomplete = (text: string) => /^\[?$/.test(text.trim());
+
 /** The integers typed into an array field: `1, 3 4` or `[1,3,4]`; null when it isn't a list of at most MAX_LEN integers. */
 function parseArray(text: string): number[] | null {
+  if (incomplete(text)) return null;
   const inner = text.trim().replace(/^\[/, '').replace(/\]$/, '');
   const parts = inner.split(/[\s,]+/).filter((p) => p !== '');
   if (parts.some((p) => !/^-?\d{1,6}$/.test(p)) || parts.length > MAX_LEN) return null;
@@ -172,7 +176,7 @@ function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: C
       onChange(withLengths(level, { ...inputs, [name]: arr }));
     }
   };
-  const bad = editing && parseArray(text) === null;
+  const bad = editing && !incomplete(text) && parseArray(text) === null;
   return (
     <div key={pops} className="flex min-w-0 flex-1 animate-[pop_0.3s_ease-out] items-center gap-1.5">
       <input
