@@ -338,7 +338,8 @@ export async function demo(
   const mine = opts.restore ?? g.formulaText;
   useGame.setState({ busy: true, callouts: [] });
   frogWorld.clear('test');
-  say(`Trying \`${formula}\`…`, 'formula', 'muted');
+  // no spotlight on the box: the formula is already in it (and the slabs on the plane)
+  say(`Trying \`${formula}\`…`, null, 'muted');
   if (g.formulaText.trim() !== formula) {
     const t = cameraRig.target();
     void handIn(t.x + 2.5, -t.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
