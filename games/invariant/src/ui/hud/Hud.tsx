@@ -25,7 +25,8 @@ export function Hud() {
         </div>
         {!cinematic && <PondGauge />}
       </div>
-      <div className="pointer-events-none! flex flex-col items-center gap-2 *:w-full *:max-w-200 *:pointer-events-auto">
+      {/* data-frame: on phones the scene centres itself in the gap between the top and bottom parts (scene/PhoneFraming) */}
+      <div className="pointer-events-none! flex flex-col items-center gap-2 *:w-full *:max-w-200 *:pointer-events-auto" data-frame="bottom">
         <CaptionBar />
         <RevealSlot open={reveal.formula}>
           <FormulaBox />

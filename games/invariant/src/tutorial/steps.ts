@@ -1,9 +1,10 @@
-import { hatchFrog, resetFrogs, stepFrogs } from '../director/frogs';
+import { hatch, placeFrog, resetFrogs, stepFrogs } from '../director/frogs';
 import { sleep } from '../director/sequence';
 import { playRain } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
 import { RULE_NAMES, type Rule } from '../levels/level';
 import { cameraRig } from '../scene/cameraRig';
+import { sceneNow } from '../scene/sceneTime';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { eggsNear, tileState } from '../scene/tiles';
 import { EXIT_MS } from '../ui/presence';
@@ -51,9 +52,12 @@ export function resetProgress() {
 }
 
 const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
-const DRAW = { ...WORLD, assert: true, formula: true, lights: ['init', 'pres', 'exit'] as Rule[] };
+const DRAW = { ...WORLD, assert: true, formula: true, lights: ['initialization', 'maintenance', 'termination'] as Rule[] };
 
-const ALL: Rule[] = ['init', 'pres', 'exit'];
+const ALL: Rule[] = ['initialization', 'maintenance', 'termination'];
+
+/** Run hatches the first ten eggs: n = 0 to 9, each frog stopping on its goal (n, n). */
+const TESTED = Array.from({ length: 10 }, (_, n): [number, number] => [n, n]);
 const upTo = (r: Rule): Rule[] => ALL.slice(0, ALL.indexOf(r) + 1);
 
 /** The learner's area, as inline code. */
@@ -66,8 +70,18 @@ function tilesWhere(test: (x: number, y: number) => boolean): [number, number][]
   return out;
 }
 
-/** Green outlines on tiles (no text: the caption says what they show). */
-const outlines = (tiles: [number, number][]) => tiles.map(([x, y]) => ({ x, y, text: '', tone: 'good' as const }));
+/** Outlines on tiles (no text: the caption says what they show); green unless `tone` says otherwise. */
+const outlines = (tiles: [number, number][], tone: 'good' | 'info' = 'good') => tiles.map(([x, y]) => ({ x, y, text: '', tone }));
+
+/** Stop tiles on the learner's area, in the tutorial's view: the only places a run on the area can end. */
+function stopsOnArea(): [number, number][] {
+  const L = useGame.getState().level!;
+  const { pond, valid } = useGame.getState();
+  return tilesWhere((x, y) => {
+    const s = tileState(L, x, y, pond);
+    return L.fast.pondReq(s) === true && L.fast.guard(s) !== true && !!valid && valid.fast(s) === true;
+  });
+}
 
 /**
  * A stage passed: say so, with the rule's own evidence in the scene — the eggs
@@ -76,15 +90,14 @@ const outlines = (tiles: [number, number][]) => tiles.map(([x, y]) => ({ x, y, t
  */
 async function passed(gen: number, rule: Rule) {
   const L = useGame.getState().level!;
-  const { pond, valid } = useGame.getState();
-  const inArea = (x: number, y: number) => !!valid && valid.fast(tileState(L, x, y, pond)) === true;
-  if (rule === 'init') {
+  const { pond } = useGame.getState();
+  if (rule === 'initialization') {
     await beat(gen, 'Correct! Every egg sits on your area: the first rule holds.', {
       spot: 'lights',
       tone: 'success',
       callouts: outlines(eggsNear(L, pond, 4, 4, 6)),
     });
-  } else if (rule === 'pres') {
+  } else if (rule === 'maintenance') {
     await beat(gen, 'Correct! No hop leaves your area: the second rule holds. A frog anywhere on it lands on it again.', {
       spot: 'lights',
       tone: 'success',
@@ -92,11 +105,10 @@ async function passed(gen: number, rule: Rule) {
     });
     frogWorld.clear('test');
   } else {
-    const stops = tilesWhere((x, y) => L.fast.pondReq(tileState(L, x, y, pond)) === true && L.fast.guard(tileState(L, x, y, pond)) !== true && inArea(x, y));
     await beat(gen, 'Correct! Every frog that stops on your area is on a goal: the third rule holds.', {
       spot: 'lights',
       tone: 'success',
-      callouts: outlines(stops),
+      callouts: outlines(stopsOnArea()),
     });
   }
 }
@@ -126,7 +138,7 @@ async function witness(
   }
 }
 
-/** The objection every learner raises at Exit, and its answer (for the learner's own area, and for one the tutorial tries). */
+/** The objection every learner raises at Termination, and its answer (for the learner's own area, and for one the tutorial tries). */
 const OBJECTION =
   '“But `i` never passes `n`!” — Your area doesn’t say that. It claims a frog could be anywhere on it, and the hand takes you at your word. To fix it, **shrink** your area so it stops claiming impossible frogs.';
 const OBJECTION_DEMO =
@@ -156,7 +168,7 @@ export const STEPS: Step[] = [
             useGame.getState().setReveal({ axes: true });
             // the frog's own tag shows its values (and animates them as it hops)
             useGame.setState({ frogTags: true });
-            hatchFrog(st(0, 3));
+            hatch(st(0, 3));
             await sleep(600);
           },
         },
@@ -226,40 +238,65 @@ export const STEPS: Step[] = [
         },
       ),
   },
-  // 1.6 goals
+  // 1.6 goals: the frog from 1.3 stopped on one
   {
-    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true } },
+    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true }, frogs: [[3, 3]], camera: [2, 2, 15.6] },
     run: (gen) =>
-      beat(gen, 'The amber pools are the **goals**: the tiles where the postcondition `i == n` holds.\n\nEvery run should stop on one.', {
-        callouts: [{ x: 2, y: 2, text: 'goal: i == n', tone: 'info' }],
-        prepare: () => useGame.getState().setReveal({ goals: true }),
-        settle: 1000,
-      }),
+      beat(
+        gen,
+        'The amber pools are the **goals**: the tiles where the postcondition `i == n` holds.\n\nThe frog you stepped stopped on one, at `i = 3, n = 3`. That run did what `ensures` promises.',
+        {
+          callouts: [{ x: 3, y: 3, text: 'stopped on a goal', tone: 'good' }],
+          prepare: () => {
+            if (!frogWorld.frogs.some((f) => f.kind === 'real')) placeFrog(st(3, 3));
+            useGame.getState().setReveal({ goals: true });
+          },
+          settle: 1000,
+        },
+      ),
   },
-  // 1.7 run
+  // 1.6b what a bug would look like, and the question the whole game asks
   {
-    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true } },
-    run: async (gen) => {
-      useGame.getState().setReveal({ run: true });
-      useGame.setState({ callouts: [] });
-      allow({ run: true });
-      say('Press **Run** to hatch every egg and run all the frogs at once.', 'run');
-      await waitEvent(gen, 'runDone', realFrogsStopped);
-      allow({});
-      await beat(gen, 'Every frog stopped on a goal. Looks correct!');
-    },
-  },
-  // 1.8 watching can't be enough
-  {
-    scene: { reveal: WORLD },
+    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true }, frogs: [[3, 3]], camera: [2, 2, 15.6] },
     run: async (gen) => {
       await beat(
         gen,
-        'But how many eggs are there? `n` can be any number, so the eggs never end.\n\nClick a few eggs to run them: they all work… but watching them one at a time can never cover them all. **So how can we check them all?**',
+        'Not every place to stop is a goal. A run that stopped here, at `i = 3, n = 1`, would leave the loop with `i ≠ n`: the program would be wrong.\n\nSo the question is: **does every run stop on a goal?**',
         {
+          prepare: () => useGame.setState({ failMark: { x: 3, y: 1, label: 'stops, but i ≠ n', t0: sceneNow() } }),
+          settle: 800,
+        },
+      );
+      useGame.setState({ failMark: null });
+    },
+  },
+  // 1.7 test some
+  {
+    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true }, camera: [2, 2, 15.6] },
+    run: async (gen) => {
+      useGame.getState().setReveal({ run: true });
+      useGame.setState({ callouts: [], failMark: null });
+      allow({ run: true });
+      say('Let’s test it. Press **Run** to hatch the first ten eggs and run their frogs at once.', 'run');
+      await waitEvent(gen, 'runDone', realFrogsStopped);
+      allow({});
+      await beat(gen, 'All ten stopped on a goal. For `n` = 0 to 9, the program is correct.');
+    },
+  },
+  // 1.8 testing can't be enough: the ten tested, and the eggs going on past them
+  {
+    scene: { reveal: WORLD, frogs: TESTED },
+    run: async (gen) => {
+      await beat(
+        gen,
+        'But that was ten inputs. `n` can be any number, so the eggs never end: however many you test, infinitely many are left.\n\nClick a few more eggs to run them. They all work… but testing can never cover them all. **So how can we be sure about every one?**',
+        {
+          callouts: [
+            { x: 9, y: 9, text: 'tested: n = 0 to 9', tone: 'good' },
+            { x: 0, y: 18, text: 'n = 18, 19, … never end', tone: 'info' },
+          ],
           prepare: async () => {
-            resetFrogs();
-            await cameraRig.lookAtTile(4, 14, 55);
+            await cameraRig.lookAtTile(4, 10, 55);
             // a fast Next may have moved on during the glide: a stale allow() would lock the next step's box
             guard(gen);
             allow({ eggs: true });
@@ -271,7 +308,7 @@ export const STEPS: Step[] = [
   },
   // 1.9 the bridge: an assert at the top of the loop
   {
-    scene: { reveal: WORLD, camera: [4, 14, 55] },
+    scene: { reveal: WORLD, camera: [4, 10, 55] },
     run: (gen) =>
       beat(
         gen,
@@ -309,80 +346,78 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
-      useGame.getState().setReveal({ awake: ['init'] });
+      useGame.getState().setReveal({ awake: ['initialization'] });
       await stage(gen, {
         ask: 'First rule: every egg must sit on your area, because the assert runs before the first hop.\n\nDraw an area every egg sits on, then press **Check**.',
-        rules: ['init'],
-        nudge: 'What do all the eggs have in common? Look at their `i`.',
-        hint: 'i >= 0',
+        rules: ['initialization'],
+        nudge: 'Every egg has the same `i`. What is it?',
         onFail: (r) => witnessed.add(r),
       });
       learnerFormula = useGame.getState().formulaText;
-      await passed(gen, 'init');
+      await passed(gen, 'initialization');
     },
   },
-  // 2.1b witness: Init
+  // 2.1b witness: Initialization
   {
-    scene: { reveal: { ...DRAW, awake: ['init'] }, formula: 'learner', camera: [2, 2, 15.6] },
+    scene: { reveal: { ...DRAW, awake: ['initialization'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
-      witness(gen, 'init', 'i == n', {
+      witness(gen, 'initialization', 'i == n', {
         question: 'Would every egg sit on it?',
-        afterDemo: `**Rule 1 · Init** (initialization): every egg sits on your area. \`i == n\` only covers the egg at \`n = 0\`; yours, ${mine()}, covers them all.`,
-        afterOwn: `**Rule 1 · Init** (initialization): every egg sits on your area. Your first try missed one; ${mine()} covers them all.`,
+        afterDemo: `**Rule 1 · Initialization**: every egg sits on your area. \`i == n\` only covers the egg at \`n = 0\`; yours, ${mine()}, covers them all.`,
+        afterOwn: `**Rule 1 · Initialization**: every egg sits on your area. Your first try missed one; ${mine()} covers them all.`,
       }),
   },
   // 2.2 stage 2: every hop
   {
-    scene: { reveal: { ...DRAW, awake: ['init'] }, formula: 'learner', camera: [2, 2, 15.6] },
+    scene: { reveal: { ...DRAW, awake: ['initialization'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
-      useGame.getState().setReveal({ awake: ['init', 'pres'] });
+      useGame.getState().setReveal({ awake: ['initialization', 'maintenance'] });
       await stage(gen, {
         ask: 'Now the hop. A frog on your area must land on your area, every time.\n\nKeep every egg on it, and make sure no hop leaves it. **Check** now runs rules 1 and 2.',
-        rules: ['init', 'pres'],
-        nudge: 'Frogs only ever move right. What stays true after `i = i + 1`?',
-        hint: 'i >= 0',
-        explain: { pres: 'The purple frog is a **test frog**: a state the hand imagines, not a real run. Your area said a frog could be there.' },
+        rules: ['initialization', 'maintenance'],
+        nudge: 'Every frog starts at `i = 0`, and a hop only ever increases `i`.',
+        explain: { maintenance: 'The purple frog is a **test frog**: a state the hand imagines, not a real run. Your area said a frog could be there.' },
         onFail: (r) => witnessed.add(r),
       });
       learnerFormula = useGame.getState().formulaText;
-      await passed(gen, 'pres');
+      await passed(gen, 'maintenance');
     },
   },
-  // 2.2b witness: Preservation
+  // 2.2b witness: Maintenance
   {
-    scene: { reveal: { ...DRAW, awake: ['init', 'pres'] }, formula: 'learner', camera: [2, 2, 15.6] },
+    scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
-      witness(gen, 'pres', 'i == 0 || i == n', {
+      witness(gen, 'maintenance', 'i == 0 || i == n', {
         question: 'Would every hop from it land on it?',
         afterDemo:
-          '**Rule 2 · Preservation**: a frog on your area that hops lands on your area. Frogs pass through the tiles in between!\n\nThe hand may start its purple **test frog** on *any* tile of your area, not only ones a real run reaches. Your area is a claim, and the hand tests the claim.',
+          '**Rule 2 · Maintenance**: a frog on your area that hops lands on your area. Frogs pass through the tiles in between!\n\nThe hand may start its purple **test frog** on *any* tile of your area, not only ones a real run reaches. Your area is a claim, and the hand tests the claim.',
         afterOwn:
-          '**Rule 2 · Preservation**: a frog on your area that hops lands on your area.\n\nThe hand may start its purple **test frog** on *any* tile of your area, not only ones a real run reaches. Your area is a claim, and the hand tests the claim.',
+          '**Rule 2 · Maintenance**: a frog on your area that hops lands on your area.\n\nThe hand may start its purple **test frog** on *any* tile of your area, not only ones a real run reaches. Your area is a claim, and the hand tests the claim.',
         extra: 'The purple frog is a **test frog**: a state the hand imagines, not a real run.',
       }),
   },
-  // 2.3 follow one frog: Init
+  // 2.3 follow one frog: Initialization
   {
-    scene: { reveal: { ...DRAW, awake: ['init', 'pres'] }, formula: 'learner', camera: [2, 2, 15.6] },
+    scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
       await beat(gen, 'Both rules hold for your area. Let’s follow one frog to see what that means.', { spot: 'lights' });
-      await beat(gen, 'It starts on your area: that’s **Init**.', {
-        callouts: [{ x: 0, y: 3, text: 'Init', tone: 'good' }],
+      await beat(gen, 'It starts on your area: that’s **Initialization**.', {
+        callouts: [{ x: 0, y: 3, text: 'Initialization', tone: 'good' }],
         prepare: async () => {
           resetFrogs();
           await cameraRig.lookAtTile(1.5, 3, 12);
           guard(gen);
-          hatchFrog(st(0, 3));
+          hatch(st(0, 3));
           await sleep(600);
         },
       });
     },
   },
-  // 2.3 follow one frog: Preservation, and what the two together mean
+  // 2.3 follow one frog: Maintenance, and what the two together mean
   {
-    scene: { reveal: { ...DRAW, awake: ['init', 'pres'] }, formula: 'learner', frogs: [[0, 3]], camera: [1.5, 3, 12] },
+    scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[0, 3]], camera: [1.5, 3, 12] },
     run: async (gen) => {
-      say('Every hop lands on your area again: that’s **Preservation**.');
+      say('Every hop lands on your area again: that’s **Maintenance**.');
       for (let k = 0; k < 6 && !realFrogsStopped(); k++) {
         await sleep(650);
         guard(gen);
@@ -401,39 +436,44 @@ export const STEPS: Step[] = [
       );
     },
   },
-  // 2.4 stage 3: stopping on a goal
+  // 2.4 stage 3: stopping on a goal. First the answer to 2.3's "Is that
+  // enough?", with the tiles it is about outlined; then the learner checks.
   {
-    scene: { reveal: { ...DRAW, awake: ['init', 'pres'] }, formula: 'learner', camera: [1.5, 3, 12] },
+    scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[3, 3]], camera: [1.5, 3, 12] },
     run: async (gen) => {
-      useGame.getState().setReveal({ awake: ALL });
-      useGame.setState({ callouts: [] });
+      await beat(
+        gen,
+        'Only if that tile is a goal. A run ends where the loop stops: on a shaded tile, and on your area — one of the outlined tiles.\n\nThird rule: every one of them must be a goal.',
+        {
+          spot: 'lights',
+          callouts: outlines(stopsOnArea(), 'info'),
+          prepare: () => {
+            useGame.getState().setReveal({ awake: ALL });
+            void cameraRig.lookAtTile(2, 2, 15.6);
+          },
+        },
+      );
       resetFrogs();
-      void cameraRig.lookAtTile(2, 2, 15.6);
-      say('Third rule: a frog that stops on your area must be on a **goal**. Let’s check yours.', 'lights');
-      await sleep(1800);
-      guard(gen);
       await stage(gen, {
-        ask: 'Make your area stop claiming frogs that stop off a goal, then press **Check**. All three rules run.',
+        ask: 'Is every one a goal? Press **Check**: it now runs all three rules.\n\nIf a frog stops off a goal, change your area and Check again.',
         rules: ALL,
-        nudge: 'A real frog never passes `n`. Does your area say so?',
-        hint: '0 <= i <= n',
-        checkFirst: true,
-        explain: { exit: OBJECTION },
+        nudge: 'A real frog never passes `n`, so `i` is never greater than `n`.',
+        explain: { termination: OBJECTION },
         onFail: (r) => witnessed.add(r),
       });
       learnerFormula = useGame.getState().formulaText;
-      await passed(gen, 'exit');
+      await passed(gen, 'termination');
     },
   },
-  // 2.4b witness: Exit
+  // 2.4b witness: Termination
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
-      witness(gen, 'exit', 'i >= 0', {
+      witness(gen, 'termination', 'i >= 0', {
         question: 'Would it pass all three rules?',
         afterDemo:
-          '**Rule 3 · Exit**: a frog that stops on your area is on a goal. `i >= 0` is a true invariant — every run really does keep `i ≥ 0` — but too weak to prove the goal.',
-        afterOwn: `**Rule 3 · Exit**: a frog that stops on your area is on a goal. Your earlier area was a true invariant, but too weak to prove the goal; ${mine()} is strong enough.`,
+          '**Rule 3 · Termination**: a frog that stops on your area is on a goal. `i >= 0` is a true invariant — every run really does keep `i ≥ 0` — but too weak to prove the goal.',
+        afterOwn: `**Rule 3 · Termination**: a frog that stops on your area is on a goal. Your earlier area was a true invariant, but too weak to prove the goal; ${mine()} is strong enough.`,
         extra: OBJECTION_DEMO,
       }),
   },
@@ -443,7 +483,7 @@ export const STEPS: Step[] = [
     run: (gen) =>
       beat(
         gen,
-        'Notice the two ways to be wrong.\n\n- Too **small** an area, and an egg or a hop falls outside: Init or Preservation fails.\n- Too **large**, and it claims frogs that stop off a goal: Exit fails.\n\nThe invariant sits between. Shrinking an area is called **strengthening** it.',
+        'Notice the two ways to be wrong.\n\n- Too **small** an area, and an egg or a hop falls outside: Initialization or Maintenance fails.\n- Too **large**, and it claims frogs that stop off a goal: Termination fails.\n\nThe invariant sits between. Shrinking an area is called **strengthening** it.',
         {
           spot: 'lights',
           callouts: [
@@ -461,7 +501,7 @@ export const STEPS: Step[] = [
       // the caption first, then the rain it celebrates; Finish once the rain has fallen
       await beat(
         gen,
-        `Your area ${mine()} passes all three rules:\n\n- **${RULE_NAMES.init}:** every egg sits on it.\n- **${RULE_NAMES.pres}:** no hop leaves it.\n- **${RULE_NAMES.exit}:** every frog that stops on it is on a goal.\n\nIt is a loop invariant strong enough to prove the postcondition: every run that stops, stops on a goal — for every \`n\`, without watching any of them.`,
+        `Your area ${mine()} passes all three rules:\n\n- **${RULE_NAMES.initialization}:** every egg sits on it.\n- **${RULE_NAMES.maintenance}:** no hop leaves it.\n- **${RULE_NAMES.termination}:** every frog that stops on it is on a goal.\n\nIt is a loop invariant strong enough to prove the postcondition: every run that stops, stops on a goal — for every \`n\`, without watching any of them.`,
         { label: 'Finish', prepare: () => playRain() },
       );
       // the three rules, as a card; the tutorial ends (and the first level

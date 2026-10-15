@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import type { Formula } from '../checker/check';
 import type { Verdicts } from '../checker/types';
-import type { State } from '../lang/ast';
 import { compileFormula, compileLevel, type CompiledLevel, type FormulaResult, type LevelDef, type Rule } from '../levels/level';
 
 // The game's state, shared by the scene, the HUD and the scripted sequences.
@@ -35,8 +34,8 @@ export const FULL_REVEAL: Reveal = {
   step: true,
   formula: true,
   assert: true,
-  lights: ['init', 'pres', 'exit'],
-  awake: ['init', 'pres', 'exit'],
+  lights: ['initialization', 'maintenance', 'termination'],
+  awake: ['initialization', 'maintenance', 'termination'],
 };
 
 export const EMPTY_REVEAL: Reveal = {
@@ -67,13 +66,12 @@ export interface Caption {
   choices?: { label: string; onClick: () => void; tone?: 'yes' | 'no' }[];
 }
 
-/** The tutorial's hint ladder for the current stage: a nudge, then a formula to try, then filling it in. */
+/** The tutorial's hint for the current stage: one sentence, shown under the stage's ask. */
 export interface Hint {
-  /** Rungs climbed so far (0–3). */
-  rung: number;
   ask: string;
   nudge: string;
-  formula: string;
+  /** The learner has asked for it (the button goes). */
+  shown: boolean;
 }
 
 export interface Game {
@@ -96,15 +94,13 @@ export interface Game {
   running: boolean;
   caption: Caption | null;
   reveal: Reveal;
-  /** Values shown under the code like a debugger. */
-  selected: State | null;
   /** Increments when frogs start a hop (the loop body runs). */
   hopTick: number;
   hopDur: number;
   /** Increments when frogs land (the loop condition is checked). */
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
-  /** Tutorial: the hint ladder while a stage waits for Check. */
+  /** Tutorial: the stage's hint while it waits for Check. */
   hint: Hint | null;
   showRules: boolean;
   /** The syntax reference card is open. */
@@ -159,7 +155,6 @@ export const useGame = create<Game>((set, get) => ({
   running: false,
   caption: null,
   reveal: FULL_REVEAL,
-  selected: null,
   hopTick: 0,
   hopDur: 0.42,
   landTick: 0,
@@ -197,8 +192,7 @@ export const useGame = create<Game>((set, get) => ({
       running: false,
       caption: def.intro ? { text: def.intro, tone: 'info' } : null,
       reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
-      selected: null,
-      hint: null,
+          hint: null,
       pitfallMessage: null,
       elevating: false,
       failMark: null,

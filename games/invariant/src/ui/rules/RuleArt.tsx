@@ -59,7 +59,7 @@ const PLUS = (center: 'tile' | 'slab'): [number, number, 'tile' | 'slab'][] => [
   [0, 1, 'tile'],
 ];
 
-export function ArtInit() {
+export function ArtInitialization() {
   const p = top(0, 0);
   return (
     <svg viewBox="0 0 120 70" width="120" height="70">
@@ -68,7 +68,7 @@ export function ArtInit() {
     </svg>
   );
 }
-export function ArtPres() {
+export function ArtMaintenance() {
   const a = top(-1, 0);
   const b = top(1, 0);
   return (
@@ -93,7 +93,7 @@ export function ArtPres() {
     </svg>
   );
 }
-export function ArtExit() {
+export function ArtTermination() {
   const p = top(0, 0);
   return (
     <svg viewBox="0 0 120 70" width="120" height="70">

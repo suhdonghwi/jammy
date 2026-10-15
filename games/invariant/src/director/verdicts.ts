@@ -45,7 +45,8 @@ async function focusState(s: State, far = false) {
   } else {
     const t = cameraRig.target();
     const dist = Math.hypot(t.x - x, -t.z - y);
-    if (dist > 3 || cameraRig.distance() > 22) await cameraRig.lookAtTile(x, y, Math.min(cameraRig.distance(), 16));
+    // near the edge (a phone's narrow view reaches it within a few tiles), it is brought to the middle too
+    if (dist > 3 || cameraRig.distance() > 22 || !cameraRig.inView(x, y)) await cameraRig.lookAtTile(x, y, Math.min(cameraRig.distance(), 16));
   }
 }
 
@@ -108,27 +109,24 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
     if (!tok.alive) return;
     const prefix = opts.prefix ?? (cex.far ? 'Everything nearby looked fine — but far away: ' : '');
   const area = opts.area ?? 'your area';
-    const broken = cex.broken ? ` \`${cex.broken}\` ${cex.rule === 'pres' ? 'no longer holds' : 'is false there'}.` : '';
+    const broken = cex.broken ? ` \`${cex.broken}\` ${cex.rule === 'maintenance' ? 'no longer holds' : 'is false there'}.` : '';
     let text: string;
-    if (cex.rule === 'init') {
+    if (cex.rule === 'initialization') {
       await handIn(x + 0.4, y - 1.3, 1.6, { curl: 0.2 });
       if (!tok.alive) return;
       await pointAt(x, y);
       hatch(cex.state);
       await sleep(450);
       markFailure(x, y, `starts outside ${area}`);
-      useGame.setState({ selected: cex.state });
       text = `${prefix}This frog starts at ${fmt(cex.state)} — outside ${area}.${broken}`;
     } else {
       const f = await placeTestFrog(tok, cex.state);
       if (!f || !tok.alive) return;
-      useGame.setState({ selected: cex.state });
       await sleep(380);
-      if (cex.rule === 'pres' && cex.next) {
+      if (cex.rule === 'maintenance' && cex.next) {
         const nx = Number(cex.next[L.view.x]);
         const ny = Number(cex.next[L.view.y]);
         await frogWorld.hopTo(L, f, cex.next, 0.55);
-        useGame.setState({ selected: cex.next });
         markFailure(nx, ny, `lands outside ${area}`);
         if (!tok.alive) return;
         await pointAt(nx, ny);
@@ -178,7 +176,7 @@ export async function playShrug(text: string) {
 export async function playRain({ max = 160, zoomOut = true }: { max?: number; zoomOut?: boolean } = {}) {
   const tok = begin();
   const L = currentLevel();
-  useGame.setState({ busy: true, running: false, selected: null });
+  useGame.setState({ busy: true, running: false });
   frogWorld.clear();
   try {
     if (zoomOut) await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));

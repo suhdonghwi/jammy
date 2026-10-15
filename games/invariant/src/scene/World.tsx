@@ -5,6 +5,7 @@ import { useGame } from '../game/store';
 import { cameraRig } from './cameraRig';
 import { HomeScene } from './home/HomeScene';
 import { LevelScene } from './level/LevelScene';
+import { PhoneFraming } from './PhoneFraming';
 
 // The one 3D canvas behind the whole app.
 
@@ -66,10 +67,10 @@ export function World() {
       dpr={[1, 1.75]}
       camera={{ position: [3, 10, 12], fov: 36, near: 0.1, far: 500 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      onPointerMissed={() => useGame.setState({ selected: null })}
     >
       <Lights />
       <Controls />
+      <PhoneFraming />
       <SceneSwitch />
     </Canvas>
   );

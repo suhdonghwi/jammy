@@ -1,11 +1,11 @@
-import { Braces, Lightbulb, Pause, Play, RotateCcw, StepForward, Wand2 } from 'lucide-react';
+import { Braces, Lightbulb, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
 import { pauseRun, resetFrogs, runFrogs, stepFrogs } from '../../director/frogs';
 import { useGame } from '../../game/store';
-import { climbHint } from '../../tutorial/script';
+import { showHint } from '../../tutorial/script';
 import { button } from '../classes';
 
 // Run / Pause, Step and Reset; on the right, the syntax reference (once there
-// is an area box) and, in the tutorial, the hint ladder.
+// is an area box) and, in the tutorial, the stage's hint.
 
 export function RunControls() {
   const reveal = useGame((s) => s.reveal);
@@ -18,8 +18,11 @@ export function RunControls() {
   const spot = useGame((s) => s.spotlight);
   const allow = useGame((s) => s.tutorialAllow);
   const tut = mode === 'tutorial';
+  const hinting = tut && !!hint && !hint.shown && awaitingCheck;
+  // on phones the row only has room for Syntax's label when neither Reset nor a hint is in it
+  const crowded = hinting || (reveal.run && !tut);
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 max-[22.5rem]:gap-1">
       {/* three alike buttons: their icons carry the colour that tells them apart */}
       {reveal.run &&
         (runningNow ? (
@@ -50,16 +53,20 @@ export function RunControls() {
         </button>
       )}
       <span className="flex-1" />
-      {/* the hint ladder: a nudge, then a formula to try, then filling it in */}
-      {tut && hint && hint.rung < 3 && awaitingCheck && (
-        <button className={button('glass')} disabled={busy} onClick={climbHint}>
-          {hint.rung < 2 ? <Lightbulb size={16} strokeWidth={2.2} /> : <Wand2 size={16} strokeWidth={2.2} />}
-          {hint.rung === 0 ? 'Hint' : hint.rung === 1 ? 'Another hint' : 'Fill it in'}
+      {/* one sentence, once: the button goes when it's shown */}
+      {hinting && (
+        <button className={button('glass')} disabled={busy} onClick={showHint}>
+          <Lightbulb size={16} strokeWidth={2.2} /> Hint
         </button>
       )}
       {reveal.formula && (
-        <button className={button('glass')} title="What you can type into the area box" onClick={() => useGame.setState({ showSyntax: true })}>
-          <Braces size={16} strokeWidth={2.2} /> Syntax
+        <button
+          className={button('glass')}
+          title="What you can type into the area box"
+          aria-label="Syntax"
+          onClick={() => useGame.setState({ showSyntax: true })}
+        >
+          <Braces size={16} strokeWidth={2.2} /> <span className={crowded ? 'max-sm:hidden' : ''}>Syntax</span>
         </button>
       )}
     </div>

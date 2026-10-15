@@ -10,9 +10,8 @@ import { useGame } from '../../game/store';
 import { displayNames } from '../../levels/level';
 import { button } from '../classes';
 
-// The area formula: a one-line CodeMirror editor with highlighting, the
-// tutorial's hint formula as placeholder text, errors once typing pauses, and
-// Check.
+// The area formula: a one-line CodeMirror editor with highlighting, errors
+// once typing pauses, and Check.
 
 const exprLanguage = StreamLanguage.define<null>({
   token(stream) {
@@ -61,12 +60,10 @@ const singleLine = EditorState.transactionFilter.of((tr) => (tr.newDoc.lines > 1
 /** In the tutorial the area can only be edited while a step allows it. */
 const isLocked = (g: { mode: string; tutorialAllow: { formula: boolean } }) => g.mode === 'tutorial' && !g.tutorialAllow.formula;
 const lockExt = (locked: boolean): Extension => [EditorState.readOnly.of(locked), EditorView.editable.of(!locked)];
-/** The hint ladder's formula, once it has been climbed to (Tab fills it in). */
-const hintFormula = (g: { hint: { rung: number; formula: string } | null }) => (g.hint && g.hint.rung >= 2 ? g.hint.formula : null);
-/** The placeholder: the hint formula with a Tab reminder, or what a condition may mention. */
-function placeholderExt(hint: string | null, names: string[]): Extension {
+/** The placeholder: what a condition may mention. */
+function placeholderExt(names: string[]): Extension {
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0] ?? '';
-  return placeholder(hint ? `${hint}   ⇥ Tab` : `a condition on ${list}`);
+  return placeholder(`a condition on ${list}`);
 }
 
 export function FormulaBox() {
@@ -74,7 +71,6 @@ export function FormulaBox() {
   const view = useRef<EditorView | null>(null);
   const placeholderComp = useRef(new Compartment());
   const lockComp = useRef(new Compartment());
-  const hint = useGame(hintFormula);
   const level = useGame((s) => s.level);
   // a fresh array would re-render forever: memoised on the level
   const names = useMemo(() => (level ? displayNames(level) : []), [level]);
@@ -126,24 +122,15 @@ export function FormulaBox() {
         extensions: [
           history(),
           singleLine,
+          // a formula too long for the box (or a placeholder, on phones) wraps rather than scrolling out of sight
+          EditorView.lineWrapping,
           errorField,
           exprLanguage,
           syntaxHighlighting(highlight),
-          placeholderComp.current.of(placeholderExt(hintFormula(useGame.getState()), useGame.getState().level ? displayNames(useGame.getState().level!) : [])),
+          placeholderComp.current.of(placeholderExt(useGame.getState().level ? displayNames(useGame.getState().level!) : [])),
           lockComp.current.of(lockExt(isLocked(useGame.getState()))),
           keymap.of([
             { key: 'Enter', run: () => (void check(), true) },
-            {
-              key: 'Tab',
-              run: (view) => {
-                const s = hintFormula(useGame.getState());
-                if (view.state.doc.length === 0 && s) {
-                  view.dispatch({ changes: { from: 0, insert: s }, selection: { anchor: s.length } });
-                  return true;
-                }
-                return false;
-              },
-            },
             ...historyKeymap,
             ...defaultKeymap,
           ]),
@@ -151,7 +138,7 @@ export function FormulaBox() {
             if (u.docChanged) useGame.getState().setFormula(u.state.doc.toString());
           }),
           EditorView.theme({
-            '&': { fontSize: '17px' },
+            '&': { fontSize: 'var(--formula-size)' },
             '.cm-content': { fontFamily: 'var(--mono)', padding: '10px 4px' },
             '&.cm-focused': { outline: 'none' },
             '.cm-placeholder': { color: '#a8afbb' },
@@ -168,8 +155,8 @@ export function FormulaBox() {
   }, [locked]);
 
   useEffect(() => {
-    view.current?.dispatch({ effects: placeholderComp.current.reconfigure(placeholderExt(hint, names)) });
-  }, [hint, names]);
+    view.current?.dispatch({ effects: placeholderComp.current.reconfigure(placeholderExt(names)) });
+  }, [names]);
 
   // external text changes (level switch, "show me")
   useEffect(() => {
@@ -189,20 +176,25 @@ export function FormulaBox() {
 
   const canCheck = !busy && !checking && (mode !== 'tutorial' || awaitingCheck);
   return (
-    <div className="animate-[rise_0.4s_ease-out]">
+    // 16px on phones: any smaller and iOS zooms the page when the box is focused
+    <div className="animate-[rise_0.4s_ease-out] [--formula-size:17px] max-sm:[--formula-size:16px]">
       <div
-        className={`flex items-center gap-2.5 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card transition-colors duration-150 ${settledError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'animate-shake' : ''}`}
+        className={`flex items-center gap-2.5 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card max-sm:flex-wrap max-sm:gap-x-2 max-sm:pl-3 transition-colors duration-150 ${settledError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'animate-shake' : ''}`}
       >
         {/* a little slab, like the area's in the scene */}
         {/* the slab sits a touch high: the capitals' optical centre is above the line box's */}
+        {/* on phones only the slab, so the formula gets the room */}
         <span className="flex items-center gap-1.75 font-display text-xs font-semibold tracking-[0.08em] text-brand uppercase before:size-3 before:-translate-y-px before:rounded-sm before:bg-slab before:shadow-[0_2px_0_var(--color-slab-side)]">
-          area
+          <span className="max-sm:sr-only">area</span>
         </span>
         {/* read-only (faded) while the tutorial isn't asking for a formula */}
         <div className={`min-w-0 flex-1 ${locked ? 'cursor-default opacity-60' : ''}`} ref={host} />
-        {/* inside the box: never covers the caption, never changes the layout */}
+        {/* inside the box: never covers the caption, never changes the layout (on phones, a row of its own under the formula) */}
         {settledError && (
-          <span className="max-w-[46%] flex-[0_1_auto] animate-fade truncate rounded-lg bg-[#fff1f0] px-2.5 py-1 text-xs text-[#b42318]" title={settledError.message}>
+          <span
+            className="max-w-[46%] flex-[0_1_auto] animate-fade truncate rounded-lg bg-[#fff1f0] px-2.5 py-1 text-xs text-[#b42318] max-sm:order-last max-sm:mb-1 max-sm:max-w-full max-sm:basis-full"
+            title={settledError.message}
+          >
             {settledError.message}
           </span>
         )}

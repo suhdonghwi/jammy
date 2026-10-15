@@ -7,8 +7,10 @@ import { tileState } from '../../scene/tiles';
 // What is the pointer on? The hovered tile's values, where a frog there would
 // go, and whether it is in the area.
 
-// a dark pill; with tags on its right it hugs them more tightly than its text on the left
-const READOUT = 'flex animate-[fade_0.15s_ease-out] items-center gap-2 rounded-full bg-ink/86 px-3.5 py-1.75 text-sm text-white shadow-card has-[>span+span]:pr-2';
+// a dark pill; with tags on its right it hugs them more tightly than its text on the left.
+// On phones the tags wrap under the values instead of running off the screen.
+const READOUT =
+  'flex animate-[fade_0.15s_ease-out] items-center gap-2 rounded-full bg-ink/86 px-3.5 py-1.75 text-sm text-white shadow-card has-[>span+span]:pr-2 max-sm:mx-4 max-sm:flex-wrap max-sm:justify-center max-sm:gap-y-1 max-sm:rounded-2xl';
 const TAG = 'rounded-full px-2.5 py-0.75 font-display text-sm font-medium';
 
 /** Room the readout needs to sit in the top bar's row (values plus two tags). */

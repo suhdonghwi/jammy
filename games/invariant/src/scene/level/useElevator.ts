@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../game/store';
+import { startView } from '../../levels/level';
 import { cameraRig, VIEW } from '../cameraRig';
 import { POND_SPACING } from '../constants';
 import { after } from '../sceneTime';
@@ -25,9 +26,9 @@ export function useElevator() {
     const c = cameraRig.controls;
     if (!p || p.level !== level || !hasPonds) {
       // fresh level: place the camera without animation
-      const cam = level.camera ?? { x: 0, y: 0 };
+      const v = startView(level);
       void c?.rotateTo(VIEW.azimuth, VIEW.polar, false);
-      void cameraRig.lookAtTile(cam.x, cam.y, (cam.distance ?? 15) * 1.2, false);
+      void cameraRig.lookAtTile(v.x, v.y, v.distance, false);
       setLeaving([]);
       return;
     }

@@ -17,7 +17,7 @@ export function Dialog({ flag, wide, children }: { flag: Flag; wide?: boolean; c
       onClick={close}
     >
       <div
-        className={`max-h-full w-full ${wide ? 'max-w-185' : 'max-w-150'} overflow-y-auto rounded-3xl bg-white px-7.5 pt-7 pb-6 text-center shadow-float ${leaving ? 'animate-pop-out' : 'animate-[pop_0.18s_ease-out]'}`}
+        className={`max-h-full w-full ${wide ? 'max-w-185' : 'max-w-150'} overflow-y-auto rounded-3xl bg-white px-7.5 pt-7 pb-6 text-center max-sm:px-5 max-sm:pt-6 shadow-float ${leaving ? 'animate-pop-out' : 'animate-[pop_0.18s_ease-out]'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

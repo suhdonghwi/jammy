@@ -39,9 +39,10 @@ export function PondGauge() {
     return () => window.removeEventListener('keydown', onKey);
   });
   if (!level.pond || !ponds) return null;
+  // phones show only the neighbouring floors, so the panel covers less of the scene
   const floors = [pond + 2, pond + 1, pond, pond - 1, pond - 2];
   return (
-    <div className={`${CARD} ml-auto flex w-27 animate-slide-in-right flex-col gap-1 self-center px-2.5 py-3 max-md:w-23`}>
+    <div className={`${CARD} ml-auto flex w-27 animate-slide-in-right flex-col gap-1 self-center px-2.5 py-3 max-md:w-23 max-sm:w-21 max-sm:px-2 max-sm:py-2.5`}>
       <div className={`${CARD_LABEL} text-center`}>Input</div>
       <button className={ARROW} disabled={busy || !exists(pond + 1)} onClick={() => step(1)} title="Next input (PageUp or ])">
         <ChevronUp size={18} strokeWidth={2.6} />
@@ -50,7 +51,7 @@ export function PondGauge() {
         {floors.map((p) => (
           <button
             key={p}
-            className={`cursor-pointer rounded-lg py-1.5 font-mono transition-all duration-200 disabled:cursor-default ${
+            className={`cursor-pointer rounded-lg py-1.5 font-mono transition-all duration-200 disabled:cursor-default ${Math.abs(p - pond) > 1 ? 'max-sm:hidden' : ''} ${
               p === pond
                 ? `bg-brand text-md font-bold text-white shadow-[0_3px_0_var(--color-brand-deep)] ${elevating ? 'animate-blink' : ''}`
                 : 'text-sm text-faint enabled:hover:bg-shade/5 enabled:hover:text-ink'
@@ -71,7 +72,7 @@ export function PondGauge() {
       <button className={ARROW} disabled={busy || !exists(pond - 1)} onClick={() => step(-1)} title="Previous input (PageDown or [)">
         <ChevronDown size={18} strokeWidth={2.6} />
       </button>
-      <div className="mt-1.5 text-center text-xs leading-tight text-faint">each input is its own pond</div>
+      <div className="mt-1.5 text-center text-xs leading-tight text-faint max-sm:hidden">each input is its own pond</div>
     </div>
   );
 }

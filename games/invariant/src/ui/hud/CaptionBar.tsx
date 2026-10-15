@@ -24,6 +24,8 @@ export function CaptionBar() {
   return (
     <div
       key={caption.text}
+      // the scene's phone framing keeps a fixed room for the caption, ending here (scene/PhoneFraming)
+      data-caption
       // the text gets the full width; the buttons sit on their own row below
       className={`flex flex-col gap-2.5 rounded-2xl border-2 bg-card py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md transition-colors duration-200 ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
     >
@@ -37,7 +39,8 @@ export function CaptionBar() {
       </div>
       {(caption.secondary || caption.action || caption.choices || back) && (
         // as tall as the primary button with its 3D edge (mb-1), so a Next joining a lone Back shifts nothing
-        <div className="flex min-h-8.5 items-center justify-end gap-1.5">
+        // wraps on phones rather than spilling when Back, Replay and a long Next share it
+        <div className="flex min-h-8.5 flex-wrap items-center justify-end gap-1.5">
           {/* tutorial: back to the previous step (left), then the step's own buttons */}
           {back && (
             <button className={button('quiet', 'sm')} onClick={back}>

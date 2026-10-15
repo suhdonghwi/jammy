@@ -99,24 +99,24 @@ const and = (...es: Expr[]): Expr =>
 
 /** The negation of each rule, as a query over the right dims. */
 export function ruleQuery(level: CompiledLevel, inv: Expr, rule: Rule): { dims: string[]; query: Expr } {
-  if (rule === 'init') {
+  if (rule === 'initialization') {
     return {
       dims: level.freeDims,
       query: and(subst(level.pondReq, level.initExprs), subst(level.eggReq, level.initExprs), not(subst(inv, level.initExprs))),
     };
   }
-  if (rule === 'pres') {
+  if (rule === 'maintenance') {
     return { dims: level.names, query: and(level.pondReq, inv, level.guard, not(subst(inv, level.next))) };
   }
   return { dims: level.names, query: and(level.pondReq, inv, not(level.guard), not(level.post)) };
 }
 
 export function cexFromModel(level: CompiledLevel, inv: Expr, invText: string, rule: Rule, s: State): Counterexample {
-  if (rule === 'init') {
+  if (rule === 'initialization') {
     const start = startState(level, s);
     return { rule, state: start, broken: brokenConjunct(inv, invText, start), far: true };
   }
-  if (rule === 'pres') {
+  if (rule === 'maintenance') {
     const n = hop(level, s);
     return { rule, state: s, next: n, broken: brokenConjunct(inv, invText, n), far: true };
   }

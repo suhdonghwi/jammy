@@ -9,7 +9,7 @@ type Callout = Game['callouts'][number];
 const calloutKey = (c: Callout) => (c.frog !== undefined ? `f${c.frog},${c.text}` : `${c.x},${c.y},${c.text}`);
 
 /**
- * Tutorial labels ("egg: input n = 2", "Init", …): over a tile, with an
+ * Tutorial labels ("egg: input n = 2", "Initialization", …): over a tile, with an
  * outline, or riding along with a frog. Removed ones fade out.
  */
 export function Callouts() {

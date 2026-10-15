@@ -1,4 +1,4 @@
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
@@ -156,16 +156,11 @@ export function Frogs() {
     if (b.instanceColor) b.instanceColor.needsUpdate = true;
   });
 
-  const onClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    const f = e.instanceId !== undefined ? visibleList.current[e.instanceId] : undefined;
-    if (f) useGame.setState({ selected: f.state });
-  };
-
   return (
     <group>
       <instancedMesh ref={shadows} args={[shadowGeom, shadowMat, MAX_FROGS]} frustumCulled={false} renderOrder={3} />
-      <instancedMesh ref={body} args={[geom, mat, MAX_FROGS]} frustumCulled={false} onClick={onClick} />
+      {/* a click on a frog isn't a click on the tile (or egg) under it */}
+      <instancedMesh ref={body} args={[geom, mat, MAX_FROGS]} frustumCulled={false} onClick={(e) => e.stopPropagation()} />
       {Array.from({ length: BADGES }, (_, i) => (
         <sprite key={i} ref={(el) => void (badgeRefs.current[i] = el)} visible={false} scale={[0.5, 0.3, 1]} renderOrder={10}>
           <spriteMaterial depthTest={false} transparent />

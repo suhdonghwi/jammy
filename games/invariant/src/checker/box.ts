@@ -66,7 +66,7 @@ export function boxSearch(
   level: CompiledLevel,
   inv: { expr: Expr; fast: FastFn; text: string },
   box: Box,
-  rules: Rule[] = ['init', 'pres', 'exit'],
+  rules: Rule[] = ['initialization', 'maintenance', 'termination'],
 ): Partial<Record<Rule, Counterexample>> {
   const rs = ranges(level, box);
   const f = level.fast;
@@ -86,27 +86,27 @@ export function boxSearch(
     if (!cur || sc < cur.score) best[rule] = { s: { ...s }, next: next && { ...next }, score: sc };
   };
 
-  if (rules.includes('init')) {
+  if (rules.includes('initialization')) {
     // Enumerate free dims; free dims are always on an axis or the pond.
     for (const free of product(level.freeDims, rs)) {
       if (!f.pondReq(free)) continue;
       const start: NumState = { ...free };
       for (const v in f.init) start[v] = f.init[v](free) as number;
       if (!f.eggReq(start)) continue;
-      if (!inv.fast(start)) offer('init', start);
+      if (!inv.fast(start)) offer('initialization', start);
     }
   }
-  if (rules.includes('pres') || rules.includes('exit')) {
+  if (rules.includes('maintenance') || rules.includes('termination')) {
     for (const s of product(level.names, rs)) {
       if (!f.pondReq(s)) continue;
       if (!inv.fast(s)) continue;
       if (f.guard(s)) {
-        if (!rules.includes('pres')) continue;
+        if (!rules.includes('maintenance')) continue;
         const n: NumState = { ...s };
         for (const v in f.next) n[v] = f.next[v](s) as number;
-        if (!inv.fast(n)) offer('pres', s, n);
-      } else if (rules.includes('exit') && !f.post(s)) {
-        offer('exit', s);
+        if (!inv.fast(n)) offer('maintenance', s, n);
+      } else if (rules.includes('termination') && !f.post(s)) {
+        offer('termination', s);
       }
     }
   }
@@ -117,19 +117,19 @@ export function boxSearch(
     const b = best[rule];
     if (!b) continue;
     const state = toBig(b.s);
-    if (rule === 'init') {
+    if (rule === 'initialization') {
       const free: State = {};
       for (const d of level.freeDims) free[d] = state[d];
       const st = startState(level, free);
       if (holds(inv.expr, st)) continue;
-      out.init = { rule, state: st, broken: brokenConjunct(inv.expr, inv.text, st) };
-    } else if (rule === 'pres') {
+      out.initialization = { rule, state: st, broken: brokenConjunct(inv.expr, inv.text, st) };
+    } else if (rule === 'maintenance') {
       const n = hop(level, state);
       if (!holds(inv.expr, state) || holds(inv.expr, n)) continue;
-      out.pres = { rule, state, next: n, broken: brokenConjunct(inv.expr, inv.text, n) };
+      out.maintenance = { rule, state, next: n, broken: brokenConjunct(inv.expr, inv.text, n) };
     } else {
       if (!holds(inv.expr, state) || holds(level.guard, state) || holds(level.post, state)) continue;
-      out.exit = { rule, state };
+      out.termination = { rule, state };
     }
   }
   return out;

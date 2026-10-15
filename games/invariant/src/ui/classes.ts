@@ -28,12 +28,13 @@ const VARIANTS: Record<Variant, string> = {
   primary: 'mb-1 bg-brand text-white shadow-toy-brand enabled:hover:bg-brand-light enabled:active:translate-y-[3px] enabled:active:shadow-toy-brand-pressed',
   // inside the formula row: raised by half its 3px edge, so it is centred with
   // it; a little less padding on the icon's side, whose glyph has its own margin
-  check: 'relative -top-[1.5px] bg-brand pl-4.5 pr-5 py-2 text-md font-semibold text-white shadow-[0_3px_0_var(--color-brand-deep)] enabled:hover:bg-brand-light enabled:active:translate-y-px',
+  check: 'relative -top-[1.5px] bg-brand pl-4.5 pr-5 py-2 max-sm:pl-3.5 max-sm:pr-4 text-md font-semibold text-white shadow-[0_3px_0_var(--color-brand-deep)] enabled:hover:bg-brand-light enabled:active:translate-y-px',
 };
 
 const SIZES: Record<Size, string> = {
   sm: 'px-3.5 py-1.5 text-sm font-medium',
-  md: 'px-4 py-2 text-md font-medium',
+  // a little narrower on phones (and the smallest ones), so a row of them fits
+  md: 'px-4 py-2 text-md font-medium max-sm:px-3 max-[22.5rem]:px-2.5',
   // the home screen's two big buttons; on phones they share the row
   lg: 'min-w-44 px-8 py-3.5 text-xl font-semibold max-sm:min-w-0 max-sm:flex-1 max-sm:px-4 max-sm:text-lg',
   // icon only: a circle as tall as the md buttons

@@ -42,11 +42,11 @@ Design.md's list, plus the two the old tutorial skipped:
 
 - explain why testing can't prove a loop correct for all inputs;
 - state the three rules in their own words;
-- explain why Preservation must hold even for states real runs never reach;
+- explain why Maintenance must hold even for states real runs never reach;
 - strengthen an invariant to fix a failing rule;
 - **choose a formula themselves**, having done it three times with feedback;
-- **know the shape of the search:** too small fails Init or Preservation, too
-  large fails Exit, the invariant sits between.
+- **know the shape of the search:** too small fails Initialization or Maintenance, too
+  large fails Termination, the invariant sits between.
 
 ## Principles
 
@@ -63,9 +63,8 @@ Design.md's list, plus the two the old tutorial skipped:
    all three failures.
 4. **Predict before you see.** Before each hand demo the learner commits to a
    guess (passes / fails, and which rule). A guess costs one click.
-5. **Hints are a ladder, not a wall.** A stuck learner can ask for a nudge,
-   then for a formula to try, then have it filled in. The old scripted
-   formulas become this ladder.
+5. **One hint, never the answer.** A stuck learner can ask for one sentence
+   that names the fact that matters, without giving the formula.
 6. **Say what things are, once, with the code word next to the world word.**
    Then keep one name each. See the vocabulary below.
 7. **Pacing rules from experience.md still hold:** caption first, then the
@@ -91,15 +90,16 @@ defines it; after that the name is used without explanation.
 | Raised tiles | **slabs**: the tiles where the formula is true | | 1.10 |
 | The checker | the **hand** | | 2.1 |
 | A hypothetical state the hand places | a **test frog** (purple); real frogs are green | | 2.2 |
-| Passes Init and Preservation | "an **invariant**" | | 2.6 |
-| Also passes Exit | "**strong enough** to prove the postcondition" | | 2.8 |
+| Passes Initialization and Maintenance | "an **invariant**" | | 2.6 |
+| Also passes Termination | "**strong enough** to prove the postcondition" | | 2.8 |
 | Shrinking the area | **strengthening** | | 2.8 |
 | A state that breaks a rule | "a frog that breaks it" | | 2.1 |
 
-Rule names stay **Init**, **Preservation**, **Exit**: all three name *when* the
-check happens. Each is expanded once when introduced, and the rules card maps
-them to the textbook names (Initialization, Maintenance, Termination) so
-readers who met CLRS recognise them.
+Rule names are the textbook ones from CLRS: **Initialization**, **Maintenance**,
+**Termination**. One name each, everywhere (lights, captions, rules card); no
+short forms and no aliases. Termination means *when the loop terminates*, not a
+termination proof; the rule's own sentence ("a frog that stops on your area is
+on a goal") carries that, so it gets no qualifier.
 
 Dropped: "input" for eggs, "striped", "condition" as a noun for the formula
 (the placeholder becomes "a condition on `i` and `n`"), "Show me", "proved the
@@ -160,15 +160,38 @@ hover hint. Caption says "the shaded tiles are where the loop stops", not
 
 Callout on one egg: "starting state: i = 0, n = 2".
 
-**1.6 Goals.**
+**1.6 Goals.** The frog stepped in 1.3 is back on `(3, 3)`, its tile outlined
+"stopped on a goal".
 
 > The amber pools are the **goals**: the tiles where the postcondition
-> `i == n` holds. Every run should stop on one.
+> `i == n` holds. The frog you stepped stopped on one, at `i = 3, n = 3`. That
+> run did what `ensures` promises.
 
-**1.7 Run.** As today. "Every frog stopped on a goal. Looks correct!"
+**1.6b What a bug would look like.** This is the motivation for everything
+that follows, so it gets its own beat and a picture: a failure marker on a stop
+tile that is not a goal, "stops, but i ≠ n".
 
-**1.8 Watching can't be enough.** As today: zoom out, eggs never end, click a
-few. "So how can we check them all?"
+> Not every place to stop is a goal. A run that stopped here, at
+> `i = 3, n = 1`, would leave the loop with `i ≠ n`: the program would be
+> wrong. So the question is: **does every run stop on a goal?**
+
+**1.7 Test some.** Run hatches the first ten eggs (`n` = 0 to 9).
+
+> Let's test it. Press **Run** to hatch the first ten eggs and run their frogs
+> at once.
+
+Then: "All ten stopped on a goal. For `n` = 0 to 9, the program is correct."
+Exactly what was shown, and no more.
+
+**1.8 Testing can't be enough.** The ten frogs stay on their goals while the
+camera zooms out: a label marks them "tested: n = 0 to 9", and further up the
+column, where the eggs carry on, "n = 18, 19, … never end". The learner can
+click a few more eggs.
+
+> But that was ten inputs. `n` can be any number, so the eggs never end:
+> however many you test, infinitely many are left. Click a few more eggs to
+> run them. They all work… but testing can never cover them all. **So how can
+> we be sure about every one?**
 
 **1.9 The bridge.** Camera back in. The code panel shows a ghost line at the
 top of the loop body: `assert(?);` (new reveal flag). All three rule lights
@@ -199,33 +222,33 @@ Each stage follows the same shape: **ask → attempt → outcome → witness →
 name the rule**. The attempt loop is specified in full under "The attempt
 loop" below; the stages here only give the wording and the pitfall.
 
-**2.1 Stage 1: every egg.** The Init light wakes (the other two stay dim).
+**2.1 Stage 1: every egg.** The Initialization light wakes (the other two stay dim).
 The hand needs no introduction of its own: it appears at the first failure
 or demo, and the captions name it then.
 
 > First rule: every egg must sit on your area, because the assert runs before
 > the first hop. Draw an area every egg sits on, then press **Check**.
 
-Check runs **Init** only. Pitfall for the demo: `i == n`.
+Check runs **Initialization** only. Pitfall for the demo: `i == n`.
 
-- *Fails Init:* the hand hatches the egg outside (as today). Caption names the
+- *Fails Initialization:* the hand hatches the egg outside (as today). Caption names the
   frog and the rule, then "Fix your area and Check again." Loop.
 - *Passes:* the pass beat (eggs tagged) → predict → demo `i == n` → the
   counterexample. Then:
 
-> **Rule 1 · Init** (initialization): every egg sits on your area. `i == n`
+> **Rule 1 · Initialization**: every egg sits on your area. `i == n`
 > only covers the egg at `n = 0`.
 
-**2.2 Stage 2: every hop.** The Preservation light wakes.
+**2.2 Stage 2: every hop.** The Maintenance light wakes.
 
 > Now the hop. A frog on your area must land on your area, every time.
 > Check now runs rules 1 and 2.
 
-Check runs **Init + Preservation**. Pitfall: `i == 0 || i == n`.
+Check runs **Initialization + Maintenance**. Pitfall: `i == 0 || i == n`.
 
-- *Fails Init:* "Rule 1 held a moment ago; this change lost it." Replay the
+- *Fails Initialization:* "Rule 1 held a moment ago; this change lost it." Replay the
   egg outside. Loop.
-- *Fails Preservation:* the hand places a purple frog and hops it out (as
+- *Fails Maintenance:* the hand places a purple frog and hops it out (as
   today). The first time a purple frog appears, a callout rides with it:
   "**test frog**: a state the hand imagines". Caption: "From `…`, one hop
   lands at `…` — outside your area." Loop.
@@ -235,13 +258,13 @@ Check runs **Init + Preservation**. Pitfall: `i == 0 || i == n`.
 
 Then name it:
 
-> **Rule 2 · Preservation**: a frog on your area that hops lands on your area.
+> **Rule 2 · Maintenance**: a frog on your area that hops lands on your area.
 > The hand may start the test frog on *any* tile of your area, not only ones a
 > real run reaches. Your area is a claim, and the hand tests the claim.
 
 **2.3 Follow one frog.** With the learner's current formula (whatever passed).
-As today: hatch at `(0, 3)`, "it starts on your area: that's Init"; step it,
-"every hop lands on your area again: that's Preservation"; then:
+As today: hatch at `(0, 3)`, "it starts on your area: that's Initialization"; step it,
+"every hop lands on your area again: that's Maintenance"; then:
 
 > So it can never leave your area, no matter how many hops. That makes your
 > area an **invariant**: true every time a run reaches the top of the loop.
@@ -249,16 +272,29 @@ As today: hatch at `(0, 3)`, "it starts on your area: that's Init"; step it,
 > When the loop stops, the frog is still somewhere on your area. Is that
 > enough?
 
-**2.4 Stage 3: stopping on a goal.** The Exit light wakes. No new formula is
-asked for first; Check runs all three rules on the current area automatically
-(as today).
+**2.4 Stage 3: stopping on a goal.** First the answer to 2.3's "Is that
+enough?", before any checking: the Termination light wakes, the frog from 2.3
+stays on the goal it stopped on, and every stop tile on the learner's area is
+outlined (the only places a run on it can end). The learner can see for
+themselves whether one lacks an amber pool.
 
-> Third rule: a frog that stops on your area must be on a goal. Let's check
-> yours.
+> Only if that tile is a goal. A run ends where the loop stops: on a shaded
+> tile, and on your area — one of the outlined tiles.
+>
+> Third rule: every one of them must be a goal.
+
+Then the learner presses Check (all three rules), as in the other stages:
+
+> Is every one a goal? Press **Check**: it now runs all three rules. If a frog
+> stops off a goal, change your area and Check again.
+
+(It used to check the area automatically, with only a one-line rule before
+it. A learner whose area already passed got "Correct!" without reading the
+rule or doing anything.)
 
 Pitfall: `i >= 0`.
 
-- *Fails Exit:* the hand places a test frog on a stop tile that is not a goal
+- *Fails Termination:* the hand places a test frog on a stop tile that is not a goal
   (as today), with the objection paragraph:
 
   > "But `i` never passes `n`!" — Your area doesn't say that. It claims a frog
@@ -273,11 +309,11 @@ Pitfall: `i >= 0`.
 
 **2.5 Too small, too large.** Once the learner's area passes all three.
 
-> **Rule 3 · Exit**: a frog that stops on your area is on a goal.
+> **Rule 3 · Termination**: a frog that stops on your area is on a goal.
 >
 > Notice the two ways to be wrong. Too **small** an area and an egg or a hop
-> falls outside: Init or Preservation fails. Too **large** and it claims frogs
-> that stop off a goal: Exit fails. The invariant sits between. Shrinking it
+> falls outside: Initialization or Maintenance fails. Too **large** and it claims frogs
+> that stop off a goal: Termination fails. The invariant sits between. Shrinking it
 > is called **strengthening**.
 
 Callouts: one egg ("too small: egg outside") and one stop tile off the goals
@@ -291,9 +327,9 @@ Callouts: one egg ("too small: egg outside") and one stop tile off the goals
 
 > Your area `<their formula>` passes all three rules:
 >
-> - **Init:** every egg sits on it.
-> - **Preservation:** no hop leaves it.
-> - **Exit:** every frog that stops on it is on a goal.
+> - **Initialization:** every egg sits on it.
+> - **Maintenance:** no hop leaves it.
+> - **Termination:** every frog that stops on it is on a goal.
 >
 > It is a loop invariant strong enough to prove the postcondition: every run
 > that stops, stops on a goal — for every `n`, without watching any of them.
@@ -306,7 +342,7 @@ area every egg sits on, and strengthen from there."
 
 ## The attempt loop
 
-One stage = `stage(gen, { ask, rules, pitfall, hints })`. It replaces
+One stage = `stage(gen, { ask, rules, nudge })`. It replaces
 `attempt()` and the `expected` / `tutorialCheck` gate.
 
 **Check** is enabled whenever the stage is waiting. Pressing it compiles the
@@ -317,32 +353,30 @@ formula and runs the checker on `rules` (cumulative: stage 1 `['init']`, stage
 |---|---|
 | Parse or type error | As in levels: the box shows the error and shakes; no caption change. |
 | A rule fails | The hand plays the counterexample for the *first* failing rule in order. The caption names the frog and the rule. If the failing rule is from an earlier stage, prefix "Rule *k* held a moment ago; this change lost it." Then wait for Check again. |
-| Undecided | Cannot happen on this program (no `*` between variables); if it ever does, the hand shrugs and the hint ladder opens at rung 2. |
+| Undecided | Cannot happen on this program (no `*` between variables); if it ever does, the hand shrugs and asks for a simpler formula. |
 | All current rules pass | Lights go green; the pass beat shows the rule's evidence in the scene; then `predict` → `demo(pitfall)`. Then the stage ends. |
 
-A stage ends only on a pass. There is no attempt limit; the hint ladder is
-how a stuck learner finishes.
+A stage ends only on a pass. There is no attempt limit.
 
-**Hint ladder.** A quiet "Hint" button beside Check (replacing "Show me").
-Each press climbs one rung; the rung resets each stage.
+**Hint.** A quiet "Hint" button in the row under the area box (replacing "Show
+me"). Pressing it adds one sentence under the stage's ask, and the button
+goes; it comes back with the next stage.
 
-1. A nudge in words, stage-specific:
-   - stage 1: "What do all the eggs have in common? Look at their `i`."
-   - stage 2: "Frogs only ever move right. What stays true after `i = i + 1`?"
-   - stage 3: "A real frog never passes `n`. Does your area say so?"
-2. The stage's reference formula appears as the placeholder (`i >= 0`,
-   `i >= 0`, `0 <= i <= n`) with the Tab hint; the button now reads "Fill it
-   in".
-3. The formula is filled in. Check still has to be pressed by the learner.
+- stage 1: "Every egg has the same `i`. What is it?"
+- stage 2: "Every frog starts at `i = 0`, and a hop only ever increases `i`."
+- stage 3: "A real frog never passes `n`, so `i` is never greater than `n`."
 
-The Tab hint is shown only while the box is empty (today it stays while Tab
-does nothing).
+Each points at the fact that matters about real runs, but never gives the
+formula: turning it into one is the learner's job.
+
+(It used to be a ladder: a second press suggested a formula, with Tab to fill
+it in, and a third filled it in. Cut to the one sentence.)
 
 **Pass.** When a stage passes, a beat opens with "Correct!" in the success
 tone and shows the rule's own evidence in the scene before anything else
-happens: green outlines and a green wash on the eggs (Init), a light shower
-of test frogs that all land on the area again (Preservation), the same marks
-on the area's stop tiles (Exit). No tags: the caption says what they show.
+happens: green outlines and a green wash on the eggs (Initialization), a light shower
+of test frogs that all land on the area again (Maintenance), the same marks
+on the area's stop tiles (Termination). No tags: the caption says what they show.
 Then Next.
 
 **Predict.** A yes-or-no question, with Yes and No as buttons that carry a
@@ -394,9 +428,8 @@ Scene and HUD:
   stays the list of visible lights; a new `reveal.awake` lists the awake ones.
   Levels show all three awake, as today.
 - **Test-frog callout** the first time a purple frog appears in the tutorial.
-- **Hint** button and rung state (`hint: number` in the store, reset per
-  stage); "Show me" and `suggestion` go away, the placeholder comes from the
-  rung.
+- **Hint** button and its state (`hint` in the store, set per stage); "Show
+  me" and `suggestion` go away.
 - **Caption choices**: `Caption.choices?: { label; onClick }[]` rendered as
   secondary buttons, for `predict`.
 - **Syntax card**: a reference for the formula language (compare, chain,
@@ -407,18 +440,16 @@ Scene and HUD:
 - **Rules card** text:
   - subtitle: "An area that passes all three is a loop invariant strong enough
     to prove the postcondition: every run that stops, stops on a goal."
-  - Init · Initialization: "Every egg sits on your area."
-  - Preservation · Maintenance: "A frog on your area that hops lands on your
-    area — any frog, not only ones a real run reaches."
-  - Exit · Termination (of the loop, not a termination proof): "A frog that
-    stops on your area is on a goal."
+  - Initialization: "Every egg sits on your area."
+  - Maintenance: "A frog on your area that hops lands on your area."
+  - Termination: "A frog that stops on your area is on a goal."
 - Formula placeholder: "a condition on `i` and `n`" (from the level's view
   names).
 
 Tutorial engine (`src/tutorial/`):
 
 - `script.ts`: remove `expected`, `tutorialCheck`'s exact-match gate and
-  `suggestion`; add `stage()`, `predict()`, `demo()`, and the hint rung. Check
+  `suggestion`; add `stage()`, `predict()`, `demo()`, and the hint. Check
   in tutorial mode calls the stage's pending resolver with the compiled formula.
 - `steps.ts`: the beats above. Each step still declares its starting scene;
   stages declare `formula: 'learner'` meaning "whatever the learner last had",
@@ -449,6 +480,7 @@ Questions that came up while planning, and the answers this plan goes with:
 - **Prediction by clicking the scene.** Buttons only (Passes / Fails). Clicking
   an egg or a tile to answer "which one is missed?" would be more engaging but
   needs new input handling; revisit after the first version has been played.
-- **Stage 2 regressions.** A learner who keeps breaking Init while fixing
-  Preservation is not special-cased; the regression prefix names the lost
-  rule, and the hint ladder's `i >= 0` fixes both. Watch for it in playtests.
+- **Stage 2 regressions.** A learner who keeps breaking Initialization while fixing
+  Maintenance is not special-cased; the regression prefix names the lost
+  rule, and the stage-2 hint points at what fixes both. Watch for it in
+  playtests.

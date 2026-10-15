@@ -21,8 +21,9 @@ export function TopBar() {
   if (!level) return null;
   return (
     // .topbar and .pill-group: HoverReadout measures them to lift itself into this row when the middle is free
-    <div className="topbar pointer-events-none! flex flex-wrap items-center justify-between gap-3">
-      <div className={PILLS}>
+    <div className="topbar pointer-events-none! flex flex-wrap items-center justify-between gap-3" data-frame="top">
+      {/* on phones each pill takes a row of its own, and Rules moves up here as an icon */}
+      <div className={`${PILLS} max-sm:w-full`}>
         {/* just an arrow: the level's name is what this pill is about */}
         <button
           className={button('quiet', 'icon')}
@@ -37,8 +38,12 @@ export function TopBar() {
           {mode === 'level' && <span className="rounded-full bg-shade/6 px-2 pt-0.75 pb-0.25 font-mono text-xs text-muted">{level.id}</span>}
           {level.title}
         </div>
+        <button className={`${button('quiet', 'icon')} ml-auto sm:hidden`} title="Rules" aria-label="Rules" onClick={showRules}>
+          <BookOpen size={16} strokeWidth={2.2} />
+        </button>
       </div>
-      <div className={`${PILLS} ${spot === 'lights' ? 'spotlight' : ''}`}>
+      {/* on phones, with Rules moved up, a pill with no lights yet would be empty */}
+      <div className={`${PILLS} max-sm:w-full max-sm:gap-1 ${lights.length ? '' : 'max-sm:hidden'} ${spot === 'lights' ? 'spotlight' : ''}`}>
         {RULES
           .filter((r) => lights.includes(r))
           .map((r) => {
@@ -47,7 +52,7 @@ export function TopBar() {
             return (
               <button
                 key={r}
-                className={`flex animate-[pop_0.35s_ease-out] items-center gap-1.5 rounded-full px-3 py-1.75 font-display text-sm font-medium max-md:px-2 max-md:py-1.25 max-md:text-xs [&_svg]:shrink-0 ${LIGHT[status]}`}
+                className={`flex animate-[pop_0.35s_ease-out] items-center gap-1.5 rounded-full px-3 py-1.75 font-display text-sm font-medium max-md:px-2 max-md:py-1.25 max-md:text-xs max-sm:flex-1 max-sm:justify-center max-sm:gap-1 max-sm:px-1.5 max-[22.5rem]:px-1 max-[22.5rem]:text-[11px] [&_svg]:shrink-0 ${LIGHT[status]}`}
                 disabled={busy || v?.status !== 'fail'}
                 title={v?.status === 'fail' ? 'Replay the counterexample' : RULE_NAMES[r]}
                 onClick={() => v?.status === 'fail' && void playCounterexample(v.cex)}
@@ -57,13 +62,15 @@ export function TopBar() {
               </button>
             );
           })}
-        <button className={button('quiet')} onClick={() => useGame.setState({ showRules: true })}>
+        <button className={`${button('quiet')} max-sm:hidden`} onClick={showRules}>
           <BookOpen size={16} strokeWidth={2.2} /> Rules
         </button>
       </div>
     </div>
   );
 }
+
+const showRules = () => useGame.setState({ showRules: true });
 
 type LightStatus = 'dim' | 'idle' | 'checking' | 'pass' | 'fail' | 'undecided';
 

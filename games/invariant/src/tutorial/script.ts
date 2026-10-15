@@ -90,7 +90,14 @@ function next(gen: number, text: string, label = 'Next', spot: Spot = null, tone
     pendingNext = () => {
       if (performance.now() - shownAt < DOUBLE_CLICK_MS) return;
       pendingNext = null;
-      useGame.setState({ spotlight: null, spotLines: [], nextAction: null });
+      useGame.setState({ spotLines: [], nextAction: null });
+      // The spotlight goes unless the next caption, shown in this same turn,
+      // sets its own: clearing it in between would restart a ring that stays
+      // on the same thing (each caption sets the spotlight along with itself).
+      const passing = useGame.getState().caption;
+      setTimeout(() => {
+        if (useGame.getState().caption === passing) useGame.setState({ spotlight: null });
+      });
       if (gen !== generation) reject(new Aborted());
       else resolve();
     };
@@ -196,7 +203,7 @@ export async function ask(gen: number, text: string): Promise<boolean> {
   return k === 'yes';
 }
 
-// ---- Check, and the hint ladder ----
+// ---- Check, and the hint ----
 
 /** The Check button in tutorial mode: hands a valid formula to the stage waiting for it. */
 export function tutorialCheck() {
@@ -223,24 +230,11 @@ function waitCheck(gen: number): Promise<void> {
   });
 }
 
-/** The Hint button: a nudge, then a formula to try (Tab fills it in), then filling it in. */
-export function climbHint() {
-  const g = useGame.getState();
-  const h = g.hint;
-  if (!h || h.rung >= 3) return;
-  const rung = h.rung + 1;
-  if (rung === 1) {
-    useGame.setState({ hint: { ...h, rung }, caption: { text: `${h.ask}\n\n**Hint:** ${h.nudge}`, tone: 'info' }, spotlight: null });
-  } else if (rung === 2) {
-    useGame.setState({
-      hint: { ...h, rung },
-      caption: { text: `${h.ask}\n\n**Hint:** ${h.nudge}\n\nTry \`${h.formula}\` — press Tab to fill it in.`, tone: 'info' },
-      spotlight: 'formula',
-    });
-  } else {
-    useGame.setState({ hint: { ...h, rung } });
-    g.setFormula(h.formula);
-  }
+/** The Hint button: the stage's one-sentence hint joins its ask. */
+export function showHint() {
+  const h = useGame.getState().hint;
+  if (!h || h.shown) return;
+  useGame.setState({ hint: { ...h, shown: true }, caption: { text: `${h.ask}\n\n**Hint:** ${h.nudge}`, tone: 'info' }, spotlight: null });
 }
 
 // ---- stages and demos ----
@@ -250,11 +244,8 @@ export interface StageOptions {
   ask: string;
   /** The rules checked: everything introduced so far. */
   rules: Rule[];
-  /** The hint ladder's nudge and formula. */
+  /** The hint: one sentence, behind the Hint button. */
   nudge: string;
-  hint: string;
-  /** Check the current area first, before asking for anything. */
-  checkFirst?: boolean;
   /** A paragraph added to a rule's counterexample caption. */
   explain?: Partial<Record<Rule, string>>;
   /** Called with each rule the learner's own area breaks. */
@@ -267,16 +258,14 @@ export interface StageOptions {
  * another Check; the stage ends on the first pass, returning the verdicts.
  */
 export async function stage(gen: number, o: StageOptions): Promise<CheckResult> {
-  useGame.setState({ hint: { rung: 0, ask: o.ask, nudge: o.nudge, formula: o.hint }, callouts: [] });
+  useGame.setState({ hint: { ask: o.ask, nudge: o.nudge, shown: false }, callouts: [] });
   // after a failure its caption stays (with Replay) while the learner fixes
   // the area, so the ask is only said at the start
-  let askNow = !o.checkFirst;
-  let waitFirst = !o.checkFirst;
+  let askNow = true;
   for (;;) {
     if (askNow) say(o.ask, 'check');
-    if (waitFirst) await waitCheck(gen);
+    await waitCheck(gen);
     askNow = false;
-    waitFirst = true;
     // no "Checking…" caption: most checks finish before one could be read,
     // and the Check button's spinner and the lights show a slow one
     useGame.setState({ spotlight: null });
@@ -290,14 +279,14 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
     const failing = o.rules.find((r) => res.verdicts[r]?.status === 'fail');
     if (!failing) {
       if (o.rules.some((r) => res.verdicts[r]?.status === 'undecided')) {
-        await playShrug("I couldn't prove that either way. Try a simpler formula — the hint has one.");
+        await playShrug("I couldn't prove that either way. Try a simpler formula.");
         guard(gen);
         continue;
       }
       // the stage's frogs (a counterexample's, say) go; the learner's area stays
       frogWorld.clear();
       allow({});
-      useGame.setState({ hint: null, selected: null });
+      useGame.setState({ hint: null });
       return res;
     }
     o.onFail?.(failing);
@@ -370,7 +359,7 @@ export async function demo(
   }
   // back to the learner's area, with its lights green again
   frogWorld.clear('test');
-  useGame.setState({ failMark: null, selected: null });
+  useGame.setState({ failMark: null });
   g.setFormula(mine);
   await runChecker(rules);
   guard(gen);

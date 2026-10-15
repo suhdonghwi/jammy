@@ -1,7 +1,7 @@
 import gsap from 'gsap';
 import { useGame } from '../game/store';
 import type { State } from '../lang/ast';
-import { hop, running, toBig } from '../levels/level';
+import { hop, running, startView, toBig } from '../levels/level';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
@@ -16,6 +16,9 @@ import { begin, currentLevel, sleep } from './sequence';
 // The learner's frogs: hatching from eggs, Step, Run and Pause, and clearing
 // the board.
 
+/** How many eggs Run hatches, from the smallest inputs up. */
+const RUN_EGGS = 10;
+
 /** Unhatched eggs around the camera's target, nearest first. */
 function eggStatesNear(maxCount: number, radius: number): State[] {
   const L = currentLevel();
@@ -27,6 +30,16 @@ function eggStatesNear(maxCount: number, radius: number): State[] {
     .filter(([x, y]) => !frogWorld.hatched.has(`${x},${y}`) && Math.hypot(x - tx, y - ty) <= radius)
     .sort((a, b) => Math.hypot(a[0] - tx, a[1] - ty) - Math.hypot(b[0] - tx, b[1] - ty))
     .slice(0, maxCount)
+    .map(([x, y]) => toBig(tileState(L, x, y, pond)));
+}
+
+/** The first eggs, from the smallest inputs up: the ones nearest the origin. */
+function firstEggs(count: number): State[] {
+  const L = currentLevel();
+  const { pond } = useGame.getState();
+  return eggsNear(L, pond, 0, 0, 30)
+    .sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]) || a[1] - b[1] || a[0] - b[0])
+    .slice(0, count)
     .map(([x, y]) => toBig(tileState(L, x, y, pond)));
 }
 
@@ -72,7 +85,6 @@ async function hopAllOnce(dur = 0.42): Promise<number> {
   } finally {
     useGame.setState({ stepping: false });
   }
-  if (frogs.length === 1 || useGame.getState().selected) useGame.setState({ selected: frogs[0].state });
   return frogs.length;
 }
 
@@ -86,7 +98,7 @@ export function interrupt() {
   occupancy.eggs = new Set();
   hatchFx.clear();
   handState.visible = 0;
-  useGame.setState({ busy: false, running: false, stepping: false, checking: false, selected: null, failMark: null });
+  useGame.setState({ busy: false, running: false, stepping: false, checking: false, failMark: null });
 }
 
 /** A fresh board for a level that is opening (or closing). */
@@ -100,7 +112,7 @@ export function resetLevel() {
 export function resetFrogs() {
   begin();
   frogWorld.clear();
-  useGame.setState({ running: false, selected: null, failMark: null });
+  useGame.setState({ running: false, failMark: null });
 }
 
 /** Put a real frog straight on its tile (no hatching): rebuilding a scene. */
@@ -109,14 +121,6 @@ export function placeFrog(s: State): FrogSim {
   frogWorld.markHatched(Number(s[L.view.x]), Number(s[L.view.y]));
   const f = frogWorld.add(L, 'real', s);
   f.stopped = !running(L, s);
-  useGame.setState({ selected: s });
-  return f;
-}
-
-/** Hatch one real frog and show its values. */
-export function hatchFrog(s: State): FrogSim {
-  const f = hatch(s);
-  useGame.setState({ selected: s });
   return f;
 }
 
@@ -127,14 +131,14 @@ export async function stepFrogs(scripted = false) {
   if (!scripted && g.mode === 'tutorial' && !g.tutorialAllow.step) return;
   if (movingFrogs().length === 0 && !frogWorld.frogs.some((f) => f.kind === 'real')) {
     const eggs = eggStatesNear(1, 6);
-    if (eggs.length) hatchFrog(eggs[0]);
+    if (eggs.length) hatch(eggs[0]);
     return;
   }
   await hopAllOnce();
   events.emit('stepped');
 }
 
-/** Run: hatch the eggs around the view (unless frogs are already out) and hop until every frog stops. */
+/** Run: hatch the first eggs (unless frogs are already out) and hop until every frog stops. */
 export async function runFrogs() {
   const g = useGame.getState();
   if (g.busy || g.running || g.stepping) return;
@@ -146,7 +150,15 @@ export async function runFrogs() {
   gsap.to(handState, { visible: 0, duration: 0.3 });
   if (movingFrogs().length === 0) {
     frogWorld.clear('real');
-    const eggs = eggStatesNear(140, Math.max(8, Math.min(22, cameraRig.distance() * 0.9)));
+    const L = currentLevel();
+    const eggs = firstEggs(RUN_EGGS);
+    // looking somewhere else: back to the level's starting view first, where the first eggs are
+    if (eggs.length && !cameraRig.inView(Number(eggs[0][L.view.x]), Number(eggs[0][L.view.y]), 1.4)) {
+      const v = startView(L);
+      void cameraRig.resetAngle();
+      await cameraRig.lookAtTile(v.x, v.y, v.distance);
+      if (!tok.alive) return;
+    }
     eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatch(s)));
     await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
   }
@@ -169,7 +181,7 @@ export function pauseRun() {
 async function runEgg(s: State) {
   const g = useGame.getState();
   if (g.busy || g.stepping) return;
-  const f = hatchFrog(s);
+  const f = hatch(s);
   if (g.running) return;
   useGame.setState({ stepping: true });
   try {
@@ -179,23 +191,19 @@ async function runEgg(s: State) {
       const n = hop(L, f.state);
       await frogWorld.hopTo(L, f, n, 0.36);
       f.stopped = !running(L, n);
-      if (useGame.getState().selected) useGame.setState({ selected: n });
     }
   } finally {
     useGame.setState({ stepping: false });
   }
 }
 
-/** A click on the floor: an unhatched egg runs its frog; anything else clears the selection. */
+/** A click on the floor: an unhatched egg runs its frog. */
 export function clickTile(x: number, y: number) {
   const g = useGame.getState();
   if (g.busy || !g.reveal.eggs) return;
   if (g.mode === 'tutorial' && !g.tutorialAllow.eggs) return;
   const L = currentLevel();
   const isEgg = eggsNear(L, g.pond, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
-  if (!isEgg || frogWorld.hatched.has(`${x},${y}`)) {
-    useGame.setState({ selected: null });
-    return;
-  }
+  if (!isEgg || frogWorld.hatched.has(`${x},${y}`)) return;
   void runEgg(toBig(tileState(L, x, y, g.pond)));
 }

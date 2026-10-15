@@ -6,9 +6,9 @@ import { checkCondition, checkProgram } from '../lang/typecheck';
 // The level format, compiling a level's program for play (exact and fast
 // evaluation), and helpers for program states.
 
-export type Rule = 'init' | 'pres' | 'exit';
-export const RULES: Rule[] = ['init', 'pres', 'exit'];
-export const RULE_NAMES: Record<Rule, string> = { init: 'Init', pres: 'Preservation', exit: 'Exit' };
+export type Rule = 'initialization' | 'maintenance' | 'termination';
+export const RULES: Rule[] = ['initialization', 'maintenance', 'termination'];
+export const RULE_NAMES: Record<Rule, string> = { initialization: 'Initialization', maintenance: 'Maintenance', termination: 'Termination' };
 
 export interface Pitfall {
   formula: string;
@@ -166,6 +166,12 @@ export function toBig(s: Record<string, number>): State {
   const o: State = {};
   for (const k in s) o[k] = BigInt(Math.round(s[k]));
   return o;
+}
+
+/** Where the camera starts on a level: the tile it centres and how far back it sits. */
+export function startView(level: CompiledLevel): { x: number; y: number; distance: number } {
+  const cam = level.camera ?? { x: 0, y: 0 };
+  return { x: cam.x, y: cam.y, distance: (cam.distance ?? 15) * 1.2 };
 }
 
 /** Variable names in display order: the plotted axes first, then the rest. */

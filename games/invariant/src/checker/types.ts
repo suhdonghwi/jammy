@@ -5,9 +5,9 @@ import type { Rule } from '../levels/level';
 
 export interface Counterexample {
   rule: Rule;
-  /** The frog's state (for init: the start state). */
+  /** The frog's state (for initialization: the start state). */
   state: State;
-  /** For preservation: where the hop lands. */
+  /** For maintenance: where the hop lands. */
   next?: State;
   /** Source text of the conjunct that is false (after the hop / at the egg). */
   broken?: string;

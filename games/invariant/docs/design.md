@@ -15,9 +15,9 @@ plane — the loop invariant — and a skeptical **hand** checks three rules:
 
 | Rule | Formal | Learner-facing wording |
 |---|---|---|
-| **Init** | `pre ⇒ Inv` (after the initialisation code) | Every egg sits on your area. |
-| **Preservation** | `Inv ∧ guard ⇒ Inv[body]` | A frog on your area that hops lands on your area. |
-| **Exit** | `Inv ∧ ¬guard ⇒ post` | A frog that stops on your area is on a goal. |
+| **Initialization** | `pre ⇒ Inv` (after the initialisation code) | Every egg sits on your area. |
+| **Maintenance** | `Inv ∧ guard ⇒ Inv[body]` | A frog on your area that hops lands on your area. |
+| **Termination** | `Inv ∧ ¬guard ⇒ post` | A frog that stops on your area is on a goal. |
 
 If all three hold, every frog, for every input, stops on a goal. That is the
 loop-invariant proof rule, presented as a game.
@@ -27,7 +27,7 @@ vaguely) met loop invariants. Nothing beyond boolean expressions is assumed.
 
 **A learner should leave able to:** explain why testing can't prove a loop
 correct for all inputs; state the three rules in their own words; explain why
-Preservation must hold even for states real runs never reach; strengthen an
+Maintenance must hold even for states real runs never reach; strengthen an
 invariant to fix a failing rule; recognise the shape *a preserved equation + a
 bound*.
 
@@ -60,9 +60,9 @@ The game never leads with the rules; it earns them:
 2. **Watching can't be enough** — zoom out; the eggs never end.
 3. **Draw an area instead** — if one area passes three checks, every frog is
    covered without watching any of them.
-4. **Induction, shown with one frog** — it starts on the area (Init), every hop
-   lands on it again (Preservation), so it never leaves; when it stops, is that
-   enough? (Exit).
+4. **Induction, shown with one frog** — it starts on the area (Initialization), every hop
+   lands on it again (Maintenance), so it never leaves; when it stops, is that
+   enough? (Termination).
 
 ## The hand: why unreachable frogs matter
 
@@ -153,7 +153,7 @@ touching levels, the language or the checker.
   misses that idea (often the previous level's answer — *don't pattern-match*);
 - the usual fix is **strengthening**: add the bound or fact the pitfall forgot;
 - chapters build up: one plane (the rules alone) → stacked ponds (a preserved
-  equation + a bound) → branches (Preservation must hold on every branch).
+  equation + a bound) → branches (Maintenance must hold on every branch).
 
 ## The tutorial
 
@@ -171,8 +171,8 @@ vocabulary it introduces and the engine changes it needs are in
 - **Every failure is witnessed:** by the learner's own formula if it fails,
   or by the hand demonstrating that stage's pitfall if it passes, after the
   learner predicts the outcome.
-- A hint ladder (a nudge, then a formula to try, then filling it in) is how a
-  stuck learner finishes.
+- Each stage has one hint: a sentence behind a Hint button that names the fact
+  that matters, without giving the formula.
 - No ponds. It ends with the rules card, then the first level.
 
 ## Scope
