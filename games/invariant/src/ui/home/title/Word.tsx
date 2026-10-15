@@ -1,5 +1,4 @@
 import { useFrame } from '@react-three/fiber';
-import type opentype from 'opentype.js';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { outlineMaterial } from '../../../scene/models';
@@ -12,7 +11,6 @@ const outline = outlineMaterial(0.02);
 export const waveAt = (t: number, i: number, phase: number) => Math.max(0, Math.sin(t * 1.6 - i * 0.55 + phase));
 
 interface WordProps {
-  font: opentype.Font;
   text: string;
   letters: LetterOptions;
   /** Baseline position. */
@@ -25,8 +23,8 @@ interface WordProps {
 }
 
 /** An extruded, outlined word with a gentle wave running through its letters. */
-export function Word({ font, text, letters: opts, position, face, side, wave, phase = 0 }: WordProps) {
-  const letters = useMemo(() => letterGeometries(font, text, opts), [font, text, opts]);
+export function Word({ text, letters: opts, position, face, side, wave, phase = 0 }: WordProps) {
+  const letters = useMemo(() => letterGeometries(text, opts), [text, opts]);
   const mats = useMemo(
     () => [new THREE.MeshStandardMaterial({ color: face, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: side, roughness: 0.6 })],
     [face, side],

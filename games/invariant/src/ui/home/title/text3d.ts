@@ -1,45 +1,27 @@
-import fredokaBold from '@fontsource/fredoka/files/fredoka-latin-700-normal.woff?url';
-import opentype from 'opentype.js';
-import { useEffect, useState } from 'react';
 import * as THREE from 'three';
+import titleGlyphs from 'virtual:title-glyphs';
+import type { GlyphCommand } from './glyphs';
 
-// Extruded 3D text from a bundled font (no CDN): opentype.js parses the WOFF
-// and each glyph outline becomes an extruded THREE shape.
+// Extruded 3D text: each letter's outline (read from the font at build time,
+// see scripts/title-glyphs.ts) becomes an extruded THREE shape.
 
-let fontPromise: Promise<opentype.Font> | null = null;
-
-/** The title font, once it has loaded (null until then). */
-export function useTitleFont(): opentype.Font | null {
-  const [font, setFont] = useState<opentype.Font | null>(null);
-  useEffect(() => {
-    let alive = true;
-    fontPromise ??= fetch(fredokaBold)
-      .then((r) => r.arrayBuffer())
-      .then((buf) => opentype.parse(buf));
-    void fontPromise.then((f) => alive && setFont(f));
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return font;
-}
-
-function glyphShapes(path: opentype.Path): THREE.Shape[] {
+function glyphShapes(path: GlyphCommand[], scale: number): THREE.Shape[] {
   const sp = new THREE.ShapePath();
-  for (const c of path.commands) {
-    // opentype paths are y-down; flip to y-up
-    switch (c.type) {
+  const s = scale;
+  for (const c of path) {
+    // font outlines are y-down; flip to y-up
+    switch (c[0]) {
       case 'M':
-        sp.moveTo(c.x, -c.y);
+        sp.moveTo(c[1] * s, -c[2] * s);
         break;
       case 'L':
-        sp.lineTo(c.x, -c.y);
+        sp.lineTo(c[1] * s, -c[2] * s);
         break;
       case 'Q':
-        sp.quadraticCurveTo(c.x1, -c.y1, c.x, -c.y);
+        sp.quadraticCurveTo(c[1] * s, -c[2] * s, c[3] * s, -c[4] * s);
         break;
       case 'C':
-        sp.bezierCurveTo(c.x1, -c.y1, c.x2, -c.y2, c.x, -c.y);
+        sp.bezierCurveTo(c[1] * s, -c[2] * s, c[3] * s, -c[4] * s, c[5] * s, -c[6] * s);
         break;
       case 'Z':
         sp.currentPath?.closePath();
@@ -58,14 +40,15 @@ export interface LetterOptions {
 }
 
 /** One extruded geometry per glyph (for per-letter animation), laid out and centered as a word. */
-export function letterGeometries(font: opentype.Font, text: string, o: LetterOptions): { geom: THREE.BufferGeometry; x: number }[] {
-  const glyphs = font.stringToGlyphs(text);
-  const scale = o.size / font.unitsPerEm;
+export function letterGeometries(text: string, o: LetterOptions): { geom: THREE.BufferGeometry; x: number }[] {
+  const { glyphs, kerning, unitsPerEm } = titleGlyphs;
+  const scale = o.size / unitsPerEm;
   const bevel = o.size * 0.045;
   let x = 0;
   const out: { geom: THREE.BufferGeometry; x: number }[] = [];
-  glyphs.forEach((g, i) => {
-    const shapes = glyphShapes(g.getPath(0, 0, o.size));
+  [...text].forEach((ch, i) => {
+    const g = glyphs[ch];
+    const shapes = glyphShapes(g.path, scale);
     if (shapes.length) {
       const geom = new THREE.ExtrudeGeometry(shapes, {
         depth: o.depth,
@@ -78,9 +61,9 @@ export function letterGeometries(font: opentype.Font, text: string, o: LetterOpt
       geom.translate(0, 0, -o.depth / 2);
       out.push({ geom, x });
     }
-    x += (g.advanceWidth ?? 0) * scale + o.letterSpacing;
-    const next = glyphs[i + 1];
-    if (next) x += font.getKerningValue(g, next) * scale;
+    x += g.advance * scale + o.letterSpacing;
+    const next = text[i + 1];
+    if (next) x += (kerning[ch + next] ?? 0) * scale;
   });
   // center the word horizontally; baseline stays at y = 0
   const width = x - o.letterSpacing;
