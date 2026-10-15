@@ -815,25 +815,29 @@ code {
 }
 /* Spotlit inside the row there is no room for the usual ring (and it would cut
    across the button's 3D edge), so the button itself pulses with a soft glow. */
-.formula-row .btn.spotlight::after {
-  display: none;
-}
 .formula-row .btn.spotlight:not(:disabled) {
   animation: check-pulse 1.6s ease-in-out infinite;
 }
+/* the glow wraps the button *and* its 3px bottom edge, so it is even on all sides */
+.formula-row .btn.spotlight::after {
+  inset: 0 0 -3px 0;
+  animation: check-halo 1.6s ease-in-out infinite;
+}
+.formula-row .btn.spotlight:disabled::after {
+  display: none;
+}
 @keyframes check-pulse {
-  0%,
-  100% {
-    background: var(--blue);
-    box-shadow:
-      0 3px 0 var(--blue-deep),
-      0 0 0 0 rgba(59, 130, 246, 0);
-  }
   50% {
     background: #5b97f8;
-    box-shadow:
-      0 3px 0 var(--blue-deep),
-      0 0 0 4px rgba(59, 130, 246, 0.42);
+  }
+}
+@keyframes check-halo {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.42);
   }
 }
 .formula-error {

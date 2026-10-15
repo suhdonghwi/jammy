@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { displayNames, RULE_NAMES, showState, type CompiledLevel, type Rule } from '../levels/level';
 import { useGame } from '../store/game';
 import { director } from '../director/director';
@@ -197,12 +197,42 @@ function LightIcon({ status }: { status: string }) {
 // What is the pointer on? A readout for the hovered tile.
 // ---------------------------------------------------------------------------
 
+/** Room the readout needs to sit in the top bar's row (values plus two tags). */
+const READOUT_ROOM = 440;
+
+/**
+ * Lift the readout into the top bar's row when the bar's middle is free (the
+ * tutorial, wide screens); otherwise it stays just below the bar. The check
+ * uses a fixed width, not the current text, so it never hops between rows
+ * while you hover around.
+ */
+function useTopRowPlacement(ref: React.RefObject<HTMLDivElement | null>) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.transform = '';
+    const groups = document.querySelectorAll('.topbar > .pill-group');
+    if (!groups.length) return;
+    const left = groups[0].getBoundingClientRect();
+    const right = groups[groups.length - 1].getBoundingClientRect();
+    const mid = window.innerWidth / 2;
+    const half = READOUT_ROOM / 2;
+    const oneRow = Math.abs(left.top - right.top) < 4;
+    const fits = mid - half >= left.right && (groups.length < 2 || mid + half <= right.left);
+    if (!oneRow || !fits) return;
+    const r = el.getBoundingClientRect();
+    el.style.transform = `translateY(${left.top + left.height / 2 - (r.top + r.height / 2)}px)`;
+  });
+}
+
 export function HoverReadout() {
   const level = useGame((s) => s.level)!;
   const pond = useGame((s) => s.pond);
   const reveal = useGame((s) => s.reveal);
   const valid = useGame((s) => s.valid);
   const tile = useHover((s) => s.tile);
+  const ref = useRef<HTMLDivElement>(null);
+  useTopRowPlacement(ref);
   if (!tile || !reveal.axes) return null;
   const s = tileState(level, tile[0], tile[1], pond);
   // tiles outside the precondition's inputs don't exist — nothing to inspect
@@ -217,7 +247,7 @@ export function HoverReadout() {
   const inArea = reveal.formula && valid ? valid.fast(s) === true : null;
   const goal = !cont && level.fast.post(s) === true;
   return (
-    <div className="readout">
+    <div className="readout" ref={ref}>
       <span className="readout-vals">{displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ')}</span>
       {reveal.stop && (
         <span className={`readout-tag ${cont ? 'go' : 'stop'}`}>{cont ? `hops to ${next}` : goal && reveal.goals ? 'stops · goal ✓' : 'stops here'}</span>
