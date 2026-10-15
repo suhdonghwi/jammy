@@ -113,14 +113,25 @@ spotlights as in the current script unless noted.
 
 ### Act 1 — The world
 
-**1.1 A frog and its tile.** Bare plane, axis labels on (`i →` along x,
-`n ↑` along y; new), one frog with its tag.
+**1.0 Hello.** Bare plane, nothing else.
+
+> Hi. This is a game about **loop invariants**: the way to prove a loop
+> correct for *every* input, not just the ones you happened to try.
+>
+> In about fifteen minutes you'll write one and have it checked. First, the
+> world it lives in.
+
+Button: "Let's go".
+
+**1.1 A frog and its tile.** The axes appear (drawn lines with an arrowhead
+and the variable's name at each end, like a chart's axes; new), and one frog
+with its tag.
 
 > This frog is one run of the program. The tile it sits on is its **state**:
-> `i = 0, n = 3`. Along this way `i` changes; along that way, `n`.
+> `i = 0, n = 3`. The plane's two axes are the two variables, so where the
+> frog sits *is* its values.
 
-Callouts on both axes. The axis labels stay on for the rest of the tutorial
-and in levels.
+The axes stay on for the rest of the tutorial and in levels.
 
 **1.2a The program.** Code panel appears, spotlit.
 
@@ -346,9 +357,10 @@ is read-only during a demo.
 
 Scene and HUD:
 
-- **Axis labels** (`scene/labels/AxisLabels.tsx`): the view's x and y names at
-  the ends of the visible axes, scaling with distance like other tags. On in
-  levels too.
+- **Axes** (`floorShader.ts` and `scene/labels/AxisLabels.tsx`): the floor
+  draws a thin line just before the row and the column of numbers; at each
+  line's far end an arrowhead and the variable's name follow the camera, so
+  the plane reads like a chart. On in levels too.
 - **Ghost assert line** in the code panel: a reveal flag `assert` draws
   `assert(???);` as the loop body's first line, dimmed; from 1.10 on, `???` is
   replaced by the current formula text (so the code panel and the box always

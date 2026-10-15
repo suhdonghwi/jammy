@@ -157,6 +157,16 @@ void main() {
     col = mix(col, uEdge, line * uShowStop);
   }
 
+  // The axes: a thin line in the gap just before the row of numbers (y = -0.5)
+  // and just before the column (x = -0.5). AxisLabels puts an arrowhead and
+  // the variable's name at their ends.
+  if (uShowAxes > 0.002) {
+    float aw = 0.03;
+    float ax = 1.0 - smoothstep(aw - fw.y, aw + fw.y, abs(p.y + 0.5));
+    float ay = 1.0 - smoothstep(aw - fw.x, aw + fw.x, abs(p.x + 0.5));
+    col = mix(col, uLabel, max(ax, ay) * 0.85 * uShowAxes);
+  }
+
   // hover cursor: a crisp rounded outline around the inspected tile
   if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
     float a = 1.0 - smoothstep(-fwRing, fwRing, ringD);

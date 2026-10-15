@@ -91,18 +91,24 @@ const OBJECTION =
 
 export const STEPS: Step[] = [
   // ======================= Act 1: The world =======================
+  // 1.0 hello
+  {
+    scene: { reveal: {} },
+    run: (gen) =>
+      beat(
+        gen,
+        'Hi. This is a game about **loop invariants**: the way to prove a loop correct for *every* input, not just the ones you happened to try.\n\nIn about fifteen minutes you’ll write one and have it checked. First, the world it lives in.',
+        { label: 'Let’s go', settle: 0 },
+      ),
+  },
   // 1.1 a frog and its tile
   {
     scene: { reveal: {} },
     run: (gen) =>
       beat(
         gen,
-        'This frog is one run of the program. The tile it sits on is its **state**: `i = 0, n = 3`.\n\nAlong one way `i` changes; along the other, `n`.',
+        'This frog is one run of the program. The tile it sits on is its **state**: `i = 0, n = 3`.\n\nThe plane’s two axes are the two variables, so where the frog sits *is* its values.',
         {
-          callouts: [
-            { x: 2, y: 0, text: 'i grows this way', tone: 'info' },
-            { x: 0, y: 1, text: 'n grows this way', tone: 'info' },
-          ],
           prepare: async () => {
             useGame.getState().setReveal({ axes: true });
             // the frog's own tag shows its values (and animates them as it hops)
