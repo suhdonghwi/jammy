@@ -2,7 +2,8 @@ import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
 import { CHAPTERS, levels } from '../levels/defs';
 import { useEffect } from 'react';
 import { useGame } from '../store/game';
-import { HOME_DRAFTS, useHomeDraft } from '../home/drafts';
+import { HOME_DRAFTS, useHomeDraft, type HomeDraftId } from '../home/drafts';
+import { Title3D } from '../home/Title3D';
 import { openLevel, openTutorial } from '../director/play';
 
 export function HomeOverlay() {
@@ -19,8 +20,8 @@ export function HomeOverlay() {
   return (
     <>
       <DraftSwitcher />
-      <div className={`home home-${draft}`} key={draft}>
-        {draft === 'e' ? <EditorialCopy /> : <HomeCopy />}
+      <div className={`home home-e`} key={draft}>
+        <EditorialCopy draft={draft} />
       </div>
     </>
   );
@@ -39,39 +40,25 @@ function HomeButtons() {
   );
 }
 
-function HomeCopy() {
-  return (
-    <div className="home-bottom">
-      <p className="home-tagline">Frogs never leave.</p>
-      <p className="home-blurb">
-        Learn loop invariants by drawing an area no frog can hop out of — and convincing a skeptical hand it holds for every input.
-      </p>
-      <HomeButtons />
-    </div>
-  );
-}
+const TITLE_STYLE = { a: 'standing', b: 'platforms', c: 'plaque' } as const;
 
-function EditorialCopy() {
+function EditorialCopy({ draft }: { draft: HomeDraftId }) {
   return (
     <div className="editorial">
       <p className="editorial-eyebrow">A little game about loop invariants</p>
-      <h1 className="editorial-title">
-        <span className="t-blue">Invariant</span>
-        <span className="t-green">Frog</span>
-      </h1>
+      {draft === 'd' ? (
+        <h1 className="editorial-title">
+          <span className="t-blue">Invariant</span>
+          <span className="t-green">Frog</span>
+        </h1>
+      ) : (
+        <h1 className="editorial-title-3d">
+          <span className="sr-only">Invariant Frog</span>
+          <Title3D style={TITLE_STYLE[draft]} />
+        </h1>
+      )}
       <p className="editorial-lede">Draw an area no frog can hop out of. Then convince a skeptical hand it holds for every input.</p>
       <HomeButtons />
-      <ul className="editorial-rules">
-        <li>
-          <span>1</span> Every egg starts on it
-        </li>
-        <li>
-          <span>2</span> No hop leaves it
-        </li>
-        <li>
-          <span>3</span> Frogs stop on a goal
-        </li>
-      </ul>
     </div>
   );
 }

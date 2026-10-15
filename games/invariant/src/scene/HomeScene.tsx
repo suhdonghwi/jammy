@@ -1,9 +1,6 @@
 import { useHomeDraft } from '../home/drafts';
-import { ClassicHome } from './home/Classic';
 import { EditorialHome } from './home/Editorial';
-import { IslandHome } from './home/Island';
-import { NightPondHome } from './home/NightPond';
-import { PixelTitleHome } from './home/PixelTitle';
+import { MiniLevel } from './home/MiniLevel';
 
 // The home screen's 3D scene, in whichever draft is being tried out.
 
@@ -11,14 +8,12 @@ export function HomeScene() {
   const draft = useHomeDraft((s) => s.draft);
   switch (draft) {
     case 'b':
-      return <PixelTitleHome key="b" />;
+      return <MiniLevel key="b" framing="corner" shift={1.25} />;
     case 'c':
-      return <NightPondHome key="c" />;
+      return <MiniLevel key="c" framing="overview" shift={1.25} />;
     case 'd':
-      return <IslandHome key="d" />;
-    case 'e':
-      return <EditorialHome key="e" />;
+      return <EditorialHome key="d" />;
     default:
-      return <ClassicHome key="a" />;
+      return <MiniLevel key="a" framing="mini" shift={1.25} />;
   }
 }

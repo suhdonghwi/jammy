@@ -30,13 +30,19 @@ export function useHomeLevel(): CompiledLevel {
 
 export const tileKey = (x: number, y: number) => `${x},${y}`;
 
-/** Raise a decorative area of slabs on these tiles; returns the field version for <Slabs>. */
-export function useArea(tiles: readonly (readonly [number, number])[]): number {
+/**
+ * Raise a decorative area of slabs on these tiles; returns the field version
+ * for <Slabs>. `flags` marks slabs where the loop stops / goals (for stripes
+ * and pools on their tops).
+ */
+export function useArea(tiles: readonly (readonly [number, number])[], flags?: (x: number, y: number) => { stop: boolean; goal: boolean }): number {
   const [version, setVersion] = useState(0);
+  const flagsRef = useRef(flags);
+  flagsRef.current = flags;
   useEffect(() => {
     field.reset();
     field.update(
-      tiles.map(([x, y]) => ({ x, y, stop: false, goal: false })),
+      tiles.map(([x, y]) => ({ x, y, ...(flagsRef.current?.(x, y) ?? { stop: false, goal: false }) })),
       true,
     );
     setVersion((v) => v + 1);

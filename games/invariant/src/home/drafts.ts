@@ -4,11 +4,10 @@ import { create } from 'zustand';
 // scene. The choice is remembered per browser; ?home=<id> picks one directly.
 
 export const HOME_DRAFTS = [
-  { id: 'a', name: 'Classic', note: 'The current title over a loop of slabs.' },
-  { id: 'b', name: 'Pixel title', note: 'The title is spelled in area slabs; frogs never step off the letters.' },
-  { id: 'c', name: 'Night pond', note: 'A dark world of glowing goal pools.' },
-  { id: 'd', name: 'Floating island', note: 'A little island of slabs drifting in a pastel sky.' },
-  { id: 'e', name: 'Editorial', note: 'Big type on the left; one curious frog and the skeptical hand on the right.' },
+  { id: 'a', name: 'Mini level', note: 'Standing 3D title; on the right, eggs hatch and frogs hop to the goals of the tutorial level.' },
+  { id: 'b', name: 'Platforms', note: 'Title words on area slabs; a close-up of a goal corner.' },
+  { id: 'c', name: 'Plaque', note: 'Title on a blue sign the frog peeks over; a wider view of many frogs reaching the goals.' },
+  { id: 'd', name: 'Before', note: 'The previous Editorial draft, for comparison.' },
 ] as const;
 
 export type HomeDraftId = (typeof HOME_DRAFTS)[number]['id'];
