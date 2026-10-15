@@ -1,6 +1,6 @@
-import { CameraControls } from '@react-three/drei';
+import { CameraControls, PerformanceMonitor } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useGame } from '../game/store';
 import { cameraRig } from './cameraRig';
 import { HomeScene } from './home/HomeScene';
@@ -60,14 +60,29 @@ function SceneSwitch() {
   return <LevelScene />;
 }
 
+/** The sharpest the world is drawn (device pixels per CSS pixel). */
+const MAX_DPR = 1.75;
+
 export function World() {
+  // Drawn as sharp as the screen allows (up to MAX_DPR), and less sharp if
+  // frames start dropping: the floor is shaded per pixel, so on a slow GPU
+  // fewer pixels is what keeps it smooth.
+  const top = Math.max(1, Math.min(window.devicePixelRatio, MAX_DPR));
+  const [dpr, setDpr] = useState(top);
   return (
     <Canvas
       flat
-      dpr={[1, 1.75]}
+      dpr={dpr}
       camera={{ position: [3, 10, 12], fov: 36, near: 0.1, far: 500 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
     >
+      {/* never gives up for good: a window the browser throttles for a while
+          (hidden behind others, battery saver) gets its sharpness back after */}
+      <PerformanceMonitor
+        factor={1}
+        // in quarter steps, so small swings don't resize the canvas
+        onChange={({ factor }) => setDpr(factor === 1 ? top : Math.round((1 + (top - 1) * factor) * 4) / 4)}
+      />
       <Lights />
       <Controls />
       <PhoneFraming />
