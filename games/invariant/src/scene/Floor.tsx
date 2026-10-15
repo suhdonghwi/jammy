@@ -81,6 +81,7 @@ void main() {
       tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
     }
     col = mix(uGap, tcol, inside);
+    if (uShowGoal > 0.002) col = mix(col, SPLASH, splashAt(p) * 0.75 * uShowGoal);
 
   } else {
     col = uVoid;
@@ -261,7 +262,7 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
     m.scale.setScalar(R * 2.2);
     u.uCenter.value.set(t.x, t.z);
     u.uTime.value = clock.now();
-    goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.pond ? pond : undefined);
+    u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.pond ? pond : undefined);
     u.uFade.value.set(R * 0.62, R);
     // revealed elements fade in rather than popping
     const kr = 1 - Math.exp(-dt * 3.2);

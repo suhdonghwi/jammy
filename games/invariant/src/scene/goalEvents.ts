@@ -22,15 +22,18 @@ export const goalEvents = {
     events.push({ x, y, pond, t });
     if (events.length > MAX_EVENTS) events.shift();
   },
-  /** Copy recent events for a pond into a shader uniform array. */
-  fill(out: THREE.Vector3[], pond: number | undefined) {
+  /** Copy recent events for a pond into a shader uniform array; returns the latest time. */
+  fill(out: THREE.Vector3[], pond: number | undefined): number {
     let k = 0;
+    let last = -100;
     for (let i = events.length - 1; i >= 0 && k < out.length; i--) {
       const e = events[i];
       if (e.pond !== pond) continue;
       out[k++].set(e.x, e.y, e.t);
+      last = Math.max(last, e.t);
     }
     for (; k < out.length; k++) out[k].set(0, 0, -100);
+    return last;
   },
   clear() {
     events.length = 0;

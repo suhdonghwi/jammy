@@ -53,6 +53,8 @@ uniform vec3 uPoolLight;
 uniform vec3 uPoolDeep;
 uniform float uTime;
 uniform vec3 uEvents[${MAX_EVENTS}];
+/** Time of the most recent landing (lets surfaces skip the splash when idle). */
+uniform float uLastEvent;
 
 // rings on the water from recent landings (p in tile space)
 float rippleAt(vec2 p) {
@@ -73,6 +75,48 @@ float rippleAt(vec2 p) {
   return acc;
 }
 
+// Splash rings that run out of the pool across the tile and onto its
+// neighbours (p in tile space). Drawn on every surface, so they read even when
+// the landed frog hides the pool itself.
+float splashAt(vec2 p) {
+  if (uTime - uLastEvent > 1.3) return 0.0;
+  float acc = 0.0;
+  for (int i = 0; i < ${MAX_EVENTS}; i++) {
+    vec3 e = uEvents[i];
+    float age = uTime - e.z;
+    if (age < 0.0 || age > 1.3) continue;
+    float d = length(p - e.xy);
+    if (d > 1.6) continue;
+    for (int k = 0; k < 2; k++) {
+      float a = age - float(k) * 0.16;
+      if (a < 0.0) continue;
+      // fast at first, easing out
+      float rr = 0.3 + 1.15 * (1.0 - exp(-a * 3.2));
+      float w = 0.03 + 0.03 * a;
+      float fade = pow(max(0.0, 1.0 - a / 1.1), 1.6);
+      acc = max(acc, exp(-pow((d - rr) / w, 2.0)) * fade * (k == 0 ? 1.0 : 0.55));
+    }
+  }
+  return acc;
+}
+
+// A bright flash of the pool itself right after a landing on this tile.
+float flashAt(vec2 tc) {
+  float acc = 0.0;
+  for (int i = 0; i < ${MAX_EVENTS}; i++) {
+    vec3 e = uEvents[i];
+    float age = uTime - e.z;
+    if (age < 0.0 || age > 0.8) continue;
+    if (abs(e.x - tc.x) > 0.5 || abs(e.y - tc.y) > 0.5) continue;
+    float u = age / 0.8;
+    // quick rise, slow fall
+    acc = max(acc, smoothstep(0.0, 0.08, u) * pow(1.0 - u, 2.0));
+  }
+  return acc;
+}
+
+const vec3 SPLASH = vec3(1.0, 0.8, 0.36);
+
 // f: tile-local coords; fwr: derivative of length(f) taken outside any branch;
 // tc: tile centre in tile space.
 vec3 drawGoal(vec3 col, vec2 f, float fwr, vec2 tc) {
@@ -86,6 +130,10 @@ vec3 drawGoal(vec3 col, vec2 f, float fwr, vec2 tc) {
   float shade = smoothstep(0.12, 0.3, r) * max(dot(n, vec2(0.0, 1.0)), 0.0);
   water *= 1.0 - 0.12 * shade;
   water = mix(water, vec3(1.0, 0.98, 0.92), rippleAt(tc + f) * 0.75);
+  float flash = flashAt(tc);
+  water = mix(water, vec3(1.0, 0.97, 0.82), flash * 0.85);
+  // a warm halo around the pool while it flashes
+  col = mix(col, SPLASH, flash * 0.55 * (1.0 - smoothstep(0.3, 0.46, r)));
   col = mix(col, water, pool);
   float edge = 1.0 - smoothstep(0.011 - aa, 0.011 + aa, abs(r - 0.3));
   col = mix(col, vec3(1.0, 0.98, 0.93), edge * max(-dot(n, vec2(0.0, 1.0)), 0.0) * 0.85);
@@ -101,6 +149,7 @@ export function goalUniforms(): Record<string, THREE.IUniform> {
     uPoolLight: { value: new THREE.Color(COLORS.poolLight) },
     uPoolDeep: { value: new THREE.Color(COLORS.poolDeep) },
     uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
+    uLastEvent: { value: -100 },
   };
 }
 

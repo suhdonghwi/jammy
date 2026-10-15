@@ -31,6 +31,8 @@ export interface FrogSim {
   face: number;
   /** Smoothed current facing. */
   yaw: number;
+  /** A little happy hop after landing on a goal (start time). */
+  cheerT0?: number;
   /** A quick turn on the spot, with a tiny hop, when the next hop goes another way. */
   turn?: { t0: number; from: number; delta: number };
   lastT?: number;
@@ -158,7 +160,10 @@ class FrogWorld {
         // look ahead to the next hop (a stopped frog keeps looking the way it came)
         f.face = facingFor(level, next, f.face);
         if (batch) landInBatch(batch, holds(level.guard, next));
-        if (!holds(level.guard, next) && holds(level.post, next)) goalEvents.push(tx, ty, f.pond);
+        if (!holds(level.guard, next) && holds(level.post, next)) {
+          goalEvents.push(tx, ty, f.pond);
+          f.cheerT0 = now();
+        }
         res();
       }, dur * 1000),
     );

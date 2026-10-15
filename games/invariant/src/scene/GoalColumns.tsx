@@ -17,7 +17,9 @@ const vertex = /* glsl */ `
 attribute vec2 aTile;
 attribute vec3 aAnim;
 uniform float uTime;
+uniform vec3 uEvents[${MAX_EVENTS}];
 varying float vV;
+varying float vBurst;
 varying vec3 vN;
 varying vec3 vWorld;
 varying vec2 vTile;
@@ -26,10 +28,27 @@ float heightNow() {
   u = u * u * (3.0 - 2.0 * u);
   return mix(aAnim.x, aAnim.y, u) * ${SLAB_H.toFixed(3)};
 }
+// 1 right after a frog lands on this goal, falling back to 0
+float burstNow() {
+  float b = 0.0;
+  for (int i = 0; i < ${MAX_EVENTS}; i++) {
+    vec3 e = uEvents[i];
+    float age = uTime - e.z;
+    if (age < 0.0 || age > 1.0) continue;
+    if (abs(e.x - aTile.x) > 0.5 || abs(e.y - aTile.y) > 0.5) continue;
+    float u = age / 1.0;
+    b = max(b, smoothstep(0.0, 0.06, u) * pow(1.0 - u, 1.6));
+  }
+  return b;
+}
 void main() {
   vV = uv.y;
   vTile = aTile;
-  vec4 w = modelMatrix * vec4(position + vec3(aTile.x, heightNow() + 0.004, -aTile.y), 1.0);
+  float burst = burstNow();
+  vBurst = burst;
+  // shoot up and widen a little on a landing
+  vec3 pos = position * vec3(1.0 + 0.25 * burst, 1.0 + 2.2 * burst, 1.0 + 0.25 * burst);
+  vec4 w = modelMatrix * vec4(pos + vec3(aTile.x, heightNow() + 0.004, -aTile.y), 1.0);
   vWorld = w.xyz;
   vN = normalize(mat3(modelMatrix) * normal);
   gl_Position = projectionMatrix * viewMatrix * w;
@@ -42,6 +61,7 @@ uniform vec3 uColor;
 uniform vec3 uEvents[${MAX_EVENTS}];
 uniform float uAppearT0;
 varying float vV;
+varying float vBurst;
 varying vec3 vN;
 varying vec3 vWorld;
 varying vec2 vTile;
@@ -52,19 +72,12 @@ void main() {
   float fall = pow(1.0 - vV, 1.6);
   float a = fall * (0.2 + 0.32 * edge);
   // glow brighter for a moment when a frog lands here
-  float burst = 0.0;
-  for (int i = 0; i < ${MAX_EVENTS}; i++) {
-    vec3 e = uEvents[i];
-    float age = uTime - e.z;
-    if (age < 0.0 || age > 0.9) continue;
-    if (abs(e.x - vTile.x) > 0.5 || abs(e.y - vTile.y) > 0.5) continue;
-    burst = max(burst, 1.0 - age / 0.9);
-  }
-  a += fall * 0.3 * burst;
+  float burst = vBurst;
+  a += (0.25 + 0.45 * edge) * burst * pow(1.0 - vV, 0.8);
   // fade in when the goals are revealed
   a *= smoothstep(0.0, 0.7, uTime - uAppearT0);
   vec3 col = mix(uColor, vec3(1.0, 0.93, 0.72), 0.25 + 0.4 * burst);
-  gl_FragColor = vec4(col, min(a, 0.85));
+  gl_FragColor = vec4(col, min(a, 0.92));
   #include <colorspace_fragment>
 }
 `;

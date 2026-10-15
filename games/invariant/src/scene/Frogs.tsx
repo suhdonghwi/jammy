@@ -151,6 +151,17 @@ function hopAt(u: number, h0: number, h1: number, H: number) {
   else h = h1;
   return { g, h };
 }
+/** The happy hop on a goal (seconds) and its squash: crouch, stretch up, squash on landing. */
+const CHEER_DUR = 0.62;
+const CHEER_KEYS = [
+  [0, 0],
+  [0.12, 0],
+  [0.27, -0.16],
+  [0.38, 0.13],
+  [0.7, 0],
+  [0.85, -0.12],
+  [1, 0],
+] as const;
 /** A turn on the spot (seconds). */
 const TURN_DUR = 0.2;
 
@@ -204,6 +215,15 @@ function pose(f: FrogSim, t: number): Pose {
     // nose follows the vertical velocity: up while rising, down while falling
     const vy = (hopAt(Math.min(1, u + 0.01), h0, h1, H).h - hopAt(Math.max(0, u - 0.01), h0, h1, H).h) / 0.02;
     pitch = -Math.max(-0.35, Math.min(0.35, vy * 0.07)) * Math.min(1, dist);
+  }
+  // happy hop on a goal: settle from the landing, crouch, spring up, land
+  if (f.cheerT0 !== undefined && !f.hop) {
+    const u = (t - f.cheerT0) / CHEER_DUR;
+    if (u >= 1) f.cheerT0 = undefined;
+    else if (u > 0) {
+      h += 0.22 * bump(clamp01((u - 0.3) / 0.55));
+      squash += keyed(u, CHEER_KEYS);
+    }
   }
   if (turnLift > 0) {
     h += 0.09 * turnLift;
@@ -353,7 +373,10 @@ export function Frogs() {
     const level = useGame.getState().level;
     if (level) {
       for (const f of dropLandings) {
-        if (level.fast.guard(toNum(f.state)) !== true && level.fast.post(toNum(f.state)) === true) goalEvents.push(f.x, f.y, f.pond);
+        if (level.fast.guard(toNum(f.state)) !== true && level.fast.post(toNum(f.state)) === true) {
+          goalEvents.push(f.x, f.y, f.pond);
+          f.cheerT0 = now();
+        }
       }
     }
     dropLandings.length = 0;
