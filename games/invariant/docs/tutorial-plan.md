@@ -124,7 +124,7 @@ spotlights as in the current script unless noted.
 Button: "Let's go".
 
 **1.1 A frog and its tile.** The axes appear (the numbered row and column as
-a band, each with a chip naming its variable; new), and one frog with its
+a band, each named in the corner before its 0; new), and one frog with its
 tag.
 
 > This frog is one run of the program. The tile it sits on is its **state**:
@@ -358,10 +358,11 @@ is read-only during a demo.
 Scene and HUD:
 
 - **Axes** (`floorShader.ts` and `scene/labels/AxisLabels.tsx`): the floor
-  tints the row and the column of numbers as a soft band, and a flat chip
-  with the variable's name ("i →", "n ↑") lies just outside each band near
-  the origin, static like a chart's axis titles. Lines were tried and
-  collided with the stop boundary, which runs in the same tile gaps; chips
+  tints the row and the column of numbers as a soft band, and each axis's
+  name is written where its numbers are, in the corner of the tile before the
+  0, so the row reads "i → 0 1 2 3" and the column "n ↑ 0 1 2 3". Like the
+  numbers it hides nothing. Lines were tried and collided with the stop
+  boundary, which runs in the same tile gaps; chips covered tiles, and chips
   that followed the camera were distracting. On in levels too.
 - **Ghost assert line** in the code panel: a reveal flag `assert` draws
   `assert(???);` as the loop body's first line, dimmed; from 1.10 on, `???` is

@@ -197,16 +197,15 @@ export function sceneFont(): Promise<string> {
 }
 
 /**
- * A short text as a chip (a pill with the text inside) in a texture, for
- * labels lying flat on the floor in the same font as the tile numbers.
- * `aspect` is width / height of the chip.
+ * A short text in a texture, for labels lying flat on the floor in the same
+ * font as the tile numbers. `aspect` is width / height of the text's box.
  */
-export function chipTexture(text: string, color: string, fill: string): { tex: THREE.CanvasTexture; aspect: number } {
+export function textTexture(text: string, color: string): { tex: THREE.CanvasTexture; aspect: number } {
   const canvas = document.createElement('canvas');
-  const h = 112;
+  const h = 104;
   const g = canvas.getContext('2d')!;
-  g.font = `600 72px ${FALLBACK_FONT}`;
-  const w = Math.ceil(g.measureText(text).width) + 72;
+  g.font = `600 84px ${FALLBACK_FONT}`;
+  const w = Math.ceil(g.measureText(text).width) + 8;
   canvas.width = w;
   canvas.height = h;
   const tex = new THREE.CanvasTexture(canvas);
@@ -215,15 +214,11 @@ export function chipTexture(text: string, color: string, fill: string): { tex: T
   tex.colorSpace = THREE.SRGBColorSpace;
   const draw = (family: string) => {
     g.clearRect(0, 0, w, h);
-    g.fillStyle = fill;
-    g.beginPath();
-    g.roundRect(2, 2, w - 4, h - 4, h / 2);
-    g.fill();
     g.fillStyle = color;
-    g.font = `600 72px ${family}`;
+    g.font = `600 84px ${family}`;
     g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(text, w / 2, h / 2 + 4);
+    g.textBaseline = 'alphabetic';
+    g.fillText(text, w / 2, h - 18);
     tex.needsUpdate = true;
   };
   draw(FALLBACK_FONT);

@@ -77,9 +77,10 @@ void main() {
     if (onCross) tcol = st ? mix(tcol, uCross * vec3(0.9, 0.94, 1.0), 0.7) : mix(tcol, uCross, 0.9);
     if (st && uShowGoal > 0.002 && L_goal(t)) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
     if (uShowAxes > 0.002) {
+      // the tile before each axis's 0 carries the axis's name instead (AxisLabels)
       float m = 0.0;
-      if (t.y == 0) m = numberMask(f, t.x);
-      else if (t.x == 0) m = numberMask(f, t.y);
+      if (t.y == 0 && t.x != -1) m = numberMask(f, t.x);
+      else if (t.x == 0 && t.y != -1) m = numberMask(f, t.y);
       tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
     }
     col = mix(uGap, tcol, inside);
