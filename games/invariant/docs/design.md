@@ -143,9 +143,10 @@ per row, whole egg regions, and one egg per plane.
 Every level carries:
 
 - **solutions** — known-good invariants, all proved at build time. The first
-  is the **model answer**: once a learner proves a different formula, the
-  success caption shows it and says whether theirs is the same area written
-  another way or a different area that works too (invariants aren't unique);
+  is the **model answer**: after a proof, the success caption says whether
+  the learner typed exactly it, the same area written another way, or a
+  different area that works too (invariants aren't unique), showing it in
+  the last two cases;
 - **pitfalls** — the wrong answers learners are expected to try, each with a
   tailored message, each verified to fail;
 - **hints** — two or three, behind a Hint button, revealed one at a time:

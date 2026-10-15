@@ -95,19 +95,19 @@ export async function check() {
   const next = levels[levels.findIndex((l) => l.id === level.id) + 1];
   useGame.setState({
     caption: {
-      text: `Proved. Every frog, everywhere you claimed — for every input.${model ? `\n\n${model}` : ''}`,
+      text: `Proved. Every frog, everywhere you claimed — for every input.\n\n${model}`,
       tone: 'success',
       action: next ? { label: `Next: ${next.title}`, onClick: () => openLevel(next) } : { label: 'Back to levels', onClick: () => goMenu('levels') },
     },
   });
 }
 
-/** A line about the model answer for the success caption; nothing when the learner typed it. */
-function modelNote(model: string, match: ModelMatch): string | null {
+/** A line about the model answer for the success caption. */
+function modelNote(model: string, match: ModelMatch): string {
   const m = `\`${model}\``;
   switch (match) {
     case 'typed':
-      return null;
+      return 'That’s exactly the model answer.';
     case 'same':
       return `The model answer, ${m}, is the same area written another way.`;
     case 'different':
