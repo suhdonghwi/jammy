@@ -9,6 +9,7 @@ import { RULES, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';
+import { markCleared } from './progress';
 import { useGame } from './store';
 
 // What the app's buttons do: open a level or the tutorial, go back to the
@@ -88,6 +89,7 @@ export async function check() {
   }
   // compared while the frogs rain, so the caption doesn't wait on it
   const level = g.level;
+  markCleared(level.id);
   const match = browserZ3()
     .then((ctx) => compareToModel(ctx, level, g.valid!))
     .catch((): ModelMatch => 'unknown');
