@@ -59,27 +59,29 @@ const upTo = (r: Rule): Rule[] => ALL.slice(0, ALL.indexOf(r) + 1);
 /** The learner's area, as inline code. */
 const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
-/** Tiles near the camera's home that satisfy `test`, nearest first, at most `n`. */
-function tilesWhere(test: (x: number, y: number) => boolean, n: number): [number, number][] {
+/** Tiles in the tutorial's view that satisfy `test`. */
+function tilesWhere(test: (x: number, y: number) => boolean): [number, number][] {
   const out: [number, number][] = [];
-  for (let y = 0; y <= 7; y++) for (let x = 0; x <= 9; x++) if (test(x, y)) out.push([x, y]);
-  return out.sort((a, b) => Math.hypot(a[0] - 2, a[1] - 2) - Math.hypot(b[0] - 2, b[1] - 2)).slice(0, n);
+  for (let y = 0; y <= 9; y++) for (let x = 0; x <= 11; x++) if (test(x, y)) out.push([x, y]);
+  return out;
 }
+
+/** Green outlines on tiles (no text: the caption says what they show). */
+const outlines = (tiles: [number, number][]) => tiles.map(([x, y]) => ({ x, y, text: '', tone: 'good' as const }));
 
 /**
  * A stage passed: say so, with the rule's own evidence in the scene — the eggs
- * on the area, a shower of frogs that all land on it again, or the stop tiles
- * on it that are goals.
+ * on the area outlined, a shower of frogs that all land on it again, or the
+ * stop tiles on it (all goals) outlined.
  */
 async function passed(gen: number, rule: Rule) {
   const L = useGame.getState().level!;
   const { pond, valid } = useGame.getState();
   const inArea = (x: number, y: number) => !!valid && valid.fast(tileState(L, x, y, pond)) === true;
   if (rule === 'init') {
-    const eggs = eggsNear(L, pond, 2, 2, 4).slice(0, 3);
     await beat(gen, 'Every egg sits on your area: the first rule holds.', {
       spot: 'lights',
-      callouts: eggs.map(([x, y]) => ({ x, y, text: 'on your area', tone: 'good' as const })),
+      callouts: outlines(eggsNear(L, pond, 4, 4, 6)),
     });
   } else if (rule === 'pres') {
     await beat(gen, 'No hop leaves your area: the second rule holds. A frog anywhere on it lands on it again.', {
@@ -88,10 +90,10 @@ async function passed(gen: number, rule: Rule) {
     });
     frogWorld.clear('test');
   } else {
-    const stops = tilesWhere((x, y) => L.fast.pondReq(tileState(L, x, y, pond)) === true && L.fast.guard(tileState(L, x, y, pond)) !== true && inArea(x, y), 3);
+    const stops = tilesWhere((x, y) => L.fast.pondReq(tileState(L, x, y, pond)) === true && L.fast.guard(tileState(L, x, y, pond)) !== true && inArea(x, y));
     await beat(gen, 'Every frog that stops on your area is on a goal: the third rule holds.', {
       spot: 'lights',
-      callouts: stops.map(([x, y]) => ({ x, y, text: 'stops on a goal', tone: 'good' as const })),
+      callouts: outlines(stops),
     });
   }
 }

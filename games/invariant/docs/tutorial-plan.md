@@ -339,10 +339,10 @@ The Tab hint is shown only while the box is empty (today it stays while Tab
 does nothing).
 
 **Pass.** When a stage passes, a beat says so with the rule's own evidence in
-the scene before anything else happens: "on your area" tags on the eggs
-(Init), a light shower of test frogs that all land on the area again
-(Preservation), "stops on a goal" tags on the area's stop tiles (Exit). Then
-Next.
+the scene before anything else happens: green outlines on the eggs (Init), a
+light shower of test frogs that all land on the area again (Preservation),
+green outlines on the area's stop tiles (Exit). Outlines only, no tags: the
+caption says what they show. Then Next.
 
 **Predict.** A yes-or-no question, with Yes and No as buttons that carry a
 green tick and a red cross:

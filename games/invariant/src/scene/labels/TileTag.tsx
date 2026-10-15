@@ -8,7 +8,7 @@ import { sceneNow } from '../sceneTime';
 import { SceneTag, type TagTone } from './SceneTag';
 
 // A labelled tile: an outline (and optionally a faint wash) on the tile, and a
-// small tag above it.
+// small tag above it (none when the label is empty: just the outline).
 
 const TONE_COLORS: Record<TagTone, string> = {
   info: '#2b3445',
@@ -89,10 +89,12 @@ export function TileTag({ x, y, label, tone, pulse = false, wash = false, leavin
           <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
         </mesh>
       </group>
-      <SceneTag anchor={{ tile: [x, y] }} tone={tone} leaving={leaving}>
-        {TONE_PREFIX[tone]}
-        {label}
-      </SceneTag>
+      {label !== '' && (
+        <SceneTag anchor={{ tile: [x, y] }} tone={tone} leaving={leaving}>
+          {TONE_PREFIX[tone]}
+          {label}
+        </SceneTag>
+      )}
     </>
   );
 }
