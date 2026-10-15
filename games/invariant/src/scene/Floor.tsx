@@ -86,7 +86,9 @@ void main() {
     if (uShowGoal > 0.002) col = mix(col, SPLASH, splashAt(p) * 0.45 * uShowGoal);
 
   } else {
-    col = uVoid;
+    // no state can be here (ruled out by the precondition): a faint ghost of a
+    // tile, so the plane doesn't just end, yet clearly not a place frogs go
+    col = mix(uVoid, uTile, inside * 0.3);
   }
 
   // Boundary between the continue and stop regions. Drawn from the grid lines
