@@ -37,12 +37,17 @@ export function HomeOverlay() {
       >
         <HeroCopy behind={view === 'levels'} />
       </div>
-      {picker.mounted && <LevelPicker leaving={picker.leaving} instant={instant} />}
-      <div className="fixed top-4 right-4 flex animate-[fade_0.4s_ease-out_both] items-center gap-2">
+      {/* the corner controls too: behind the level list (it comes later in the DOM), faded back like the title */}
+      <div
+        className={`fixed top-4 right-4 flex animate-[fade_0.4s_ease-out_both] items-center gap-2 transition-opacity duration-180 ${
+          view === 'levels' ? 'opacity-35' : ''
+        }`}
+      >
         <ResetProgress />
         <SoundToggle />
         <LangSwitch />
       </div>
+      {picker.mounted && <LevelPicker leaving={picker.leaving} instant={instant} />}
     </>
   );
 }
