@@ -72,7 +72,9 @@ void main() {
       tcol = mix(uTile, mix(uStop, uHatch, hatch * 0.55), uShowStop);
     }
     bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
-    if (onCross && !st) tcol = mix(tcol, uCross, 0.9);
+    // the hovered tile's row and column, across striped tiles too (tinted
+    // more lightly there, so the stripes still show through)
+    if (onCross) tcol = st ? mix(tcol, uCross * vec3(0.9, 0.94, 1.0), 0.7) : mix(tcol, uCross, 0.9);
     if (st && uShowGoal > 0.002 && L_goal(t)) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
     if (uShowAxes > 0.002) {
       float m = 0.0;
