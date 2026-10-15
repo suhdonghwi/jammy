@@ -1,19 +1,21 @@
 import { conjuncts, type Expr, type State } from '../lang/ast';
-import { compileFast, holds, type FastFn } from '../lang/eval';
-import { hop, startState, toBig, type CompiledLevel, type Rule } from '../levels/level';
+import { compileFast, holds, type FastFn, type FastState } from '../lang/eval';
+import { hop, startState, toBig, type CompiledLevel, type Inputs, type Rule } from '../levels/level';
 import type { Counterexample } from './types';
 
 // Brute-force search of the states around the camera: finds the nicest
-// counterexamples quickly, before the solver has to.
+// counterexamples quickly, before the solver has to. It looks through the
+// plane in view and the planes of nearby integer inputs; an array is only
+// ever the one in view (other arrays are the solver's job).
 
 export interface Box {
   cx: number;
   cy: number;
   /** Half-size of the tile box. */
   r: number;
-  /** Focused plane (if the level has planes). */
-  plane?: number;
-  /** How many planes to search on each side of the focused one. */
+  /** The plane in view: the off-axis inputs. */
+  inputs: Inputs;
+  /** How many values of an integer input to search on each side of the one in view. */
   planeR: number;
 }
 
@@ -25,25 +27,36 @@ export function brokenConjunct(inv: Expr, src: string, s: State): string | undef
   return bad ? src.slice(bad.span.from, bad.span.to) : undefined;
 }
 
-type NumState = Record<string, number>;
+type NumState = FastState;
+type Ranges = Record<string, (number | number[])[]>;
 
-function ranges(level: CompiledLevel, box: Box): Record<string, number[]> {
+/** The integer inputs the search varies: not on an axis, and not an array's length (which follows its array). */
+function freeInputs(level: CompiledLevel): string[] {
+  const lengths = new Set(Object.values(level.arrays));
+  return level.offAxis.filter((n) => !level.arrays[n] && !lengths.has(n));
+}
+
+function ranges(level: CompiledLevel, box: Box): Ranges {
   const span = (c: number, r: number) => Array.from({ length: 2 * r + 1 }, (_, k) => c - r + k);
-  const out: Record<string, number[]> = {
+  const out: Ranges = {
     [level.view.x]: span(Math.round(box.cx), box.r),
     [level.view.y]: span(Math.round(box.cy), box.r),
   };
-  if (level.plane) {
-    const p = box.plane ?? 0;
+  for (const n of level.offAxis) out[n] = [box.inputs[n]];
+  // several integer inputs multiply the search: fewer planes each
+  const free = freeInputs(level);
+  const planeR = free.length > 2 ? Math.min(box.planeR, 3) : free.length === 2 ? Math.min(box.planeR, 6) : box.planeR;
+  for (const n of free) {
+    const p = Number(box.inputs[n] ?? 0);
     // nearest planes first
     const ps = [p];
-    for (let d = 1; d <= box.planeR; d++) ps.push(p - d, p + d);
-    out[level.plane] = ps;
+    for (let d = 1; d <= planeR; d++) ps.push(p - d, p + d);
+    out[n] = ps;
   }
   return out;
 }
 
-function* product(dims: string[], rs: Record<string, number[]>): Generator<NumState> {
+function* product(dims: string[], rs: Ranges): Generator<NumState> {
   const s: NumState = {};
   function* go(k: number): Generator<NumState> {
     if (k === dims.length) {
@@ -70,11 +83,12 @@ export function boxSearch(
 ): Partial<Record<Rule, Counterexample>> {
   const rs = ranges(level, box);
   const f = level.fast;
-  const focus = box.plane ?? 0;
+  const free = freeInputs(level);
   const score = (s: NumState) => {
-    const pd = level.plane ? Math.abs(s[level.plane] - focus) : 0;
-    const x = s[level.view.x];
-    const y = s[level.view.y];
+    let pd = 0;
+    for (const n of free) pd += Math.abs(Number(s[n]) - Number(box.inputs[n] ?? 0));
+    const x = s[level.view.x] as number;
+    const y = s[level.view.y] as number;
     const mag = Math.abs(x) + Math.abs(y);
     const cam = Math.abs(x - box.cx) + Math.abs(y - box.cy);
     return pd * 1e8 + mag * 1e4 + cam;
@@ -87,7 +101,7 @@ export function boxSearch(
   };
 
   if (rules.includes('initialization')) {
-    // Enumerate free dims; free dims are always on an axis or on the slider.
+    // Enumerate free dims; free dims are always on an axis or in the inputs card.
     for (const free of product(level.freeDims, rs)) {
       if (!f.planeReq(free)) continue;
       const start: NumState = { ...free };

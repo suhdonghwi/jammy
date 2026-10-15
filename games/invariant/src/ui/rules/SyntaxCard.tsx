@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
-import { displayNames } from '../../levels/level';
+import { scalarNames } from '../../levels/level';
 import { button } from '../classes';
 import { HighlightedCode } from '../codeColors';
 import { closeDialog, Dialog } from '../Dialog';
@@ -12,7 +12,7 @@ import { closeDialog, Dialog } from '../Dialog';
 
 export function SyntaxCard() {
   const level = useGame((s) => s.level);
-  const [a, b] = level ? displayNames(level) : ['i', 'n'];
+  const [a, b] = level ? scalarNames(level) : ['i', 'n'];
   // array examples only in a level with an array, written with its own array and length
   const arr = level ? Object.entries(level.arrays)[0] : undefined;
   const s = useT().syntax;

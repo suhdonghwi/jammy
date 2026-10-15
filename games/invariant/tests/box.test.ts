@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { boxSearch } from '../src/checker/box';
 import { tutorialLevel, levels } from '../src/levels/catalog';
-import { compileFormula, compileLevel } from '../src/levels/level';
+import { compileFormula, compileLevel, startInputs } from '../src/levels/level';
 
 const tut = compileLevel(tutorialLevel);
 const box = { cx: 0, cy: 0, r: 20, planeR: 20 };
 const search = (lvl: ReturnType<typeof compileLevel>, f: string, b = box) => {
   const r = compileFormula(lvl, f);
   if (!r.ok) throw r.error;
-  return boxSearch(lvl, r, b);
+  return boxSearch(lvl, r, { ...b, inputs: startInputs(lvl) });
 };
 const num = (s: Record<string, bigint | bigint[]>) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Array.isArray(v) ? v.map(Number) : Number(v)]));
 

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Formula } from '../checker/check';
 import type { Verdicts } from '../checker/types';
-import { compileFormula, compileLevel, type CompiledLevel, type FormulaResult, type LevelDef, type Rule } from '../levels/level';
+import { compileFormula, compileLevel, startInputs, type CompiledLevel, type FormulaResult, type Inputs, type LevelDef, type Rule } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 
 // The game's state, shared by the scene, the HUD and the scripted sequences.
@@ -80,7 +80,8 @@ export interface Game {
   /** On the home screen: the title, or the level picker. */
   menuView: 'home' | 'levels';
   level: CompiledLevel | null;
-  plane: number;
+  /** The plane in view: the off-axis inputs' values (see the inputs card). */
+  inputs: Inputs;
   formulaText: string;
   formula: FormulaResult | null;
   /** Last valid formula — the slabs follow it. */
@@ -124,6 +125,8 @@ export interface Game {
   spotLines: number[];
   /** Tutorial: the UI element the caption is talking about. */
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
+  /** The input whose row in the inputs card is hovered: its declaration lights up in the code. */
+  inputHover: string | null;
   /** Bumped when Check is pressed with an invalid formula (shows the inline error at once). */
   errorNudge: number;
   /** Tutorial labels: over tile (x, y), or riding along with a frog when `frog` (its id) is set; an empty text is an outline alone. */
@@ -141,7 +144,7 @@ export const useGame = create<Game>((set, get) => ({
   mode: 'menu',
   menuView: 'home',
   level: null,
-  plane: 0,
+  inputs: {},
   formulaText: '',
   formula: null,
   valid: null,
@@ -172,6 +175,7 @@ export const useGame = create<Game>((set, get) => ({
   spotLines: [],
   nextAction: null,
   spotlight: null,
+  inputHover: null,
 
   openLevel(def, mode) {
     // in the current language: its title, intro, hints and pitfalls
@@ -179,7 +183,7 @@ export const useGame = create<Game>((set, get) => ({
     set({
       mode,
       level,
-      plane: def.planes?.start ?? 0,
+      inputs: startInputs(level),
       formulaText: '',
       formula: null,
       valid: null,
@@ -203,6 +207,7 @@ export const useGame = create<Game>((set, get) => ({
       spotLines: [],
       nextAction: null,
       spotlight: null,
+      inputHover: null,
     });
   },
   backToMenu(view = 'home') {

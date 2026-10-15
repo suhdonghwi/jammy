@@ -3,9 +3,9 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { tokenize } from '../../lang/parser';
-import type { CompiledLevel } from '../../levels/level';
-import { tokenClass } from '../codeColors';
+import { planeExists, type CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
+import { tokenClass } from '../codeColors';
 
 // The program, with the loop lighting up as frogs hop and a ghost `assert(?)`
 // line standing for the invariant at the top of the loop. On phones it folds
@@ -27,6 +27,10 @@ interface Beat {
   assert: boolean;
   /** Lines the tutorial's caption is talking about (1-based). */
   spotLines: number[];
+  /** The input whose row in the inputs card is hovered: its declaration lights up. */
+  inputHover: string | null;
+  /** The inputs in view are ruled out by the precondition: its lines say so. */
+  impossible: boolean;
 }
 
 /**
@@ -66,6 +70,8 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   }
   const lineOf = (pos: number) => lines.findIndex((l) => pos >= l.from && pos <= l.to);
   const headerLine = lineOf(header.from);
+  const hoverLine = beat.inputHover ? lineOf(level.program.inputDecls.find((d) => d.name === beat.inputHover)?.span.from ?? -1) : -1;
+  const requiresLines = beat.impossible ? level.program.requires.map((r) => lineOf(r.span.from)) : [];
   const bodyFirst = stmts.length ? lineOf(stmts[0].span.from) : -1;
   const bodyLast = stmts.length ? lineOf(stmts[stmts.length - 1].span.to) : -2;
   const rows = lines.map((l, i) => {
@@ -82,7 +88,8 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
       // as long as the hop itself
       if (beat.hopTick > 0) style = { animation: `body-run ${Math.max(0.3, beat.hopDur + 0.15)}s ease-out` };
     }
-    if (beat.spotLines.includes(i + 1)) cls += ' rounded-md bg-brand-soft';
+    if (beat.spotLines.includes(i + 1) || i === hoverLine) cls += ' rounded-md bg-brand-soft';
+    if (requiresLines.includes(i)) cls += ' rounded-md bg-warn-soft';
     return (
       <div key={key} className={cls} style={style}>
         <span>{piece(l.from, l.to, `l${i}`)}</span>
@@ -114,9 +121,11 @@ export function CodePanel() {
   const reveal = useGame((s) => s.reveal);
   const spotLines = useGame((s) => s.spotLines);
   const assert = useGame((s) => s.reveal.assert);
+  const inputHover = useGame((s) => s.inputHover);
+  const impossible = useGame((s) => !planeExists(level, s.inputs));
   const nodes = useMemo(
-    () => highlightSource(level, { hopTick, hopDur, landTick, landGuard, assert, spotLines }),
-    [level, hopTick, hopDur, landTick, landGuard, assert, spotLines],
+    () => highlightSource(level, { hopTick, hopDur, landTick, landGuard, assert, spotLines, inputHover, impossible }),
+    [level, hopTick, hopDur, landTick, landGuard, assert, spotLines, inputHover, impossible],
   );
   const spot = useGame((s) => s.spotlight);
   const [folded, setFolded] = useState(false);
@@ -129,7 +138,7 @@ export function CodePanel() {
     // wide enough for the longest program line in the catalog; anything longer scrolls sideways rather than spilling.
     // No taller than the room between the top bar and the caption (a long caption on a phone): the code scrolls
     // inside it, not the card, whose spotlight ring would be clipped
-    <div data-frame="top" className={`${CARD} flex max-h-full max-w-105 animate-slide-in flex-col px-4 pt-3.25 pb-3 max-md:max-w-52 max-md:p-2.5 ${spot === 'code' ? 'spotlight' : ''}`}>
+    <div data-frame="top" className={`${CARD} flex min-h-0 animate-slide-in flex-col px-4 pt-3.25 pb-3 max-md:p-2.5 ${spot === 'code' ? 'spotlight' : ''}`}>
       {/* folding only exists on phones; elsewhere the title is just a label */}
       <button
         className={`${CARD_LABEL} flex w-full items-center justify-between gap-1.5 max-sm:cursor-pointer sm:pointer-events-none ${open ? '' : 'max-sm:mb-0'}`}

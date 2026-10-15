@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
+import type { FastState } from '../../lang/eval';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { useHover } from '../hover';
@@ -13,7 +14,7 @@ import { tileState } from '../tiles';
 /** Where would a frog on the hovered tile hop? A dashed arc and a ghost frog. */
 export function HoverPreview() {
   const level = useGame((s) => s.level)!;
-  const plane = useGame((s) => s.plane);
+  const inputs = useGame((s) => s.inputs);
   const enabled = useGame((s) => s.reveal.hover && !s.busy);
   const tile = useHover((s) => s.tile);
   const ghost = useRef<THREE.Group>(null);
@@ -26,12 +27,12 @@ export function HoverPreview() {
 
   const hop = useMemo(() => {
     if (!tile) return null;
-    const s = tileState(level, tile[0], tile[1], plane);
+    const s = tileState(level, tile[0], tile[1], inputs);
     if (!level.fast.planeReq(s) || level.fast.guard(s) !== true) return null;
-    const n: Record<string, number> = { ...s };
+    const n: FastState = { ...s };
     for (const v in level.fast.next) n[v] = level.fast.next[v](s) as number;
-    return { from: tile, to: [n[level.view.x], n[level.view.y]] as [number, number] };
-  }, [tile, level, plane]);
+    return { from: tile, to: [n[level.view.x] as number, n[level.view.y] as number] as [number, number] };
+  }, [tile, level, inputs]);
 
   useFrame(() => {
     const g = ghost.current;

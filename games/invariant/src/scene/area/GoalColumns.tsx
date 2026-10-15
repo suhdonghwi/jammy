@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
-import type { CompiledLevel } from '../../levels/level';
+import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
 import { COLORS, SLAB_H } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
@@ -79,27 +79,29 @@ void main() {
 
 export function GoalColumns({
   level,
-  plane,
+  inputs,
   win,
   version,
 }: {
   level: CompiledLevel;
-  plane: number;
+  inputs: Inputs;
   win: TileWindow;
   version: number;
 }) {
+  const key = planeKey(inputs);
   const tiles = useMemo(() => {
     const out: [number, number][] = [];
     const f = level.fast;
     const R = Math.min(win.R, 24);
     for (let y = win.cy - R; y <= win.cy + R; y++) {
       for (let x = win.cx - R; x <= win.cx + R; x++) {
-        const s = tileState(level, x, y, plane);
+        const s = tileState(level, x, y, inputs);
         if (f.planeReq(s) && f.guard(s) !== true && f.post(s) === true) out.push([x, y]);
       }
     }
     return out;
-  }, [level, plane, win]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level, key, win]);
 
   const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
   const geom = useMemo(() => {
@@ -140,7 +142,7 @@ export function GoalColumns({
   useFrame(() => {
     material.uniforms.uTime.value = sceneNow();
     const g = useGame.getState();
-    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.plane ? g.plane : undefined);
+    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], planeKey(g.inputs));
   });
   return <mesh geometry={geom} material={material} frustumCulled={false} renderOrder={6} />;
 }

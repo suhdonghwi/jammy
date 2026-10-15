@@ -7,8 +7,21 @@ import { checkCondition, checkProgram, programScope, type Scope } from '../lang/
 // The level format, compiling a level's program for play (exact and fast
 // evaluation), and helpers for program states.
 
+/**
+ * Values of the inputs that are not on an axis: one plane of the state space.
+ * Arrays are at most MAX_LEN long (what the inputs card and the floor can show).
+ */
+export type Inputs = Record<string, number | number[]>;
+
 /** The longest array the game shows; proofs are not bounded by it. */
 export const MAX_LEN = 32;
+
+/** How the dice button draws an array input: a length and cell values in these ranges, sorted when the level needs it. */
+export interface Dice {
+  length: [number, number];
+  values: [number, number];
+  sorted?: boolean;
+}
 
 export type Rule = 'initialization' | 'maintenance' | 'termination';
 export const RULES: Rule[] = ['initialization', 'maintenance', 'termination'];
@@ -24,7 +37,7 @@ export interface LevelDef {
   id: string;
   title: string;
   source: string;
-  /** Which variables go on the plane's axes. A leftover input becomes the plane slider: one plane per value. */
+  /** Which variables go on the plane's axes. The inputs left over are picked in the inputs card: one plane per choice. */
   view: { x: string; y: string };
   /** Known-good areas; after a proof, the success caption lists them (all but the one typed). */
   solutions: string[];
@@ -35,19 +48,23 @@ export interface LevelDef {
   hints?: string[];
   /** Camera target tile and distance. */
   camera?: { x: number; y: number; distance?: number };
-  /** Slider range and starting plane. */
-  planes?: { min: number; max: number; start: number };
+  /** Starting values of the off-axis inputs (0 and the empty array otherwise). */
+  start?: Inputs;
+  /** How the dice button draws each array input. */
+  dice?: Record<string, Dice>;
 }
 
 export interface CompiledLevel extends LevelDef {
   program: Program;
   inputs: string[];
   vars: string[];
+  /** Every name: inputs (arrays too), then variables. */
   names: string[];
   scope: Scope;
   /** Array inputs: name → the input that is its length. */
   arrays: Record<string, string>;
-  plane?: string;
+  /** The inputs that are not on an axis (arrays, their lengths, and other inputs): the plane. */
+  offAxis: string[];
   /** Inputs + variables without an initializer: what a start state is chosen from. */
   freeDims: string[];
   /** Initial value of each initialized variable, in terms of free dims. */
@@ -82,10 +99,16 @@ export function compileLevel(def: LevelDef): CompiledLevel {
   for (const a of [x, y]) {
     if (scope.get(a) !== 'int') throw new Error(`[${def.id}] view axis '${a}' is not an integer variable`);
   }
-  const rest = names.filter((n) => n !== x && n !== y);
-  if (rest.length > 1) throw new Error(`[${def.id}] at most one name may be off-axis`);
-  const plane = rest[0];
-  if (plane && !inputs.includes(plane)) throw new Error(`[${def.id}] off-axis '${plane}' must be an input`);
+  const offAxis = names.filter((n) => n !== x && n !== y);
+  for (const n of offAxis) {
+    if (!inputs.includes(n)) throw new Error(`[${def.id}] off-axis '${n}' must be an input`);
+  }
+  for (const len of Object.values(arrays)) {
+    if (!offAxis.includes(len)) throw new Error(`[${def.id}] an array's length '${len}' can't be on an axis`);
+  }
+  for (const n of Object.keys(def.start ?? {})) {
+    if (!offAxis.includes(n)) throw new Error(`[${def.id}] starting input '${n}' is not an off-axis input`);
+  }
 
   const initExprs: Record<string, Expr> = {};
   const freeDims = [...inputs];
@@ -113,7 +136,7 @@ export function compileLevel(def: LevelDef): CompiledLevel {
     names,
     scope,
     arrays,
-    plane,
+    offAxis,
     freeDims,
     initExprs,
     planeReq,
@@ -186,6 +209,60 @@ export function toBig(s: FastState): State {
   return o;
 }
 
+// ---- the plane: the off-axis inputs ----
+
+/** Where a level starts: its given inputs, 0 for the rest, and every array's length matching it. */
+export function startInputs(level: CompiledLevel): Inputs {
+  const out: Inputs = {};
+  for (const n of level.offAxis) out[n] = level.arrays[n] ? [] : 0;
+  Object.assign(out, level.start);
+  return withLengths(level, out);
+}
+
+/** The same inputs with each array's length input set to the array's length. */
+export function withLengths(level: CompiledLevel, inputs: Inputs): Inputs {
+  const out = { ...inputs };
+  for (const [arr, len] of Object.entries(level.arrays)) out[len] = (out[arr] as number[]).length;
+  return out;
+}
+
+/** The plane a state is in: its off-axis inputs. */
+export function inputsOf(level: CompiledLevel, s: State | FastState): Inputs {
+  const out: Inputs = {};
+  for (const n of level.offAxis) {
+    const v = s[n];
+    out[n] = Array.isArray(v) ? v.map(Number) : Number(v);
+  }
+  return out;
+}
+
+/** A key naming a plane, so frogs and effects know which plane they are on. */
+export function planeKey(inputs: Inputs): string {
+  return Object.keys(inputs)
+    .sort()
+    .map((k) => `${k}=${String(inputs[k])}`)
+    .join(';');
+}
+
+/** The inputs' part of the precondition holds: there are states in this plane. */
+export function planeExists(level: CompiledLevel, inputs: Inputs): boolean {
+  return level.fast.planeReq({ ...inputs, [level.view.x]: 0, [level.view.y]: 0 }) === true;
+}
+
+/** Draw an array for the dice button: random cells that fit the level's precondition (a few tries, then the best effort). */
+export function rollArray(level: CompiledLevel, inputs: Inputs, name: string): Inputs {
+  const d = level.dice?.[name] ?? { length: [1, 6], values: [0, 9] };
+  const rand = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  let next = inputs;
+  for (let tries = 0; tries < 50; tries++) {
+    const arr = Array.from({ length: Math.min(MAX_LEN, rand(d.length[0], d.length[1])) }, () => rand(d.values[0], d.values[1]));
+    if (d.sorted) arr.sort((a, b) => a - b);
+    next = withLengths(level, { ...inputs, [name]: arr });
+    if (planeExists(level, next)) break;
+  }
+  return next;
+}
+
 /** Where the camera starts on a level: the tile it centres and how far back it sits. */
 export function startView(level: CompiledLevel): { x: number; y: number; distance: number } {
   const cam = level.camera ?? { x: 0, y: 0 };
@@ -198,6 +275,11 @@ export function displayNames(level: CompiledLevel): string[] {
   return [x, y, ...level.names.filter((n) => n !== x && n !== y)];
 }
 
+/** The integer names, in display order: what a tile or a frog is labelled with (arrays are in the inputs card). */
+export function scalarNames(level: CompiledLevel): string[] {
+  return displayNames(level).filter((n) => !level.arrays[n]);
+}
+
 export function showState(level: CompiledLevel, s: State): string {
-  return displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
+  return scalarNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
 }

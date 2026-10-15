@@ -5,7 +5,7 @@ import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import type { State } from '../src/lang/ast';
 import { allLevels, tutorialLevel } from '../src/levels/catalog';
 import { levelsKo } from '../src/levels/catalog.ko';
-import { compileFormula, compileLevel, hop, isEgg, running, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
+import { compileFormula, compileLevel, hop, isEgg, running, startInputs, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
 
 const ctx = await nodeZ3();
 let failures = 0;
@@ -83,7 +83,7 @@ for (const def of allLevels) {
     if ((def.hints?.length ?? 0) < 2) fail('needs at least two hints');
     checkHints(def, def.hints ?? []);
   }
-  const box = { cx: 0, cy: 0, r: 12, planeR: 8, plane: def.planes?.start };
+  const box = { cx: 0, cy: 0, r: 12, planeR: 8, inputs: startInputs(level) };
 
   const eggs = sampleEggs(level);
   if (eggs.length === 0) fail('no starting states');

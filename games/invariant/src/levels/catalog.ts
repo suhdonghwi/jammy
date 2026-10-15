@@ -102,7 +102,7 @@ while (lo < hi) {
 
 ensures hi <= lo && lo <= hi + 1;`,
         view: { x: 'lo', y: 'hi' },
-        planes: { min: 0, max: 20, start: 5 },
+        start: { n: 5 },
         solutions: ['lo <= hi + 1', 'lo + hi == n && lo <= hi + 1'],
         pitfalls: [
           { formula: 'lo <= hi', message: 'When `lo` and `hi` are next to each other, one hop makes them trade places.' },
@@ -217,7 +217,7 @@ while (x > 0) {
 
 ensures y == n;`,
         view: { x: 'x', y: 'y' },
-        planes: { min: 0, max: 30, start: 4 },
+        start: { n: 4 },
         solutions: ['x + y == n && x >= 0'],
         pitfalls: [
           { formula: 'x + y == n', message: 'Right line — but your area lets `x` go below `0`.' },
@@ -246,7 +246,7 @@ while (x < n) {
 
 ensures y == 2 * n;`,
         view: { x: 'x', y: 'y' },
-        planes: { min: 0, max: 30, start: 3 },
+        start: { n: 3 },
         solutions: ['y == 2 * x && x <= n', 'y == 2 * x && 0 <= x <= n'],
         pitfalls: [
           { formula: 'y == 2 * x', message: 'Right line — but your area keeps going past `x = n`.' },
@@ -275,7 +275,7 @@ while (r >= 3) {
 
 ensures a == 3 * q + r && 0 <= r && r < 3;`,
         view: { x: 'q', y: 'r' },
-        planes: { min: 0, max: 40, start: 7 },
+        start: { a: 7 },
         solutions: ['a == 3 * q + r && r >= 0'],
         pitfalls: [
           { formula: 'a == 3 * q + r', message: 'The equation is right — but a remainder must not be negative.' },
@@ -336,7 +336,7 @@ while (x != 0) {
 
 ensures y == abs(a);`,
         view: { x: 'x', y: 'y' },
-        planes: { min: -15, max: 15, start: 3 },
+        start: { a: 3 },
         solutions: ['y + abs(x) == abs(a)'],
         pitfalls: [
           { formula: 'y == a - x', message: 'That works for frogs hopping left — but some frogs take the else branch.' },
@@ -344,7 +344,7 @@ ensures y == abs(a);`,
         ],
         intro: 'Walk `x` to `0` from either side, counting the steps in `y`.',
         hints: [
-          'Try a negative `a` with the slider too. Whichever way a frog hops, what happens to `abs(x)`? And to `y`?',
+          'Try a negative `a` in the inputs card too. Whichever way a frog hops, what happens to `abs(x)`? And to `y`?',
           'Each hop, `abs(x)` goes down by one and `y` goes up by one, so their sum never changes.',
           'One equation, with `abs(x)`, `y` and `abs(a)` in it.',
         ],
@@ -365,7 +365,7 @@ while (a < b) {
 
 ensures a == b && a == 2 * n;`,
         view: { x: 'a', y: 'b' },
-        planes: { min: 0, max: 15, start: 3 },
+        start: { n: 3 },
         solutions: ['a == 2 * (b - n) && a <= b', 'a == 2 * b - 2 * n && a <= b'],
         pitfalls: [
           { formula: 'a == 2 * (b - n)', message: 'Right line — but a frog on it could stop with `a` already past `b`.' },
@@ -402,7 +402,7 @@ while (a + b < n) {
 
 ensures a + b == n && b <= a && a <= b + 1;`,
         view: { x: 'a', y: 'b' },
-        planes: { min: 0, max: 20, start: 5 },
+        start: { n: 5 },
         solutions: ['b <= a <= b + 1 && a + b <= n', 'b <= a && a <= b + 1 && a + b <= n'],
         pitfalls: [
           { formula: 'b <= a <= b + 1', message: 'Nobody gets ahead — right. But your area also lets the dealer hand out more than `n` cards.' },
@@ -437,7 +437,7 @@ while (i < n) {
 
 ensures c == n / 3;`,
         view: { x: 'i', y: 'c' },
-        planes: { min: 0, max: 30, start: 7 },
+        start: { n: 7 },
         solutions: ['c == i / 3 && i <= n', 'c == i / 3 && 0 <= i <= n', '3 * c <= i && i < 3 * c + 3 && i <= n'],
         pitfalls: [
           { formula: 'c == i / 3', message: 'Right staircase — but it keeps going past `i = n`.' },
@@ -466,7 +466,7 @@ while (i < n) {
 
 ensures s == n * n;`,
         view: { x: 'i', y: 's' },
-        planes: { min: 0, max: 12, start: 3 },
+        start: { n: 3 },
         solutions: ['s == i * i && i <= n', 's == i * i && 0 <= i <= n'],
         pitfalls: [
           { formula: 's == i * i', message: 'Right curve — but your area keeps going past `i = n`.' },
@@ -495,7 +495,7 @@ while (i < n) {
 
 ensures 2 * s == n * (n + 1);`,
         view: { x: 'i', y: 's' },
-        planes: { min: 0, max: 20, start: 4 },
+        start: { n: 4 },
         solutions: ['2 * s == i * (i + 1) && i <= n', '2 * s == i * (i + 1) && 0 <= i <= n'],
         pitfalls: [
           { formula: '2 * s == i * (i + 1)', message: 'Right curve — but your area keeps going past `i = n`.' },

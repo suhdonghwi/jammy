@@ -1,7 +1,7 @@
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import type { CompiledLevel } from '../../levels/level';
+import { planeExists, planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
 import { field } from '../area/field';
 import { cameraRig } from '../cameraRig';
 import { SLAB_H } from '../constants';
@@ -9,6 +9,7 @@ import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
 import { axisNameUniforms, colorUniform, getDigitTexture, goalUniforms, setAxisNames, updateFade } from '../shaders/common';
+import { inputUniforms, setInputUniforms } from '../shaders/levelGlsl';
 import { floorFragment, floorVertex } from './floorShader';
 
 // The floor of a plane: one quad shaded per pixel (see floorShader), which
@@ -36,7 +37,8 @@ function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
 
 export interface FloorProps {
   level: CompiledLevel | null;
-  plane: number;
+  /** The plane: the off-axis inputs' values. */
+  inputs: Inputs;
   opacity: number;
   /** Opacity to start from (fades toward `opacity`). */
   initialOpacity?: number;
@@ -53,7 +55,7 @@ export interface FloorProps {
   clickable?: (x: number, y: number) => boolean;
 }
 
-export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, clickable }: FloorProps) {
+export function Floor({ level, inputs, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, clickable }: FloorProps) {
   const mesh = useRef<THREE.Mesh>(null);
   const canvas = useThree((s) => s.gl.domElement);
   const material = useMemo(() => {
@@ -63,7 +65,7 @@ export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fa
       transparent: true,
       depthWrite: true,
       uniforms: {
-        uPlane: { value: plane },
+        ...inputUniforms(level),
         uHover: { value: new THREE.Vector2() },
         uHoverOn: { value: 0 },
         uCenter: { value: new THREE.Vector2() },
@@ -73,9 +75,9 @@ export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fa
         uShowGoal: { value: showGoal ? 1 : 0 },
         uShowAxes: { value: showAxes ? 1 : 0 },
         uDigits: { value: getDigitTexture() },
+        ...axisNameUniforms(),
         ...goalUniforms(),
         uTime: { value: 0 },
-        ...axisNameUniforms(),
         uGap: colorUniform('gap'),
         uVoid: colorUniform('void'),
         uTile: colorUniform('tile'),
@@ -95,7 +97,9 @@ export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fa
   useEffect(() => () => material.dispose(), [material]);
 
   const u = material.uniforms;
-  u.uPlane.value = plane;
+  // the plane's inputs, set when they change (a check may have moved the view to another plane)
+  const key = planeKey(inputs);
+  useMemo(() => setInputUniforms(u, level, inputs, level ? planeExists(level, inputs) : true), [u, level, inputs, key]);
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 
@@ -116,7 +120,7 @@ export function Floor({ level, plane, opacity, initialOpacity, fadeSpeed = 5, fa
     u.uTime.value = sceneNow();
     // measured once the font has loaded, so set again as it may change
     setAxisNames(u, level);
-    u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], level?.plane ? plane : undefined);
+    u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], key);
     // revealed elements fade in rather than popping
     const kr = 1 - Math.exp(-dt * 3.2);
     const towards = (cur: number, on: boolean) => {

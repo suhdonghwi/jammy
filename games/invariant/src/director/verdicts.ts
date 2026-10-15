@@ -6,7 +6,7 @@ import { browserZ3 } from '../checker/z3-browser';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
-import { hop, RULES, running, showState, toBig, type Rule } from '../levels/level';
+import { hop, inputsOf, planeKey, RULES, running, showState, toBig, type Rule } from '../levels/level';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { handState } from '../scene/hand/handState';
@@ -33,13 +33,11 @@ async function focusState(s: State, far = false) {
   const L = currentLevel();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
-  if (L.plane) {
-    const p = Number(s[L.plane]);
-    if (p !== useGame.getState().plane) {
-      useGame.setState({ plane: p });
-      // a beat for the switch to register (the slider shows it) before the camera moves
-      await sleep(250);
-    }
+  const inputs = inputsOf(L, s);
+  if (planeKey(inputs) !== planeKey(useGame.getState().inputs)) {
+    useGame.setState({ inputs });
+    // a beat for the switch to register (the inputs card shows it) before the camera moves
+    await sleep(250);
   }
   if (far) {
     await cameraRig.zoomTo(45);
@@ -59,7 +57,7 @@ export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | n
   const inv = g.valid;
   if (!g.level || !inv || (g.formula && !g.formula.ok)) return null;
   const t = cameraRig.target();
-  const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, planeR: 20, plane: g.plane };
+  const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, planeR: 20, inputs: g.inputs };
   const keep = { ...g.verdicts };
   for (const r of rules) delete keep[r];
   useGame.setState({ checking: true, verdicts: keep, failMark: null });
@@ -72,10 +70,10 @@ export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | n
   }, 350);
   try {
     const ctx = await browserZ3();
-    // each proved rule chimes as its light turns on, a little higher each time
-    rules.filter((r) => res.verdicts[r]?.status === 'pass').forEach((_, i) => after(i * 130, () => sfx.pass(i)));
     const res = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
     useGame.setState({ verdicts: { ...keep, ...res.verdicts }, pitfallMessage: res.pitfall?.message ?? null });
+    // each proved rule chimes as its light turns on, a little higher each time
+    rules.filter((r) => res.verdicts[r]?.status === 'pass').forEach((_, i) => after(i * 130, () => sfx.pass(i)));
     return res;
   } catch (e) {
     caption(messages().verdicts.solverFailed((e as Error).message), 'fail');
@@ -184,14 +182,14 @@ export async function playRain({ max = 160, zoomOut = true }: { max?: number; zo
   frogWorld.clear();
   try {
     if (zoomOut) await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
-    const { valid: inv, plane } = useGame.getState();
+    const { valid: inv, inputs } = useGame.getState();
     if (!inv) return;
     const t = cameraRig.target();
     const tx = t.x;
     const ty = -t.z;
-    const tiles: State[] = areaNear(L, plane, inv.fast, Math.round(tx), Math.round(ty), 16)
+    const tiles: State[] = areaNear(L, inputs, inv.fast, Math.round(tx), Math.round(ty), 16)
       .filter(([x, y]) => Math.hypot(x - tx, y - ty) <= 15)
-      .map(([x, y]) => toBig(tileState(L, x, y, plane)));
+      .map(([x, y]) => toBig(tileState(L, x, y, inputs)));
     // shuffle and cap
     for (let i = tiles.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

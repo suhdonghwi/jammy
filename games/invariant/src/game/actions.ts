@@ -89,10 +89,10 @@ export async function check() {
   markCleared(level.id);
   const others = otherAnswers(level.solutions, g.formulaText);
   await playRain();
-  sfx.cleared();
   // left for another level (or the menu) while it rained
   if (useGame.getState().level !== level) return;
   const next = levels[levels.findIndex((l) => l.id === level.id) + 1];
+  sfx.cleared();
   useGame.setState({
     caption: {
       text: others ? `${t().level.proved}\n\n${others}` : t().level.proved,

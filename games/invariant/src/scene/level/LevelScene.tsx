@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { clickTile, tileClickable } from '../../director/frogs';
 import { useGame } from '../../game/store';
-import { startView } from '../../levels/level';
+import { planeKey, startView } from '../../levels/level';
 import { AreaLayer } from '../area/AreaLayer';
 import { cameraRig, VIEW } from '../cameraRig';
 import { Floor } from '../floor/Floor';
@@ -16,16 +16,17 @@ import { HoverPreview } from './HoverPreview';
 
 /**
  * A level (or the tutorial): its plane's floor, the area, eggs and frogs,
- * labels and the hand. Moving the slider to another plane swaps it at once; the camera
- * stays where it is.
+ * labels and the hand. Changing an input in the inputs card swaps the plane at
+ * once; the camera stays where it is.
  */
 export function LevelScene() {
   const level = useGame((s) => s.level)!;
-  const plane = useGame((s) => s.plane);
+  const inputs = useGame((s) => s.inputs);
+  const key = planeKey(inputs);
   const reveal = useGame((s) => s.reveal);
   const valid = useGame((s) => s.valid);
   const formula = useGame((s) => s.formula);
-  useEffect(() => useHover.setState({ tile: null }), [level, plane]);
+  useEffect(() => useHover.setState({ tile: null }), [level, key]);
   // a fresh level: the camera is placed at its starting view, without animation
   useEffect(() => {
     const v = startView(level);
@@ -36,9 +37,9 @@ export function LevelScene() {
   return (
     <>
       <Floor
-        key={`floor-${plane}`}
+        key={`floor-${key}`}
         level={level}
-        plane={plane}
+        inputs={inputs}
         opacity={1}
         interactive
         showStop={reveal.stop}
@@ -49,7 +50,7 @@ export function LevelScene() {
       />
       <AreaLayer
         level={level}
-        plane={plane}
+        inputs={inputs}
         inv={valid?.fast ?? null}
         dim={formula !== null && !formula.ok}
         showStop={reveal.stop}

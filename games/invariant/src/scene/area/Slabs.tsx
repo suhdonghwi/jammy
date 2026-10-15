@@ -3,6 +3,7 @@ import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { useGame } from '../../game/store';
+import { planeKey } from '../../levels/level';
 import { SLAB_H, TILE } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
@@ -177,8 +178,8 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
           uStopAmt: { value: showStop ? 1 : 0 },
           uGoalAmt: { value: showGoal ? 1 : 0 },
           uDigits: { value: getDigitTexture() },
-          ...fadeUniforms(),
           ...axisNameUniforms(),
+          ...fadeUniforms(),
         },
       }),
     [],
@@ -203,7 +204,7 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     const g = useGame.getState();
     // the slabs are shared by every scene: the names follow whichever level is open (none on the home screen)
     setAxisNames(material.uniforms, g.level);
-    material.uniforms.uLastEvent.value = goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], g.level?.plane ? g.plane : undefined);
+    material.uniforms.uLastEvent.value = goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], planeKey(g.inputs));
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);

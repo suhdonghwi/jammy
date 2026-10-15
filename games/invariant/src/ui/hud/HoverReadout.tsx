@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
-import { displayNames } from '../../levels/level';
+import { scalarNames } from '../../levels/level';
+import type { FastState } from '../../lang/eval';
 import { useHover } from '../../scene/hover';
 import { tileState } from '../../scene/tiles';
 
@@ -44,16 +45,16 @@ function useTopRowPlacement(ref: React.RefObject<HTMLDivElement | null>) {
 
 export function HoverReadout() {
   const level = useGame((s) => s.level)!;
-  const plane = useGame((s) => s.plane);
+  const inputs = useGame((s) => s.inputs);
   const reveal = useGame((s) => s.reveal);
   const valid = useGame((s) => s.valid);
   const tile = useHover((s) => s.tile);
   const ref = useRef<HTMLDivElement>(null);
-  useTopRowPlacement(ref);
   const tr = useT();
+  useTopRowPlacement(ref);
   if (!tile || !reveal.axes) return null;
-  const s = tileState(level, tile[0], tile[1], plane);
-  const vals = displayNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
+  const s = tileState(level, tile[0], tile[1], inputs);
+  const vals = scalarNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
   // tiles the precondition rules out: there is no such state, so nothing more to say
   if (!level.fast.planeReq(s)) {
     return (
@@ -66,7 +67,7 @@ export function HoverReadout() {
   const cont = level.fast.guard(s) === true;
   let next: string | null = null;
   if (cont) {
-    const n: Record<string, number> = { ...s };
+    const n: FastState = { ...s };
     for (const v in level.fast.next) n[v] = level.fast.next[v](s) as number;
     next = `(${n[level.view.x]}, ${n[level.view.y]})`;
   }

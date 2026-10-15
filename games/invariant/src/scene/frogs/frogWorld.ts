@@ -1,7 +1,7 @@
 import { sfx } from '../../audio/sfx';
 import type { State } from '../../lang/ast';
 import { holds, step } from '../../lang/eval';
-import type { CompiledLevel } from '../../levels/level';
+import { inputsOf, planeKey, type CompiledLevel } from '../../levels/level';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
 import { joinHopBatch, landInBatch } from './hopBatch';
@@ -16,8 +16,8 @@ export interface FrogSim {
   id: number;
   kind: FrogKind;
   state: State;
-  /** Plane this frog lives in (undefined when the level has no planes). */
-  plane?: number;
+  /** The plane this frog lives in (see planeKey). */
+  plane: string;
   /** Visual tile position (floats while animating). */
   x: number;
   y: number;
@@ -84,7 +84,7 @@ class FrogWorld {
       id: this.nextId++,
       kind,
       state,
-      plane: level.plane ? Number(state[level.plane]) : undefined,
+      plane: planeKey(inputsOf(level, state)),
       x: Number(state[level.view.x]),
       y: Number(state[level.view.y]),
       stopped: false,

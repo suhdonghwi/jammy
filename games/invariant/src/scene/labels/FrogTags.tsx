@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useState } from 'react';
 import { useGame } from '../../game/store';
 import type { State } from '../../lang/ast';
-import { displayNames, type CompiledLevel } from '../../levels/level';
+import { scalarNames, type CompiledLevel } from '../../levels/level';
 import { usePresentList } from '../../ui/presence';
 import { frogWorld, type FrogSim } from '../frogs/frogWorld';
 import { SceneTag } from './SceneTag';
@@ -51,7 +51,7 @@ function FrogTag({ frog, level, leaving }: { frog: FrogSim; level: CompiledLevel
   };
   return (
     <SceneTag anchor={{ frog }} hidden={covered} leaving={leaving}>
-      {displayNames(level)
+      {scalarNames(level)
         .filter((n) => n in shown)
         .map((n, i) => (
           <span key={n}>

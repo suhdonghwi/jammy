@@ -81,9 +81,9 @@ const outlines = (tiles: [number, number][], tone: 'good' | 'info' = 'good') => 
 /** Stop tiles on the learner's area, in the tutorial's view: the only places a run on the area can end. */
 function stopsOnArea(): [number, number][] {
   const L = useGame.getState().level!;
-  const { plane, valid } = useGame.getState();
+  const { inputs, valid } = useGame.getState();
   return tilesWhere((x, y) => {
-    const s = tileState(L, x, y, plane);
+    const s = tileState(L, x, y, inputs);
     return L.fast.planeReq(s) === true && L.fast.guard(s) !== true && !!valid && valid.fast(s) === true;
   });
 }
@@ -95,12 +95,12 @@ function stopsOnArea(): [number, number][] {
  */
 async function passed(gen: number, rule: Rule) {
   const L = useGame.getState().level!;
-  const { plane } = useGame.getState();
+  const { inputs } = useGame.getState();
   if (rule === 'initialization') {
     await beat(gen, T().passedInitialization, {
       spot: 'lights',
       tone: 'success',
-      callouts: outlines(eggsNear(L, plane, 4, 4, 6)),
+      callouts: outlines(eggsNear(L, inputs, 4, 4, 6)),
     });
   } else if (rule === 'maintenance') {
     await beat(gen, T().passedMaintenance, {

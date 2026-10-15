@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
+import { planeKey } from '../../levels/level';
 import { field } from '../area/field';
 import { SLAB_H } from '../constants';
 import { eggGeometry } from '../models';
@@ -25,7 +26,7 @@ const MAX = 256;
 interface HatchFx {
   x: number;
   y: number;
-  plane?: number;
+  plane: string;
   t0: number;
   dx: number;
   dy: number;
@@ -107,8 +108,7 @@ export function HatchShells() {
       ),
     [],
   );
-  const hasPlanes = useGame((s) => !!s.level?.plane);
-  const plane = useGame((s) => s.plane);
+  const plane = useGame((s) => planeKey(s.inputs));
 
   useFrame(() => {
     const a = cup.current;
@@ -119,7 +119,7 @@ export function HatchShells() {
     let na = 0;
     let nb = 0;
     for (const fx of active) {
-      if (hasPlanes && fx.plane !== plane) continue;
+      if (fx.plane !== plane) continue;
       const u = t - fx.t0;
       const base = field.heightAt(fx.x, fx.y) * SLAB_H;
       const bx = fx.x + fx.dx;

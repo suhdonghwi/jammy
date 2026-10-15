@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import type { CompiledLevel } from '../../levels/level';
+import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
 import { SLAB_H } from '../constants';
 import { frogWorld } from '../frogs/frogWorld';
 import { occupancy, slotFor, type Slot } from '../frogs/occupancy';
@@ -59,7 +59,7 @@ void main() {
 }
 `;
 
-export function Eggs({ level, plane, win, version }: { level: CompiledLevel; plane: number; win: TileWindow; version: number }) {
+export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; inputs: Inputs; win: TileWindow; version: number }) {
   const base = useMemo(() => eggGeometry(), []);
   const shadowBase = useMemo(() => new THREE.PlaneGeometry(0.66, 0.66).rotateX(-Math.PI / 2), []);
   const [hatchVersion, setHatchVersion] = useState(0);
@@ -71,7 +71,9 @@ export function Eggs({ level, plane, win, version }: { level: CompiledLevel; pla
   /** Current slot animation per egg tile, so changes continue from where they are. */
   const slots = useRef(new Map<string, { fx: number; fy: number; fs: number; tx: number; ty: number; ts: number; t0: number }>());
 
-  const eggs = useMemo(() => eggsNear(level, plane, win.cx, win.cy, win.R), [level, plane, win]);
+  const key = planeKey(inputs);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const eggs = useMemo(() => eggsNear(level, inputs, win.cx, win.cy, win.R), [level, key, win]);
   // when eggs are hidden or this layer goes away, frogs must not make room for them
   useEffect(
     () => () => {

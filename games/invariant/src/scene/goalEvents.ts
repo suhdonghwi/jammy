@@ -8,14 +8,15 @@ import { MAX_EVENTS } from './shaders/common';
 interface GoalEvent {
   x: number;
   y: number;
-  plane: number | undefined;
+  /** The plane the goal is on (see planeKey). */
+  plane: string;
   t: number;
 }
 
 const events: GoalEvent[] = [];
 
 export const goalEvents = {
-  push(x: number, y: number, plane: number | undefined) {
+  push(x: number, y: number, plane: string) {
     const t = sceneNow();
     // several frogs landing on the same goal at once make one ripple
     if (events.some((e) => e.x === x && e.y === y && e.plane === plane && t - e.t < 0.15)) return;
@@ -23,7 +24,7 @@ export const goalEvents = {
     if (events.length > MAX_EVENTS) events.shift();
   },
   /** Copy recent events for a plane into a shader uniform array; returns the latest time. */
-  fill(out: THREE.Vector3[], plane: number | undefined): number {
+  fill(out: THREE.Vector3[], plane: string): number {
     let k = 0;
     let last = -100;
     for (let i = events.length - 1; i >= 0 && k < out.length; i--) {

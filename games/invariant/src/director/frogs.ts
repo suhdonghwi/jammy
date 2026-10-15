@@ -2,7 +2,7 @@ import gsap from 'gsap';
 import { sfx } from '../audio/sfx';
 import { useGame } from '../game/store';
 import type { State } from '../lang/ast';
-import { hop, running, startView, toBig } from '../levels/level';
+import { hop, inputsOf, planeKey, running, startView, toBig } from '../levels/level';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
@@ -23,25 +23,25 @@ const RUN_EGGS = 10;
 /** Unhatched eggs around the camera's target, nearest first. */
 function eggStatesNear(maxCount: number, radius: number): State[] {
   const L = currentLevel();
-  const { plane } = useGame.getState();
+  const { inputs } = useGame.getState();
   const t = cameraRig.target();
   const tx = t.x;
   const ty = -t.z;
-  return eggsNear(L, plane, Math.round(tx), Math.round(ty), Math.ceil(radius))
+  return eggsNear(L, inputs, Math.round(tx), Math.round(ty), Math.ceil(radius))
     .filter(([x, y]) => !frogWorld.hatched.has(`${x},${y}`) && Math.hypot(x - tx, y - ty) <= radius)
     .sort((a, b) => Math.hypot(a[0] - tx, a[1] - ty) - Math.hypot(b[0] - tx, b[1] - ty))
     .slice(0, maxCount)
-    .map(([x, y]) => toBig(tileState(L, x, y, plane)));
+    .map(([x, y]) => toBig(tileState(L, x, y, inputs)));
 }
 
 /** The first eggs, from the smallest inputs up: the ones nearest the origin. */
 function firstEggs(count: number): State[] {
   const L = currentLevel();
-  const { plane } = useGame.getState();
-  return eggsNear(L, plane, 0, 0, 30)
+  const { inputs } = useGame.getState();
+  return eggsNear(L, inputs, 0, 0, 30)
     .sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]) || a[1] - b[1] || a[0] - b[0])
     .slice(0, count)
-    .map(([x, y]) => toBig(tileState(L, x, y, plane)));
+    .map(([x, y]) => toBig(tileState(L, x, y, inputs)));
 }
 
 /** The egg at state s cracks open and a real frog climbs out from where it sat. */
@@ -50,7 +50,7 @@ export function hatch(s: State): FrogSim {
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
   const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
-  hatchFx.push({ x, y, plane: L.plane ? Number(s[L.plane]) : undefined, dx: slot.dx, dy: slot.dy, s: slot.scale });
+  hatchFx.push({ x, y, plane: planeKey(inputsOf(L, s)), dx: slot.dx, dy: slot.dy, s: slot.scale });
   sfx.hatch();
   frogWorld.markHatched(x, y);
   const f = frogWorld.add(L, 'real', s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
@@ -60,9 +60,8 @@ export function hatch(s: State): FrogSim {
 
 /** Real frogs in the focused plane that still have hops to make. */
 function movingFrogs(): FrogSim[] {
-  const L = currentLevel();
-  const { plane } = useGame.getState();
-  return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.stopped && (!L.plane || f.plane === plane));
+  const plane = planeKey(useGame.getState().inputs);
+  return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.stopped && f.plane === plane);
 }
 
 /**
@@ -204,12 +203,12 @@ export function tileClickable(x: number, y: number): boolean {
   if (g.busy || !g.reveal.eggs || !g.level) return false;
   if (g.mode === 'tutorial' && !g.tutorialAllow.eggs) return false;
   if (frogWorld.hatched.has(`${x},${y}`)) return false;
-  return eggsNear(g.level, g.plane, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
+  return eggsNear(g.level, g.inputs, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
 }
 
 /** A click on the floor: an unhatched egg runs its frog. */
 export function clickTile(x: number, y: number) {
   if (!tileClickable(x, y)) return;
-  const { level, plane } = useGame.getState();
-  void runEgg(toBig(tileState(level!, x, y, plane)));
+  const { level, inputs } = useGame.getState();
+  void runEgg(toBig(tileState(level!, x, y, inputs)));
 }

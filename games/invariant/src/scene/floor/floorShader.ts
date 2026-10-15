@@ -4,8 +4,9 @@ import { GLSL_INT_HELPERS, levelGlsl } from '../shaders/levelGlsl';
 
 // The floor is one big plane drawn per pixel: each pixel works out which tile
 // it is on and asks the level's formulas (compiled to GLSL) whether that tile
-// exists, is a stop tile, or a goal — so the plane is infinite with no
-// per-tile geometry.
+// is a stop tile or a goal — so the plane is infinite with no per-tile
+// geometry. Whether the plane's tiles exist at all (the inputs' part of the
+// precondition) is a uniform.
 
 export const floorVertex = /* glsl */ `
 varying vec3 vWorld;
@@ -22,7 +23,6 @@ export function floorFragment(level: CompiledLevel | null) {
 precision highp float;
 precision highp int;
 varying vec3 vWorld;
-uniform int uPlane;
 uniform vec2 uHover;
 uniform float uHoverOn;
 uniform vec2 uCenter;
@@ -39,15 +39,15 @@ ${GLSL_INT_HELPERS}
 ${levelGlsl(level)}
 
 // uShow* fade 0 → 1 when an element is revealed
-bool stopAt(ivec3 t) { return uShowStop > 0.002 && L_exists(t) && L_stop(t); }
-bool edgeBetween(ivec3 a, ivec3 b) { return L_exists(a) && L_exists(b) && stopAt(a) != stopAt(b); }
+bool stopAt(ivec2 t) { return uShowStop > 0.002 && uExists && L_stop(t); }
+bool edgeBetween(ivec2 a, ivec2 b) { return uExists && stopAt(a) != stopAt(b); }
 
 void main() {
   vec2 p = vec2(vWorld.x, -vWorld.z);
   vec2 tc = floor(p + 0.5);
   vec2 f = p - tc;
-  ivec3 t = ivec3(int(tc.x), int(tc.y), uPlane);
-  bool ex = L_exists(t);
+  ivec2 t = ivec2(int(tc.x), int(tc.y));
+  bool ex = uExists;
 
   // derivatives are taken up front (uniform control flow)
   // derivatives of the continuous coordinate (f jumps at tile borders)
@@ -105,12 +105,11 @@ void main() {
     const float RC = 0.15;
     vec2 V = floor(p) + 0.5;
     vec2 local = p - V;
-    ivec3 cSW = ivec3(int(floor(p.x)), int(floor(p.y)), uPlane);
-    ivec3 cSE = cSW + ivec3(1, 0, 0);
-    ivec3 cNW = cSW + ivec3(0, 1, 0);
-    ivec3 cNE = cSW + ivec3(1, 1, 0);
-    bool inCorner = max(abs(local.x), abs(local.y)) < RC
-      && L_exists(cSW) && L_exists(cSE) && L_exists(cNW) && L_exists(cNE);
+    ivec2 cSW = ivec2(int(floor(p.x)), int(floor(p.y)));
+    ivec2 cSE = cSW + ivec2(1, 0);
+    ivec2 cNW = cSW + ivec2(0, 1);
+    ivec2 cNE = cSW + ivec2(1, 1);
+    bool inCorner = max(abs(local.x), abs(local.y)) < RC && uExists;
     if (inCorner) {
       bool sw = stopAt(cSW);
       bool se = stopAt(cSE);
@@ -136,10 +135,10 @@ void main() {
       float dx = abs(p.x - (float(kx) + 0.5));
       int ty = int(floor(p.y + 0.5));
       float fy = p.y - float(ty);
-      bool edgeV = edgeBetween(ivec3(kx, ty, uPlane), ivec3(kx + 1, ty, uPlane));
+      bool edgeV = edgeBetween(ivec2(kx, ty), ivec2(kx + 1, ty));
       if (!edgeV && abs(fy) > 0.5 - w) {
         int ty2 = ty + (fy > 0.0 ? 1 : -1);
-        edgeV = edgeBetween(ivec3(kx, ty2, uPlane), ivec3(kx + 1, ty2, uPlane));
+        edgeV = edgeBetween(ivec2(kx, ty2), ivec2(kx + 1, ty2));
       }
       if (edgeV) line = max(line, 1.0 - smoothstep(w - fw.x, w + fw.x, dx));
       // nearest horizontal grid line y = ky + 0.5, between tiles ky and ky + 1
@@ -147,10 +146,10 @@ void main() {
       float dy = abs(p.y - (float(ky) + 0.5));
       int tx = int(floor(p.x + 0.5));
       float fx = p.x - float(tx);
-      bool edgeH = edgeBetween(ivec3(tx, ky, uPlane), ivec3(tx, ky + 1, uPlane));
+      bool edgeH = edgeBetween(ivec2(tx, ky), ivec2(tx, ky + 1));
       if (!edgeH && abs(fx) > 0.5 - w) {
         int tx2 = tx + (fx > 0.0 ? 1 : -1);
-        edgeH = edgeBetween(ivec3(tx2, ky, uPlane), ivec3(tx2, ky + 1, uPlane));
+        edgeH = edgeBetween(ivec2(tx2, ky), ivec2(tx2, ky + 1));
       }
       if (edgeH) line = max(line, 1.0 - smoothstep(w - fw.y, w + fw.y, dy));
     }

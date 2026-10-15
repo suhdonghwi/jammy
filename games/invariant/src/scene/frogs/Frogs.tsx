@@ -3,6 +3,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { sfx } from '../../audio/sfx';
 import { useGame } from '../../game/store';
+import { planeKey } from '../../levels/level';
 import { toNum } from '../../levels/level';
 import { COLORS } from '../constants';
 import { goalEvents } from '../goalEvents';
@@ -52,8 +53,7 @@ export function Frogs() {
     () => new THREE.MeshBasicMaterial({ map: getBlobTexture(), transparent: true, depthWrite: false }),
     [],
   );
-  const plane = useGame((s) => s.plane);
-  const hasPlanes = useGame((s) => !!s.level?.plane);
+  const plane = useGame((s) => planeKey(s.inputs));
   const visibleList = useRef<FrogSim[]>([]);
   const lastT = useRef<number | undefined>(undefined);
   const badgeRefs = useRef<(THREE.Sprite | null)[]>([]);
@@ -72,7 +72,7 @@ export function Frogs() {
     // Which frogs share which tile (for slot layout). A hopping frog already
     // counts on the tile it is landing on, so the frogs there make room while
     // it is in the air and it touches down straight into its own slot.
-    const visible = frogWorld.frogs.filter((f) => !hasPlanes || f.plane === plane);
+    const visible = frogWorld.frogs.filter((f) => f.plane === plane);
     const groups = new Map<string, FrogSim[]>();
     for (const f of visible) {
       if (f.carried !== undefined) continue;

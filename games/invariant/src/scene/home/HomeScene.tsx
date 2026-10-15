@@ -78,7 +78,7 @@ function HomeRing() {
       const [x, y] = PATH[k];
       const hatch = t0 + EGG_IN + EGG_HOLD + j * EGG_STAGGER;
       eggs.current.push({ x, y, appear: t0 + EGG_IN + j * 0.1, hatch });
-      timers.push(after((hatch - t0) * 1000, () => hatchFx.push({ x, y, dx: 0, dy: 0, s: 1 })));
+      timers.push(after((hatch - t0) * 1000, () => hatchFx.push({ x, y, plane: '', dx: 0, dy: 0, s: 1 })));
       const f = frogWorld.add(DIAGONAL, 'real', { x: BigInt(x), y: BigInt(y) }, { hatchT0: hatch + HATCH_EMERGE });
       const [nx, ny] = PATH[(k + 1) % PATH.length];
       f.face = f.yaw = yawToward(x, y, nx, ny);
@@ -111,9 +111,9 @@ function HomeRing() {
 
   return (
     <group>
-      <Floor level={DIAGONAL} plane={0} opacity={1} initialOpacity={0} fadeSpeed={2.6} showAxes={false} />
+      <Floor level={DIAGONAL} inputs={{}} opacity={1} initialOpacity={0} fadeSpeed={2.6} showAxes={false} />
       <Slabs version={version} dim={false} showStop showGoal />
-      <GoalColumns level={DIAGONAL} plane={0} win={WINDOW} version={version} />
+      <GoalColumns level={DIAGONAL} inputs={{}} win={WINDOW} version={version} />
       <StartEggs eggs={eggs} />
       <Frogs />
       <HatchShells />
