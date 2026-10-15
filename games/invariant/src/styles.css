@@ -90,13 +90,15 @@ code {
   opacity: 0.4;
   cursor: default;
 }
+/* Quiet buttons keep a faint pill at rest, so their edge is always visible and
+   lines up with what's around them (bare text looks indented by the padding). */
 .btn.ghost {
-  background: transparent;
+  background: rgba(32, 44, 70, 0.045);
   border-color: transparent;
   color: var(--muted);
 }
 .btn.ghost:hover:not(:disabled) {
-  background: rgba(32, 44, 70, 0.06);
+  background: rgba(32, 44, 70, 0.09);
   color: var(--text);
 }
 /* chunky "toy" buttons with a solid bottom edge */
@@ -706,10 +708,7 @@ code {
 .caption-actions .spacer {
   flex: 1;
 }
-/* Back sits flush with the text's left edge */
-.caption-back {
-  margin-left: -10px;
-}
+
 /* inline code (states, formulas) never breaks across lines */
 .caption-text code {
   white-space: nowrap;
