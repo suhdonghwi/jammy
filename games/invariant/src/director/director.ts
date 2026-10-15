@@ -71,7 +71,7 @@ function above(x: number, y: number) {
 // The hand
 // ---------------------------------------------------------------------------
 
-async function handIn(x: number, y: number, h = 1.8, pose: Partial<typeof handState> = {}) {
+export async function handIn(x: number, y: number, h = 1.8, pose: Partial<typeof handState> = {}) {
   const p = above(x, y);
   if (handState.visible < 0.05) {
     Object.assign(handState, { x: p.x + 1.5, y: h + 5, z: p.z - 3, curl: 0.25, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0 });
@@ -79,7 +79,7 @@ async function handIn(x: number, y: number, h = 1.8, pose: Partial<typeof handSt
   await tween(handState, { visible: 1, x: p.x, y: h, z: p.z, duration: 0.7, ease: 'power3.out', ...pose });
 }
 
-async function handOut() {
+export async function handOut() {
   await tween(handState, { visible: 0, y: handState.y + 4, z: handState.z - 2, point: 0, shrug: 0, tap: 0, yaw: 0, tilt: 0, palmUp: 0, duration: 0.6, ease: 'power2.in' });
 }
 
@@ -135,7 +135,7 @@ function fingertipFrame() {
  * Point at whatever sits on tile (x, y) — an egg or a frog: the fingertip stops
  * just short of it, angled down at its middle, then jabs at it a few times.
  */
-async function pointAt(x: number, y: number) {
+export async function pointAt(x: number, y: number) {
   const slot = occupancy.eggSlots.get(`${x},${y}`);
   const ground = field.heightAt(x, y) * SLAB_H;
   const target = new THREE.Vector3(x + (slot?.dx ?? 0), ground + 0.2, -y - (slot?.dy ?? 0));

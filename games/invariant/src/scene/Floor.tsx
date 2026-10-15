@@ -1,6 +1,7 @@
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { COLORS } from './constants';
 import type { CompiledLevel } from '../levels/level';
 import { GLSL_INT_HELPERS, levelGlsl } from './glsl';
 import { colorUniform, getDigitTexture, GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL, goalUniforms } from './shaders';
@@ -203,9 +204,11 @@ export interface FloorProps {
   showGoal?: boolean;
   showAxes?: boolean;
   onTile?: (x: number, y: number) => void;
+  /** Override some of the floor's colours (home screen moods). */
+  palette?: Partial<Record<'gap' | 'void' | 'tile' | 'label', string>>;
 }
 
-export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile }: FloorProps) {
+export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, palette }: FloorProps) {
   const mesh = useRef<THREE.Mesh>(null);
   const material = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -243,6 +246,10 @@ export function Floor({ level, pond, y, opacity, initialOpacity, fadeSpeed = 5, 
   useEffect(() => () => material.dispose(), [material]);
 
   const u = material.uniforms;
+  const key = { gap: 'uGap', void: 'uVoid', tile: 'uTile', label: 'uLabel' } as const;
+  for (const k of Object.keys(key) as (keyof typeof key)[]) {
+    (u[key[k]].value as THREE.Color).set(palette?.[k] ?? COLORS[k === 'gap' ? 'gap' : k]);
+  }
   u.uPond.value = pond;
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };

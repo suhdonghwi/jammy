@@ -2,6 +2,7 @@ import { CameraControls } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../store/game';
+import { useHomeDraft } from '../home/drafts';
 import { cameraRig, VIEW } from './cameraRig';
 import { POND_SPACING } from './constants';
 import { Floor } from './Floor';
@@ -18,6 +19,19 @@ import { useHover } from './hover';
 import { Callouts, FailMarker } from './FailMarker';
 
 function Lights() {
+  // the night draft of the home screen gets moonlight instead of daylight
+  const inMenu = useGame((s) => s.mode === 'menu');
+  const draft = useHomeDraft((s) => s.draft);
+  const night = inMenu && draft === 'c';
+  if (night) {
+    return (
+      <>
+        <hemisphereLight args={['#9db0ff', '#141b33', 1.1]} />
+        <directionalLight position={[-4, 9, 6]} intensity={1.0} color="#d6deff" />
+        <directionalLight position={[6, 3, -4]} intensity={0.3} color="#ffcf8a" />
+      </>
+    );
+  }
   return (
     <>
       <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />

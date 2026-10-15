@@ -1,28 +1,97 @@
 import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
 import { CHAPTERS, levels } from '../levels/defs';
+import { useEffect } from 'react';
 import { useGame } from '../store/game';
+import { HOME_DRAFTS, useHomeDraft } from '../home/drafts';
 import { openLevel, openTutorial } from '../director/play';
 
 export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
+  const draft = useHomeDraft((s) => s.draft);
+  // the page background (sky) follows the draft
+  useEffect(() => {
+    document.documentElement.dataset.home = draft;
+    return () => {
+      delete document.documentElement.dataset.home;
+    };
+  }, [draft]);
   if (view === 'levels') return <LevelPicker />;
   return (
-    <div className="home">
-      <div className="home-bottom">
-        <p className="home-tagline">Frogs never leave.</p>
-        <p className="home-blurb">
-          Learn loop invariants by drawing an area no frog can hop out of — and convincing a skeptical hand it holds for every
-          input.
-        </p>
-        <div className="home-buttons">
-          <button className="btn toy big primary icon-btn" onClick={openTutorial}>
-            <GraduationCap size={22} strokeWidth={2.2} /> Tutorial
-          </button>
-          <button className="btn toy big icon-btn" onClick={() => useGame.setState({ menuView: 'levels' })}>
-            <LayoutGrid size={22} strokeWidth={2.2} /> Levels
-          </button>
-        </div>
+    <>
+      <DraftSwitcher />
+      <div className={`home home-${draft}`} key={draft}>
+        {draft === 'e' ? <EditorialCopy /> : <HomeCopy />}
       </div>
+    </>
+  );
+}
+
+function HomeButtons() {
+  return (
+    <div className="home-buttons">
+      <button className="btn toy big primary icon-btn" onClick={openTutorial}>
+        <GraduationCap size={22} strokeWidth={2.2} /> Tutorial
+      </button>
+      <button className="btn toy big icon-btn" onClick={() => useGame.setState({ menuView: 'levels' })}>
+        <LayoutGrid size={22} strokeWidth={2.2} /> Levels
+      </button>
+    </div>
+  );
+}
+
+function HomeCopy() {
+  return (
+    <div className="home-bottom">
+      <p className="home-tagline">Frogs never leave.</p>
+      <p className="home-blurb">
+        Learn loop invariants by drawing an area no frog can hop out of — and convincing a skeptical hand it holds for every input.
+      </p>
+      <HomeButtons />
+    </div>
+  );
+}
+
+function EditorialCopy() {
+  return (
+    <div className="editorial">
+      <p className="editorial-eyebrow">A little game about loop invariants</p>
+      <h1 className="editorial-title">
+        <span className="t-blue">Invariant</span>
+        <span className="t-green">Frog</span>
+      </h1>
+      <p className="editorial-lede">Draw an area no frog can hop out of. Then convince a skeptical hand it holds for every input.</p>
+      <HomeButtons />
+      <ul className="editorial-rules">
+        <li>
+          <span>1</span> Every egg starts on it
+        </li>
+        <li>
+          <span>2</span> No hop leaves it
+        </li>
+        <li>
+          <span>3</span> Frogs stop on a goal
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+/** Pick a home screen draft (exploration only). */
+function DraftSwitcher() {
+  const draft = useHomeDraft((s) => s.draft);
+  const setDraft = useHomeDraft((s) => s.setDraft);
+  const note = HOME_DRAFTS.find((d) => d.id === draft)?.note;
+  return (
+    <div className="draft-switcher">
+      <div className="draft-pills">
+        <span className="draft-label">Home draft</span>
+        {HOME_DRAFTS.map((d) => (
+          <button key={d.id} className={`draft-pill ${d.id === draft ? 'on' : ''}`} onClick={() => setDraft(d.id)} title={d.note}>
+            <b>{d.id.toUpperCase()}</b> {d.name}
+          </button>
+        ))}
+      </div>
+      <p className="draft-note">{note}</p>
     </div>
   );
 }
