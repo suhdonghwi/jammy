@@ -23,7 +23,7 @@ const PHASE2 = 1.4;
 const FROG_SCALE = 1.12;
 
 /** Room between letters: their bevel and outline make them a little wider than the glyphs, and they tilt in the wave. */
-const SPACING = 0.075;
+const SPACING = 0.045;
 const letterOpts = { size: SIZE, depth: SIZE * 0.42, letterSpacing: SIZE * SPACING };
 
 /**
