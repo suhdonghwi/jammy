@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "invariant-frog", "dev", "--port", "5187", "--strictPort"],
       "port": 5187
+    },
+    {
+      "name": "hub",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "5180", "--bind", "127.0.0.1", "--directory", "hub"],
+      "port": 5180
     }
   ]
 }
