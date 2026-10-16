@@ -1,13 +1,41 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
-    { "source": "/yut", "destination": "/yut/", "permanent": true },
-    { "source": "/invariant", "destination": "/invariant/", "permanent": true }
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.jammy.fun"
+        }
+      ],
+      "destination": "https://jammy.fun/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/yut",
+      "destination": "/yut/",
+      "permanent": true
+    },
+    {
+      "source": "/invariant",
+      "destination": "/invariant/",
+      "permanent": true
+    }
   ],
   "rewrites": [
-    { "source": "/yut/", "destination": "https://yutnori-eta.vercel.app/yut/" },
-    { "source": "/yut/:path*", "destination": "https://yutnori-eta.vercel.app/yut/:path*" },
-    { "source": "/invariant/", "destination": "https://invariant-frog.vercel.app/invariant/" },
+    {
+      "source": "/yut/",
+      "destination": "https://yutnori-eta.vercel.app/yut/"
+    },
+    {
+      "source": "/yut/:path*",
+      "destination": "https://yutnori-eta.vercel.app/yut/:path*"
+    },
+    {
+      "source": "/invariant/",
+      "destination": "https://invariant-frog.vercel.app/invariant/"
+    },
     {
       "source": "/invariant/:path*",
       "destination": "https://invariant-frog.vercel.app/invariant/:path*"
