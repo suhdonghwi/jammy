@@ -13,3 +13,6 @@ so its own `*.vercel.app` URL (and preview deployments) work at the same path.
 
 To add a game: give it the same setup, then add a redirect and a rewrite here
 and a link on `index.html`.
+
+www.jammy.fun redirects to jammy.fun through the domain's own settings in
+Vercel (Project → Domains), not through `vercel.json`.

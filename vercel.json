@@ -2,17 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.jammy.fun"
-        }
-      ],
-      "destination": "https://jammy.fun/:path*",
-      "permanent": true
-    },
-    {
       "source": "/yut",
       "destination": "/yut/",
       "permanent": true
