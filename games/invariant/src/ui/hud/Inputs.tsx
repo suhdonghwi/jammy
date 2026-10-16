@@ -30,9 +30,9 @@ const INT = /^-?\d{1,9}$/;
 
 // as tall as the small buttons beside it, so a stepper's three parts line up
 const FIELD =
-  'h-7 min-w-0 rounded-md border border-line bg-white px-1.5 font-mono text-sm text-ink outline-none transition-colors focus:border-brand/60 disabled:opacity-60';
+  'h-6 min-w-0 rounded-md border border-line bg-white px-1.5 font-mono text-sm text-ink outline-none transition-colors focus:border-brand/60 disabled:opacity-60';
 const SMALL_BUTTON =
-  'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-line bg-sky text-muted transition-colors enabled:hover:bg-horizon enabled:hover:text-ink enabled:active:translate-y-px disabled:cursor-default';
+  'flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md border border-line bg-sky text-muted transition-colors enabled:hover:bg-horizon enabled:hover:text-ink enabled:active:translate-y-px disabled:cursor-default';
 
 /** The inputs that get a row: those not on an axis, less arrays' lengths (a length follows its array). */
 export function inputRows(level: CompiledLevel): string[] {
@@ -141,10 +141,10 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
   return (
     <div key={pops} className="flex animate-[pop_0.3s_ease-out] items-center">
       <SmallButton onClick={() => commit(value - 1)} disabled={disabled} label={labels[0]} className="rounded-r-none">
-        <Minus size={14} strokeWidth={2.6} />
+        <Minus size={12} strokeWidth={2.6} />
       </SmallButton>
       <input
-        className={`${FIELD} w-13 rounded-none border-x-0 text-center ${bad ? 'text-fail' : ''}`}
+        className={`${FIELD} w-10 rounded-none border-x-0 text-center ${bad ? 'text-fail' : ''}`}
         value={text}
         inputMode="numeric"
         disabled={disabled}
@@ -158,7 +158,7 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
         onKeyDown={onKeyDown}
       />
       <SmallButton onClick={() => commit(value + 1)} disabled={disabled} label={labels[1]} className="rounded-l-none">
-        <Plus size={14} strokeWidth={2.6} />
+        <Plus size={12} strokeWidth={2.6} />
       </SmallButton>
     </div>
   );
@@ -217,7 +217,7 @@ function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: C
         disabled={disabled}
         label={label}
       >
-        <Dices size={15} strokeWidth={2.2} />
+        <Dices size={13} strokeWidth={2.2} />
       </SmallButton>
     </div>
   );
