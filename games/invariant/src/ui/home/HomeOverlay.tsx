@@ -98,7 +98,7 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
       }`}
     >
       <div
-        className={`flex max-h-[calc(100vh-2rem)] w-full max-w-110 flex-col rounded-3xl border border-line bg-card shadow-float backdrop-blur-lg ${
+        className={`flex max-h-full w-full max-w-110 flex-col rounded-3xl border border-line bg-card shadow-float backdrop-blur-lg ${
           leaving ? 'animate-pop-out' : instant ? '' : 'animate-rise'
         }`}
       >
