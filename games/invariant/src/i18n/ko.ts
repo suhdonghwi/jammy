@@ -41,8 +41,6 @@ export const ko: Messages = {
   topBar: {
     home: '홈',
     allLevels: '레벨 목록',
-    rules: '규칙',
-    replay: '반례 다시 보기',
   },
 
   caption: {
@@ -58,12 +56,14 @@ export const ko: Messages = {
   },
 
   formula: {
+    replay: '반례 다시 보기',
     area: '영역',
     placeholder: (names) => `${names}에 대한 조건`,
     check: '검사',
   },
 
   controls: {
+    rules: '규칙',
     run: '실행',
     pause: '일시정지',
     step: '한 단계',

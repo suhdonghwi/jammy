@@ -34,8 +34,6 @@ export const en = {
   topBar: {
     home: 'Home',
     allLevels: 'All levels',
-    rules: 'Rules',
-    replay: 'Replay the counterexample',
   },
 
   caption: {
@@ -51,12 +49,15 @@ export const en = {
   },
 
   formula: {
+    /** A failed rule light replays its counterexample. */
+    replay: 'Replay the counterexample',
     area: 'area',
     placeholder: (names: string) => `condition on ${names}`,
     check: 'Check',
   },
 
   controls: {
+    rules: 'Rules',
     run: 'Run',
     pause: 'Pause',
     step: 'Step',
