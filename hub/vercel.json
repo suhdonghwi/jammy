@@ -5,6 +5,11 @@
       "source": "/invariant",
       "destination": "/invariant/",
       "permanent": true
+    },
+    {
+      "source": "/((?!invariant(?:/|$)).+)",
+      "destination": "/",
+      "permanent": false
     }
   ],
   "rewrites": [
