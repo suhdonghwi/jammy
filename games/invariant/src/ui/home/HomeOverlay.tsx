@@ -13,6 +13,7 @@ import { ResetProgress } from './ResetProgress';
 import { SoundToggle } from './SoundToggle';
 import { Title3D } from './title/Title3D';
 import { useCompactHome } from './useCompactHome';
+import { useNarrowHome } from './useNarrowHome';
 
 // The home screen over the 3D scene: the title, a line about the game, the way
 // in, the level list, and in the corner, resetting progress and the language.
@@ -32,7 +33,7 @@ export function HomeOverlay() {
       {/* the title and buttons stay, faded back behind the level list */}
       <div
         className={`pointer-events-none fixed inset-0 isolate flex flex-col items-start justify-center pl-[max(5vw,24px)] transition-opacity duration-180 narrow:items-center narrow:px-4 narrow:pb-[5vh] ${
-          compact ? '' : `narrow:justify-end ${WASH}`
+          compact ? BACKDROP : `narrow:justify-end ${WASH}`
         } ${view === 'levels' ? 'opacity-35' : ''}`}
       >
         <HeroCopy behind={view === 'levels'} />
@@ -51,6 +52,9 @@ export function HomeOverlay() {
     </>
   );
 }
+
+/** On very small screens the copy fills the screen, over the scene washed almost away: there, but quiet. */
+const BACKDROP = 'before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-wash/72';
 
 /** A soft wash behind the copy so the grid doesn't fight the type: from the left, or from below when stacked. */
 const WASH =
@@ -73,12 +77,14 @@ function HomeButtons() {
 /** The title, a line about the game, and the way in. */
 function HeroCopy({ behind }: { behind: boolean }) {
   const tr = useT();
+  const narrow = useNarrowHome();
   return (
     <div className={`max-w-118 animate-[rise_0.6s_ease-out_both] narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
       <p className="mb-3 font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
       <h1 className="mb-3.5">
         <span className="sr-only">Invariant Frog</span>
-        <Title3D />
+        {/* centred with the copy when stacked, "Frog" under the middle of "Invariant" */}
+        <Title3D align={narrow ? 'center' : 'left'} />
       </h1>
       <p className="mb-6.5 text-lg leading-[1.55] text-muted max-sm:text-base">{tr.home.pitch}</p>
       <HomeButtons />

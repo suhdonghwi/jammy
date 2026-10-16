@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
+import { useCompactHome } from '../../ui/home/useCompactHome';
 import { cameraRig } from '../cameraRig';
 import { sceneNow } from '../sceneTime';
 
@@ -17,8 +18,8 @@ let firstArrival = true;
 const eye = new THREE.Vector3();
 const target = new THREE.Vector3();
 
-/** Where the camera rests (into eye / target), swaying gently over time. */
-function restingPose(t: number, aspect: number) {
+/** Where the camera rests (into eye / target), swaying gently over time. `compact`: the scene is a faint backdrop behind the copy. */
+function restingPose(t: number, aspect: number, compact: boolean) {
   const sway = Math.sin(t * 0.13) * 0.35;
   const k = Math.max(0.9, FOCUS.span / 8.5);
   if (aspect > 1.1) {
@@ -30,7 +31,9 @@ function restingPose(t: number, aspect: number) {
     // narrow: above the copy, far enough back that the scene's width fits the screen
     const kn = Math.max(k, FOCUS.span / (aspect * 13.5));
     eye.set(FOCUS.x + sway, 10 * kn, -FOCUS.y + 15.5 * kn);
-    target.set(FOCUS.x, -1.6 * kn, -FOCUS.y + 2.4 * kn);
+    // compact: the ring sits low, in the room under the buttons, rather than behind the title
+    if (compact) target.set(FOCUS.x, 0.2, -FOCUS.y - 10.5 * kn);
+    else target.set(FOCUS.x, -1.6 * kn, -FOCUS.y + 2.4 * kn);
   }
 }
 
@@ -42,13 +45,14 @@ function restingPose(t: number, aspect: number) {
 export function useHomeCamera() {
   const mode = useGame((s) => s.mode);
   const intro = useRef<{ t0: number; eye: THREE.Vector3; target: THREE.Vector3 } | null>(null);
+  const compact = useCompactHome();
 
   // Decide where the glide starts before the first frame is drawn, and on a
   // fresh page load put the camera there right away (no default-camera frame).
   const { camera, size } = useThree();
   useLayoutEffect(() => {
     const t = sceneNow();
-    restingPose(t, size.width / size.height);
+    restingPose(t, size.width / size.height, compact);
     const c = cameraRig.controls;
     if (firstArrival) {
       firstArrival = false;
@@ -70,7 +74,7 @@ export function useHomeCamera() {
   useFrame(({ size, camera }) => {
     if (mode !== 'menu' || !intro.current) return;
     const t = sceneNow();
-    restingPose(t, size.width / size.height);
+    restingPose(t, size.width / size.height, compact);
     const u = Math.min(1, (t - intro.current.t0) / INTRO_SECONDS);
     // ease in and out, so the glide neither jerks off nor stops dead
     const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;

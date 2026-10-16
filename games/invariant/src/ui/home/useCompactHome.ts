@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 // Very small screens (narrow *and* short, like an iPhone SE) have no room for
-// both the scene and the title: the home screen then shows only the title,
-// copy and buttons.
+// both the scene and the title side by side: the copy then fills the screen,
+// with the scene washed back into a faint backdrop behind it.
 const COMPACT_HOME = '(max-aspect-ratio: 11/10) and (max-height: 720px)';
 
 export function useCompactHome(): boolean {

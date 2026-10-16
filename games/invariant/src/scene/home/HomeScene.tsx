@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useCompactHome } from '../../ui/home/useCompactHome';
 import { field } from '../area/field';
 import { GoalColumns } from '../area/GoalColumns';
 import { Slabs } from '../area/Slabs';
@@ -42,12 +41,8 @@ function edgePath({ x0, y0, w, h }: typeof RING): [number, number][] {
 }
 const PATH = edgePath(RING);
 
-/** The home screen's 3D scene (none on very small screens: just the title and buttons). */
+/** The home screen's 3D scene (on very small screens, a faint backdrop behind the copy: see HomeOverlay). */
 export function HomeScene() {
-  return useCompactHome() ? null : <HomeRing />;
-}
-
-function HomeRing() {
   useHomeCamera();
 
   // Raise the ring. Slabs inside the striped zone are striped too, and carry its pools.
