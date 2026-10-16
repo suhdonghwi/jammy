@@ -81,10 +81,13 @@ export function Frogs() {
       if (g) g.push(f);
       else groups.set(key, [f]);
     }
-    const sig = [...groups].map(([k, g]) => `${k}:${g.length}`).join('|');
+    // only the egg tiles' counts are published: the eggs rebuild when one
+    // changes, and a shower of frogs landing elsewhere shouldn't rebuild them
+    let sig = '';
+    for (const [k, g] of groups) if (occupancy.eggs.has(k)) sig += `${k}:${g.length}|`;
     if (sig !== occupancy.signature) {
       occupancy.signature = sig;
-      occupancy.frogs = new Map([...groups].map(([k, g]) => [k, g.length]));
+      occupancy.frogs = new Map([...groups].filter(([k]) => occupancy.eggs.has(k)).map(([k, g]) => [k, g.length]));
       occupancy.version++;
     }
     let n = 0;

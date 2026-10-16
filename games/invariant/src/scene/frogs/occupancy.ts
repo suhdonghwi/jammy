@@ -36,7 +36,7 @@ export function slotFor(index: number, count: number): Slot {
   return layout[index] ?? LAYOUTS[0][0];
 }
 
-/** Settled frogs per tile in the focused plane, published by the frog renderer each frame. */
+/** Frogs on each egg tile in the focused plane (the eggs make room for them), published by the frog renderer. */
 export const occupancy = {
   frogs: new Map<string, number>(),
   /** Unhatched eggs on screen (tile keys), published by the egg renderer. */

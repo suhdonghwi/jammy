@@ -8,19 +8,25 @@ import { COLORS } from './constants';
 
 const PART = { body: 0, belly: 1, sclera: 2, pupil: 3, shine: 4, mouth: 5, cheek: 6 } as const;
 
+// Parts stay indexed: a vertex shared by its neighbouring triangles is shaded
+// once, not once per triangle, which matters with a few hundred frogs out.
 function tag(g: THREE.BufferGeometry, part: number): THREE.BufferGeometry {
-  const geo = g.index ? g.toNonIndexed() : g;
-  const n = geo.attributes.position.count;
-  geo.setAttribute('aPart', new THREE.BufferAttribute(new Float32Array(n).fill(part), 1));
-  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3).fill(1), 3));
-  geo.deleteAttribute('uv');
-  return geo;
+  const n = g.attributes.position.count;
+  g.setAttribute('aPart', new THREE.BufferAttribute(new Float32Array(n).fill(part), 1));
+  g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3).fill(1), 3));
+  g.deleteAttribute('uv');
+  return g;
 }
 
-/** Smooth sphere (segment hints are scaled up for a soft surface). */
-const lp = (r: number, w = 9, h = 7) => new THREE.SphereGeometry(r, Math.max(20, w * 3), Math.max(14, h * 3));
-
-export function frogGeometry(): THREE.BufferGeometry {
+/**
+ * The frog. A board frog is small on screen and there can be a few hundred of
+ * them (frog rain), so its parts are only as round as they look at the
+ * closest zoom; `fine` is for the one big frog in the title.
+ */
+export function frogGeometry({ fine = false }: { fine?: boolean } = {}): THREE.BufferGeometry {
+  const k = fine ? 3 : 2;
+  /** Smooth sphere (segment hints are scaled up for a soft surface). */
+  const lp = (r: number, w = 9, h = 7) => new THREE.SphereGeometry(r, Math.max(fine ? 20 : 12, w * k), Math.max(fine ? 14 : 8, h * k));
   const parts: THREE.BufferGeometry[] = [];
   const add = (g: THREE.BufferGeometry, p: number) => parts.push(tag(g, p));
 
@@ -36,7 +42,7 @@ export function frogGeometry(): THREE.BufferGeometry {
     add(lp(0.1, 8, 6).scale(0.5, 0.75, 1.25).translate(s * 0.135, 0.09, -0.06), PART.body);
     add(lp(0.06, 8, 4).scale(0.95, 0.3, 1.55).translate(s * 0.15, 0.016, 0.05), PART.body);
     // thin front arms
-    add(new THREE.CapsuleGeometry(0.028, 0.1, 6, 14).rotateX(0.2).translate(s * 0.078, 0.08, 0.1), PART.body);
+    add(new THREE.CapsuleGeometry(0.028, 0.1, fine ? 6 : 3, fine ? 14 : 10).rotateX(0.2).translate(s * 0.078, 0.08, 0.1), PART.body);
     add(lp(0.034, 7, 4).scale(1.3, 0.4, 1.2).translate(s * 0.08, 0.012, 0.125), PART.body);
   }
   const merged = mergeGeometries(parts)!;

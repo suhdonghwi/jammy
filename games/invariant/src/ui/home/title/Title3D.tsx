@@ -75,7 +75,7 @@ const dummy = new THREE.Object3D();
  */
 function PeekingFrog({ x, y, letterIndex }: { x: number; y: number; letterIndex: number }) {
   const mesh = useMemo(() => {
-    const geom = frogGeometry();
+    const geom = frogGeometry({ fine: true });
     const body = new THREE.InstancedMesh(geom, frogMaterial(), 1);
     body.setColorAt(0, new THREE.Color(COLORS.frog));
     body.frustumCulled = false;
