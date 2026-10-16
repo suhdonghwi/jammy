@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>jammy.fun</title>
+    <meta name="description" content="Small games by Suh Donghwi." />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>"
+    />
+    <style>
+      :root {
+        --bg: #faf7f0;
+        --card: #ffffff;
+        --ink: #1f1d1a;
+        --muted: #6b665d;
+        --line: #e7e1d4;
+        --accent: #d9622b;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #17161a;
+          --card: #212026;
+          --ink: #f1eee8;
+          --muted: #a29d94;
+          --line: #33313a;
+          --accent: #f08a54;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 48px 16px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.5 system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+      }
+      main {
+        width: 100%;
+        max-width: 560px;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+      p.lede {
+        margin: 0 0 28px;
+        color: var(--muted);
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+      }
+      a.game {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--card);
+        color: inherit;
+        text-decoration: none;
+        transition: border-color 0.15s, transform 0.15s;
+      }
+      a.game:hover,
+      a.game:focus-visible {
+        border-color: var(--accent);
+        transform: translateY(-1px);
+        outline: none;
+      }
+      .emoji {
+        font-size: 32px;
+        line-height: 1;
+      }
+      .name {
+        font-weight: 650;
+      }
+      .desc {
+        color: var(--muted);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>jammy.fun</h1>
+      <p class="lede">Small games, made for fun.</p>
+      <ul>
+        <li>
+          <a class="game" href="/yut/">
+            <span class="emoji" aria-hidden="true">🎲</span>
+            <span>
+              <span class="name">윷놀이</span><br />
+              <span class="desc">A 3D two-player game of yut, on one screen.</span>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a class="game" href="/invariant/">
+            <span class="emoji" aria-hidden="true">🐸</span>
+            <span>
+              <span class="name">Invariant Frog</span><br />
+              <span class="desc">A puzzle game about loop invariants, checked by Z3.</span>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>

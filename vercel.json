@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    { "source": "/yut", "destination": "/yut/", "permanent": true },
+    { "source": "/invariant", "destination": "/invariant/", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/yut/:path*", "destination": "https://yutnori.vercel.app/yut/:path*" },
+    {
+      "source": "/invariant/:path*",
+      "destination": "https://invariant-frog.vercel.app/invariant/:path*"
+    }
+  ]
+}
