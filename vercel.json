@@ -5,8 +5,8 @@
     { "source": "/invariant", "destination": "/invariant/", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/yut/", "destination": "https://yutnori.vercel.app/yut/" },
-    { "source": "/yut/:path*", "destination": "https://yutnori.vercel.app/yut/:path*" },
+    { "source": "/yut/", "destination": "https://yutnori-eta.vercel.app/yut/" },
+    { "source": "/yut/:path*", "destination": "https://yutnori-eta.vercel.app/yut/:path*" },
     { "source": "/invariant/", "destination": "https://invariant-frog.vercel.app/invariant/" },
     {
       "source": "/invariant/:path*",
