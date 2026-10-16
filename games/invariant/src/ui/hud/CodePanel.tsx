@@ -6,6 +6,7 @@ import { tokenize } from '../../lang/parser';
 import { planeExists, type CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
 import { tokenClass } from '../codeColors';
+import { usePhone } from '../usePhone';
 import { inputRows, InputsSection } from './Inputs';
 
 // The program, with the loop lighting up as frogs hop and a ghost `assert(?)`
@@ -132,11 +133,17 @@ export function CodePanel() {
     [level, hopTick, hopDur, landTick, landGuard, assert, spotLines, inputHover, impossible],
   );
   const spot = useGame((s) => s.spotlight);
-  const [folded, setFolded] = useState(false);
+  const tutorial = useGame((s) => s.mode === 'tutorial');
+  const phone = usePhone();
+  // null: as the learner left it, nothing yet
+  const [folded, setFolded] = useState<boolean | null>(null);
   const tr = useT();
-  // a new level starts unfolded, and so does anything the tutorial points at in the code
-  useEffect(() => setFolded(false), [level]);
-  const open = !folded || spot === 'code' || spotLines.length > 0;
+  useEffect(() => setFolded(null), [level]);
+  // A level starts unfolded. The tutorial on a phone starts folded: the card
+  // would cover a third of the scene its captions talk about, so it opens
+  // only for the captions about the code (and Step, which the code acts out).
+  const pointedAt = spot === 'code' || spotLines.length > 0 || (tutorial && phone && spot === 'step');
+  const open = pointedAt || !(folded ?? (tutorial && phone));
   const hasInputs = inputRows(level).length > 0;
   if (!reveal.code) return null;
   return (

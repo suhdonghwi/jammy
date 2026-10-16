@@ -29,8 +29,9 @@ export function CaptionBar() {
       key={caption.text}
       // the scene's phone framing keeps a fixed room for the caption, ending here (scene/PhoneFraming)
       data-caption
-      // the text gets the full width; the buttons sit on their own row below
-      className={`flex flex-col gap-2.5 rounded-2xl border-2 bg-card py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md transition-colors duration-200 ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
+      // the text gets the full width; the buttons sit on their own row below. On a phone it is a little tighter
+      // (smaller type, padding and paragraph gaps): a long tutorial caption there would otherwise cover the scene
+      className={`flex flex-col gap-2.5 rounded-2xl border-2 bg-card py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md transition-colors duration-200 max-sm:gap-2 max-sm:py-2.75 max-sm:pr-3 max-sm:pl-3.5 max-sm:text-sm max-sm:leading-[1.45] ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
     >
       <div>
         <Markdown text={caption.text} />

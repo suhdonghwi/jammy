@@ -12,7 +12,7 @@ export function Markdown({ text }: { text: string }) {
 }
 
 /** Space between paragraphs and lists. */
-const gap = (key: number) => (key > 0 ? 'mt-2.5' : '');
+const gap = (key: number) => (key > 0 ? 'mt-2.5 max-sm:mt-2' : '');
 
 function renderBlock(block: string, key: number): ReactNode {
   const lines = block.split('\n');
