@@ -625,7 +625,7 @@ ensures i == n || A[i] == x;`,
         intro:
           'Look for `x` in `A`: walk `i` along until a cell equals `x` or the array ends. `x` is on the vertical axis, so each row is one value to look for.',
         hints: [
-          'Hover over the tiles where the loop stops: for each `x`, where are they, and which of them are goals?',
+          'Hover over (or tap) the tiles where the loop stops: for each `x`, where are they, and which of them are goals?',
           'A real frog at `i` has looked at every cell before `i` and found no `x` there. `forall` says that.',
           'Fence `i` between `0` and `n`, and add the `forall` about the cells before `i`.',
         ],

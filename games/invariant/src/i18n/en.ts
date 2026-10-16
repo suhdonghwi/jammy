@@ -192,7 +192,7 @@ export const en = {
     pressStep: 'Press **Step** to run the loop body once.',
     keepStepping: 'One hop = the loop body running once: `i` went from `0` to `1`.\n\nKeep pressing **Step** until the frog stops.',
     stops:
-      'Now `i < n` is false (`3 < 3`), so the loop ends and the frog **stops**.\n\n- The shaded tiles are where the loop stops.\n- Hover over any tile to preview where a frog there would hop.',
+      'Now `i < n` is false (`3 < 3`), so the loop ends and the frog **stops**.\n\n- The shaded tiles are where the loop stops.\n- Hover over (or tap) any tile to preview where a frog there would hop.',
     stopsTag: 'stops: 3 < 3 is false',
     eggs: 'Where can a frog start? The program sets `i` to `0`, and the precondition lets `n` be any number `≥ 0`.\n\nEach **egg** is one starting state: a place a real frog begins.',
     eggsTag: 'starting state: i = 0, n = 2',

@@ -151,13 +151,29 @@ export function Floor({ level, inputs, opacity, initialOpacity, fadeSpeed = 5, f
     if (interactive) return () => void (canvas.style.cursor = '');
   }, [interactive, canvas]);
 
+  // A finger has no hover: dragging it pans the view, and shouldn't light up
+  // every tile it passes. On touch a tile is "hovered" once tapped (a second
+  // tap on it lets go), and a touch that starts a pan lets go too.
+  const touch = useRef<{ on: boolean; was: [number, number] | null }>({ on: false, was: null });
   const handlers = interactive
     ? {
-        onPointerMove: (e: ThreeEvent<PointerEvent>) => hover.set(pickTile(e)),
-        onPointerOut: () => hover.set(null),
+        onPointerDown: (e: ThreeEvent<PointerEvent>) => {
+          touch.current = { on: e.pointerType === 'touch', was: hover.tile };
+          if (touch.current.on) hover.set(null);
+        },
+        onPointerMove: (e: ThreeEvent<PointerEvent>) => {
+          if (e.pointerType !== 'touch') hover.set(pickTile(e));
+        },
+        onPointerOut: (e: ThreeEvent<PointerEvent>) => {
+          if (e.pointerType !== 'touch') hover.set(null);
+        },
         onClick: (e: ThreeEvent<MouseEvent>) => {
           if (e.delta > 4) return;
           const [tx, ty] = pickTile(e);
+          if (touch.current.on) {
+            const was = touch.current.was;
+            hover.set(was && was[0] === tx && was[1] === ty ? null : [tx, ty]);
+          }
           onTile?.(tx, ty);
         },
       }
