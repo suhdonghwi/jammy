@@ -5,7 +5,6 @@ that game's own Vercel project (see `vercel.json`):
 
 | Path          | Project                                                          |
 | ------------- | ---------------------------------------------------------------- |
-| `/yut/`       | [yutnori](https://github.com/suhdonghwi/yutnori)                 |
 | `/invariant/` | [invariant-frog](https://github.com/suhdonghwi/invariant-frog)   |
 
 Each game builds with its path as Vite's `base` and serves itself under it,
