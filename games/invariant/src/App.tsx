@@ -13,6 +13,10 @@ import { SyntaxCard } from './ui/rules/SyntaxCard';
 const SfxLab = import.meta.env.DEV ? lazy(() => import('./ui/dev/SfxLab').then((m) => ({ default: m.SfxLab }))) : null;
 const showLab = import.meta.env.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).has('sfx-lab');
 
+/** The link preview image's page (`?poster`, see ui/dev/Poster), in development only too. */
+const Poster = import.meta.env.DEV ? lazy(() => import('./ui/dev/Poster').then((m) => ({ default: m.Poster }))) : null;
+const showPoster = import.meta.env.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).has('poster');
+
 export function App() {
   const mode = useGame((s) => s.mode);
   const level = useGame((s) => s.level);
@@ -25,6 +29,13 @@ export function App() {
   useEffect(() => {
     if (wantSolver) void browserZ3().catch(() => {});
   }, [wantSolver]);
+
+  if (Poster && showPoster)
+    return (
+      <Suspense fallback={null}>
+        <Poster />
+      </Suspense>
+    );
 
   return (
     <div className="fixed inset-0">
