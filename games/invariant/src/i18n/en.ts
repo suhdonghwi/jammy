@@ -24,7 +24,6 @@ export const en = {
     language: 'Language',
     cleared: 'Cleared',
     clearedCount: (n: number, of: number) => `${n} of ${of} levels cleared`,
-    reset: 'Reset',
     resetTitle: 'Forget which levels you have cleared',
     resetConfirm: 'Reset progress?',
     soundOn: 'Sound on',

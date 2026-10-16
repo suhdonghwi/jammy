@@ -31,7 +31,6 @@ export const ko: Messages = {
     language: '언어',
     cleared: '클리어',
     clearedCount: (n, of) => `${of}개 레벨 중 ${n}개 클리어`,
-    reset: '초기화',
     resetTitle: '클리어한 레벨 기록을 지웁니다',
     resetConfirm: '정말 초기화할까요?',
     soundOn: '소리 켜짐',
