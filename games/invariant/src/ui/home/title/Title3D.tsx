@@ -48,17 +48,18 @@ function measure(text: string) {
 /**
  * Both words are placed so their ink starts exactly at x = 0 (not at the
  * glyphs' built-in side bearing), so the title's left edge lines up with the
- * text below it.
+ * text below it. Centred, "Frog" sits in the middle under "Invariant".
  */
-function layout() {
+function layout(align: TitleAlign) {
   const m1 = measure(LINE1);
   const m2 = measure(LINE2);
   const OUTLINE = 0.02;
+  const indent2 = align === 'center' ? (m1.max - m1.min - (m2.max - m2.min)) / 2 : 0;
   return {
-    /** Word centres, so each word's ink starts at x = 0. */
+    /** Word centres, so each word's ink starts at x = 0 (or "Frog"'s is centred under "Invariant"). */
     x1: -m1.min,
-    x2: -m2.min,
-    o: { ...m2.o, x: m2.o.x - m2.min },
+    x2: -m2.min + indent2,
+    o: { ...m2.o, x: m2.o.x - m2.min + indent2 },
     left: -OUTLINE,
     right: Math.max(m1.max - m1.min, m2.max - m2.min) + OUTLINE,
     bottom: -0.32,
@@ -105,8 +106,8 @@ function PeekingFrog({ x, y, letterIndex }: { x: number; y: number; letterIndex:
   );
 }
 
-function TitleScene() {
-  const L = useMemo(layout, []);
+function TitleScene({ align }: { align: TitleAlign }) {
+  const L = useMemo(() => layout(align), [align]);
   const { camera, size } = useThree();
 
   // A gentle perspective lens straight in front of the title: the letters face
@@ -145,18 +146,20 @@ function TitleScene() {
  */
 const TITLE_ASPECT = 1.89;
 
-/** The 3D title block. */
-export function Title3D() {
+type TitleAlign = 'left' | 'center';
+
+/** The 3D title block; `width` replaces its usual width classes. */
+export function Title3D({ width = 'w-full max-w-125 narrow:mx-auto narrow:max-w-85', align = 'left' }: { width?: string; align?: TitleAlign }) {
   return (
     // the title rises into place rather than popping in
-    <div className="w-full max-w-125 narrow:mx-auto narrow:max-w-85 [&_canvas]:animate-[title-in_0.7s_ease-out_both]" style={{ aspectRatio: TITLE_ASPECT }}>
+    <div className={`${width} [&_canvas]:animate-[title-in_0.7s_ease-out_both]`} style={{ aspectRatio: TITLE_ASPECT }}>
       <Canvas flat dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: 18, near: 0.1, far: 200 }}>
         <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
         <directionalLight position={[4, 10, 6]} intensity={1.6} color="#ffffff" />
         <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
         {/* the letters face the viewer, so light them from the front too */}
         <directionalLight position={[1, 2, 10]} intensity={1.1} color="#ffffff" />
-        <TitleScene />
+        <TitleScene align={align} />
       </Canvas>
     </div>
   );
