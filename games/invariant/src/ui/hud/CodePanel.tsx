@@ -12,6 +12,9 @@ import { inputRows, InputsSection } from './Inputs';
 // line standing for the invariant at the top of the loop, and the inputs at
 // its foot. It folds away to its title (and the inputs), so it doesn't hide the scene.
 
+/** A row of code: pulled out through the scroll area's padding (px-4, px-2.5 on small screens), so a highlight spans the card. */
+const ROW = '-mx-4 flex px-4 max-md:-mx-2.5 max-md:px-2.5';
+
 /** The loop condition's flash when frogs land: keep looping, stop, or some of each. */
 const LANDED = {
   true: 'animate-[check-true_0.9s_ease-out]',
@@ -76,8 +79,9 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   const bodyFirst = stmts.length ? lineOf(stmts[0].span.from) : -1;
   const bodyLast = stmts.length ? lineOf(stmts[stmts.length - 1].span.to) : -2;
   const rows = lines.map((l, i) => {
-    // a line's height even when it is blank; highlights are plain bands, square-cornered
-    let cls = '-mx-2 flex min-h-lh px-2';
+    // a line's height even when it is blank; highlights are square bands that run out through the code's padding
+    // to the card's edges (ROW matches the scroll area's padding)
+    let cls = `${ROW} min-h-lh`;
     let key = `l${i}`;
     let style: React.CSSProperties | undefined;
     if (i === headerLine) {
@@ -101,7 +105,7 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   if (beat.assert && headerLine >= 0) {
     const indent = stmts.length ? src.slice(lines[bodyFirst].from).match(/^\s*/)?.[0] ?? '  ' : '  ';
     rows.splice(headerLine + 1, 0, (
-      <div key="assert" className="-mx-2 flex px-2 text-faint">
+      <div key="assert" className={`${ROW} text-faint`}>
         <span>
           {indent}
           <span className="font-semibold">assert</span>(?);
