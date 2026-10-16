@@ -72,7 +72,6 @@
   --color-fail-soft: #fdecec;
   --color-warn: #d98b0b;
   --color-warn-soft: #fdf2dc;
-  --color-frog: #52c24a;
   --color-slab: #5c9df5;
   --color-slab-side: #3a78d8;
   /* the scene's dark labels */
@@ -90,10 +89,7 @@
 
   --animate-fade: fade 0.2s ease-out;
   --animate-rise: rise 0.2s ease-out;
-  --animate-pop: pop 0.2s ease-out;
   --animate-slide-in: slide-in 0.4s ease-out;
-  --animate-slide-in-right: slide-in-right 0.4s ease-out;
-  --animate-blink: blink 0.35s infinite alternate;
   --animate-shake: shake 0.32s ease-in-out;
   --animate-tag-in: tag-in 0.2s ease-out;
   /* exits last EXIT_MS (ui/presence.ts) */
@@ -189,24 +185,10 @@
     transform: translateX(-12px);
   }
 }
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(12px);
-  }
-}
 @keyframes title-in {
   from {
     opacity: 0;
     transform: translateY(12px);
-  }
-}
-@keyframes blink {
-  from {
-    opacity: 0.45;
-  }
-  to {
-    opacity: 1;
   }
 }
 @keyframes shake {

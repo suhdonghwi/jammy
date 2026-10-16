@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 
 // Keep things on screen a moment after they are closed, so they can play an
 // exit animation instead of vanishing. Components render with `leaving` set
-// during that moment (styles add a `.leaving` class with the reverse animation).
+// during that moment, and swap in an exit animation (`animate-fade-out`,
+// `animate-pop-out`, `animate-sink-out`).
 
-/** Exit animations last this long (keep in step with the `.leaving` styles). */
+/** Exit animations last this long (keep in step with the `animate-*-out` durations in styles.css). */
 export const EXIT_MS = 150;
 
 /** A single element: still mounted while `leaving`, then gone. */

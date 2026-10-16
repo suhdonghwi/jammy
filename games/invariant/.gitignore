@@ -3,6 +3,5 @@ dist
 *.log
 .DS_Store
 public/z3
-sfx-lab
 .vercel
 .env*
