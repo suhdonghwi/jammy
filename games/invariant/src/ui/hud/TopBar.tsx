@@ -1,32 +1,22 @@
-import { ArrowLeft, BookOpen, CircleCheck, CircleDashed, CircleHelp, CircleX, LoaderCircle } from 'lucide-react';
-import { playCounterexample } from '../../director/verdicts';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import { goMenu } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { levelNumber } from '../../levels/catalog';
-import { RULES } from '../../levels/level';
 import { button } from '../classes';
 
-// The top bar: back, the level's name, the three rule lights (dim until the
-// tutorial reaches them; a failed one replays its counterexample) and the
-// rules card.
+// The top bar: back, the level's name and the rules card, in one pill. The
+// rule lights are under the formula (RuleLights), next to the Check they report on.
 
 export function TopBar() {
   const level = useGame((s) => s.level);
   const mode = useGame((s) => s.mode);
-  const lights = useGame((s) => s.reveal.lights);
-  const awake = useGame((s) => s.reveal.awake);
-  const verdicts = useGame((s) => s.verdicts);
-  const checking = useGame((s) => s.checking);
-  const busy = useGame((s) => s.busy);
-  const spot = useGame((s) => s.spotlight);
   const tr = useT();
   if (!level) return null;
   return (
     // .topbar and .pill-group: HoverReadout measures them to lift itself into this row when the middle is free
-    <div className="topbar pointer-events-none! flex flex-wrap items-center justify-between gap-3" data-frame="top">
-      {/* on phones each pill takes a row of its own, and Rules moves up here as an icon */}
-      <div className={`${PILLS} max-sm:w-full`}>
+    <div className="topbar pointer-events-none! flex items-center" data-frame="top">
+      <div className={PILLS}>
         {/* just an arrow: the level's name is what this pill is about */}
         <button
           className={button('quiet', 'icon')}
@@ -36,37 +26,13 @@ export function TopBar() {
         >
           <ArrowLeft size={17} strokeWidth={2.4} />
         </button>
-        <div className="flex items-center gap-2 pr-3 pl-1.5 font-display text-lg font-semibold">
+        <div className="flex min-w-0 items-center gap-2 pr-1 pl-1.5 font-display text-lg font-semibold">
           {/* the mono digits sit high in their line box: a little more padding on top centres them on the title */}
           {mode === 'level' && <span className="rounded-full bg-shade/6 px-2 pt-0.75 pb-0.25 font-mono text-xs text-muted">{levelNumber(level.id)}</span>}
-          {level.title}
+          <span className="truncate">{level.title}</span>
         </div>
-        <button className={`${button('quiet', 'icon')} ml-auto sm:hidden`} title={tr.topBar.rules} aria-label={tr.topBar.rules} onClick={showRules}>
+        <button className={button('quiet', 'icon')} title={tr.topBar.rules} aria-label={tr.topBar.rules} onClick={showRules}>
           <BookOpen size={16} strokeWidth={2.2} />
-        </button>
-      </div>
-      {/* on phones, with Rules moved up, a pill with no lights yet would be empty */}
-      <div className={`${PILLS} max-sm:w-full max-sm:gap-1 ${lights.length ? '' : 'max-sm:hidden'} ${spot === 'lights' ? 'spotlight' : ''}`}>
-        {RULES
-          .filter((r) => lights.includes(r))
-          .map((r) => {
-            const v = verdicts[r];
-            const status: LightStatus = !awake.includes(r) ? 'dim' : checking && !v ? 'checking' : (v?.status ?? 'idle');
-            return (
-              <button
-                key={r}
-                className={`flex animate-[pop_0.35s_ease-out] items-center gap-1.5 rounded-full px-3 py-1.75 font-display text-sm font-medium max-md:px-2 max-md:py-1.25 max-md:text-xs max-sm:flex-1 max-sm:justify-center max-sm:gap-1 max-sm:px-1.5 max-[22.5rem]:px-1 max-[22.5rem]:text-[11px] [&_svg]:shrink-0 ${LIGHT[status]}`}
-                disabled={busy || v?.status !== 'fail'}
-                title={v?.status === 'fail' ? tr.topBar.replay : tr.rules[r]}
-                onClick={() => v?.status === 'fail' && void playCounterexample(v.cex)}
-              >
-                <LightIcon status={status} />
-                {tr.rules[r]}
-              </button>
-            );
-          })}
-        <button className={`${button('quiet')} max-sm:hidden`} onClick={showRules}>
-          <BookOpen size={16} strokeWidth={2.2} /> {tr.topBar.rules}
         </button>
       </div>
     </div>
@@ -75,26 +41,5 @@ export function TopBar() {
 
 const showRules = () => useGame.setState({ showRules: true });
 
-type LightStatus = 'dim' | 'idle' | 'checking' | 'pass' | 'fail' | 'undecided';
-
 /** A rounded bar of controls floating over the scene. */
-const PILLS = 'pill-group pointer-events-auto flex items-center gap-1.5 rounded-full border border-line bg-card p-1.25 shadow-card backdrop-blur-md';
-
-const LIGHT: Record<LightStatus, string> = {
-  // revealed, but its stage hasn't come yet
-  dim: 'text-faint opacity-60',
-  idle: 'text-muted',
-  checking: 'text-muted',
-  pass: 'bg-pass-soft text-pass',
-  // a failed rule replays its counterexample
-  fail: 'cursor-pointer bg-fail-soft text-fail',
-  undecided: 'bg-warn-soft text-warn',
-};
-
-function LightIcon({ status }: { status: LightStatus }) {
-  if (status === 'pass') return <CircleCheck size={16} strokeWidth={2.4} />;
-  if (status === 'fail') return <CircleX size={16} strokeWidth={2.4} />;
-  if (status === 'undecided') return <CircleHelp size={16} strokeWidth={2.4} />;
-  if (status === 'checking') return <LoaderCircle size={16} strokeWidth={2.4} className="animate-spin" />;
-  return <CircleDashed size={16} strokeWidth={2.2} />;
-}
+const PILLS = 'pill-group pointer-events-auto flex min-w-0 items-center gap-1.5 rounded-full border border-line bg-card p-1.25 shadow-card backdrop-blur-md';

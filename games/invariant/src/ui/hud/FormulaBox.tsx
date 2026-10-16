@@ -2,10 +2,11 @@ import { Check, LoaderCircle } from 'lucide-react';
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { check } from '../../game/actions';
 import { useGame } from '../../game/store';
-import { listNames, useT } from '../../i18n/i18n';
+import { useT } from '../../i18n/i18n';
 import { displayNames } from '../../levels/level';
 import { button } from '../classes';
 import { colorRuns } from '../codeColors';
+import { RuleLights } from './RuleLights';
 
 // The area formula: a one-line editor with highlighting, errors when it is
 // submitted, and Check. The editor is a textarea with see-through text laid
@@ -87,7 +88,8 @@ export function FormulaBox() {
       void check();
     }
   };
-  const placeholder = tr.formula.placeholder(listNames(names));
+  // just the names, comma-separated: short enough to stay on one line on a phone
+  const placeholder = tr.formula.placeholder(names.join(', '));
 
   const canCheck = !busy && !checking && (mode !== 'tutorial' || awaitingCheck);
   return (
@@ -106,7 +108,7 @@ export function FormulaBox() {
         {/* a formula too long for the box (or a placeholder, on phones) wraps rather than scrolling out of sight */}
         <div className={`grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] ${locked ? 'cursor-default opacity-60' : ''}`}>
           <div aria-hidden className={`${TEXT} pointer-events-none text-ink`}>
-            {formulaText ? colored(formulaText, shownError?.span ?? null) : <span className="text-[#a8afbb]">{placeholder}</span>}
+            {formulaText ? colored(formulaText, shownError?.span ?? null) : <span className="font-sans text-[0.9em] text-[#a8afbb]">{placeholder}</span>}
             {/* keeps the last line's height when the text ends in a space */}
             {'\u200b'}
           </div>
@@ -133,6 +135,10 @@ export function FormulaBox() {
             {shownError.message}
           </span>
         )}
+        {/* last, under the formula: what Check found, rule by rule */}
+        <div className="order-last -ml-1 mb-0.5 basis-full empty:hidden">
+          <RuleLights />
+        </div>
         <button
           className={`${button('check', 'none')} ${spot === 'check' ? 'spotlight spotlight-glow' : ''}`}
           disabled={!canCheck}

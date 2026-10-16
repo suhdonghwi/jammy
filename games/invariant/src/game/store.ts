@@ -18,7 +18,7 @@ export interface Reveal {
   formula: boolean;
   /** The ghost `assert(…)` line at the top of the loop body. */
   assert: boolean;
-  /** Rule lights shown in the top bar. */
+  /** Rule lights shown under the formula. */
   lights: Rule[];
   /** Lights that are live (the tutorial shows the rest dim until their stage). */
   awake: Rule[];

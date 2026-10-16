@@ -52,7 +52,7 @@ export const en = {
 
   formula: {
     area: 'area',
-    placeholder: (names: string) => `a condition on ${names}`,
+    placeholder: (names: string) => `condition on ${names}`,
     check: 'Check',
   },
 
