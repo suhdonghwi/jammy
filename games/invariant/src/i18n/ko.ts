@@ -27,7 +27,6 @@ export const ko: Messages = {
     tutorial: '튜토리얼',
     levels: '레벨',
     back: '뒤로',
-    difficulty: (filled, of) => `난이도 ${filled}/${of}`,
     language: '언어',
     cleared: '클리어',
     clearedCount: (n, of) => `${of}개 레벨 중 ${n}개 클리어`,

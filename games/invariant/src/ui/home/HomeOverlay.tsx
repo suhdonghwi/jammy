@@ -98,7 +98,7 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
       }`}
     >
       <div
-        className={`flex max-h-[calc(100vh-2rem)] w-full max-w-215 flex-col rounded-3xl border border-line bg-card shadow-float backdrop-blur-lg ${
+        className={`flex max-h-[calc(100vh-2rem)] w-full max-w-110 flex-col rounded-3xl border border-line bg-card shadow-float backdrop-blur-lg ${
           leaving ? 'animate-pop-out' : instant ? '' : 'animate-rise'
         }`}
       >
@@ -112,53 +112,32 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
             {done}/{levels.length}
           </span>
         </div>
-        <div className="overflow-y-auto px-6 pt-1.5 pb-6">
-          {GROUPS.map((g, tier) => (
+        {/* one plain column, top to bottom in play order, under quiet tier labels */}
+        <div className="overflow-y-auto px-3 pt-1 pb-4">
+          {GROUPS.map((g) => (
             <section key={g.name}>
-              <h3 className="mt-4 mb-2.5 flex items-center gap-2.5 font-display text-lg font-semibold">
-                {groupName(g.name)}
-                <Pips filled={tier + 1} of={GROUPS.length} />
-              </h3>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2.5">
-                {g.levels.map((l) => {
-                  const isCleared = cleared.includes(l.id);
-                  return (
-                    <button
-                      key={l.id}
-                      className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line bg-white py-2.5 pr-3.5 pl-2.5 text-left shadow-[0_3px_0_#e2e6ee] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_5px_0_#dfe4ec,0_10px_20px_rgb(32_44_70/0.08)]"
-                      onClick={() => openLevel(l)}
-                    >
-                      {/* a cleared level's number turns green */}
-                      <span
-                        className={`grid size-8 shrink-0 place-items-center rounded-lg font-display text-md font-semibold ${
-                          isCleared ? 'bg-pass-soft text-pass' : 'bg-brand-soft text-brand'
-                        }`}
-                      >
-                        {levelNumber(l.id)}
-                      </span>
-                      <span className="flex-1 font-display text-md font-semibold">{localizeLevel(l).title}</span>
-                      {isCleared && <Check size={18} strokeWidth={2.8} className="shrink-0 text-pass" aria-label={tr.home.cleared} />}
-                    </button>
-                  );
-                })}
-              </div>
+              <h3 className="mt-4 mb-1 px-3 font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">{groupName(g.name)}</h3>
+              {g.levels.map((l) => {
+                const isCleared = cleared.includes(l.id);
+                return (
+                  <button
+                    key={l.id}
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors duration-150 hover:bg-shade/5"
+                    onClick={() => openLevel(l)}
+                  >
+                    {/* a cleared level's number turns green */}
+                    <span className={`w-6 shrink-0 text-right font-display text-md font-semibold tabular-nums ${isCleared ? 'text-pass' : 'text-muted'}`}>
+                      {levelNumber(l.id)}
+                    </span>
+                    <span className="flex-1 font-display text-md font-semibold">{localizeLevel(l).title}</span>
+                    {isCleared && <Check size={16} strokeWidth={2.8} className="shrink-0 text-pass" aria-label={tr.home.cleared} />}
+                  </button>
+                );
+              })}
             </section>
           ))}
         </div>
       </div>
     </div>
-  );
-}
-
-/** A tier's difficulty as filled dots: ●○○, ●●○, ●●●. */
-function Pips({ filled, of }: { filled: number; of: number }) {
-  const tr = useT();
-  return (
-    // a pixel below the line box's centre (the capitals'), toward the lowercase letters', so they don't look high
-    <span className="flex translate-y-px gap-1" aria-label={tr.home.difficulty(filled, of)}>
-      {Array.from({ length: of }, (_, k) => (
-        <span key={k} className={`size-2 rounded-full ${k < filled ? 'bg-brand' : 'bg-shade/12'}`} />
-      ))}
-    </span>
   );
 }

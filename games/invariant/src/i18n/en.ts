@@ -20,7 +20,6 @@ export const en = {
     tutorial: 'Tutorial',
     levels: 'Levels',
     back: 'Back',
-    difficulty: (filled: number, of: number) => `difficulty ${filled} of ${of}`,
     language: 'Language',
     cleared: 'Cleared',
     clearedCount: (n: number, of: number) => `${n} of ${of} levels cleared`,
