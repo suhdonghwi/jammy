@@ -4,8 +4,7 @@ import { create } from 'zustand';
 // Sounds, UI Audio, Impact Sounds, Music Jingles), played through Web Audio so
 // one clip can vary in pitch and loudness. The files are in src/assets/sfx,
 // named by what they are for. A role with no clip is silent (button clicks,
-// frogs all stopping, goal pools, egg cracks and proved rules, for now); the
-// sound lab can still try clips for them.
+// frogs all stopping, goal pools, egg cracks and proved rules, for now).
 //
 // Browsers only allow sound after the page has been used, so the audio
 // context starts (and the clips load) at the first press or key; anything
@@ -61,8 +60,6 @@ const GAIN: Record<Role, number> = {
 
 const takes = new Map<string, AudioBuffer[]>();
 const roleOf = (path: string) => path.slice(path.lastIndexOf('/') + 1, -'.m4a'.length).replace(/-\d+$/, '');
-/** The sound lab's stand-ins (dev only): a role's clips, scaled to its own clips' loudness. */
-const overrides = new Map<Role, { bufs: AudioBuffer[]; peak: number }>();
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -104,14 +101,13 @@ function live(): AudioContext | null {
  */
 function play(role: Role, { gain = 1, rate = 1, at = 0, pan = 0 }: { gain?: number; rate?: number; at?: number; pan?: number } = {}) {
   const c = live();
-  const o = overrides.get(role);
-  const bufs = o ? o.bufs : takes.get(role);
+  const bufs = takes.get(role);
   if (!c || !bufs?.length) return;
   const src = c.createBufferSource();
   src.buffer = bufs[Math.floor(Math.random() * bufs.length)];
   src.playbackRate.value = rate;
   const g = c.createGain();
-  g.gain.value = GAIN[role] * gain * (o ? matchLoudness(role, o.peak) : 1);
+  g.gain.value = GAIN[role] * gain;
   let node: AudioNode = src.connect(g);
   if (pan) node = node.connect(new StereoPannerNode(c, { pan }));
   node.connect(master!);
@@ -208,45 +204,6 @@ export const sfx = {
     play('cleared');
   },
 };
-
-// ---------------------------------------------------------------- the sound lab (dev only)
-
-/** Whether the game has a clip of its own for `role` (a role without one is silent). */
-export const hasOwnClip = (role: Role) => Object.keys(URLS).some((path) => roleOf(path) === role);
-
-/** Load a clip to audition (starting audio first if it hasn't started). */
-export async function loadClip(url: string): Promise<AudioBuffer> {
-  start();
-  const b = await (await fetch(url)).arrayBuffer();
-  return ctx!.decodeAudioData(b);
-}
-
-function peak(b: AudioBuffer): number {
-  const d = b.getChannelData(0);
-  let m = 0;
-  for (let i = 0; i < d.length; i++) m = Math.max(m, Math.abs(d[i]));
-  return m || 1;
-}
-
-const ownPeaks = new Map<Role, number>();
-/** The gain that brings a stand-in with this peak to the loudness of the role's own clip. */
-function matchLoudness(role: Role, standIn: number): number {
-  const own = takes.get(role)?.[0];
-  if (!own) return 1;
-  if (!ownPeaks.has(role)) ownPeaks.set(role, peak(own));
-  return ownPeaks.get(role)! / standIn;
-}
-
-/** Play `role` with this clip instead of its own, about as loud; null silences it, undefined restores it. */
-export function overrideRole(role: Role, buf: AudioBuffer | null | undefined) {
-  if (buf === undefined) return void overrides.delete(role);
-  overrides.set(role, { bufs: buf ? [buf] : [], peak: buf ? peak(buf) : 1 });
-}
-
-/** Play a role once at its usual loudness. */
-export function previewRole(role: Role) {
-  play(role);
-}
 
 if (typeof window !== 'undefined') {
   // the first press or key starts audio; every enabled button clicks

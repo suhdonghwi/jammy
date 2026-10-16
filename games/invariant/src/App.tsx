@@ -9,11 +9,7 @@ import { SyntaxCard } from './ui/rules/SyntaxCard';
 
 // The page: the 3D world behind everything, and the home screen or the level's HUD over it.
 
-/** The sound lab (`?sfx-lab`), in development only: it isn't in the built game. */
-const SfxLab = import.meta.env.DEV ? lazy(() => import('./ui/dev/SfxLab').then((m) => ({ default: m.SfxLab }))) : null;
-const showLab = import.meta.env.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).has('sfx-lab');
-
-/** The link preview image's page (`?poster`, see ui/dev/Poster), in development only too. */
+/** The link preview image's page (`?poster`, see ui/dev/Poster), in development only: it isn't in the built game. */
 const Poster = import.meta.env.DEV ? lazy(() => import('./ui/dev/Poster').then((m) => ({ default: m.Poster }))) : null;
 const showPoster = import.meta.env.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).has('poster');
 
@@ -47,11 +43,6 @@ export function App() {
       {mode !== 'menu' && level && <Hud />}
       <RulesCard />
       <SyntaxCard />
-      {SfxLab && showLab && (
-        <Suspense fallback={null}>
-          <SfxLab />
-        </Suspense>
-      )}
     </div>
   );
 }
