@@ -11,6 +11,8 @@ const isolation = {
 };
 
 export default defineConfig({
+  // Served from a subpath in production (e.g. BASE_PATH=/invariant/).
+  base: process.env.BASE_PATH ?? '/',
   plugins: [react(), tailwindcss(), titleGlyphs()],
   server: { headers: isolation },
   preview: { headers: isolation },
