@@ -34,3 +34,4 @@ the same headers. `pnpm install` copies Z3's browser build into `public/z3/`.
 | `pnpm test` | Unit tests (parser, types, integer semantics, box search) |
 | `pnpm validate` | Proves every level's solutions with Z3, checks every pitfall fails the intended rule, checks real frogs terminate, and checks no hint gives a solution away |
 | `pnpm build` | Typecheck + production build |
+| `pnpm og` | Redraws the link preview image, `public/og.png`, by screenshotting the game's `?poster` page in the system Chrome |
