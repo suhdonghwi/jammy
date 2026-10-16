@@ -172,6 +172,8 @@ export const en = {
     trying: (f: string) => `Trying \`${f}\`…`,
     guessedRight: 'Right, no. ',
     guessedWrong: 'Not quite. ',
+    /** A prediction that was right, whichever way the answer went. */
+    predictedRight: 'Right! ',
 
     passedInitialization: 'Correct! Every egg sits on your area: the first rule holds.',
     passedMaintenance: 'Correct! No hop leaves your area: the second rule holds. A frog anywhere on it lands on it again.',
@@ -239,9 +241,14 @@ export const en = {
     neverLeaves:
       'So it can never leave your area, no matter how many hops. That makes your area an **invariant**: true every time the program reaches the top of the loop.\n\nWhen the loop stops, the frog is still somewhere on your area. But what we need to show is that it stops on a **goal**. Does stopping on your area mean stopping on a goal?',
 
+    /** The answer to neverLeaves' question when the learner's area is already strong enough. */
+    stopsAllGoals:
+      'For your area, yes. Look at the outlined tiles: they are on your area and the loop stops there, so they are where a frog can end up. Every one is a goal.\n\nThat is the third rule: every frog that stops on your area is on a goal.',
+    /** The answer when it isn't: some of those tiles (outlined in red) are off a goal. */
     onlyIfGoal:
-      'Not necessarily. Look at the outlined tiles: they are on your area and the loop stops there, so they are where a frog can end up.\n\nThe third rule says every one of them must be a goal.',
-    askTermination: 'Is every one a goal? Press **Check**: it now runs all three rules.\n\nIf a frog stops off a goal, change your area and Check again.',
+      'For your area, no. Look at the outlined tiles: they are on your area and the loop stops there, so they are where a frog can end up. The red ones are not goals.\n\nThe third rule says every one of them must be a goal.',
+    confirmTermination: 'Press **Check** to confirm it: it now runs all three rules.',
+    askTermination: 'Change your area so every frog that stops on it is on a goal, then press **Check**: it now runs all three rules.',
     nudgeTermination: 'A real frog never passes `n`, so `i` is never greater than `n`.',
     questionTermination: 'Would it pass all three rules?',
     afterDemoTermination:

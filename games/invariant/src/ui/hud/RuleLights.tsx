@@ -17,7 +17,7 @@ export function RuleLights() {
   const tr = useT();
   if (!lights.length) return null;
   return (
-    <div className={`flex flex-wrap items-center gap-1 rounded-full max-[22.5rem]:gap-0.5 ${spot === 'lights' ? 'spotlight' : ''}`}>
+    <div className={`flex w-fit flex-wrap items-center gap-1 rounded-full max-[22.5rem]:gap-0.5 ${spot === 'lights' ? 'spotlight' : ''}`}>
       {RULES
         .filter((r) => lights.includes(r))
         .map((r) => {

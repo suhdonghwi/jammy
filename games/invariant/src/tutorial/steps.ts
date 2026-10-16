@@ -47,10 +47,13 @@ interface Step {
 export let learnerFormula = '';
 /** Rules the learner has seen fail on an area of their own (then the hand's demo of that rule is skipped). */
 const witnessed = new Set<Rule>();
+/** The learner's answer to "does stopping on your area mean stopping on a goal?" (null before they answer). */
+let predictedGoal: boolean | null = null;
 
 export function resetProgress() {
   learnerFormula = '';
   witnessed.clear();
+  predictedGoal = null;
 }
 
 const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
@@ -76,7 +79,7 @@ function tilesWhere(test: (x: number, y: number) => boolean): [number, number][]
 }
 
 /** Outlines on tiles (no text: the caption says what they show); green unless `tone` says otherwise. */
-const outlines = (tiles: [number, number][], tone: 'good' | 'info' = 'good') => tiles.map(([x, y]) => ({ x, y, text: '', tone }));
+const outlines = (tiles: [number, number][], tone: 'good' | 'info' | 'fail' = 'good') => tiles.map(([x, y]) => ({ x, y, text: '', tone }));
 
 /** Stop tiles on the learner's area, in the tutorial's view: the only places a run on the area can end. */
 function stopsOnArea(): [number, number][] {
@@ -426,24 +429,34 @@ export const STEPS: Step[] = [
       }
       await sleep(500);
       guard(gen);
-      await beat(
-        gen,
-        T().neverLeaves,
-        { callouts: useGame.getState().callouts },
-      );
+      // a real question: the next step answers it for the learner's own area, which may already be strong enough
+      const kept = useGame.getState().callouts;
+      const answer = ask(gen, T().neverLeaves);
+      useGame.setState({ callouts: kept });
+      predictedGoal = await answer;
     },
   },
-  // 2.4 stage 3: stopping on a goal. First the answer to 2.3's "Is that
-  // enough?", with the tiles it is about outlined; then the learner checks.
+  // 2.4 stage 3: stopping on a goal. First the answer to 2.3's question, for
+  // the learner's own area: the tiles where a frog can stop on it outlined,
+  // the ones off a goal in red. An area that is already strong enough (say
+  // `i <= n`) only needs a Check to confirm it; a weaker one gets changed.
   {
     scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[3, 3]], camera: [1.5, 3, 12] },
     run: async (gen) => {
+      const L = useGame.getState().level!;
+      const { inputs } = useGame.getState();
+      const stops = stopsOnArea();
+      const offGoal = stops.filter(([x, y]) => L.fast.post(tileState(L, x, y, inputs)) !== true);
+      const strong = offGoal.length === 0;
+      const right = predictedGoal === null ? null : predictedGoal === strong;
+      const verdict = right === null ? '' : right ? T().predictedRight : T().guessedWrong;
       await beat(
         gen,
-        T().onlyIfGoal,
+        verdict + (strong ? T().stopsAllGoals : T().onlyIfGoal),
         {
           spot: 'lights',
-          callouts: outlines(stopsOnArea(), 'info'),
+          tone: right ? 'success' : 'info',
+          callouts: strong ? outlines(stops) : [...outlines(stops.filter((t) => !offGoal.includes(t)), 'info'), ...outlines(offGoal, 'fail')],
           prepare: () => {
             useGame.getState().setReveal({ awake: ALL });
             void cameraRig.lookAtTile(2, 2, 15.6);
@@ -452,7 +465,7 @@ export const STEPS: Step[] = [
       );
       resetFrogs();
       await stage(gen, {
-        ask: T().askTermination,
+        ask: strong ? T().confirmTermination : T().askTermination,
         rules: ALL,
         nudge: T().nudgeTermination,
         // the objection every learner raises at Termination, and its answer

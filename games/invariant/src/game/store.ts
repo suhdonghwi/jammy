@@ -130,7 +130,7 @@ export interface Game {
   /** Bumped when Check is pressed with an invalid formula (shows the inline error at once). */
   errorNudge: number;
   /** Tutorial labels: over tile (x, y), or riding along with a frog when `frog` (its id) is set; an empty text is an outline alone. */
-  callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' }[];
+  callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];
   /** Where the last check failed (tile in the focused plane) and why. */
   failMark: { x: number; y: number; label: string; t0: number } | null;
 
