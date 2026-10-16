@@ -8,6 +8,7 @@ import { GROUPS, levelNumber, levels } from '../../levels/catalog';
 import { groupName, localizeLevel } from '../../levels/localize';
 import { button } from '../classes';
 import { usePresence } from '../presence';
+import { GitHubLink } from './GitHubLink';
 import { LangSwitch } from './LangSwitch';
 import { ResetProgress } from './ResetProgress';
 import { SoundToggle } from './SoundToggle';
@@ -16,7 +17,7 @@ import { useCompactHome } from './useCompactHome';
 import { useNarrowHome } from './useNarrowHome';
 
 // The home screen over the 3D scene: the title, a line about the game, the way
-// in, the level list, and in the corner, resetting progress and the language.
+// in, the level list, and in the corner, the source, resetting progress and the language.
 
 export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
@@ -44,6 +45,7 @@ export function HomeOverlay() {
           view === 'levels' ? 'opacity-35' : ''
         }`}
       >
+        <GitHubLink />
         <ResetProgress />
         <SoundToggle />
         <LangSwitch />

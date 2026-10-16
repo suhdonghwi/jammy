@@ -34,6 +34,7 @@ export const ko: Messages = {
     resetConfirm: '정말 초기화할까요?',
     soundOn: '소리 켜짐',
     soundOff: '소리 꺼짐',
+    source: 'GitHub에서 소스 보기',
   },
 
   topBar: {

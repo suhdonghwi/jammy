@@ -27,6 +27,7 @@ export const en = {
     resetConfirm: 'Reset progress?',
     soundOn: 'Sound on',
     soundOff: 'Sound off',
+    source: 'Source on GitHub',
   },
 
   topBar: {
