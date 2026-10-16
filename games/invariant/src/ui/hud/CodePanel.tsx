@@ -76,21 +76,20 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   const bodyFirst = stmts.length ? lineOf(stmts[0].span.from) : -1;
   const bodyLast = stmts.length ? lineOf(stmts[stmts.length - 1].span.to) : -2;
   const rows = lines.map((l, i) => {
-    // a line's height even when it is blank
+    // a line's height even when it is blank; highlights are plain bands, square-cornered
     let cls = '-mx-2 flex min-h-lh px-2';
     let key = `l${i}`;
     let style: React.CSSProperties | undefined;
     if (i === headerLine) {
-      cls += ` rounded-md ${beat.landTick > 0 ? LANDED[beat.landGuard] : ''}`;
+      cls += ` ${beat.landTick > 0 ? LANDED[beat.landGuard] : ''}`;
       key += `h${beat.landTick}`;
     } else if (i >= bodyFirst && i <= bodyLast) {
-      cls += `${i === bodyFirst ? ' rounded-t-md' : ''}${i === bodyLast ? ' rounded-b-md' : ''}`;
       key += `b${beat.hopTick}`;
       // as long as the hop itself
       if (beat.hopTick > 0) style = { animation: `body-run ${Math.max(0.3, beat.hopDur + 0.15)}s ease-out` };
     }
-    if (beat.spotLines.includes(i + 1) || i === hoverLine) cls += ' rounded-md bg-brand-soft';
-    if (requiresLines.includes(i)) cls += ' rounded-md bg-warn-soft';
+    if (beat.spotLines.includes(i + 1) || i === hoverLine) cls += ' bg-brand-soft';
+    if (requiresLines.includes(i)) cls += ' bg-warn-soft';
     return (
       <div key={key} className={cls} style={style}>
         <span>{piece(l.from, l.to, `l${i}`)}</span>
