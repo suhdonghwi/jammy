@@ -145,7 +145,7 @@ export function CodePanel() {
       className={`${CARD} flex min-h-0 animate-slide-in px-4 pt-3.25 pb-3 max-md:p-2.5 ${open ? 'flex-col' : 'flex-wrap items-center gap-x-3 gap-y-2'} ${spot === 'code' ? 'spotlight' : ''}`}
     >
       <button
-        className={`${CARD_LABEL} flex cursor-pointer items-center justify-between gap-1.5 ${open ? 'w-full' : 'mb-0'}`}
+        className={`${CARD_LABEL} flex cursor-pointer items-center justify-between gap-1.5 ${open ? 'w-full' : 'mb-0!'}`}
         aria-expanded={open}
         onClick={() => setFolded(open)}
       >
