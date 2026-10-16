@@ -144,8 +144,10 @@ export function CodePanel() {
       data-frame="top"
       className={`${CARD} flex min-h-0 animate-slide-in px-4 pt-3.25 pb-3 max-md:p-2.5 ${open ? 'flex-col' : 'flex-wrap items-center gap-x-3 gap-y-2'} ${spot === 'code' ? 'spotlight' : ''}`}
     >
+      {/* a chip around the title and its chevron, open or folded: a tint on hover, and padding that makes it easier
+          to hit than the small letters alone. Negative margins keep the letters where a plain label would be */}
       <button
-        className={`${CARD_LABEL} flex cursor-pointer items-center justify-between gap-1.5 ${open ? 'w-full' : 'mb-0!'}`}
+        className={`${CARD_LABEL} -mx-1.5 -mt-1 flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-shade/6 hover:text-muted ${open ? 'mb-0.5! self-start' : '-mb-1!'}`}
         aria-expanded={open}
         onClick={() => setFolded(open)}
       >
