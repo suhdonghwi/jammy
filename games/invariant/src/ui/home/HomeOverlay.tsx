@@ -39,7 +39,7 @@ export function HomeOverlay() {
       </div>
       {/* the corner controls too: behind the level list (it comes later in the DOM), faded back like the title */}
       <div
-        className={`fixed top-4 right-4 flex animate-[fade_0.4s_ease-out_both] items-center gap-2 transition-opacity duration-180 ${
+        className={`fixed top-4 right-4 flex max-sm:top-2.5 max-sm:right-2.5 animate-[fade_0.4s_ease-out_both] items-center gap-2 transition-opacity duration-180 ${
           view === 'levels' ? 'opacity-35' : ''
         }`}
       >
@@ -93,7 +93,7 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
   return (
     // arriving straight on the list (back from a level), it is simply there
     <div
-      className={`fixed inset-0 flex items-center justify-center bg-horizon/45 p-4 backdrop-blur-xs ${
+      className={`fixed inset-0 flex items-center justify-center bg-horizon/45 p-4 backdrop-blur-xs max-sm:p-2.5 ${
         leaving ? 'pointer-events-none animate-fade-out' : instant ? '' : 'animate-[fade_0.18s_ease-out]'
       }`}
     >

@@ -13,7 +13,7 @@ export function Dialog({ flag, wide, children }: { flag: Flag; wide?: boolean; c
   const close = () => useGame.setState({ [flag]: false } as Partial<Game>);
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-horizon/55 p-4 backdrop-blur-xs ${leaving ? 'pointer-events-none animate-fade-out' : 'animate-[fade_0.15s]'}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-horizon/55 p-4 backdrop-blur-xs max-sm:p-2.5 ${leaving ? 'pointer-events-none animate-fade-out' : 'animate-[fade_0.15s]'}`}
       onClick={close}
     >
       <div
