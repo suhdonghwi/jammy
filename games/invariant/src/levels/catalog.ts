@@ -208,7 +208,7 @@ ensures i == n;`,
           },
         ],
         intro:
-          'The goal now depends on `n`. Change `n` in the inputs card under the code — the proof has to hold for every `n`.',
+          'The goal now depends on `n`. Change `n` in the inputs under the code — the proof has to hold for every `n`.',
         hints: [
           'Change `n`. What moves with it?',
           'The goal says nothing about `s`, so your area needn’t either.',
@@ -419,7 +419,7 @@ ensures y == abs(a);`,
         ],
         intro: 'Walk `x` to `0` from either side, counting the steps in `y`.',
         hints: [
-          'Try a negative `a` in the inputs card too. Whichever way a frog hops, what happens to `abs(x)`? And to `y`?',
+          'Try a negative `a` in the inputs too. Whichever way a frog hops, what happens to `abs(x)`? And to `y`?',
           'Each hop, `abs(x)` goes down by one and `y` goes up by one, so their sum never changes.',
           'One equation, with `abs(x)`, `y` and `abs(a)` in it.',
         ],
@@ -583,7 +583,7 @@ ensures forall 0 <= k < n: A[k] <= m;`,
           { formula: 'i <= n', message: 'That fences `i`, but says nothing about `m`.' },
         ],
         intro:
-          'The largest cell of `A`: walk `i` along the array, keeping the biggest so far in `m`. `A` is in the inputs card — type cells in, or roll the dice. A cell outside `A` (before `0` or past the end) reads as `0`.',
+          'The largest cell of `A`: walk `i` along the array, keeping the biggest so far in `m`. `A` is in the inputs under the code — type cells in, or roll the dice. A cell outside `A` (before `0` or past the end) reads as `0`.',
         hints: [
           'Step a frog and watch `m`. After each hop, which cells of `A` is `m` already at least as big as?',
           'The goal talks about every cell before `n`. While the loop runs, `m` only answers for the cells before `i`.',

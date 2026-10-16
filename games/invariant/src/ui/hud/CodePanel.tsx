@@ -6,10 +6,11 @@ import { tokenize } from '../../lang/parser';
 import { planeExists, type CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
 import { tokenClass } from '../codeColors';
+import { inputRows, InputsSection } from './Inputs';
 
 // The program, with the loop lighting up as frogs hop and a ghost `assert(?)`
-// line standing for the invariant at the top of the loop. On phones it folds
-// away to its title, so it doesn't hide the scene.
+// line standing for the invariant at the top of the loop, and the inputs at
+// its foot. It folds away to its title (and the inputs), so it doesn't hide the scene.
 
 /** The loop condition's flash when frogs land: keep looping, stop, or some of each. */
 const LANDED = {
@@ -27,7 +28,7 @@ interface Beat {
   assert: boolean;
   /** Lines the tutorial's caption is talking about (1-based). */
   spotLines: number[];
-  /** The input whose row in the inputs card is hovered: its declaration lights up. */
+  /** The input whose row under the code is hovered: its declaration lights up. */
   inputHover: string | null;
   /** The inputs in view are ruled out by the precondition: its lines say so. */
   impossible: boolean;
@@ -133,28 +134,36 @@ export function CodePanel() {
   // a new level starts unfolded, and so does anything the tutorial points at in the code
   useEffect(() => setFolded(false), [level]);
   const open = !folded || spot === 'code' || spotLines.length > 0;
+  const hasInputs = inputRows(level).length > 0;
   if (!reveal.code) return null;
   return (
     // wide enough for the longest program line in the catalog; anything longer scrolls sideways rather than spilling.
     // No taller than the room between the top bar and the caption (a long caption on a phone): the code scrolls
-    // inside it, not the card, whose spotlight ring would be clipped
-    <div data-frame="top" className={`${CARD} flex min-h-0 animate-slide-in flex-col px-4 pt-3.25 pb-3 max-md:p-2.5 ${spot === 'code' ? 'spotlight' : ''}`}>
-      {/* folding only exists on phones; elsewhere the title is just a label */}
+    // inside it, not the card, whose spotlight ring would be clipped. Folded, the title and the inputs share one row
+    <div
+      data-frame="top"
+      className={`${CARD} flex min-h-0 animate-slide-in px-4 pt-3.25 pb-3 max-md:p-2.5 ${open ? 'flex-col' : 'flex-wrap items-center gap-x-3 gap-y-2'} ${spot === 'code' ? 'spotlight' : ''}`}
+    >
       <button
-        className={`${CARD_LABEL} flex w-full items-center justify-between gap-1.5 max-sm:cursor-pointer sm:pointer-events-none ${open ? '' : 'max-sm:mb-0'}`}
+        className={`${CARD_LABEL} flex cursor-pointer items-center justify-between gap-1.5 ${open ? 'w-full' : 'mb-0'}`}
         aria-expanded={open}
         onClick={() => setFolded(open)}
       >
         {tr.code.title}
-        <ChevronDown size={14} strokeWidth={2.6} className={`transition-transform duration-200 sm:hidden ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} strokeWidth={2.6} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       {/* the scroll area runs to the card's edges (the card's padding is inside it, matching the classes above), so a
-          scrolling program clips at the rounded edge, with its scrollbar along it, not at a line floating above it */}
-      <pre
-        className={`m-0 -mx-4 -mb-3 min-h-0 overflow-auto rounded-b-2xl px-4 pb-3 max-md:-mx-2.5 max-md:-mb-2.5 max-md:px-2.5 max-md:pb-2.5 ${open ? '' : 'max-sm:hidden'} font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]`}
-      >
-        {nodes}
-      </pre>
+          scrolling program clips at the rounded edge, with its scrollbar along it, not at a line floating above it;
+          with inputs below, it runs down to their rule */}
+      {open && (
+        <pre
+          className={`m-0 -mx-4 min-h-0 overflow-auto px-4 max-md:-mx-2.5 max-md:px-2.5 ${hasInputs ? 'pb-2.5 max-md:pb-2' : '-mb-3 rounded-b-2xl pb-3 max-md:-mb-2.5 max-md:pb-2.5'} font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]`}
+        >
+          {nodes}
+        </pre>
+      )}
+      {/* a fresh section per level: a field being typed in must not carry its text over */}
+      <InputsSection key={level.id} inline={!open} />
     </div>
   );
 }

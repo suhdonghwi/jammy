@@ -42,7 +42,7 @@ bound*.
 | States the precondition rules out | Faint ghost tiles — not possible states |
 | Postcondition | **Goal** pools, shown only in the stop region |
 | Loop invariant | The learner's **area**, raised as blue slabs |
-| An input the loop never changes | A **plane** per value, picked in the **inputs card** under the code |
+| An input the loop never changes | A **plane** per value, picked in the **inputs** at the foot of the code card |
 | An array input | The same: one plane per array, typed into the card or rolled with its dice |
 
 **Visual language.** Everything the level fixes is quiet grayscale; the
@@ -85,8 +85,9 @@ Most invariants mention an input (e.g. `n`) that the loop never changes. Inputs
 are a direction frogs can never hop in, so the state space is a set of
 **independent planes**, one per choice of inputs, and all three rules hold for
 every input exactly when they hold in every plane. Showing one plane at a time
-loses nothing: the **inputs card** under the code lists every input that is
-not on an axis, and changing one switches the plane at once. (They used to be
+loses nothing: the **inputs**, at the foot of the code card, list every input
+that is not on an axis, and changing one switches the plane at once. Folded,
+the code card keeps them beside its title (an array on a row of its own). (They used to be
 "ponds", floors stacked in 3D with the camera riding between them, and then a
 vertical slider; a card of plain controls is what a programmer expects, and it
 has room for arrays.)

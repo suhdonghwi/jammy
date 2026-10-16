@@ -3,10 +3,10 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type R
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type CompiledLevel, type Inputs } from '../../levels/level';
-import { CARD, CARD_LABEL } from '../classes';
+import { CARD_LABEL } from '../classes';
 
-// The inputs that are not on an axis, one row each: a number with − and +
-// for an integer, a text field (and a dice) for an array. Changing one picks
+// The inputs that are not on an axis, at the foot of the code card, one row
+// each: a number with − and + for an integer, a text field (and a dice) for an array. Changing one picks
 // another plane of the state space, and the scene swaps to it at once. A
 // value the precondition rules out is allowed: the plane is then all ghost
 // tiles, and the code panel's `requires` line says why.
@@ -34,25 +34,38 @@ const FIELD =
 const SMALL_BUTTON =
   'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-line bg-sky text-muted transition-colors enabled:hover:bg-horizon enabled:hover:text-ink enabled:active:translate-y-px disabled:cursor-default';
 
-export function InputsCard() {
+/** The inputs that get a row: those not on an axis, less arrays' lengths (a length follows its array). */
+export function inputRows(level: CompiledLevel): string[] {
+  const lengths = new Set(Object.values(level.arrays));
+  return level.offAxis.filter((n) => !lengths.has(n));
+}
+
+/**
+ * The inputs, as the code card's last part. Under the code they get a label
+ * and a rule across the card; with the code folded they sit beside its title,
+ * so the folded card is one row (an array takes a second).
+ */
+export function InputsSection({ inline }: { inline: boolean }) {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
   const busy = useGame((s) => s.busy);
-  const reveal = useGame((s) => s.reveal.code);
   const tr = useT();
-  const lengths = new Set(Object.values(level.arrays));
-  // an array's length follows the array: no row of its own
-  const rows = level.offAxis.filter((n) => !lengths.has(n));
+  const rows = inputRows(level);
   const exists = planeExists(level, inputs);
-  if (!reveal || rows.length === 0) return null;
+  if (rows.length === 0) return null;
   const set = (next: Inputs) => {
     if (useGame.getState().busy) return;
     useGame.setState({ inputs: next });
   };
+  const hasArrays = Object.keys(level.arrays).length > 0;
   return (
-    // data-frame: on phones the scene centres itself below this card, not below the code alone (scene/PhoneFraming)
-    <div data-frame="top" className={`${CARD} flex shrink-0 animate-slide-in flex-col px-4 pt-3.25 pb-3 max-md:p-2.5 ${busy ? 'opacity-60' : ''}`}>
-      <div className={CARD_LABEL}>{tr.inputs.title}</div>
+    <div
+      className={`flex min-w-0 flex-col transition-opacity ${busy ? 'opacity-60' : ''} ${
+        // an array's field needs the room: folded, it goes under the title rather than beside it
+        inline ? (hasArrays ? 'basis-full' : 'min-w-36 flex-1') : '-mx-4 shrink-0 border-t border-line px-4 pt-2.5 max-md:-mx-2.5 max-md:px-2.5 max-md:pt-2'
+      }`}
+    >
+      {!inline && <div className={CARD_LABEL}>{tr.inputs.title}</div>}
       <div className="flex flex-col gap-1.5">
         {rows.map((name) => (
           <div
@@ -77,7 +90,7 @@ export function InputsCard() {
         ))}
       </div>
       {/* under the rows: each array's length, and whether such an input exists at all */}
-      {(lengths.size > 0 || !exists) && (
+      {(hasArrays || !exists) && (
         <div className="mt-1.5 flex flex-wrap gap-x-3 font-mono text-xs text-faint">
           {Object.entries(level.arrays).map(([a, len]) => (
             <span key={a}>
