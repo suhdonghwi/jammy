@@ -145,6 +145,13 @@
     fade 0.3s ease-out,
     spotlight 1.6s ease-in-out infinite;
 }
+/* A small target inside a card (the rule lights): a thinner ring with only a
+   faint halo, so the pulse doesn't flood the card around it. */
+.spotlight-soft::after {
+  animation:
+    fade 0.3s ease-out,
+    spotlight-soft 1.6s ease-in-out infinite;
+}
 /* Check sits inside the formula row, with no room for the ring (and it would
    cut across the button's 3D edge): the button pulses, and a glow wraps it
    and its bottom edge. */
@@ -316,6 +323,19 @@
     box-shadow:
       0 0 0 3px rgb(59 130 246 / 0.85),
       0 0 0 13px rgb(59 130 246 / 0.08);
+  }
+}
+@keyframes spotlight-soft {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgb(59 130 246 / 0.45),
+      0 0 0 3px rgb(59 130 246 / 0.06);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgb(59 130 246 / 0.75),
+      0 0 0 5px rgb(59 130 246 / 0.08);
   }
 }
 @keyframes check-pulse {
