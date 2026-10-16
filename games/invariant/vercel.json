@@ -7,7 +7,10 @@
     { "source": "/", "destination": "/invariant/", "permanent": false },
     { "source": "/invariant", "destination": "/invariant/", "permanent": true }
   ],
-  "rewrites": [{ "source": "/invariant/:path*", "destination": "/:path*" }],
+  "rewrites": [
+    { "source": "/invariant/", "destination": "/index.html" },
+    { "source": "/invariant/:path*", "destination": "/:path*" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
