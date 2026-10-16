@@ -1,0 +1,336 @@
+@import 'tailwindcss';
+
+/* Styles live in the components as Tailwind classes. This file holds what
+   reads better as CSS: the design tokens, keyframes, the page itself, and the
+   tutorial's spotlight ring. */
+
+/* Tall or narrow windows stack the home copy under the scene. */
+@custom-variant narrow {
+  @media (max-width: 768px) {
+    @slot;
+  }
+  @media (max-aspect-ratio: 11/10) {
+    @slot;
+  }
+}
+
+/* The Korean fonts, for Hangul only, so a symbol Nunito lacks (≠, say) on an
+   English page never pulls in a whole Korean font. They are subsets of the
+   full fonts, made by scripts/subset-fonts.mjs (`pnpm fonts`). */
+@font-face {
+  font-family: 'NanumSquareRound';
+  src: url('./assets/fonts/NanumSquareRound-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+1100-11FF, U+3130-318F, U+AC00-D7A3;
+}
+@font-face {
+  font-family: 'NanumSquareRound';
+  src: url('./assets/fonts/NanumSquareRound-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+1100-11FF, U+3130-318F, U+AC00-D7A3;
+}
+@font-face {
+  font-family: 'TmoneyRoundWind';
+  src: url('./assets/fonts/TmoneyRoundWind-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+  unicode-range: U+1100-11FF, U+3130-318F, U+AC00-D7A3;
+}
+
+@theme {
+  /* Korean letters come from rounded fonts of the same feel: NanumSquareRound
+     beside Nunito, T-money RoundWind beside Fredoka (neither has Latin letters
+     loaded); headings show NanumSquareRound while RoundWind is still loading */
+  --font-sans: 'Nunito Variable', 'NanumSquareRound', ui-rounded, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Fredoka', 'TmoneyRoundWind', 'Nunito Variable', 'NanumSquareRound', ui-rounded, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  /* the UI's base size, between sm and base */
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.5;
+
+  --color-ink: #1c2333;
+  --color-muted: #66708a;
+  --color-faint: #a3abbc;
+  /* the ink colour all faint washes and lines are made of */
+  --color-shade: #202c46;
+  --color-line: rgb(32 44 70 / 0.09);
+  --color-card: rgb(255 255 255 / 0.9);
+  --color-sky: #f6f8fb;
+  --color-horizon: #e8ecf2;
+  --color-wash: #f4f6fa;
+  --color-glass: #c4cddc;
+  --color-brand: #3b82f6;
+  --color-brand-light: #4a8cf7;
+  --color-brand-deep: #2563d4;
+  --color-brand-soft: #e7f0fe;
+  --color-pass: #3fae37;
+  --color-pass-soft: #e5f6e2;
+  --color-fail: #e5484d;
+  --color-fail-soft: #fdecec;
+  --color-warn: #d98b0b;
+  --color-warn-soft: #fdf2dc;
+  --color-slab: #5c9df5;
+  --color-slab-side: #3a78d8;
+  /* the scene's dark labels */
+  --color-tag: #2b3445;
+  --color-tag-good: #2f9e44;
+  --color-tag-fail: #f04f55;
+
+  --shadow-card: 0 10px 30px rgb(32 44 70 / 0.08), 0 2px 6px rgb(32 44 70 / 0.05);
+  --shadow-float: 0 24px 70px rgb(32 44 70 / 0.18);
+  /* chunky "toy" buttons: a solid bottom edge and a soft drop */
+  --shadow-toy: 0 4px 0 #d5dbe5, 0 8px 18px rgb(32 44 70 / 0.1);
+  --shadow-toy-pressed: 0 1px 0 #d5dbe5, 0 3px 8px rgb(32 44 70 / 0.1);
+  --shadow-toy-brand: 0 4px 0 var(--color-brand-deep), 0 8px 18px rgb(59 130 246 / 0.3);
+  --shadow-toy-brand-pressed: 0 1px 0 var(--color-brand-deep), 0 3px 8px rgb(59 130 246 / 0.3);
+
+  --animate-fade: fade 0.2s ease-out;
+  --animate-rise: rise 0.2s ease-out;
+  --animate-slide-in: slide-in 0.4s ease-out;
+  --animate-shake: shake 0.32s ease-in-out;
+  --animate-tag-in: tag-in 0.2s ease-out;
+  /* exits last EXIT_MS (ui/presence.ts) */
+  --animate-fade-out: fade-out 0.15s ease-in forwards;
+  --animate-pop-out: pop-out 0.15s ease-in forwards;
+  --animate-sink-out: sink-out 0.15s ease-in forwards;
+  --animate-tag-out: tag-out 0.15s ease-in forwards;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    color: var(--color-ink);
+    background: var(--color-horizon);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Korean breaks lines between words, not inside them */
+  :lang(ko) {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+}
+
+/* RoundWind has one weight, and already a heavy one: a label of any weight
+   uses it as it is, never thickened further (Fredoka has real weights, so it
+   is unaffected) */
+.font-display {
+  font-synthesis-weight: none;
+}
+
+/* The tutorial's spotlight: a pulsing ring around whatever the caption talks
+   about. It lives on a pseudo-element so it never replaces the element's own
+   animation (the code card's slide-in would otherwise replay when it moves on). */
+.spotlight {
+  position: relative;
+  z-index: 2;
+}
+.spotlight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation:
+    fade 0.3s ease-out,
+    spotlight 1.6s ease-in-out infinite;
+}
+/* A small target inside a card (the rule lights): a thinner ring with only a
+   faint halo, so the pulse doesn't flood the card around it. */
+.spotlight-soft::after {
+  animation:
+    fade 0.3s ease-out,
+    spotlight-soft 1.6s ease-in-out infinite;
+}
+/* Check sits inside the formula row, with no room for the ring (and it would
+   cut across the button's 3D edge): the button pulses, and a glow wraps it
+   and its bottom edge. */
+.spotlight-glow:not(:disabled) {
+  animation: check-pulse 1.6s ease-in-out infinite;
+}
+.spotlight-glow::after {
+  inset: 0 0 -3px 0;
+  animation: check-halo 1.6s ease-in-out infinite;
+}
+.spotlight-glow:disabled::after {
+  display: none;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+@keyframes title-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes shake {
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes sink-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* the code panel's loop: the body lights up while frogs hop; the condition
+   flashes green (keep looping), amber (stop) or blue (some of each) */
+@keyframes body-run {
+  0% {
+    background: rgb(82 194 74 / 0.38);
+  }
+  70% {
+    background: rgb(82 194 74 / 0.28);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@keyframes check-true {
+  0% {
+    background: rgb(82 194 74 / 0.4);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@keyframes check-false {
+  0% {
+    background: rgb(239 165 43 / 0.55);
+  }
+  100% {
+    background: rgb(239 165 43 / 0.18);
+  }
+}
+@keyframes check-mixed {
+  0% {
+    background: rgb(59 130 246 / 0.3);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* scene tags: in and out, and a changed value (the old one slips up and away,
+   the new one rises into place with a brief warm tint) */
+@keyframes tag-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+}
+@keyframes tag-out {
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+}
+@keyframes tag-old {
+  to {
+    opacity: 0;
+    transform: translateY(-70%);
+  }
+}
+@keyframes tag-new {
+  0% {
+    opacity: 0;
+    transform: translateY(70%);
+    color: #ffd98a;
+  }
+  35% {
+    opacity: 1;
+    transform: none;
+    color: #ffd98a;
+  }
+  100% {
+    color: #fff;
+  }
+}
+
+@keyframes spotlight {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgb(59 130 246 / 0.55),
+      0 0 0 8px rgb(59 130 246 / 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgb(59 130 246 / 0.85),
+      0 0 0 13px rgb(59 130 246 / 0.08);
+  }
+}
+@keyframes spotlight-soft {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgb(59 130 246 / 0.45),
+      0 0 0 3px rgb(59 130 246 / 0.06);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgb(59 130 246 / 0.75),
+      0 0 0 5px rgb(59 130 246 / 0.08);
+  }
+}
+@keyframes check-pulse {
+  50% {
+    background: #5b97f8;
+  }
+}
+@keyframes check-halo {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(59 130 246 / 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgb(59 130 246 / 0.42);
+  }
+}
