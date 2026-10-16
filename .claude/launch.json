@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "invariant",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "invariant-frog", "dev", "--port", "5187", "--strictPort"],
+      "port": 5187
+    }
+  ]
+}

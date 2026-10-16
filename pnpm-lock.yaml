@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  games/invariant:
     dependencies:
       '@fontsource-variable/nunito':
         specifier: ^5.3.0
