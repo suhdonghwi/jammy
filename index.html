@@ -5,28 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>jammy.fun</title>
     <meta name="description" content="Small games by Suh Donghwi." />
+    <meta name="theme-color" content="#f4f6fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#151a24" media="(prefers-color-scheme: dark)" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>"
     />
+    <!-- Invariant Frog's rounded type: Fredoka for headings, Nunito for the rest -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;600&display=swap"
+    />
     <style>
+      /* The colours follow games/invariant/src/styles.css. */
       :root {
-        --bg: #faf7f0;
+        --wash: #f4f6fa;
         --card: #ffffff;
-        --ink: #1f1d1a;
-        --muted: #6b665d;
-        --line: #e7e1d4;
-        --accent: #d9622b;
+        --ink: #1c2333;
+        --muted: #66708a;
+        --line: rgb(32 44 70 / 0.09);
+        --grid: rgb(32 44 70 / 0.05);
+        --brand: #3b82f6;
         color-scheme: light dark;
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #17161a;
-          --card: #212026;
-          --ink: #f1eee8;
-          --muted: #a29d94;
-          --line: #33313a;
-          --accent: #f08a54;
+          --wash: #151a24;
+          --card: #1d2430;
+          --ink: #eef1f6;
+          --muted: #9aa4b8;
+          --line: rgb(200 212 235 / 0.1);
+          --grid: rgb(200 212 235 / 0.04);
+          --brand: #5b97f8;
         }
       }
       * {
@@ -34,22 +46,29 @@
       }
       body {
         margin: 0;
+        /* svh, not vh: on phones 100vh is the height with the browser's
+           toolbars hidden, taller than the screen while they show, so the page
+           scrolled though everything fits */
         min-height: 100vh;
+        min-height: 100svh;
         display: grid;
         place-items: center;
         padding: 48px 16px;
-        background: var(--bg);
+        background:
+          linear-gradient(var(--grid) 1px, transparent 1px) center / 44px 44px,
+          linear-gradient(90deg, var(--grid) 1px, transparent 1px) center / 44px 44px,
+          var(--wash);
         color: var(--ink);
-        font: 16px/1.5 system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+        font: 16px/1.5 Nunito, ui-rounded, system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
       main {
         width: 100%;
-        max-width: 560px;
+        max-width: 480px;
       }
       h1 {
         margin: 0 0 4px;
-        font-size: 28px;
-        letter-spacing: -0.02em;
+        font: 600 32px/1.2 Fredoka, ui-rounded, system-ui, sans-serif;
       }
       p.lede {
         margin: 0 0 28px;
@@ -68,16 +87,14 @@
         gap: 16px;
         padding: 16px 18px;
         border: 1px solid var(--line);
-        border-radius: 14px;
+        border-radius: 20px;
         background: var(--card);
         color: inherit;
         text-decoration: none;
-        transition: border-color 0.15s, transform 0.15s;
       }
       a.game:hover,
       a.game:focus-visible {
-        border-color: var(--accent);
-        transform: translateY(-1px);
+        border-color: var(--brand);
         outline: none;
       }
       .emoji {
@@ -85,11 +102,16 @@
         line-height: 1;
       }
       .name {
-        font-weight: 650;
+        font: 600 18px/1.3 Fredoka, ui-rounded, system-ui, sans-serif;
       }
       .desc {
         color: var(--muted);
         font-size: 14px;
+      }
+      @media (max-width: 480px) {
+        body {
+          padding: 24px 16px;
+        }
       }
     </style>
   </head>
