@@ -112,28 +112,39 @@ function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean 
             {done}/{levels.length}
           </span>
         </div>
-        {/* one plain column, top to bottom in play order, under quiet tier labels */}
-        <div className="overflow-y-auto px-3 pt-1 pb-4">
+        {/* one column in play order: each tier is a card, its levels rows */}
+        <div className="overflow-y-auto px-4 pt-1 pb-5">
           {GROUPS.map((g) => (
             <section key={g.name}>
-              <h3 className="mt-4 mb-1 px-3 font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">{groupName(g.name)}</h3>
-              {g.levels.map((l) => {
-                const isCleared = cleared.includes(l.id);
-                return (
-                  <button
-                    key={l.id}
-                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors duration-150 hover:bg-shade/5"
-                    onClick={() => openLevel(l)}
-                  >
-                    {/* a cleared level's number turns green */}
-                    <span className={`w-6 shrink-0 text-right font-display text-md font-semibold tabular-nums ${isCleared ? 'text-pass' : 'text-muted'}`}>
-                      {levelNumber(l.id)}
-                    </span>
-                    <span className="flex-1 font-display text-md font-semibold">{localizeLevel(l).title}</span>
-                    {isCleared && <Check size={16} strokeWidth={2.8} className="shrink-0 text-pass" aria-label={tr.home.cleared} />}
-                  </button>
-                );
-              })}
+              <h3 className="mt-4 mb-2 flex items-baseline justify-between px-1 font-display text-md font-semibold">
+                {groupName(g.name)}
+                <span className="font-mono text-xs font-normal text-muted">
+                  {g.levels.filter((l) => cleared.includes(l.id)).length}/{g.levels.length}
+                </span>
+              </h3>
+              <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
+                {g.levels.map((l) => {
+                  const isCleared = cleared.includes(l.id);
+                  return (
+                    <button
+                      key={l.id}
+                      className="flex w-full cursor-pointer items-center gap-3 py-2 pr-4 pl-2.5 text-left transition-colors duration-150 hover:bg-sky"
+                      onClick={() => openLevel(l)}
+                    >
+                      {/* a cleared level's number turns green */}
+                      <span
+                        className={`grid size-7 shrink-0 place-items-center rounded-lg font-display text-sm font-semibold tabular-nums ${
+                          isCleared ? 'bg-pass-soft text-pass' : 'bg-brand-soft text-brand'
+                        }`}
+                      >
+                        {levelNumber(l.id)}
+                      </span>
+                      <span className="flex-1 font-display text-md font-semibold">{localizeLevel(l).title}</span>
+                      {isCleared && <Check size={16} strokeWidth={2.8} className="shrink-0 text-pass" aria-label={tr.home.cleared} />}
+                    </button>
+                  );
+                })}
+              </div>
             </section>
           ))}
         </div>
