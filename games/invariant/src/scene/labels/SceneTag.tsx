@@ -1,6 +1,6 @@
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
 import { SLAB_H } from '../constants';
@@ -41,6 +41,8 @@ function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
 /** A dark pill with a pointer underneath (both in --tag-bg); a covered tag fades and dips away. */
 const TAG =
   'relative origin-bottom rounded-full bg-(--tag-bg) px-3.25 pt-1 pb-1.25 font-display text-md font-semibold whitespace-nowrap text-white tabular-nums transition-[opacity,translate,scale] duration-250 data-covered:translate-y-1 data-covered:scale-90 data-covered:opacity-0 after:absolute after:-bottom-1.25 after:left-[calc(50%+var(--tag-dx,0px))] after:-ml-1.5 after:border-6 after:border-b-0 after:border-transparent after:border-t-(--tag-bg)';
+/** The holder's place before the first frame sizes it: centred over the anchor, above it. */
+const HOLDER = { transform: 'translate(-50%, -100%)' };
 const TONE: Record<TagTone, string> = {
   info: '[--tag-bg:var(--color-tag)]',
   good: '[--tag-bg:var(--color-tag-good)]',
@@ -69,6 +71,13 @@ export function SceneTag({
   const width = useRef(0);
   const watch = useRef<ResizeObserver | null>(null);
   useEffect(() => () => watch.current?.disconnect(), []);
+  // Html places the label where the group is when it mounts, and each frame
+  // before this component moves the group, so the group starts on the anchor:
+  // at the origin, a new tag would flash there for a frame (on a phone, at the
+  // screen's side). A frog not drawn yet has no anchor: its tag stays hidden
+  // until Html has followed the group there.
+  const [start] = useState(() => anchorPoint(anchor)?.toArray());
+  const placed = useRef(start ? 1 : 0);
   useFrame(({ camera, size }) => {
     if (!watch.current && box.current) {
       const el = box.current;
@@ -76,7 +85,10 @@ export function SceneTag({
       watch.current.observe(el);
     }
     const p = anchorPoint(anchor);
-    if (group.current && p) group.current.position.copy(p);
+    if (group.current && p) {
+      group.current.position.copy(p);
+      placed.current++;
+    }
     // the pointer's tip sits on the anchor and the tag grows upward from it;
     // a little smaller when the camera is far, so it never swamps the frog
     if (holder.current && box.current && p) {
@@ -89,14 +101,15 @@ export function SceneTag({
       const dx = THREE.MathUtils.clamp(Math.max(EDGE + half - x, Math.min(0, size.width - EDGE - half - x)), -reach, reach);
       holder.current.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), -100%) scale(${k.toFixed(3)})`;
       box.current.style.setProperty('--tag-dx', `${(-dx / k).toFixed(1)}px`);
+      if (placed.current > 1) holder.current.style.visibility = '';
     }
     box.current?.toggleAttribute('data-covered', !!hidden?.());
   });
   return (
-    <group ref={group}>
+    <group ref={group} position={start}>
       <Html zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
         {/* positioned (above) so the pointer's tip sits on the anchor */}
-        <div ref={holder} className="origin-bottom pb-1.5">
+        <div ref={holder} className="origin-bottom pb-1.5" style={start ? HOLDER : { ...HOLDER, visibility: 'hidden' }}>
           <div ref={box} className={`${TAG} ${TONE[tone]} ${leaving ? 'animate-tag-out' : 'animate-tag-in'}`}>
             {children}
           </div>
