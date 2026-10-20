@@ -8,7 +8,6 @@ import { Floor } from '../floor/Floor';
 import { Frogs } from '../frogs/Frogs';
 import { HatchShells } from '../frogs/Hatch';
 import { Hand } from '../hand/Hand';
-import { useHover } from '../hover';
 import { Callouts } from '../labels/Callouts';
 import { FailMarker } from '../labels/FailMarker';
 import { FrogTags } from '../labels/FrogTags';
@@ -21,7 +20,6 @@ export function LevelScene() {
   const reveal = useGame((s) => s.reveal);
   const valid = useGame((s) => s.valid);
   const formula = useGame((s) => s.formula);
-  useEffect(() => useHover.setState({ tile: null }), [level, key]);
   useEffect(() => {
     const v = startView(level);
     void cameraRig.resetAngle(false);
@@ -31,7 +29,7 @@ export function LevelScene() {
   return (
     <>
       <Floor
-        key={`floor-${key}`}
+        key={`${level.id}-${key}`}
         level={level}
         inputs={inputs}
         interactive

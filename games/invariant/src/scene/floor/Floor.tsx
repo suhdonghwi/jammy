@@ -120,7 +120,11 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
   });
 
   useEffect(() => {
-    if (interactive) return () => void (canvas.style.cursor = '');
+    if (!interactive) return;
+    return () => {
+      canvas.style.cursor = '';
+      hover.set(null);
+    };
   }, [interactive, canvas]);
 
   const touch = useRef<{ on: boolean; was: [number, number] | null }>({ on: false, was: null });

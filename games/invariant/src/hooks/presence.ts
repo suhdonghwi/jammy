@@ -5,11 +5,9 @@ export const EXIT_MS = 150;
 
 export function usePresence(show: boolean): { mounted: boolean; leaving: boolean } {
   const [mounted, setMounted] = useState(show);
+  if (show && !mounted) setMounted(true);
   useEffect(() => {
-    if (show) {
-      setMounted(true);
-      return;
-    }
+    if (show) return;
     const t = setTimeout(() => setMounted(false), EXIT_MS);
     return () => clearTimeout(t);
   }, [show]);

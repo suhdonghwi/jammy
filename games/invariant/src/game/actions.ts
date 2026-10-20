@@ -59,17 +59,11 @@ function showHints(shown: number) {
   });
 }
 
-export async function check() {
+export async function check(): Promise<'refused' | void> {
   const g = useGame.getState();
   if (g.busy || g.checking || !g.level) return;
-  if (g.mode === 'tutorial') {
-    tutorialCheck();
-    return;
-  }
-  if (!g.formula || !g.formula.ok) {
-    useGame.setState((s) => ({ errorNudge: s.errorNudge + 1 }));
-    return;
-  }
+  if (g.mode === 'tutorial') return tutorialCheck();
+  if (!g.formula || !g.formula.ok) return 'refused';
   frogWorld.clear('test');
   const res = await runChecker(RULES);
   if (!res) return;

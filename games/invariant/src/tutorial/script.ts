@@ -160,13 +160,10 @@ export async function ask(gen: number, text: string): Promise<boolean> {
   return k === 'yes';
 }
 
-export function tutorialCheck() {
+export function tutorialCheck(): 'refused' | void {
   const g = useGame.getState();
   if (!pendingCheck) return;
-  if (!g.formula || !g.formula.ok) {
-    useGame.setState((s) => ({ errorNudge: s.errorNudge + 1 }));
-    return;
-  }
+  if (!g.formula || !g.formula.ok) return 'refused';
   pendingCheck();
 }
 

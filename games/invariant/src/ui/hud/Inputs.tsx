@@ -1,5 +1,5 @@
 import { Dices, Minus, Plus } from 'lucide-react';
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type CompiledLevel, type Inputs } from '../../levels/level';
@@ -86,25 +86,24 @@ export function InputsSection({ inline }: { inline: boolean }) {
   );
 }
 
-function usePop(value: string, own: RefObject<boolean>): number {
+function usePop(value: string): [number, () => void] {
+  const [seen, setSeen] = useState(value);
+  const [ownNext, setOwnNext] = useState(false);
   const [pops, setPops] = useState(0);
-  useEffect(() => {
-    if (own.current) own.current = false;
-    else setPops((k) => k + 1);
-  }, [value, own]);
-  return pops;
+  if (value !== seen) {
+    setSeen(value);
+    if (ownNext) setOwnNext(false);
+    else setPops(pops + 1);
+  }
+  return [pops, () => setOwnNext(true)];
 }
 
 function IntRow({ name, value, disabled, onChange, labels }: { name: string; value: number; disabled: boolean; onChange: (v: number) => void; labels: [string, string] }) {
-  const own = useRef(false);
   const [text, setText] = useState(String(value));
   const [editing, setEditing] = useState(false);
-  const pops = usePop(String(value), own);
-  useEffect(() => {
-    if (!editing) setText(String(value));
-  }, [value, editing]);
+  const [pops, own] = usePop(String(value));
   const commit = (v: number) => {
-    own.current = true;
+    own();
     onChange(v);
   };
   const type = (t: string) => {
@@ -125,15 +124,15 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
       </SmallButton>
       <input
         className={`${FIELD} w-10 rounded-none border-x-0 text-center ${bad ? 'text-fail' : ''}`}
-        value={text}
+        value={editing ? text : String(value)}
         inputMode="numeric"
         disabled={disabled}
         aria-label={name}
-        onFocus={() => setEditing(true)}
-        onBlur={() => {
-          setEditing(false);
+        onFocus={() => {
           setText(String(value));
+          setEditing(true);
         }}
+        onBlur={() => setEditing(false)}
         onChange={(e) => type(e.target.value)}
         onKeyDown={onKeyDown}
       />
@@ -153,20 +152,16 @@ function SmallButton({ onClick, disabled, label, className = '', children }: { o
 }
 
 function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: CompiledLevel; name: string; inputs: Inputs; disabled: boolean; onChange: (next: Inputs) => void; label: string }) {
-  const own = useRef(false);
   const value = inputs[name] as number[];
   const shown = showArray(value);
   const [text, setText] = useState(shown);
   const [editing, setEditing] = useState(false);
-  const pops = usePop(planeKey({ [name]: value }), own);
-  useEffect(() => {
-    if (!editing) setText(shown);
-  }, [shown, editing]);
+  const [pops, own] = usePop(planeKey({ [name]: value }));
   const type = (t: string) => {
     setText(t);
     const arr = parseArray(t);
     if (arr) {
-      own.current = true;
+      own();
       onChange(withLengths(level, { ...inputs, [name]: arr }));
     }
   };
@@ -175,23 +170,23 @@ function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: C
     <div key={pops} className="flex min-w-0 flex-1 animate-[pop_0.3s_ease-out] items-center gap-1.5">
       <input
         className={`${FIELD} flex-1 ${bad ? 'border-fail/50 text-fail' : ''}`}
-        value={text}
+        value={editing ? text : shown}
         disabled={disabled}
         aria-label={name}
         spellCheck={false}
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
-        onFocus={() => setEditing(true)}
-        onBlur={() => {
-          setEditing(false);
+        onFocus={() => {
           setText(shown);
+          setEditing(true);
         }}
+        onBlur={() => setEditing(false)}
         onChange={(e) => type(e.target.value)}
       />
       <SmallButton
         onClick={() => {
-          own.current = true;
+          own();
           onChange(rollArray(level, inputs, name));
         }}
         disabled={disabled}

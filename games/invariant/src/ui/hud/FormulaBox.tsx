@@ -1,5 +1,5 @@
 import { Check, LoaderCircle } from 'lucide-react';
-import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { check } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
@@ -31,6 +31,8 @@ function colored(text: string, error: { from: number; to: number } | null): Reac
   return out;
 }
 
+const SHAKE: Keyframe[] = [{ transform: 'none' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(-2px)' }, { transform: 'none' }];
+
 const TEXT = 'col-start-1 row-start-1 m-0 min-w-0 px-1 py-2.5 font-mono text-(length:--formula-size) leading-[1.4] whitespace-pre-wrap [overflow-wrap:anywhere]';
 
 export function FormulaBox() {
@@ -45,29 +47,27 @@ export function FormulaBox() {
   const locked = useGame((s) => s.mode === 'tutorial' && !s.tutorialAllow.formula);
   const spot = useGame((s) => s.spotlight);
   const tr = useT();
-  const [shownError, setShownError] = useState<{ message: string; span: { from: number; to: number } } | null>(null);
-  const errorNudge = useGame((s) => s.errorNudge);
-  const [shake, setShake] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const [refused, setRefused] = useState<typeof formula>(null);
+  const shownError = formula && !formula.ok && formula === refused ? formula.error : null;
   const [slow, setSlow] = useState(false);
+  if (!checking && slow) setSlow(false);
   useEffect(() => {
-    if (!checking) return setSlow(false);
+    if (!checking) return;
     const t = setTimeout(() => setSlow(true), 450);
     return () => clearTimeout(t);
   }, [checking]);
-  useEffect(() => setShownError(null), [formula]);
-  useEffect(() => {
-    if (!errorNudge) return;
-    const f = useGame.getState().formula;
-    if (f && !f.ok) setShownError({ message: f.error.message, span: f.error.span });
-    setShake(true);
-    const t = setTimeout(() => setShake(false), 340);
-    return () => clearTimeout(t);
-  }, [errorNudge]);
 
+  const submit = () =>
+    void check().then((r) => {
+      if (r !== 'refused') return;
+      setRefused(useGame.getState().formula);
+      box.current?.animate(SHAKE, { duration: 320, easing: 'ease-in-out' });
+    });
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      void check();
+      submit();
     }
   };
   const placeholder = tr.formula.placeholder(names.join(', '));
@@ -77,7 +77,8 @@ export function FormulaBox() {
     // 16px on phones: any smaller and iOS zooms the page when the box is focused
     <div className="animate-[rise_0.4s_ease-out] [--formula-size:17px] max-sm:[--formula-size:16px]">
       <div
-        className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card max-sm:gap-x-2 max-sm:pl-3 transition-colors duration-150 ${shownError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''} ${shake ? 'animate-shake' : ''}`}
+        ref={box}
+        className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card max-sm:gap-x-2 max-sm:pl-3 transition-colors duration-150 ${shownError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''}`}
       >
         <span className="flex items-center gap-1.75 font-display text-xs font-semibold tracking-[0.08em] text-brand uppercase before:size-3 before:-translate-y-px before:rounded-sm before:bg-slab before:shadow-[0_2px_0_var(--color-slab-side)]">
           <span className="max-sm:sr-only">{tr.formula.area}</span>
@@ -114,7 +115,7 @@ export function FormulaBox() {
         <button
           className={`${button('check', 'none')} ${spot === 'check' ? 'spotlight spotlight-glow' : ''}`}
           disabled={!canCheck}
-          onClick={() => void check()}
+          onClick={submit}
         >
           {slow ? <LoaderCircle size={16} strokeWidth={2.6} className="animate-spin" /> : <Check size={16} strokeWidth={2.8} />}
           {tr.formula.check}

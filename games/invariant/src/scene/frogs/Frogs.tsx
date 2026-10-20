@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { sfx } from '../../audio/sfx';
 import { useGame } from '../../game/store';
@@ -44,9 +44,6 @@ export function Frogs() {
   const plane = useGame((s) => planeKey(s.inputs));
   const lastT = useRef<number | undefined>(undefined);
   const badgeRefs = useRef<(THREE.Sprite | null)[]>([]);
-  useLayoutEffect(() => {
-    for (const r of [body, ghosts, ghostDepth, shadows]) if (r.current) r.current.count = 0;
-  }, []);
 
   useFrame(() => {
     const b = body.current;
@@ -153,10 +150,10 @@ export function Frogs() {
 
   return (
     <group>
-      <instancedMesh ref={shadows} args={[shadowGeom, shadowMat, MAX_FROGS]} frustumCulled={false} renderOrder={3} />
-      <instancedMesh ref={body} args={[geom, mat, MAX_FROGS]} frustumCulled={false} onClick={(e) => e.stopPropagation()} />
-      <instancedMesh ref={ghostDepth} args={[geom, ghostDepthMat, MAX_FROGS]} frustumCulled={false} renderOrder={4} />
-      <instancedMesh ref={ghosts} args={[geom, ghostMat, MAX_FROGS]} frustumCulled={false} renderOrder={5} onClick={(e) => e.stopPropagation()} />
+      <instancedMesh ref={shadows} args={[shadowGeom, shadowMat, MAX_FROGS]} count={0} frustumCulled={false} renderOrder={3} />
+      <instancedMesh ref={body} args={[geom, mat, MAX_FROGS]} count={0} frustumCulled={false} onClick={(e) => e.stopPropagation()} />
+      <instancedMesh ref={ghostDepth} args={[geom, ghostDepthMat, MAX_FROGS]} count={0} frustumCulled={false} renderOrder={4} />
+      <instancedMesh ref={ghosts} args={[geom, ghostMat, MAX_FROGS]} count={0} frustumCulled={false} renderOrder={5} onClick={(e) => e.stopPropagation()} />
       {Array.from({ length: BADGES }, (_, i) => (
         <sprite key={i} ref={(el) => void (badgeRefs.current[i] = el)} visible={false} scale={[0.5, 0.3, 1]} renderOrder={10}>
           <spriteMaterial depthTest={false} transparent />

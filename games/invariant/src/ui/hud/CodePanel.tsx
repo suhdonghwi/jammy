@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useGame } from '../../game/store';
 import { PHONE, useMedia } from '../../hooks/media';
 import { useT } from '../../i18n/i18n';
@@ -99,7 +99,6 @@ export function CodePanel() {
   const phone = useMedia(PHONE);
   const [folded, setFolded] = useState<boolean | null>(null);
   const tr = useT();
-  useEffect(() => setFolded(null), [level]);
   const pointedAt = spot === 'code' || spotLines.length > 0 || (tutorial && phone && spot === 'step');
   const open = pointedAt || !(folded ?? (tutorial && phone));
   const hasInputs = inputRows(level).length > 0;

@@ -75,7 +75,6 @@
   --animate-fade: fade 0.2s ease-out;
   --animate-rise: rise 0.2s ease-out;
   --animate-slide-in: slide-in 0.4s ease-out;
-  --animate-shake: shake 0.32s ease-in-out;
   --animate-tag-in: tag-in 0.2s ease-out;
   --animate-fade-out: fade-out 0.15s ease-in forwards;
   --animate-pop-out: pop-out 0.15s ease-in forwards;
@@ -172,17 +171,6 @@ html[data-leaving] .screen {
   from {
     opacity: 0;
     transform: translateX(-12px);
-  }
-}
-@keyframes shake {
-  25% {
-    transform: translateX(-5px);
-  }
-  50% {
-    transform: translateX(4px);
-  }
-  75% {
-    transform: translateX(-2px);
   }
 }
 @keyframes fade-out {

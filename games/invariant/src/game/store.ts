@@ -97,7 +97,6 @@ export interface Game {
   spotLines: number[];
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
   inputHover: string | null;
-  errorNudge: number;
   callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];
   failMark: { x: number; y: number; label: string; t0: number } | null;
 
@@ -148,7 +147,6 @@ export const useGame = create<Game>((set, get) => ({
   landGuard: 'true',
   showRules: false,
   showSyntax: false,
-  errorNudge: 0,
 
   openLevel(def, mode) {
     const level = compileLevel(localizeLevel(def));

@@ -1,6 +1,6 @@
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
 import { SLAB_H } from '../constants';
@@ -53,16 +53,19 @@ export function SceneTag({
   const holder = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const width = useRef(0);
-  const watch = useRef<ResizeObserver | null>(null);
-  useEffect(() => () => watch.current?.disconnect(), []);
+  const measure = useCallback((el: HTMLDivElement | null) => {
+    box.current = el;
+    if (!el) return;
+    const watch = new ResizeObserver(() => void (width.current = el.offsetWidth));
+    watch.observe(el);
+    return () => {
+      watch.disconnect();
+      box.current = null;
+    };
+  }, []);
   const [start] = useState(() => anchorPoint(anchor)?.toArray());
   const placed = useRef(start ? 1 : 0);
   useFrame(({ camera, size }) => {
-    if (!watch.current && box.current) {
-      const el = box.current;
-      watch.current = new ResizeObserver(() => void (width.current = el.offsetWidth));
-      watch.current.observe(el);
-    }
     const p = anchorPoint(anchor);
     if (group.current && p) {
       group.current.position.copy(p);
@@ -84,7 +87,7 @@ export function SceneTag({
     <group ref={group} position={start}>
       <Html zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={holder} className="origin-bottom pb-1.5" style={start ? HOLDER : { ...HOLDER, visibility: 'hidden' }}>
-          <div ref={box} className={`${TAG} ${TONE[tone]} ${leaving ? 'animate-tag-out' : 'animate-tag-in'}`}>
+          <div ref={measure} className={`${TAG} ${TONE[tone]} ${leaving ? 'animate-tag-out' : 'animate-tag-in'}`}>
             {children}
           </div>
         </div>
