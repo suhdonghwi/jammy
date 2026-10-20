@@ -256,7 +256,7 @@ export const en = {
     tooLargeTag: 'too large: stops off a goal',
 
     wrapUp: (mine: string) =>
-      `Your area ${mine} passes all three rules:\n\n- **Initialization:** every egg is on it.\n- **Maintenance:** no hop leads off it.\n- **Termination:** every striped tile on it is a goal.\n\nSo every frog stops on a goal, for every \`n\`. You’ve proved our loop correct for infinitely many inputs! 🎉`,
+      `Your area ${mine} passes all three rules:\n\n- **Initialization:** every egg is on it.\n- **Maintenance:** no hop leads off it.\n- **Termination:** every striped tile on it is a goal.\n\nSo every frog stops on a goal. You’ve proved our loop correct for infinitely many inputs! 🎉`,
     finish: 'Finish',
   },
 };
