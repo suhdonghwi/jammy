@@ -5,16 +5,19 @@ import { browserZ3 } from '../checker/z3-browser';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
-import { hop, inputsOf, planeKey, running, showState, toBig } from '../levels/level';
+import { hop, inputsOf, planeKey, showState, toBig } from '../levels/level';
 import { tilesNear } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { hatch } from './frogs';
+import { clamp01, smoothstep } from '../scene/easing';
+import { hopArcs } from '../scene/frogs/HopArcs';
 import { GHOST_RISE, raiseGhost, realRunTo } from './ghosts';
 import { begin, caption, currentLevel } from './sequence';
 
 const ABOVE_CAPTION = 0.05;
+const HOP_DUR = 0.5;
 
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
 
@@ -137,7 +140,35 @@ export function showUndecided(text: string) {
   caption(text, 'muted');
 }
 
-export async function playGhostWave({ max = 160, zoomOut = true }: { max?: number; zoomOut?: boolean } = {}) {
+const PROOF_NEAR = 6;
+const PROOF_FAR = 13;
+const PROOF_MAX = 40;
+const PROOF_ABOVE = 2.5;
+
+interface ProofHop {
+  from: State;
+  to: State;
+  d: number;
+}
+
+function spreadHops(hops: ProofHop[]): ProofHop[] {
+  const L = currentLevel();
+  const at = (s: State) => [Number(s[L.view.x]), Number(s[L.view.y])] as const;
+  const apart = (a: readonly number[], b: readonly number[], r: number) => Math.hypot(a[0] - b[0], a[1] - b[1]) >= r;
+  const picked: ProofHop[] = [];
+  for (const h of hops) {
+    if (picked.length >= PROOF_MAX) break;
+    const [f, t] = [at(h.from), at(h.to)];
+    const fits = picked.every((p) => {
+      const [pf, pt] = [at(p.from), at(p.to)];
+      return apart(f, pf, 2.2) && apart(f, pt, 1.2) && apart(t, pf, 1.2) && apart(t, pt, 1.2);
+    });
+    if (fits) picked.push(h);
+  }
+  return picked;
+}
+
+export async function playProof({ zoomOut = true }: { zoomOut?: boolean } = {}) {
   const tok = begin();
   const L = currentLevel();
   useGame.setState({ busy: true, running: false });
@@ -149,19 +180,41 @@ export async function playGhostWave({ max = 160, zoomOut = true }: { max?: numbe
     if (!inv) return;
     const t = cameraRig.target();
     const tx = t.x;
-    const ty = -t.z;
+    const ty = -t.z + PROOF_ABOVE;
     const near = (x: number, y: number) => Math.hypot(x - tx, y - ty);
-    const tiles = tilesNear(L, inputs, { cx: Math.round(tx), cy: Math.round(ty), R: 16 }, (s, x, y) =>
-      L.fast.planeReq(s) && inv.fast(s) === true && near(x, y) <= 15 ? { s: toBig(s), d: near(x, y) } : undefined,
-    );
-    const pick = tiles.sort((a, b) => a.d - b.d).slice(0, max);
-    const spread = Math.max(1, pick[pick.length - 1]?.d ?? 1);
+    const candidates = tilesNear(L, inputs, { cx: Math.round(tx), cy: Math.round(ty), R: PROOF_FAR }, (s, x, y) => {
+      if (!L.fast.planeReq(s) || inv.fast(s) !== true || L.fast.guard(s) !== true || near(x, y) > PROOF_FAR) return undefined;
+      const from = toBig(s);
+      return { from, to: hop(L, from), d: near(x, y) };
+    });
+    const hops = spreadHops(candidates.sort((a, b) => a.d - b.d));
+    const fadeAt = (d: number) => 1 - smoothstep(clamp01((d - PROOF_NEAR) / (PROOF_FAR - PROOF_NEAR)));
     sfx.ghost();
-    const frogs = pick.map(({ s, d }) => raiseGhost(s, (d / spread) * 0.9 + Math.random() * 0.12));
-    await sleep(1020 + GHOST_RISE * 1000 + 250);
-    if (!tok.alive) return;
-    const movers = frogs.filter((f) => running(L, f.state));
-    await Promise.all(movers.map((f) => frogWorld.hopTo(L, f, hop(L, f.state), 0.45)));
+    const risen = hops.map((h) => {
+      const delay = (h.d / PROOF_FAR) * 0.6;
+      return { ...h, delay, f: raiseGhost(h.from, delay, fadeAt(h.d)) };
+    });
+    const now = sceneNow();
+    const drawAt = (delay: number) => now + delay + GHOST_RISE + 0.1;
+    const hopAt = (delay: number) => drawAt(delay) + 0.9;
+    for (const h of risen) {
+      hopArcs.add({
+        fx: h.f.x,
+        fy: h.f.y,
+        tx: Number(h.to[L.view.x]),
+        ty: Number(h.to[L.view.y]),
+        plane: h.f.plane,
+        t0: drawAt(h.delay),
+        land: hopAt(h.delay) + HOP_DUR,
+        fade: h.f.fade ?? 1,
+      });
+    }
+    await Promise.all(
+      risen.map(async (h) => {
+        await sleep((hopAt(h.delay) - sceneNow()) * 1000);
+        if (tok.alive) await frogWorld.hopTo(L, h.f, h.to, HOP_DUR, h !== risen[0]);
+      }),
+    );
   } finally {
     if (tok.alive) useGame.setState({ busy: false });
   }

@@ -1,0 +1,145 @@
+import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import { useGame } from '../../game/store';
+import { planeKey } from '../../levels/level';
+import { field } from '../area/field';
+import { clamp01 } from '../easing';
+import { COLORS, SLAB_H } from '../constants';
+import { ringGeometry, TONE_COLORS } from '../labels/TileTag';
+import { sceneNow } from '../sceneTime';
+import { hopHeight } from './motion';
+
+const DOTS = 16;
+const DRAW = 0.4;
+const OUT = 0.35;
+const RING_HOLD = 1.6;
+const MAX = 80;
+const LIFT = 0.22;
+
+interface Arc {
+  fx: number;
+  fy: number;
+  tx: number;
+  ty: number;
+  plane: string;
+  t0: number;
+  land: number;
+  fade: number;
+}
+
+const arcs: Arc[] = [];
+
+export const hopArcs = {
+  add(a: Arc) {
+    arcs.push(a);
+    if (arcs.length > MAX) arcs.shift();
+  },
+  clear() {
+    arcs.length = 0;
+  },
+};
+
+const vertex = /* glsl */ `
+attribute vec3 aColor;
+attribute float aAlpha;
+varying vec3 vColor;
+varying float vAlpha;
+void main() {
+  vColor = aColor;
+  vAlpha = aAlpha;
+  gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+}
+`;
+const fragment = /* glsl */ `
+varying vec3 vColor;
+varying float vAlpha;
+void main() {
+  gl_FragColor = vec4(vColor, vAlpha);
+  #include <colorspace_fragment>
+}
+`;
+
+function instancedParts(base: THREE.BufferGeometry, count: number) {
+  const g = base.clone();
+  const color = new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3);
+  const alpha = new THREE.InstancedBufferAttribute(new Float32Array(count), 1);
+  g.setAttribute('aColor', color);
+  g.setAttribute('aAlpha', alpha);
+  const mat = new THREE.ShaderMaterial({ vertexShader: vertex, fragmentShader: fragment, transparent: true, depthWrite: false });
+  return { g, mat, color, alpha };
+}
+
+const m = new THREE.Matrix4();
+const q = new THREE.Quaternion();
+const pos = new THREE.Vector3();
+const scl = new THREE.Vector3();
+const c = new THREE.Color();
+const HORIZON = new THREE.Color(COLORS.horizon);
+const DOT = new THREE.Color(COLORS.hover);
+const RING = new THREE.Color(TONE_COLORS.good);
+
+export function HopArcs() {
+  const dots = useRef<THREE.InstancedMesh>(null);
+  const rings = useRef<THREE.InstancedMesh>(null);
+  const plane = useGame((s) => planeKey(s.inputs));
+  const parts = useMemo(
+    () => ({ dot: instancedParts(new THREE.SphereGeometry(0.045, 10, 8), MAX * DOTS), ring: instancedParts(ringGeometry, MAX) }),
+    [],
+  );
+
+  useFrame(() => {
+    const d = dots.current;
+    const r = rings.current;
+    if (!d || !r) return;
+    const t = sceneNow();
+    while (arcs.length && t > arcs[0].land + RING_HOLD + OUT) arcs.shift();
+    let nd = 0;
+    let nr = 0;
+    for (const a of arcs) {
+      if (a.plane !== plane) continue;
+      const h0 = field.heightAt(a.fx, a.fy) * SLAB_H;
+      const h1 = field.heightAt(a.tx, a.ty) * SLAB_H;
+      const H = hopHeight(Math.hypot(a.tx - a.fx, a.ty - a.fy));
+      const gone = 1 - clamp01((t - a.land - 0.15) / OUT);
+      for (let k = 0; k < DOTS; k++) {
+        const f = (k + 0.5) / DOTS;
+        const shown = clamp01((t - a.t0 - f * DRAW) / 0.08) * gone;
+        if (shown <= 0) continue;
+        pos.set(a.fx + (a.tx - a.fx) * f, h0 + (h1 - h0) * f + 4 * H * f * (1 - f) + LIFT, -(a.fy + (a.ty - a.fy) * f));
+        m.compose(pos, q, scl.setScalar(0.6 + 0.4 * shown));
+        d.setMatrixAt(nd, m);
+        c.copy(DOT).lerp(HORIZON, 1 - a.fade);
+        parts.dot.color.setXYZ(nd, c.r, c.g, c.b);
+        parts.dot.alpha.setX(nd, 0.9 * shown);
+        nd++;
+      }
+      const ring = clamp01((t - a.land) / 0.25) * (1 - clamp01((t - a.land - RING_HOLD) / OUT));
+      if (ring > 0) {
+        m.compose(pos.set(a.tx, h1 + 0.014, -a.ty), q, scl.setScalar(0.9 + 0.1 * ring));
+        r.setMatrixAt(nr, m);
+        c.copy(RING).lerp(HORIZON, 1 - a.fade);
+        parts.ring.color.setXYZ(nr, c.r, c.g, c.b);
+        parts.ring.alpha.setX(nr, 0.85 * ring * a.fade);
+        nr++;
+      }
+    }
+    d.count = nd;
+    r.count = nr;
+    for (const [mesh, p] of [
+      [d, parts.dot],
+      [r, parts.ring],
+    ] as const) {
+      mesh.instanceMatrix.needsUpdate = true;
+      p.color.needsUpdate = true;
+      p.alpha.needsUpdate = true;
+    }
+  });
+
+  return (
+    <>
+      <instancedMesh ref={dots} args={[parts.dot.g, parts.dot.mat, MAX * DOTS]} count={0} frustumCulled={false} renderOrder={6} />
+      <instancedMesh ref={rings} args={[parts.ring.g, parts.ring.mat, MAX]} count={0} frustumCulled={false} renderOrder={9} />
+    </>
+  );
+}

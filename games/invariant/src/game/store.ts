@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { RULES, type Rule, type Verdicts } from '../checker/types';
 import { compileFormula, compileLevel, startInputs, type CompiledLevel, type Formula, type FormulaResult, type Inputs, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
+import type { TileWindow } from '../levels/tiles';
 
 export interface Reveal {
   code: boolean;
@@ -100,13 +101,25 @@ export interface Game {
   spotLines: number[];
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
   inputHover: string | null;
-  callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail'; fade?: number; delay?: number }[];
+  callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];
+  region: Region | null;
   failMark: { x: number; y: number; label: string; t0: number } | null;
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
   backToMenu(view?: 'home' | 'levels'): void;
   setFormula(text: string): void;
   setReveal(r: Partial<Reveal>): void;
+}
+
+export interface RegionTile {
+  x: number;
+  y: number;
+  tone: 'info' | 'good' | 'fail';
+}
+
+export interface Region {
+  tiles: (win: TileWindow) => RegionTile[];
+  center: [number, number];
 }
 
 export const ALLOW_NONE: Game['tutorialAllow'] = { step: false, run: false, eggs: false, formula: false };
@@ -124,6 +137,7 @@ const FRESH = {
   pitfallMessage: null,
   failMark: null,
   callouts: [],
+  region: null,
   stepping: false,
   frogTags: false,
   back: null,

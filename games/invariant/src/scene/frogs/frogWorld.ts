@@ -19,6 +19,7 @@ export interface FrogSim {
   rise?: { t0: number; dur: number; turns: number };
   leave?: { t0: number; dur: number };
   home?: [number, number];
+  fade?: number;
   hatchT0?: number;
   stopped: boolean;
   phase: number;

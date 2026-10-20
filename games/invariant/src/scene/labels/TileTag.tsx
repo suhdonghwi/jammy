@@ -7,7 +7,7 @@ import { COLORS, SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';
 import { SceneTag, type TagTone } from './SceneTag';
 
-const TONE_COLORS: Record<TagTone, string> = {
+export const TONE_COLORS: Record<TagTone, string> = {
   info: '#2b3445',
   good: '#34d058',
   fail: COLORS.fail,
@@ -29,12 +29,12 @@ function roundedRect(w: number, r: number): THREE.Shape {
   return s;
 }
 
-const ringGeometry = (() => {
+export const ringGeometry = (() => {
   const outer = roundedRect(1.0, 0.17);
   outer.holes.push(roundedRect(0.88, 0.12) as unknown as THREE.Path);
   return new THREE.ShapeGeometry(outer, 8).rotateX(-Math.PI / 2);
 })();
-const washGeometry = new THREE.ShapeGeometry(roundedRect(0.88, 0.12), 8).rotateX(-Math.PI / 2);
+export const washGeometry = new THREE.ShapeGeometry(roundedRect(0.88, 0.12), 8).rotateX(-Math.PI / 2);
 
 interface TileTagProps {
   x: number;
@@ -43,12 +43,10 @@ interface TileTagProps {
   tone: TagTone;
   pulse?: boolean;
   wash?: boolean;
-  fade?: number;
-  delay?: number;
   leaving?: boolean;
 }
 
-export function TileTag({ x, y, label, tone, pulse = false, wash = false, fade = 1, delay = 0, leaving = false }: TileTagProps) {
+export function TileTag({ x, y, label, tone, pulse = false, wash = false, leaving = false }: TileTagProps) {
   const color = TONE_COLORS[tone];
   const group = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
@@ -63,7 +61,7 @@ export function TileTag({ x, y, label, tone, pulse = false, wash = false, fade =
     g.position.set(x, field.heightAt(x, y) * SLAB_H + 0.012, -y);
     if (leaving && leftAt.current === null) leftAt.current = performance.now();
     const out = leftAt.current === null ? 1 : Math.max(0, 1 - (performance.now() - leftAt.current) / EXIT_MS);
-    const pop = Math.min(1, Math.max(0, (t - delay) / 0.3)) * out * fade;
+    const pop = Math.min(1, t / 0.3) * out;
     const beat = pulse ? 0.5 + 0.5 * Math.sin(t * 4.2) : 1;
     if (ring.current) {
       ring.current.scale.setScalar(0.9 + 0.1 * pop + (pulse ? 0.035 * beat : 0));

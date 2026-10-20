@@ -83,11 +83,12 @@ export async function beat(
     spot?: Spot;
     settle?: number;
     callouts?: Game['callouts'];
+    region?: Game['region'];
     lines?: Game['spotLines'];
     tone?: CaptionTone;
   } = {},
 ): Promise<void> {
-  useGame.setState({ callouts: opts.callouts ?? [], spotLines: opts.lines ?? [] });
+  useGame.setState({ callouts: opts.callouts ?? [], region: opts.region ?? null, spotLines: opts.lines ?? [] });
   const tone = opts.tone ?? 'info';
   const label = opts.label ?? messages().caption.next;
   say(text, opts.spot ?? null, tone, label);
@@ -146,6 +147,7 @@ function choose<K extends string>(gen: number, text: string, choices: { key: K; 
       caption: { text, tone: 'info', choices: choices.map((c) => ({ label: c.label, tone: c.tone, onClick: pick(c.key) })) },
       spotlight: null,
       callouts: [],
+      region: null,
     });
   });
 }
@@ -193,7 +195,7 @@ interface StageOptions {
 }
 
 export async function stage(gen: number, o: StageOptions): Promise<void> {
-  useGame.setState({ hint: { ask: o.ask, nudge: o.nudge, shown: false }, callouts: [] });
+  useGame.setState({ hint: { ask: o.ask, nudge: o.nudge, shown: false }, callouts: [], region: null });
   let askNow = true;
   for (;;) {
     if (askNow) say(o.ask, 'check');
@@ -236,7 +238,7 @@ export async function demo(
 ): Promise<void> {
   const g = useGame.getState();
   const mine = opts.restore ?? g.formulaText;
-  useGame.setState({ busy: true, callouts: [] });
+  useGame.setState({ busy: true, callouts: [], region: null });
   frogWorld.clear('test');
   say(messages().tutorial.trying(formula), null, 'muted');
   if (g.formulaText.trim() !== formula) {

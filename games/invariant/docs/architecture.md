@@ -28,7 +28,7 @@ src/
     floor/       the infinite floor, drawn per pixel from the level's formulas (formulas → GLSL)
     area/        the learner's slabs, eggs and goal columns
     frogs/       frog state, motion, rendering, hatching
-    labels/      tags over tiles and frogs (callouts, failures, frog values)
+    labels/      tags over tiles and frogs (callouts, failures, frog values), and outlines of endless regions
     level/       a level's scene and hover preview
     home/        the home screen's scene
     shaders/     shared GLSL

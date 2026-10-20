@@ -7,6 +7,7 @@ import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { burstFx } from '../scene/frogs/Burst';
+import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { occupancy } from '../scene/frogs/occupancy';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
@@ -78,6 +79,7 @@ export function interrupt() {
   occupancy.eggs = new Set();
   hatchFx.clear();
   burstFx.clear();
+  hopArcs.clear();
   useGame.setState({ busy: false, running: false, stepping: false, checking: false, failMark: null });
 }
 

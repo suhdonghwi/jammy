@@ -18,6 +18,8 @@ const BADGES = 24;
 
 const dummy = new THREE.Object3D();
 const GHOST = new THREE.Color(COLORS.ghostFrog);
+const HORIZON = new THREE.Color(COLORS.horizon);
+const tint = new THREE.Color();
 const FLOAT = 0.12;
 const BOB = 0.035;
 
@@ -119,10 +121,10 @@ export function Frogs() {
       if (ghost) {
         gd.setMatrixAt(nGhost, dummy.matrix);
         gh.setMatrixAt(nGhost, dummy.matrix);
-        gh.setColorAt(nGhost++, GHOST);
+        gh.setColorAt(nGhost++, f.fade === undefined ? GHOST : tint.copy(GHOST).lerp(HORIZON, 1 - f.fade));
       } else b.setMatrixAt(nReal++, dummy.matrix);
       const air = Math.max(0, py - p.ground);
-      const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2) * os * (ghost ? 0.75 : 1) * p.emerged;
+      const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2) * os * (ghost ? 0.75 : 1) * p.emerged * (f.fade ?? 1);
       dummy.position.set(px, p.ground + 0.008, pz);
       dummy.rotation.set(0, 0, 0);
       dummy.scale.set(ss, 1, ss);

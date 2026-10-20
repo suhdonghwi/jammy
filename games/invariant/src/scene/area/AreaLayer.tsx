@@ -22,7 +22,7 @@ interface AreaLayerProps {
   showArea: boolean;
 }
 
-function useTileWindow(): TileWindow {
+export function useTileWindow(): TileWindow {
   const [win, setWin] = useState<TileWindow>({ cx: 0, cy: 0, R: 18 });
   const ref = useRef(win);
   useFrame(() => {

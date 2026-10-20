@@ -8,7 +8,9 @@ import { Floor } from '../floor/Floor';
 import { GroundBursts } from '../frogs/Burst';
 import { Frogs } from '../frogs/Frogs';
 import { HatchShells } from '../frogs/Hatch';
+import { HopArcs } from '../frogs/HopArcs';
 import { Callouts } from '../labels/Callouts';
+import { OutlineRegion } from '../labels/Region';
 import { FailMarker } from '../labels/FailMarker';
 import { FrogTags } from '../labels/FrogTags';
 import { HoverPreview } from './HoverPreview';
@@ -52,9 +54,11 @@ export function LevelScene() {
       <Frogs />
       <HatchShells />
       <GroundBursts />
+      <HopArcs />
       <FrogTags />
       {reveal.hover && <HoverPreview />}
       <FailMarker />
+      <OutlineRegion />
       <Callouts />
     </>
   );

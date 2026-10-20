@@ -85,6 +85,7 @@ const CHEER_KEYS = [
   [1, 0],
 ] as const;
 const TURN_DUR = 0.2;
+export const hopHeight = (dist: number) => 0.3 + 0.14 * dist;
 const RISE_DEPTH = 0.85;
 
 export function pose(f: FrogSim, t: number): Pose {
@@ -120,7 +121,7 @@ export function pose(f: FrogSim, t: number): Pose {
     const h0 = baseAt(f.hop.fx, f.hop.fy);
     const h1 = baseAt(f.hop.tx, f.hop.ty);
     const dist = Math.hypot(f.hop.tx - f.hop.fx, f.hop.ty - f.hop.fy);
-    const H = 0.3 + 0.14 * dist;
+    const H = hopHeight(dist);
     const { g, h: hh } = hopAt(u, h0, h1, H);
     x = f.hop.fx + (f.hop.tx - f.hop.fx) * g;
     ty = f.hop.fy + (f.hop.ty - f.hop.fy) * g;

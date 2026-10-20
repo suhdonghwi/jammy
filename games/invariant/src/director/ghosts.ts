@@ -9,10 +9,10 @@ import { currentLevel } from './sequence';
 export const GHOST_RISE = 0.95;
 const TURNS = 2;
 
-export function raiseGhost(s: State, delay = 0): FrogSim {
+export function raiseGhost(s: State, delay = 0, fade = 1): FrogSim {
   const t0 = sceneNow() + delay;
-  const f = frogWorld.add(currentLevel(), 'test', s, { rise: { t0, dur: GHOST_RISE, turns: TURNS } });
-  burstFx.push(f.x, f.y, f.plane, t0 + GHOST_RISE * 0.18);
+  const f = frogWorld.add(currentLevel(), 'test', s, { rise: { t0, dur: GHOST_RISE, turns: TURNS }, fade });
+  burstFx.push(f.x, f.y, f.plane, t0 + GHOST_RISE * 0.18, fade);
   return f;
 }
 

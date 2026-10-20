@@ -33,13 +33,13 @@ interface BurstFx {
 const active: BurstFx[] = [];
 
 export const burstFx = {
-  push(x: number, y: number, plane: string, t0: number) {
+  push(x: number, y: number, plane: string, t0: number, fade = 1) {
     const chips = Array.from({ length: CHIPS }, (_, k) => ({
       dir: ((k + Math.random() * 0.6) / CHIPS) * Math.PI * 2,
       speed: 0.9 + Math.random() * 0.9,
       up: 1.8 + Math.random() * 1.6,
       spin: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(14),
-      size: 0.6 + Math.random() * 0.6,
+      size: (0.6 + Math.random() * 0.6) * fade,
     }));
     active.push({ x, y, plane, t0, chips });
     if (active.length > MAX) active.shift();

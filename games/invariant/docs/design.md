@@ -142,8 +142,9 @@ has room for arrays.)
   with small bounds so its counterexamples are small too. If the only
   counterexample is far away, the camera flies to it: "everything you could see
   looked fine" is not a proof.
-- **Verdicts:** proved (a wave of ghost frogs rises across the area and all of
-  them land on it again, level cleared); counterexample (a real frog acts it
+- **Verdicts:** proved (ghost frogs rise on tiles of the area spread apart
+  enough not to tangle, fading with distance; each draws its hop as a dotted
+  path, then takes it, and its landing tile ticks green; level cleared); counterexample (a real frog acts it
   out if one can reach it, otherwise a ghost frog); **undecided** (said in the
   caption, the lights turn amber, the level is *not* cleared). Before giving up, the checker
   tries proving the formula equivalent to a known solution.
@@ -249,8 +250,9 @@ step N, for playtesting.
   hidden. While the claim is introduced, one frog at a time hatches, runs and
   goes back into its egg; once the captions turn to tiles, the frogs go home
   and the scene is still.
-- **An endless region is drawn endless:** outlines (every egg, every stop on
-  the area) go on as far as the view does, fading with distance.
+- **An endless region is drawn endless:** outlines of every egg or every stop
+  on the area are a layer like the slabs, built around the camera and fading
+  into the horizon, so they go on wherever you look.
 - **Any formula is a valid move.** Each of three stages asks for one rule's
   worth of area and checks only the rules introduced so far; the story
   branches on which rule failed, never on which formula was typed. The
