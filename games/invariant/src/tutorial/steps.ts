@@ -313,9 +313,9 @@ export const STEPS: Step[] = [
     scene: { reveal: DRAW, formula: 'learner', camera: CAM },
     run: async (gen) => {
       useGame.getState().setReveal({ awake: ['initialization'] });
-      await beat(gen, T().ruleInitialization, { region: eggRegion('info') });
       await stage(gen, {
         ask: T().askInitialization,
+        region: eggRegion('info'),
         rules: ['initialization'],
         nudge: T().nudgeInitialization,
         onFail: (r) => witnessed.add(r),

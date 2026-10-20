@@ -191,17 +191,18 @@ interface StageOptions {
   rules: Rule[];
   nudge: string;
   ghost?: Partial<Record<Rule, string>>;
+  region?: Game['region'];
   onFail?: (rule: Rule) => void;
 }
 
 export async function stage(gen: number, o: StageOptions): Promise<void> {
-  useGame.setState({ hint: { ask: o.ask, nudge: o.nudge, shown: false }, callouts: [], region: null });
+  useGame.setState({ hint: { ask: o.ask, nudge: o.nudge, shown: false }, callouts: [], region: o.region ?? null });
   let askNow = true;
   for (;;) {
     if (askNow) say(o.ask, 'check');
     await waitCheck(gen);
     askNow = false;
-    useGame.setState({ spotlight: null });
+    useGame.setState({ spotlight: null, region: null });
     frogWorld.clear('test');
     const res = await runChecker(o.rules);
     guard(gen);

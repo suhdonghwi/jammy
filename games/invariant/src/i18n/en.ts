@@ -193,13 +193,13 @@ export const en = {
     testedTag: 'tested: n = 0 to 9',
     endlessTag: 'n = 18, 19, … never end',
     detour: 'There is a way to be sure about every egg without hatching infinitely many of them. Let’s leave our loop for a moment.',
-    exWorld: 'Here is another loop. Its frogs hatch on the left and zigzag up and down, one column after another, until the loop stops in the stripes on the right.',
+    exWorld: 'Here is another loop. Its frogs hatch and zigzag, one column after another, until they stop in the stripes on the right.',
     exArea:
       'These blue slabs are an **invariant area**. Drawing an area is claiming that **“every tile a frog ever lands on is on this area.”**',
     exBadTag: 'stops, but not a goal',
     exWhy:
       'Why does that help? A frog that stopped on one of these striped tiles would stop off a goal, and the program would be wrong.\n\nBut these tiles are off the area. If every frog is always on the area, as it claims, no frog can ever get there.',
-    exEndings: 'On the area, the loop can only stop in this one column, and every tile of it is a goal. So if the claim is true, **every frog stops on a goal**.',
+    exEndings: 'On the area, the loop can only stop in this one column, and every tile of it is a goal. So if the claim that frogs only ever move on the area is true, **every frog stops on a goal**.',
     exEndingTag: 'a possible ending',
     exRules:
       'So all it takes is three things:\n\n- **Initialization:** every egg is on the area.\n- **Maintenance:** no hop leads off the area.\n- **Termination:** every striped tile on the area is a goal.\n\nThen every frog is proved to stop on a goal.',
@@ -208,16 +208,15 @@ export const en = {
     exRule3Tag: 'Termination · every stop on it is a goal',
     backToOurs: 'Back to our loop',
 
-    draw: 'Back to our loop, and this time you draw the area. Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**.\n\nTry something like `i == 2`, `i % 2 == 0` or `i < n`. **Syntax**, below the box, lists what you can write.',
-    ruleInitialization: '**Rule 1 · Initialization:** every egg must be on your area.',
-    askInitialization: 'Change your area so **every egg is on it**, then press **Check**.',
+    draw: 'Back to our loop, and this time you draw the area. Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**.\n\nTry something like `i == 2`, `i % 2 == 0` or `i < n`.',
+    askInitialization: '**Rule 1 · Initialization:** every egg must be on your area.\n\nChange your area so **every egg is on it**, then press **Check**.',
     nudgeInitialization: 'Every egg has the same `i`. What is it?',
     passedInitialization: 'Correct! Every egg is on your area: **Initialization** holds.',
     questionInitialization: 'Is every egg on it?',
     afterDemoInitialization: (mine: string) => `\`i == n\` only covers the egg at \`n = 0\`, while yours, ${mine}, covers every egg.`,
     afterOwnInitialization: (mine: string) => `Your first try missed an egg, but ${mine} covers every egg.`,
 
-    ruleMaintenance: '**Rule 2 · Maintenance:** no hop leads off your area. From any tile of it, one hop lands on it again.',
+    ruleMaintenance: 'Next rule.\n\n**Rule 2 · Maintenance:** no hop leads off your area. From any tile of it, one hop lands on it again.',
     askMaintenance: 'Now change your area so **no hop leads off it**. **Check** tests rules 1 and 2 together.',
     nudgeMaintenance: 'Every frog starts at `i = 0`, and a hop only ever increases `i`.',
     ghostMaintenance:
@@ -227,7 +226,7 @@ export const en = {
     questionMaintenance: 'Would every hop from it land on it?',
 
     together:
-      'With rules 1 and 2 together, a frog never leaves your area: every frog starts on it, and no number of hops takes it off.\n\nThat’s why it’s called an **invariant**: it is a fact that doesn’t change for as long as the loop runs.',
+      'With rules 1 and 2 together, a frog never leaves your area: every frog starts on it, and no number of hops takes it off.\n\nThat’s why it’s called an **invariant**: with every hop the state changes, but “it is on the area” stays true.',
     stillOnTag: 'still on your area',
     neverLeaves: (mine: string) =>
       `When it reaches a striped tile and the loop stops, the frog is still on your area.\n\nSo here is a question: does a frog that stops on your area ${mine} always stop on a goal?`,
