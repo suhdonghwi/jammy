@@ -7,7 +7,7 @@ import { hopArcs } from '../scene/frogs/HopArcs';
 import { sceneNow } from '../scene/sceneTime';
 import { currentLevel } from './sequence';
 
-export const GHOST_RISE = 0.95;
+export const GHOST_RISE = 0.6;
 const TURNS = 2;
 
 export function raiseGhost(s: State, delay = 0, fade = 1): FrogSim {

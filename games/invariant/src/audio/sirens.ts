@@ -96,8 +96,8 @@ export const SIRENS: Siren[] = [
         type: 'sine',
         glide: [
           [0, 760],
-          [0.26, 1480],
-          [0.34, 1520],
+          [0.46, 1480],
+          [0.6, 1520],
         ],
         gain: 0.8,
         vibrato: { rate: 7, depth: 9 },
