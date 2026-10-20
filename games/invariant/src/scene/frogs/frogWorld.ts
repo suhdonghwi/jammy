@@ -6,7 +6,7 @@ import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
 import { joinHopBatch, landInBatch } from './hopBatch';
 
-type FrogKind = 'real' | 'test';
+export type FrogKind = 'real' | 'test';
 
 export interface FrogSim {
   id: number;

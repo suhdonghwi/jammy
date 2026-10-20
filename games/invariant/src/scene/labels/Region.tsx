@@ -1,8 +1,9 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { useGame, type Region, type RegionTile } from '../../game/store';
-import { EXIT_MS, useLingering } from '../../hooks/presence';
+import { useLingering } from '../../hooks/presence';
+import { useExitFade } from './exitFade';
 import { useTileWindow } from '../area/AreaLayer';
 import { field } from '../area/field';
 import { GLSL_HEIGHT, instanced } from '../area/glsl';
@@ -91,7 +92,7 @@ export function OutlineRegion() {
   const win = useTileWindow();
   const ring = useMemo(() => regionMaterial(0.85), []);
   const wash = useMemo(() => regionMaterial(0.3), []);
-  const leftAt = useRef<number | null>(null);
+  const exit = useExitFade(leaving);
   useTicks(region, win);
 
   const [shown, setShown] = useState<{ id: string; t0: number } | null>(null);
@@ -122,9 +123,7 @@ export function OutlineRegion() {
   useEffect(() => () => (geoms?.ring.dispose(), geoms?.wash.dispose()), [geoms]);
 
   useFrame(() => {
-    if (leaving && leftAt.current === null) leftAt.current = performance.now();
-    if (!leaving) leftAt.current = null;
-    const out = leftAt.current === null ? 1 : Math.max(0, 1 - (performance.now() - leftAt.current) / EXIT_MS);
+    const out = exit();
     for (const m of [ring, wash]) {
       m.uniforms.uTime.value = sceneNow();
       m.uniforms.uT0.value = t0;

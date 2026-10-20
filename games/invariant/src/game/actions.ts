@@ -1,12 +1,11 @@
 import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
-import { resetLevel } from '../director/frogs';
+import { dismissFrogs, resetLevel } from '../director/frogs';
 import { playVerification, runChecker, showUndecided } from '../director/verdicts';
 import { listNames, t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
 import type { LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
-import { frogWorld } from '../scene/frogs/frogWorld';
 import { switchScene } from '../scene/sceneTime';
 import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';
 import { markCleared } from './progress';
@@ -64,7 +63,7 @@ export async function check(): Promise<'refused' | void> {
   if (g.busy || g.checking || !g.level) return;
   if (g.mode === 'tutorial') return tutorialCheck();
   if (!g.formula || !g.formula.ok) return 'refused';
-  frogWorld.clear('test');
+  void dismissFrogs('test');
   const res = await runChecker(RULES);
   if (!res) return;
   const out = await playVerification(res, RULES, () => ({ extra: res.pitfall?.message }));

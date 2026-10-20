@@ -10,9 +10,9 @@ import { tilesNear } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { hatch } from './frogs';
+import { dismissFrogs, hatch } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
-import { dismissGhosts, GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
+import { GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
 import { begin, caption, currentLevel, type Token } from './sequence';
 
@@ -108,7 +108,8 @@ const BETWEEN_MS = 300;
 async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
   const L = currentLevel();
   useGame.setState({ failMark: null, region: null });
-  frogWorld.clear();
+  await dismissFrogs();
+  if (!tok.alive) return;
   const x = Number(cex.state[L.view.x]);
   const y = Number(cex.state[L.view.y]);
   await focusState(cex.state, cex.far);
@@ -166,7 +167,7 @@ export interface Outcome {
 export async function playVerification(res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions = () => ({})): Promise<Outcome | null> {
   const tok = begin();
   useGame.setState({ busy: true, running: false, failMark: null, region: null, callouts: [] });
-  frogWorld.clear('test');
+  void dismissFrogs('test');
   const order = RULES.filter((r) => rules.includes(r));
   let undecided = false;
   try {
@@ -194,7 +195,7 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
         await sleep(HOLD_MS);
         if (!tok.alive) return null;
         useGame.setState({ region: null, callouts: [] });
-        dismissGhosts();
+        void dismissFrogs('test');
         await sleep(BETWEEN_MS);
         if (!tok.alive) return null;
       }
@@ -268,7 +269,7 @@ function spreadHops(hops: ProofHop[]): ProofHop[] {
 export async function playProof() {
   const tok = begin();
   useGame.setState({ busy: true, running: false });
-  frogWorld.clear();
+  void dismissFrogs();
   try {
     await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
     if (tok.alive) await proofWave();

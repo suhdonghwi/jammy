@@ -1,10 +1,10 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
-import { EXIT_MS } from '../../hooks/presence';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';
+import { useExitFade } from './exitFade';
 import { SceneTag, type TagTone } from './SceneTag';
 
 export const TONE_COLORS: Record<TagTone, string> = {
@@ -52,15 +52,14 @@ export function TileTag({ x, y, label, tone, pulse = false, wash = false, leavin
   const ring = useRef<THREE.Mesh>(null);
   const washRef = useRef<THREE.Mesh>(null);
   const t0 = useRef(sceneNow());
-  const leftAt = useRef<number | null>(null);
+  const exit = useExitFade(leaving);
 
   useFrame(() => {
     const g = group.current;
     if (!g) return;
     const t = sceneNow() - t0.current;
     g.position.set(x, field.heightAt(x, y) * SLAB_H + 0.012, -y);
-    if (leaving && leftAt.current === null) leftAt.current = performance.now();
-    const out = leftAt.current === null ? 1 : Math.max(0, 1 - (performance.now() - leftAt.current) / EXIT_MS);
+    const out = exit();
     const pop = Math.min(1, t / 0.3) * out;
     const beat = pulse ? 0.5 + 0.5 * Math.sin(t * 4.2) : 1;
     if (ring.current) {

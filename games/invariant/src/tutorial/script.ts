@@ -4,7 +4,6 @@ import { dismissFrogs } from '../director/frogs';
 import { playVerification, revealAll, runChecker, showUndecided } from '../director/verdicts';
 import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';
-import { frogWorld } from '../scene/frogs/frogWorld';
 import { sleep } from '../scene/sceneTime';
 
 export class Aborted extends Error {}
@@ -215,7 +214,7 @@ export async function stage(gen: number, o: StageOptions): Promise<void> {
     await waitCheck(gen);
     askNow = false;
     useGame.setState({ spotlight: null, region: null });
-    frogWorld.clear('test');
+    void dismissFrogs('test');
     const res = await runChecker(o.rules);
     guard(gen);
     if (!res) {
@@ -254,7 +253,7 @@ export async function demo(
   const g = useGame.getState();
   const mine = opts.restore ?? g.formulaText;
   useGame.setState({ busy: true, callouts: [], region: null });
-  frogWorld.clear('test');
+  void dismissFrogs('test');
   say(messages().tutorial.trying(formula), null, 'muted');
   if (g.formulaText.trim() !== formula) {
     useGame.setState({ spotlight: 'formula' });
@@ -279,7 +278,7 @@ export async function demo(
     guard(gen);
     if (out?.failing) await holdCaption(gen);
   }
-  dismissFrogs();
+  void dismissFrogs();
   useGame.setState({ failMark: null, region: null });
   g.setFormula(mine);
   const back = await runChecker(rules);

@@ -5,7 +5,7 @@ import { hop, inputsOf, planeKey, running, startView, toBig } from '../levels/le
 import { eggsNear, tileState } from '../levels/tiles';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
-import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
+import { frogWorld, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
 import { burstFx } from '../scene/frogs/Burst';
 import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
@@ -90,12 +90,15 @@ export function resetLevel() {
 
 export function resetFrogs() {
   begin();
-  dismissFrogs();
+  void dismissFrogs();
   useGame.setState({ running: false, failMark: null });
 }
 
-export function dismissFrogs() {
-  for (const f of frogWorld.frogs) if (!f.leave) void sendHome(f);
+export const FROG_LEAVE = 0.3;
+
+export async function dismissFrogs(kind?: FrogKind): Promise<void> {
+  const going = frogWorld.frogs.filter((f) => !f.leave && (!kind || f.kind === kind));
+  await Promise.all(going.map(sendHome));
 }
 
 export function placeFrog(s: State, opts: Partial<FrogSim> = {}): FrogSim {
@@ -126,10 +129,11 @@ export async function runFrogs() {
   if (g.busy || g.running || g.stepping) return;
   if (g.mode === 'tutorial' && !g.tutorialAllow.run) return;
   const tok = begin();
-  frogWorld.clear('test');
   useGame.setState({ failMark: null, running: true });
+  void dismissFrogs('test');
   if (movingFrogs().length === 0) {
-    frogWorld.clear('real');
+    await dismissFrogs();
+    if (!tok.alive) return;
     const L = currentLevel();
     const eggs = firstEggs(RUN_EGGS);
     if (eggs.length && !cameraRig.inView(Number(eggs[0][L.view.x]), Number(eggs[0][L.view.y]), 1.4)) {
@@ -211,8 +215,8 @@ export function loopFrogs(eggs: State[]) {
 }
 
 async function sendHome(f: FrogSim) {
-  f.leave = { t0: sceneNow(), dur: 0.35 };
-  await sleep(400);
+  f.leave = { t0: sceneNow(), dur: FROG_LEAVE };
+  await sleep(FROG_LEAVE * 1000 + 50);
   frogWorld.remove(f);
   const home = f.home;
   if (home && !frogWorld.frogs.some((g) => g.home?.[0] === home[0] && g.home?.[1] === home[1])) frogWorld.returnEgg(...home);
@@ -220,5 +224,5 @@ async function sendHome(f: FrogSim) {
 
 export function sendFrogsHome() {
   begin();
-  for (const f of frogWorld.frogs) if (f.kind === 'real') void sendHome(f);
+  void dismissFrogs('real');
 }

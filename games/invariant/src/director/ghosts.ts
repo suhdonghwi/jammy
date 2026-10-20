@@ -36,15 +36,6 @@ export function previewHop(s: State, delay = 0, fade = 1): FrogSim {
   return f;
 }
 
-export const GHOST_LEAVE = 0.3;
-
-export function dismissGhosts() {
-  const now = sceneNow();
-  const ghosts = frogWorld.frogs.filter((f) => f.kind === 'test' && !f.leave);
-  for (const f of ghosts) f.leave = { t0: now, dur: GHOST_LEAVE };
-  after(GHOST_LEAVE * 1000 + 30, () => ghosts.forEach((f) => frogWorld.remove(f)));
-}
-
 const REACH_HOPS = 16;
 const REACH_EGGS = 10;
 
