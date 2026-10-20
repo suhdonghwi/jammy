@@ -1,7 +1,7 @@
 import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
 import { resetLevel } from '../director/frogs';
-import { playCounterexample, playProof, runChecker, showUndecided } from '../director/verdicts';
+import { playVerification, runChecker, showUndecided } from '../director/verdicts';
 import { listNames, t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
 import type { LevelDef } from '../levels/level';
@@ -67,12 +67,9 @@ export async function check(): Promise<'refused' | void> {
   frogWorld.clear('test');
   const res = await runChecker(RULES);
   if (!res) return;
-  const failure = RULES.map((r) => res.verdicts[r]).find((v) => v?.status === 'fail');
-  if (failure?.status === 'fail') {
-    await playCounterexample(failure.cex, { extra: res.pitfall?.message });
-    return;
-  }
-  if (RULES.some((r) => res.verdicts[r]?.status === 'undecided')) {
+  const out = await playVerification(res, RULES, () => ({ extra: res.pitfall?.message }));
+  if (!out || out.failing) return;
+  if (out.undecided) {
     const tip = g.formulaText.includes('/') ? t().level.avoidDivision : '';
     showUndecided(`${t().level.undecided}${tip}`);
     return;
@@ -80,7 +77,6 @@ export async function check(): Promise<'refused' | void> {
   const level = g.level;
   markCleared(level.id);
   const others = otherAnswers(level.solutions, g.formulaText);
-  await playProof();
   if (useGame.getState().level !== level) return;
   const next = levels[levels.findIndex((l) => l.id === level.id) + 1];
   sfx.cleared();

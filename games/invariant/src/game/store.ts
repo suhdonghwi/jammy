@@ -78,6 +78,7 @@ export interface Game {
   valid: Formula | null;
   verdicts: Partial<Verdicts>;
   checking: boolean;
+  pending: Rule[];
   busy: boolean;
   running: boolean;
   caption: Caption | null;
@@ -130,6 +131,7 @@ const FRESH = {
   valid: null,
   verdicts: {},
   checking: false,
+  pending: [],
   busy: false,
   running: false,
   hint: null,

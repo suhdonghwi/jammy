@@ -42,6 +42,21 @@ behind many small decisions; keep them when changing or adding UI.
 - **The scene pauses when the page is hidden** and carries on where it was. All
   scene timing runs on scene time (see architecture.md), never the wall clock.
 
+## Verifying
+
+- **Every verification plays the same way**, whether Check in a level, Check
+  in the tutorial, or a what-if after a yes/no: the result is held back, each
+  rule checked is shown in turn in the scene, and only then does the caption
+  say what happened.
+- **One rule at a time, with a visible seam.** Its light spins while its
+  picture plays (Initialization: every egg ringed, rippling out;
+  Maintenance: ghost frogs showing their hops; Termination: every stop on the
+  area ringed); then the light turns and chimes, the picture clears, and a
+  short pause separates it from the next rule.
+- **A failure is reached, not cut to.** The camera settles on the failing
+  case before the frog or ghost acts it out; the light turns red as the
+  caption arrives. The last picture stays under the result caption.
+
 ## Clarity
 
 - **One component per idea.** Every label in the scene (tutorial callouts,

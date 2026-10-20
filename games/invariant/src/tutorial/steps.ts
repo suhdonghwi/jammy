@@ -2,12 +2,13 @@ import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
 import { hatch, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs } from '../director/frogs';
 import { previewHop } from '../director/ghosts';
+import { eggRegion, endingsRegion } from '../director/regions';
 import { playProof } from '../director/verdicts';
-import { useGame, type Region, type RegionTile, type Reveal } from '../game/store';
+import { useGame, type Reveal } from '../game/store';
 import { EXIT_MS } from '../hooks/presence';
 import { t } from '../i18n/i18n';
 import { toBig } from '../levels/level';
-import { eggsNear, tileState, tilesNear } from '../levels/tiles';
+import { eggsNear, tileState } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
@@ -58,23 +59,6 @@ const T = () => t().tutorial;
 const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
 
-function eggRegion(tone: RegionTile['tone'], center: [number, number, number] = CAM): Region {
-  const { level, inputs } = useGame.getState();
-  return { center: [center[0], center[1]], tiles: (win) => eggsNear(level!, inputs, win.cx, win.cy, win.R).map(([x, y]) => ({ x, y, tone })) };
-}
-
-function endings(toneOf: (goal: boolean) => RegionTile['tone'], center: [number, number, number] = CAM): Region {
-  const { level, inputs, valid } = useGame.getState();
-  const L = level!;
-  return {
-    center: [center[0], center[1]],
-    tiles: (win) =>
-      tilesNear(L, inputs, win, (s, x, y) =>
-        L.fast.planeReq(s) === true && L.fast.guard(s) !== true && valid?.fast(s) === true ? { x, y, tone: toneOf(L.fast.post(s) === true) } : undefined,
-      ),
-  };
-}
-
 export function loopExampleFrogs() {
   const L = useGame.getState().level!;
   const { inputs } = useGame.getState();
@@ -83,26 +67,9 @@ export function loopExampleFrogs() {
 }
 
 async function passed(gen: number, rule: Rule) {
-  if (rule === 'initialization') {
-    await beat(gen, T().passedInitialization, {
-      spot: 'lights',
-      tone: 'success',
-      region: eggRegion('good'),
-    });
-  } else if (rule === 'maintenance') {
-    await beat(gen, T().passedMaintenance, {
-      spot: 'lights',
-      tone: 'success',
-      prepare: () => playProof({ zoomOut: false }),
-    });
-    frogWorld.clear('test');
-  } else {
-    await beat(gen, T().passedTermination, {
-      spot: 'lights',
-      tone: 'success',
-      region: endings(() => 'good'),
-    });
-  }
+  const text = { initialization: T().passedInitialization, maintenance: T().passedMaintenance, termination: T().passedTermination }[rule];
+  await beat(gen, text, { spot: 'lights', tone: 'success', keep: true });
+  frogWorld.clear('test');
 }
 
 async function witness(gen: number, rule: Rule, pitfall: string, o: { question: string; afterDemo?: string; afterOwn?: string; ghost?: string }) {
@@ -275,7 +242,7 @@ export const STEPS: Step[] = [
     scene: { example: true, reveal: { ...EXAMPLE, area: true }, formula: EXAMPLE_AREA, camera: EXAMPLE_WIDE },
     run: (gen) =>
       beat(gen, T().exEndings, {
-        region: endings(() => 'good', EXAMPLE_CAM),
+        region: endingsRegion(() => 'good', EXAMPLE_CAM),
         callouts: [{ x: 4, y: 3, text: T().exEndingTag, tone: 'good' }],
         prepare: () => void cameraRig.lookAtTile(...EXAMPLE_CAM),
       }),
@@ -388,7 +355,7 @@ export const STEPS: Step[] = [
     scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', camera: CAM },
     run: async (gen) => {
       await beat(gen, T().leadTermination, {
-        region: endings(() => 'info'),
+        region: endingsRegion(() => 'info'),
         prepare: () => {
           resetFrogs();
           void cameraRig.lookAtTile(...CAM);
@@ -400,7 +367,7 @@ export const STEPS: Step[] = [
         ask: T().askTermination,
         rules: RULES,
         nudge: T().nudgeTermination,
-        region: endings(() => 'info'),
+        region: endingsRegion(() => 'info'),
         ghost: { maintenance: T().ghostMaintenance, termination: T().objection },
         onFail: (r) => {
           witnessed.add(r);

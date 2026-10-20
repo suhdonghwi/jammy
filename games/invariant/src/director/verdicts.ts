@@ -1,6 +1,6 @@
 import { sfx } from '../audio/sfx';
 import { checkFormula, type CheckResult } from '../checker/check';
-import type { Counterexample, Rule } from '../checker/types';
+import { RULES, type Counterexample, type Rule } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
 import { t as messages } from '../i18n/i18n';
@@ -9,11 +9,12 @@ import { hop, inputsOf, planeKey, showState, toBig } from '../levels/level';
 import { tilesNear } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
-import { after, sceneNow, sleep } from '../scene/sceneTime';
+import { sceneNow, sleep } from '../scene/sceneTime';
 import { hatch } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
 import { GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
-import { begin, caption, currentLevel } from './sequence';
+import { eggRegion, endingsRegion } from './regions';
+import { begin, caption, currentLevel, type Token } from './sequence';
 
 const ABOVE_CAPTION = 0.05;
 
@@ -52,14 +53,14 @@ export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
   const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, planeR: 20, inputs: g.inputs };
   const keep = { ...g.verdicts };
   for (const r of rules) delete keep[r];
-  useGame.setState({ checking: true, verdicts: keep, failMark: null });
+  useGame.setState({ checking: true, verdicts: keep, pending: rules, failMark: null, region: null });
   try {
     const ctx = await browserZ3();
     const res = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
-    useGame.setState({ verdicts: { ...keep, ...res.verdicts }, pitfallMessage: res.pitfall?.message ?? null });
-    rules.filter((r) => res.verdicts[r]?.status === 'pass').forEach((_, i) => after(i * 130, () => sfx.pass(i)));
+    useGame.setState({ pitfallMessage: res.pitfall?.message ?? null });
     return res;
   } catch (e) {
+    useGame.setState({ pending: [] });
     caption(messages().verdicts.solverFailed((e as Error).message), 'fail');
     return null;
   } finally {
@@ -76,62 +77,134 @@ interface CounterexampleOptions {
   action?: () => Caption['action'];
 }
 
+export function revealAll(res: CheckResult) {
+  useGame.setState((g) => ({ verdicts: { ...g.verdicts, ...res.verdicts }, pending: [] }));
+}
+
+function reveal(rule: Rule, res: CheckResult, chime: number) {
+  const v = res.verdicts[rule];
+  if (!v) return;
+  useGame.setState((g) => ({ verdicts: { ...g.verdicts, [rule]: v }, pending: g.pending.filter((r) => r !== rule) }));
+  if (v.status === 'pass') sfx.pass(chime);
+}
+
 export async function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
   const tok = begin();
-  const L = currentLevel();
-  useGame.setState({ busy: true, running: false, failMark: null });
-  frogWorld.clear();
-  const x = Number(cex.state[L.view.x]);
-  const y = Number(cex.state[L.view.y]);
+  useGame.setState({ busy: true, running: false });
   try {
-    await focusState(cex.state, cex.far);
-    if (!tok.alive) return;
-    const say = messages().verdicts;
-    const prefix = opts.prefix ?? (cex.far ? say.far : '');
-    const area = opts.area ?? say.yourArea;
-    const broken = cex.broken ? (cex.rule === 'maintenance' ? say.noLongerHolds(cex.broken) : say.falseThere(cex.broken)) : '';
-    const run = cex.rule === 'initialization' ? [cex.state] : realRunTo(cex.state);
-    let f: FrogSim;
-    if (run) {
-      f = hatch(run[0]);
-      await sleep(450);
-      for (const s of run.slice(1)) {
-        if (!tok.alive) return;
-        await frogWorld.hopTo(L, f, s, 0.36);
-      }
-    } else {
-      sfx.ghost();
-      f = raiseGhost(cex.state);
-      await sleep(GHOST_RISE * 1000 + 250);
-    }
-    if (!tok.alive) return;
-    const from = run ? run[0] : null;
-    let text: string;
-    if (cex.rule === 'initialization') {
-      markFailure(x, y, say.startsOutsideTag(area));
-      text = `${prefix}${say.startsOutside(fmt(cex.state), area)}${broken}`;
-    } else if (cex.rule === 'maintenance' && cex.next) {
-      await frogWorld.hopTo(L, f, cex.next, 0.55);
-      if (!tok.alive) return;
-      markFailure(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]), say.landsOutsideTag(area));
-      const lands =
-        !from ? say.landsOutside(fmt(cex.state), fmt(cex.next), area)
-        : run!.length === 1 ? say.eggLandsOutside(fmt(cex.state), fmt(cex.next), area)
-        : say.realLandsOutside(fmt(from), fmt(cex.state), fmt(cex.next), area);
-      text = `${prefix}${lands}${broken}`;
-    } else {
-      markFailure(x, y, say.offGoalTag);
-      text = `${prefix}${from ? say.realOffGoal(fmt(from), fmt(cex.state)) : say.offGoal(fmt(cex.state))}`;
-    }
-    if (!run && opts.ghostExtra) text += `\n\n${opts.ghostExtra}`;
-    if (opts.extra) text += `\n\n${opts.extra}`;
-    const replay = { label: messages().caption.replay, onClick: () => void playCounterexample(cex, opts) };
-    const action = opts.action?.();
-    const tone = opts.tone ?? 'fail';
-    useGame.setState({ caption: action ? { text, tone, action, secondary: replay } : { text, tone, action: replay } });
+    await counterexample(tok, cex, opts);
   } finally {
     if (tok.alive) useGame.setState({ busy: false });
   }
+}
+
+const SETTLE_MS = 350;
+const HOLD_MS = 600;
+const BETWEEN_MS = 300;
+
+async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
+  const L = currentLevel();
+  useGame.setState({ failMark: null, region: null });
+  frogWorld.clear();
+  const x = Number(cex.state[L.view.x]);
+  const y = Number(cex.state[L.view.y]);
+  await focusState(cex.state, cex.far);
+  if (!tok.alive) return;
+  await sleep(SETTLE_MS);
+  if (!tok.alive) return;
+  const say = messages().verdicts;
+  const prefix = opts.prefix ?? (cex.far ? say.far : '');
+  const area = opts.area ?? say.yourArea;
+  const broken = cex.broken ? (cex.rule === 'maintenance' ? say.noLongerHolds(cex.broken) : say.falseThere(cex.broken)) : '';
+  const run = cex.rule === 'initialization' ? [cex.state] : realRunTo(cex.state);
+  let f: FrogSim;
+  if (run) {
+    f = hatch(run[0]);
+    await sleep(450);
+    for (const s of run.slice(1)) {
+      if (!tok.alive) return;
+      await frogWorld.hopTo(L, f, s, 0.36);
+    }
+  } else {
+    sfx.ghost();
+    f = raiseGhost(cex.state);
+    await sleep(GHOST_RISE * 1000 + 250);
+  }
+  if (!tok.alive) return;
+  const from = run ? run[0] : null;
+  let text: string;
+  if (cex.rule === 'initialization') {
+    markFailure(x, y, say.startsOutsideTag(area));
+    text = `${prefix}${say.startsOutside(fmt(cex.state), area)}${broken}`;
+  } else if (cex.rule === 'maintenance' && cex.next) {
+    await frogWorld.hopTo(L, f, cex.next, 0.55);
+    if (!tok.alive) return;
+    markFailure(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]), say.landsOutsideTag(area));
+    const lands =
+      !from ? say.landsOutside(fmt(cex.state), fmt(cex.next), area)
+      : run!.length === 1 ? say.eggLandsOutside(fmt(cex.state), fmt(cex.next), area)
+      : say.realLandsOutside(fmt(from), fmt(cex.state), fmt(cex.next), area);
+    text = `${prefix}${lands}${broken}`;
+  } else {
+    markFailure(x, y, say.offGoalTag);
+    text = `${prefix}${from ? say.realOffGoal(fmt(from), fmt(cex.state)) : say.offGoal(fmt(cex.state))}`;
+  }
+  if (!run && opts.ghostExtra) text += `\n\n${opts.ghostExtra}`;
+  if (opts.extra) text += `\n\n${opts.extra}`;
+  const replay = { label: messages().caption.replay, onClick: () => void playCounterexample(cex, opts) };
+  const action = opts.action?.();
+  const tone = opts.tone ?? 'fail';
+  useGame.setState({ caption: action ? { text, tone, action, secondary: replay } : { text, tone, action: replay } });
+}
+
+export interface Outcome {
+  failing?: Rule;
+  undecided: boolean;
+}
+
+export async function playVerification(res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions = () => ({})): Promise<Outcome | null> {
+  const tok = begin();
+  useGame.setState({ busy: true, running: false, failMark: null, region: null });
+  frogWorld.clear('test');
+  const order = RULES.filter((r) => rules.includes(r));
+  let undecided = false;
+  try {
+    for (const [i, rule] of order.entries()) {
+      const v = res.verdicts[rule];
+      if (!v) continue;
+      if (v.status === 'fail') {
+        await counterexample(tok, v.cex, onFail(rule));
+        if (!tok.alive) return null;
+        reveal(rule, res, i);
+        return { failing: rule, undecided };
+      }
+      if (v.status === 'undecided') {
+        reveal(rule, res, i);
+        undecided = true;
+        continue;
+      }
+      await showHolds(rule);
+      if (!tok.alive) return null;
+      reveal(rule, res, i);
+      if (i < order.length - 1) {
+        await sleep(HOLD_MS);
+        if (!tok.alive) return null;
+        useGame.setState({ region: null });
+        frogWorld.clear('test');
+        await sleep(BETWEEN_MS);
+        if (!tok.alive) return null;
+      }
+    }
+    return { undecided };
+  } finally {
+    if (tok.alive) useGame.setState({ busy: false, pending: [] });
+  }
+}
+
+async function showHolds(rule: Rule) {
+  if (rule === 'maintenance') return proofWave();
+  useGame.setState({ region: rule === 'initialization' ? eggRegion('good') : endingsRegion(() => 'good') });
+  await sleep(1000);
 }
 
 export function showUndecided(text: string) {
@@ -166,31 +239,34 @@ function spreadHops(hops: ProofHop[]): ProofHop[] {
   return picked;
 }
 
-export async function playProof({ zoomOut = true }: { zoomOut?: boolean } = {}) {
+export async function playProof() {
   const tok = begin();
-  const L = currentLevel();
   useGame.setState({ busy: true, running: false });
   frogWorld.clear();
   try {
-    if (zoomOut) await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
-    if (!tok.alive) return;
-    const { valid: inv, inputs } = useGame.getState();
-    if (!inv) return;
-    const t = cameraRig.target();
-    const tx = t.x;
-    const ty = -t.z + PROOF_ABOVE;
-    const near = (x: number, y: number) => Math.hypot(x - tx, y - ty);
-    const candidates = tilesNear(L, inputs, { cx: Math.round(tx), cy: Math.round(ty), R: PROOF_FAR }, (s, x, y) => {
-      if (!L.fast.planeReq(s) || inv.fast(s) !== true || L.fast.guard(s) !== true || near(x, y) > PROOF_FAR) return undefined;
-      const from = toBig(s);
-      return { from, to: hop(L, from), d: near(x, y) };
-    });
-    const hops = spreadHops(candidates.sort((a, b) => a.d - b.d));
-    const fadeAt = (d: number) => 1 - smoothstep(clamp01((d - PROOF_NEAR) / (PROOF_FAR - PROOF_NEAR)));
-    sfx.ghost();
-    hops.forEach((h) => previewHop(h.from, (h.d / PROOF_FAR) * 0.6, fadeAt(h.d)));
-    await sleep((0.6 + GHOST_RISE + 0.9) * 1000);
+    await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
+    if (tok.alive) await proofWave();
   } finally {
     if (tok.alive) useGame.setState({ busy: false });
   }
+}
+
+async function proofWave() {
+  const L = currentLevel();
+  const { valid: inv, inputs } = useGame.getState();
+  if (!inv) return;
+  const t = cameraRig.target();
+  const tx = t.x;
+  const ty = -t.z + PROOF_ABOVE;
+  const near = (x: number, y: number) => Math.hypot(x - tx, y - ty);
+  const candidates = tilesNear(L, inputs, { cx: Math.round(tx), cy: Math.round(ty), R: PROOF_FAR }, (s, x, y) => {
+    if (!L.fast.planeReq(s) || inv.fast(s) !== true || L.fast.guard(s) !== true || near(x, y) > PROOF_FAR) return undefined;
+    const from = toBig(s);
+    return { from, to: hop(L, from), d: near(x, y) };
+  });
+  const hops = spreadHops(candidates.sort((a, b) => a.d - b.d));
+  const fadeAt = (d: number) => 1 - smoothstep(clamp01((d - PROOF_NEAR) / (PROOF_FAR - PROOF_NEAR)));
+  sfx.ghost();
+  hops.forEach((h) => previewHop(h.from, (h.d / PROOF_FAR) * 0.6, fadeAt(h.d)));
+  await sleep((0.6 + GHOST_RISE + 0.9) * 1000);
 }

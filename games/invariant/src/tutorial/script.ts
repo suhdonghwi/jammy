@@ -1,7 +1,6 @@
-import type { CheckResult } from '../checker/check';
 import type { Rule } from '../checker/types';
 import { events } from '../director/events';
-import { playCounterexample, runChecker, showUndecided } from '../director/verdicts';
+import { playVerification, revealAll, runChecker, showUndecided } from '../director/verdicts';
 import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import { frogWorld } from '../scene/frogs/frogWorld';
@@ -84,11 +83,12 @@ export async function beat(
     settle?: number;
     callouts?: Game['callouts'];
     region?: Game['region'];
+    keep?: boolean;
     lines?: Game['spotLines'];
     tone?: CaptionTone;
   } = {},
 ): Promise<void> {
-  useGame.setState({ callouts: opts.callouts ?? [], region: opts.region ?? null, spotLines: opts.lines ?? [] });
+  if (!opts.keep) useGame.setState({ callouts: opts.callouts ?? [], region: opts.region ?? null, spotLines: opts.lines ?? [] });
   const tone = opts.tone ?? 'info';
   const label = opts.label ?? messages().caption.next;
   say(text, opts.spot ?? null, tone, label);
@@ -210,24 +210,26 @@ export async function stage(gen: number, o: StageOptions): Promise<void> {
       askNow = true;
       continue;
     }
-    const failing = o.rules.find((r) => res.verdicts[r]?.status === 'fail');
-    if (!failing) {
-      if (o.rules.some((r) => res.verdicts[r]?.status === 'undecided')) {
-        showUndecided(messages().tutorial.undecided);
-        continue;
-      }
-      frogWorld.clear();
-      allow({});
-      useGame.setState({ hint: null });
-      return;
-    }
-    o.onFail?.(failing);
-    const cex = failureOf(res, failing)!;
     const stageRule = o.rules[o.rules.length - 1];
-    const prefix = failing !== stageRule ? messages().tutorial.lostRule(messages().rules[failing]) : undefined;
     useGame.setState({ pitfallMessage: null });
-    await playCounterexample(cex, { prefix, extra: messages().tutorial.fixAndCheck, ghostExtra: o.ghost?.[failing] });
+    const out = await playVerification(res, o.rules, (failing) => ({
+      prefix: failing !== stageRule ? messages().tutorial.lostRule(messages().rules[failing]) : undefined,
+      extra: messages().tutorial.fixAndCheck,
+      ghostExtra: o.ghost?.[failing],
+    }));
     guard(gen);
+    if (!out) continue;
+    if (out.failing) {
+      o.onFail?.(out.failing);
+      continue;
+    }
+    if (out.undecided) {
+      showUndecided(messages().tutorial.undecided);
+      continue;
+    }
+    allow({});
+    useGame.setState({ hint: null });
+    return;
   }
 }
 
@@ -257,24 +259,18 @@ export async function demo(
   useGame.setState({ busy: false });
   const res = await runChecker(rules);
   guard(gen);
-  const failing = res && rules.find((r) => res.verdicts[r]?.status === 'fail');
-  const cex = res && failing ? failureOf(res, failing) : null;
-  if (cex) {
+  if (res) {
     useGame.setState({ pitfallMessage: null });
     const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? messages().tutorial.guessedRight : messages().tutorial.guessedWrong;
     const tone = opts.guessedRight ? 'success' : 'fail';
-    await playCounterexample(cex, { prefix: verdict, tone, ghostExtra: opts.ghostExtra, area: messages().verdicts.theArea, action: nextAfterCounterexample });
+    const out = await playVerification(res, rules, () => ({ prefix: verdict, tone, ghostExtra: opts.ghostExtra, area: messages().verdicts.theArea, action: nextAfterCounterexample }));
     guard(gen);
-    await holdCaption(gen);
+    if (out?.failing) await holdCaption(gen);
   }
   frogWorld.clear('test');
-  useGame.setState({ failMark: null });
+  useGame.setState({ failMark: null, region: null });
   g.setFormula(mine);
-  await runChecker(rules);
+  const back = await runChecker(rules);
   guard(gen);
-}
-
-function failureOf(res: CheckResult, rule: Rule) {
-  const v = res.verdicts[rule];
-  return v?.status === 'fail' ? v.cex : null;
+  if (back) revealAll(back);
 }

@@ -8,7 +8,7 @@ export function RuleLights() {
   const lights = useGame((s) => s.reveal.lights);
   const awake = useGame((s) => s.reveal.awake);
   const verdicts = useGame((s) => s.verdicts);
-  const checking = useGame((s) => s.checking);
+  const pending = useGame((s) => s.pending);
   const busy = useGame((s) => s.busy);
   const spot = useGame((s) => s.spotlight);
   const tr = useT();
@@ -19,7 +19,7 @@ export function RuleLights() {
         .filter((r) => lights.includes(r))
         .map((r) => {
           const v = verdicts[r];
-          const status: LightStatus = !awake.includes(r) ? 'dim' : checking && !v ? 'checking' : (v?.status ?? 'idle');
+          const status: LightStatus = !awake.includes(r) ? 'dim' : v ? v.status : pending.includes(r) ? 'checking' : 'idle';
           return (
             <button
               key={r}
