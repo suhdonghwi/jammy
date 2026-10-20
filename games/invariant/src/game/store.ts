@@ -79,7 +79,6 @@ export interface Game {
   verdicts: Partial<Verdicts>;
   checking: boolean;
   pending: Rule[];
-  ruleBanner: { rule: Rule; status: 'checking' | 'pass' | 'fail' | 'undecided' } | null;
   busy: boolean;
   running: boolean;
   caption: Caption | null;
@@ -135,7 +134,6 @@ const FRESH = {
   verdicts: {},
   checking: false,
   pending: [],
-  ruleBanner: null,
   busy: false,
   running: false,
   hint: null,

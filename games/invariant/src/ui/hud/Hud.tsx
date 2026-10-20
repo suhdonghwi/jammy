@@ -4,7 +4,6 @@ import { CaptionBar } from './CaptionBar';
 import { CodePanel } from './CodePanel';
 import { FormulaBox } from './FormulaBox';
 import { HoverReadout } from './HoverReadout';
-import { RuleBanner } from './RuleBanner';
 import { RunControls } from './RunControls';
 import { TopBar } from './TopBar';
 
@@ -19,7 +18,6 @@ export function Hud() {
           <CodePanel key={levelId} />
         </div>
         <div className="pointer-events-none! absolute inset-x-0 top-0 flex flex-col items-center gap-2 *:pointer-events-none">
-          <RuleBanner />
           <HoverReadout />
         </div>
       </div>

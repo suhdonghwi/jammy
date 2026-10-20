@@ -39,9 +39,8 @@ export function HoverReadout() {
   const tile = useHover((s) => s.tile);
   const ref = useRef<HTMLDivElement>(null);
   const tr = useT();
-  const banner = useGame((s) => s.ruleBanner);
   useTopRowPlacement(ref);
-  if (!tile || !reveal.axes || banner) return null;
+  if (!tile || !reveal.axes) return null;
   const s = tileState(level, tile[0], tile[1], inputs);
   const vals = scalarNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
   if (!level.fast.planeReq(s)) {

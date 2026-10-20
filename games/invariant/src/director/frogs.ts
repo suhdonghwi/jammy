@@ -80,7 +80,7 @@ export function interrupt() {
   hatchFx.clear();
   burstFx.clear();
   hopArcs.clear();
-  useGame.setState({ busy: false, running: false, stepping: false, checking: false, failMark: null, ruleBanner: null, pending: [] });
+  useGame.setState({ busy: false, running: false, stepping: false, checking: false, failMark: null, pending: [] });
 }
 
 export function resetLevel() {

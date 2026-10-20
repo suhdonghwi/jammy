@@ -2,14 +2,14 @@ import { sfx } from '../audio/sfx';
 import { checkFormula, type CheckResult } from '../checker/check';
 import { RULES, type Counterexample, type Rule } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
-import { useGame, type Caption, type CaptionTone } from '../game/store';
+import { useGame, type Caption, type CaptionTone, type Game, type Region } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
 import { hop, inputsOf, planeKey, showState, toBig } from '../levels/level';
 import { tilesNear } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
-import { after, sceneNow, sleep } from '../scene/sceneTime';
+import { sceneNow, sleep } from '../scene/sceneTime';
 import { hatch } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
 import { dismissGhosts, GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
@@ -83,17 +83,10 @@ export function revealAll(res: CheckResult) {
   useGame.setState((g) => ({ verdicts: { ...g.verdicts, ...res.verdicts }, pending: [] }));
 }
 
-const BANNER_LINGER_MS = 1200;
-
-function lowerBanner() {
-  const shown = useGame.getState().ruleBanner;
-  after(BANNER_LINGER_MS, () => useGame.getState().ruleBanner === shown && useGame.setState({ ruleBanner: null }));
-}
-
 function reveal(rule: Rule, res: CheckResult, chime: number) {
   const v = res.verdicts[rule];
   if (!v) return;
-  useGame.setState((g) => ({ verdicts: { ...g.verdicts, [rule]: v }, pending: g.pending.filter((r) => r !== rule), ruleBanner: { rule, status: v.status } }));
+  useGame.setState((g) => ({ verdicts: { ...g.verdicts, [rule]: v }, pending: g.pending.filter((r) => r !== rule) }));
   if (v.status === 'pass') sfx.pass(chime);
 }
 
@@ -109,6 +102,7 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
 
 const HOLD_MS = 500;
 const REGION_MS = 1300;
+const TAG_ABOVE = 2;
 const BETWEEN_MS = 300;
 
 async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
@@ -171,7 +165,7 @@ export interface Outcome {
 
 export async function playVerification(res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions = () => ({})): Promise<Outcome | null> {
   const tok = begin();
-  useGame.setState({ busy: true, running: false, failMark: null, region: null });
+  useGame.setState({ busy: true, running: false, failMark: null, region: null, callouts: [] });
   frogWorld.clear('test');
   const order = RULES.filter((r) => rules.includes(r));
   let undecided = false;
@@ -179,12 +173,10 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
     for (const [i, rule] of order.entries()) {
       const v = res.verdicts[rule];
       if (!v) continue;
-      useGame.setState({ ruleBanner: { rule, status: 'checking' } });
       if (v.status === 'fail') {
         await counterexample(tok, v.cex, onFail(rule));
         if (!tok.alive) return null;
         reveal(rule, res, i);
-        lowerBanner();
         return { failing: rule, undecided };
       }
       if (v.status === 'undecided') {
@@ -194,30 +186,51 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
         if (!tok.alive) return null;
         continue;
       }
-      await showHolds(rule);
+      const tag = await showHolds(rule);
       if (!tok.alive) return null;
       reveal(rule, res, i);
+      if (tag) useGame.setState({ callouts: [tag] });
       if (i < order.length - 1) {
         await sleep(HOLD_MS);
         if (!tok.alive) return null;
-        useGame.setState({ region: null, ruleBanner: null });
+        useGame.setState({ region: null, callouts: [] });
         dismissGhosts();
         await sleep(BETWEEN_MS);
         if (!tok.alive) return null;
       }
     }
-    lowerBanner();
     return { undecided };
   } finally {
     if (tok.alive) useGame.setState({ busy: false, pending: [] });
   }
 }
 
-async function showHolds(rule: Rule) {
-  if (rule === 'maintenance') return proofWave();
+type Callout = Game['callouts'][number];
+
+async function showHolds(rule: Rule): Promise<Callout | null> {
+  const text = messages().verdicts.holdsTag[rule];
+  if (rule === 'maintenance') {
+    const f = await proofWave();
+    return f ? { x: f.x, y: f.y, frog: f.id, text, tone: 'good' } : null;
+  }
   const region = rule === 'initialization' ? eggRegion('good') : endingsRegion(() => 'good');
   useGame.setState({ region: { ...region, id: `check-${rule}`, tick: true } });
   await sleep(REGION_MS);
+  const near = nearestTile(region);
+  return near ? { ...near, text, tone: 'good' } : null;
+}
+
+function nearestTile(region: Region): { x: number; y: number } | null {
+  const t = cameraRig.target();
+  const [cx, cy] = [t.x, -t.z + TAG_ABOVE];
+  const tiles = region.tiles({ cx: Math.round(cx), cy: Math.round(cy), R: 8 });
+  let best: { x: number; y: number } | null = null;
+  let bestD = Infinity;
+  for (const tile of tiles) {
+    const d = Math.hypot(tile.x - cx, tile.y - cy);
+    if (d < bestD) [best, bestD] = [{ x: tile.x, y: tile.y }, d];
+  }
+  return best;
 }
 
 export function showUndecided(text: string) {
@@ -264,10 +277,10 @@ export async function playProof() {
   }
 }
 
-async function proofWave() {
+async function proofWave(): Promise<FrogSim | null> {
   const L = currentLevel();
   const { valid: inv, inputs } = useGame.getState();
-  if (!inv) return;
+  if (!inv) return null;
   const t = cameraRig.target();
   const tx = t.x;
   const ty = -t.z + PROOF_ABOVE;
@@ -280,6 +293,7 @@ async function proofWave() {
   const hops = spreadHops(candidates.sort((a, b) => a.d - b.d));
   const fadeAt = (d: number) => 1 - smoothstep(clamp01((d - PROOF_NEAR) / (PROOF_FAR - PROOF_NEAR)));
   sfx.ghost();
-  hops.forEach((h) => previewHop(h.from, 0, fadeAt(h.d)));
+  const ghosts = hops.map((h) => previewHop(h.from, 0, fadeAt(h.d)));
   await sleep((GHOST_RISE + 1.0) * 1000);
+  return ghosts[0] ?? null;
 }

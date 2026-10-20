@@ -125,6 +125,11 @@ export const en = {
     realLandsOutside: (egg: string, from: string, to: string, area: string) =>
       `The frog from the egg at ${egg} gets to ${from}, and its next hop lands at ${to}, outside ${area}.`,
     offGoalTag: 'stops, but not on a goal',
+    holdsTag: {
+      initialization: 'every egg is on the area',
+      maintenance: 'every hop lands on the area',
+      termination: 'every stop on the area is a goal',
+    } satisfies Record<Rule, string>,
     offGoal: (state: string) => `A ghost frog at ${state} stops there, but it isn't a goal: the postcondition doesn't hold.`,
     realOffGoal: (egg: string, state: string) => `The frog from the egg at ${egg} stops at ${state}, but it isn't a goal: the postcondition doesn't hold.`,
   },

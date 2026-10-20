@@ -124,6 +124,11 @@ export const ko: Messages = {
     eggLandsOutside: (from, to, area) => `${from}의 알에서 나온 개구리가 한 번 뛰면 ${to}에 착지하는데, ${area} 밖입니다.`,
     realLandsOutside: (egg, from, to, area) => `${egg}의 알에서 나온 개구리가 ${from}까지 온 뒤, 다음 점프에서 ${to}에 착지하는데, ${area} 밖입니다.`,
     offGoalTag: '멈췄지만 목표가 아님',
+    holdsTag: {
+      initialization: '모든 알이 영역 위',
+      maintenance: '모든 점프가 영역 위에 착지',
+      termination: '영역 위에서 멈추는 곳은 모두 목표',
+    },
     offGoal: (state) => `${state}의 유령 개구리는 거기서 멈추지만, 목표가 아닙니다. 사후 조건이 성립하지 않습니다.`,
     realOffGoal: (egg, state) => `${egg}의 알에서 나온 개구리가 ${state}에서 멈추지만, 목표가 아닙니다. 사후 조건이 성립하지 않습니다.`,
   },
