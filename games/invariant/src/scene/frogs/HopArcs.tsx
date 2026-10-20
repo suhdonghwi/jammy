@@ -90,20 +90,23 @@ export function HopArcs() {
     const r = rings.current;
     if (!d || !r) return;
     const t = sceneNow();
-    const ghosts = new Set(frogWorld.frogs.map((f) => f.id));
+    const ghosts = new Map(frogWorld.frogs.map((f) => [f.id, f]));
     if (arcs.some((a) => !ghosts.has(a.frog))) arcs = arcs.filter((a) => ghosts.has(a.frog));
     let nd = 0;
     let nr = 0;
     for (const a of arcs) {
       if (a.plane !== plane) continue;
+      const drawn = ghosts.get(a.frog)?.drawn;
+      const fx = drawn ? drawn.x : a.fx;
+      const fy = drawn ? -drawn.z : a.fy;
       const h0 = field.heightAt(a.fx, a.fy) * SLAB_H;
       const h1 = field.heightAt(a.tx, a.ty) * SLAB_H;
-      const H = hopHeight(Math.hypot(a.tx - a.fx, a.ty - a.fy));
+      const H = hopHeight(Math.hypot(a.tx - fx, a.ty - fy));
       for (let k = 0; k < DOTS; k++) {
         const f = (k + 0.5) / DOTS;
         const shown = clamp01((t - a.t0 - f * DRAW) / 0.08);
         if (shown <= 0) continue;
-        pos.set(a.fx + (a.tx - a.fx) * f, h0 + (h1 - h0) * f + 4 * H * f * (1 - f) + LIFT, -(a.fy + (a.ty - a.fy) * f));
+        pos.set(fx + (a.tx - fx) * f, h0 + (h1 - h0) * f + 4 * H * f * (1 - f) + LIFT, -(fy + (a.ty - fy) * f));
         m.compose(pos, q, scl.setScalar(0.6 + 0.4 * shown));
         d.setMatrixAt(nd, m);
         parts.dot.color.setXYZ(nd, DOT.r, DOT.g, DOT.b);
