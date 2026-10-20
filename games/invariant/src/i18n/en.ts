@@ -198,7 +198,7 @@ export const en = {
       'These blue slabs are an **invariant area**. Drawing an area is claiming that **“every tile a frog ever lands on is on this area.”**',
     exBadTag: 'stops, but not a goal',
     exWhy:
-      'Why does that help? A frog that stopped on one of these striped tiles would stop off a goal, and the program would be wrong.\n\nBut these tiles are off the area. If every frog is always on the area, as it claims, no frog can ever get there.',
+      'Why does that help? If a frog stopped on one of these red tiles, it would stop off a goal, and the program would be wrong.\n\nBut these tiles are off the area. If every frog is always on the area, as it claims, no frog can ever reach them.',
     exEndings: 'On the area, the loop can only stop in this one column, and every tile of it is a goal. So if the claim that frogs only ever move on the area is true, **every frog stops on a goal**.',
     exEndingTag: 'a possible ending',
     exRules:
@@ -242,7 +242,7 @@ export const en = {
     objection:
       '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But your area claims “a frog could be here too”. **Shrink** your area so it doesn’t.',
     objectionDemo:
-      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But the area `i >= 0` claims “a frog could be here too”, so checking that claim covers tiles where `i` is greater than `n` as well.',
+      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But the area `i >= 0` claims “a frog could be on any tile where `i >= 0`”, so checking that claim covers impossible tiles where `i` is greater than `n` as well.',
     passedTermination: 'Correct! Every striped tile on your area is a goal: **Termination** holds.',
     questionTermination: 'Would it pass all three rules?',
     afterDemoTermination: (mine: string) =>
