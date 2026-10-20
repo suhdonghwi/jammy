@@ -237,7 +237,7 @@ export const en = {
     checkToSee: 'Press **Check** to find out. It now tests all three rules.',
     firstPassTermination: 'Every striped tile on your area is a goal, so a frog that stops on your area always stops on a goal.',
     askTermination:
-      '“But `i` can never pass `n`!” Indeed, no real frog gets to tiles like these. But your area claims “a frog could be here too”, and Check checks the claim as it stands.\n\n**Shrink** your area so every striped tile on it is a goal, then press **Check**.',
+      '“But `i` can never pass `n`!” Indeed, no real frog gets to tiles like these. But your area claims “a frog could be here too”. The area is too large.\n\n**Shrink** your area so every striped tile on it is a goal, then press **Check**.',
     nudgeTermination: 'A real frog never passes `n`, so `i` is never greater than `n`.',
     objection:
       '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But your area claims “a frog could be here too”. **Shrink** your area so it doesn’t.',
