@@ -1,7 +1,7 @@
 import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
 import { hatch, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs } from '../director/frogs';
-import { previewHop } from '../director/ghosts';
+import { dismissGhosts, previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
 import { playProof } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
@@ -69,7 +69,7 @@ export function loopExampleFrogs() {
 async function passed(gen: number, rule: Rule) {
   const text = { initialization: T().passedInitialization, maintenance: T().passedMaintenance, termination: T().passedTermination }[rule];
   await beat(gen, text, { spot: 'lights', tone: 'success', keep: true });
-  frogWorld.clear('test');
+  dismissGhosts();
 }
 
 async function witness(gen: number, rule: Rule, pitfall: string, o: { question: string; afterDemo?: string; afterOwn?: string; ghost?: string }) {

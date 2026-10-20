@@ -12,7 +12,7 @@ import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
 import { hatch } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
-import { GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
+import { dismissGhosts, GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
 import { begin, caption, currentLevel, type Token } from './sequence';
 
@@ -190,7 +190,7 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
         await sleep(HOLD_MS);
         if (!tok.alive) return null;
         useGame.setState({ region: null });
-        frogWorld.clear('test');
+        dismissGhosts();
         await sleep(BETWEEN_MS);
         if (!tok.alive) return null;
       }
@@ -204,7 +204,7 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
 async function showHolds(rule: Rule) {
   if (rule === 'maintenance') return proofWave();
   const region = rule === 'initialization' ? eggRegion('good') : endingsRegion(() => 'good');
-  useGame.setState({ region: { ...region, tick: true } });
+  useGame.setState({ region: { ...region, id: `check-${rule}`, tick: true } });
   await sleep(REGION_MS);
 }
 

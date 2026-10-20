@@ -1,5 +1,6 @@
 import type { Rule } from '../checker/types';
 import { events } from '../director/events';
+import { dismissGhosts } from '../director/ghosts';
 import { playVerification, revealAll, runChecker, showUndecided } from '../director/verdicts';
 import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';
@@ -267,7 +268,7 @@ export async function demo(
     guard(gen);
     if (out?.failing) await holdCaption(gen);
   }
-  frogWorld.clear('test');
+  dismissGhosts();
   useGame.setState({ failMark: null, region: null });
   g.setFormula(mine);
   const back = await runChecker(rules);

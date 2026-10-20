@@ -123,7 +123,7 @@ export function Frogs() {
       if (ghost) {
         gd.setMatrixAt(nGhost, dummy.matrix);
         gh.setMatrixAt(nGhost, dummy.matrix);
-        fades.setX(nGhost, f.fade ?? 1);
+        fades.setX(nGhost, (f.fade ?? 1) * (f.leave ? 1 - Math.min(1, (t - f.leave.t0) / f.leave.dur) : 1));
         gh.setColorAt(nGhost++, GHOST);
       } else b.setMatrixAt(nReal++, dummy.matrix);
       const air = Math.max(0, py - p.ground);

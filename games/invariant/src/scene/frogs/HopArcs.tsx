@@ -96,7 +96,9 @@ export function HopArcs() {
     let nr = 0;
     for (const a of arcs) {
       if (a.plane !== plane) continue;
-      const drawn = ghosts.get(a.frog)?.drawn;
+      const frog = ghosts.get(a.frog);
+      const drawn = frog?.drawn;
+      const gone = frog?.leave ? 1 - clamp01((t - frog.leave.t0) / frog.leave.dur) : 1;
       const fx = drawn ? drawn.x : a.fx;
       const fy = drawn ? -drawn.z : a.fy;
       const h0 = field.heightAt(a.fx, a.fy) * SLAB_H;
@@ -110,7 +112,7 @@ export function HopArcs() {
         m.compose(pos, q, scl.setScalar(0.6 + 0.4 * shown));
         d.setMatrixAt(nd, m);
         parts.dot.color.setXYZ(nd, DOT.r, DOT.g, DOT.b);
-        parts.dot.alpha.setX(nd, 0.9 * shown * a.fade);
+        parts.dot.alpha.setX(nd, 0.9 * shown * a.fade * gone);
         nd++;
       }
       const ring = clamp01((t - a.t0 - ARC_DRAW) / 0.25);
@@ -118,7 +120,7 @@ export function HopArcs() {
         m.compose(pos.set(a.tx, h1 + 0.014, -a.ty), q, scl.setScalar(0.9 + 0.1 * ring));
         r.setMatrixAt(nr, m);
         parts.ring.color.setXYZ(nr, RING.r, RING.g, RING.b);
-        parts.ring.alpha.setX(nr, 0.85 * ring * a.fade);
+        parts.ring.alpha.setX(nr, 0.85 * ring * a.fade * gone);
         nr++;
       }
     }

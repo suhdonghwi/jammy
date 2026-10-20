@@ -11,13 +11,14 @@ const viewCenter = (): [number, number] => {
 
 export function eggRegion(tone: RegionTile['tone'], center: Center = viewCenter()): Region {
   const { level, inputs } = useGame.getState();
-  return { center: [center[0], center[1]], tiles: (win) => eggsNear(level!, inputs, win.cx, win.cy, win.R).map(([x, y]) => ({ x, y, tone })) };
+  return { id: `eggs-${tone}`, center: [center[0], center[1]], tiles: (win) => eggsNear(level!, inputs, win.cx, win.cy, win.R).map(([x, y]) => ({ x, y, tone })) };
 }
 
-export function endingsRegion(toneOf: (goal: boolean) => RegionTile['tone'], center: Center = viewCenter()): Region {
+export function endingsRegion(toneOf: (goal: boolean) => RegionTile['tone'], center: Center = viewCenter(), id = 'endings'): Region {
   const { level, inputs, valid } = useGame.getState();
   const L = level!;
   return {
+    id,
     center: [center[0], center[1]],
     tiles: (win) =>
       tilesNear(L, inputs, win, (s, x, y) =>

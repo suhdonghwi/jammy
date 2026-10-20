@@ -119,6 +119,7 @@ export interface RegionTile {
 }
 
 export interface Region {
+  id: string;
   tiles: (win: TileWindow) => RegionTile[];
   center: [number, number];
   tick?: boolean;

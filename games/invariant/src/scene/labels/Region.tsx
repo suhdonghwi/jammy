@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useGame, type Region } from '../../game/store';
 import { EXIT_MS, useLingering } from '../../hooks/presence';
@@ -89,7 +89,10 @@ export function OutlineRegion() {
   const leftAt = useRef<number | null>(null);
   useTicks(region, win);
 
-  const t0 = useMemo(() => (region ? sceneNow() : 0), [region]);
+  const [shown, setShown] = useState<{ id: string; t0: number } | null>(null);
+  if (region && region.id !== shown?.id) setShown({ id: region.id, t0: sceneNow() });
+  if (!region && shown) setShown(null);
+  const t0 = shown?.t0 ?? 0;
   const geoms = useMemo(() => {
     if (!region) return null;
     const tiles = region.tiles(win);
@@ -105,7 +108,7 @@ export function OutlineRegion() {
       anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
       const c = COLOR[t.tone];
       color.set([c.r, c.g, c.b], i * 3);
-      delay[i] = rippleDelay(Math.hypot(t.x - cx, t.y - cy));
+      delay[i] = region.tick ? rippleDelay(Math.hypot(t.x - cx, t.y - cy)) : 0;
     });
     const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aColor: [color, 3], aDelay: [delay, 1] } as const;
     return { ring: instanced(ringGeometry, n, attrs), wash: instanced(washGeometry, n, attrs) };
