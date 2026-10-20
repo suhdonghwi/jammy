@@ -38,9 +38,6 @@ function colored(text: string, error: { from: number; to: number } | null): Reac
   return out;
 }
 
-/** In the tutorial the area can only be edited while a step allows it. */
-const isLocked = (g: { mode: string; tutorialAllow: { formula: boolean } }) => g.mode === 'tutorial' && !g.tutorialAllow.formula;
-
 /** The text box and its coloured copy share all of this, so their letters line up exactly. */
 const TEXT = 'col-start-1 row-start-1 m-0 min-w-0 px-1 py-2.5 font-mono text-(length:--formula-size) leading-[1.4] whitespace-pre-wrap [overflow-wrap:anywhere]';
 
@@ -54,8 +51,8 @@ export function FormulaBox() {
   const checking = useGame((s) => s.checking);
   const mode = useGame((s) => s.mode);
   const awaitingCheck = useGame((s) => s.awaitingCheck);
-  const allowFormula = useGame((s) => s.tutorialAllow.formula);
-  const locked = isLocked({ mode, tutorialAllow: { formula: allowFormula } });
+  // in the tutorial the area can only be edited while a step allows it
+  const locked = useGame((s) => s.mode === 'tutorial' && !s.tutorialAllow.formula);
   const spot = useGame((s) => s.spotlight);
   const tr = useT();
   // an invalid formula's error shows only once it is submitted (Check or Enter),

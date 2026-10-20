@@ -30,9 +30,9 @@ const top = (i: number, j: number) => {
   const { x, y } = iso(i, j);
   return { x, y: y - SLAB_T };
 };
-const Frog = ({ x, y, color = '#52c24a' }: { x: number; y: number; color?: string }) => (
+const Frog = ({ x, y }: { x: number; y: number }) => (
   <g transform={`translate(${x},${y - 6})`}>
-    <ellipse cx="0" cy="1" rx="9" ry="6.5" fill={color} stroke="#2a3142" strokeWidth="1.2" />
+    <ellipse cx="0" cy="1" rx="9" ry="6.5" fill="#52c24a" stroke="#2a3142" strokeWidth="1.2" />
     <circle cx="-4.2" cy="-5" r="3.4" fill="#fff" stroke="#2a3142" strokeWidth="1.2" />
     <circle cx="4.2" cy="-5" r="3.4" fill="#fff" stroke="#2a3142" strokeWidth="1.2" />
     <circle cx="-4" cy="-4.8" r="1.5" fill="#12141c" />

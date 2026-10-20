@@ -1,14 +1,16 @@
+import { Check } from 'lucide-react';
 import { useGame, type Game } from '../game/store';
 import { usePresence } from '../hooks/presence';
+import { useT } from '../i18n/i18n';
+import { button } from './classes';
 
 // A card over everything, closed by its button, a click outside, or Escape's
 // sibling: the overlay. Opened by a boolean in the store (showRules,
 // showSyntax), so any button anywhere can open it.
 
-type Flag = 'showRules' | 'showSyntax';
-
-export function Dialog({ flag, wide, children }: { flag: Flag; wide?: boolean; children: React.ReactNode }) {
+export function Dialog({ flag, wide, children }: { flag: 'showRules' | 'showSyntax'; wide?: boolean; children: React.ReactNode }) {
   const { mounted, leaving } = usePresence(useGame((s) => s[flag]));
+  const tr = useT();
   if (!mounted) return null;
   const close = () => useGame.setState({ [flag]: false } as Partial<Game>);
   return (
@@ -21,12 +23,10 @@ export function Dialog({ flag, wide, children }: { flag: Flag; wide?: boolean; c
         onClick={(e) => e.stopPropagation()}
       >
         {children}
+        <button className={button('primary')} onClick={close}>
+          <Check size={17} strokeWidth={2.6} /> {tr.gotIt}
+        </button>
       </div>
     </div>
   );
-}
-
-/** The dialog's closing button. */
-export function closeDialog(flag: Flag) {
-  useGame.setState({ [flag]: false } as Partial<Game>);
 }

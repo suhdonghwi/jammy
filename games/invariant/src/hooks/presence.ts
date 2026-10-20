@@ -9,16 +9,16 @@ import { useEffect, useRef, useState } from 'react';
 export const EXIT_MS = 150;
 
 /** A single element: still mounted while `leaving`, then gone. */
-export function usePresence(show: boolean, ms = EXIT_MS): { mounted: boolean; leaving: boolean } {
+export function usePresence(show: boolean): { mounted: boolean; leaving: boolean } {
   const [mounted, setMounted] = useState(show);
   useEffect(() => {
     if (show) {
       setMounted(true);
       return;
     }
-    const t = setTimeout(() => setMounted(false), ms);
+    const t = setTimeout(() => setMounted(false), EXIT_MS);
     return () => clearTimeout(t);
-  }, [show, ms]);
+  }, [show]);
   return { mounted: show || mounted, leaving: !show && mounted };
 }
 
@@ -27,10 +27,10 @@ export function usePresence(show: boolean, ms = EXIT_MS): { mounted: boolean; le
  * render (the current one, or the one that just went away), `leaving` whether
  * it is on its way out.
  */
-export function useLingering<T>(current: T | null | undefined, ms = EXIT_MS): { value: T | null; leaving: boolean } {
+export function useLingering<T>(current: T | null | undefined): { value: T | null; leaving: boolean } {
   const last = useRef<T | null>(current ?? null);
   if (current != null) last.current = current;
-  const { mounted, leaving } = usePresence(current != null, ms);
+  const { mounted, leaving } = usePresence(current != null);
   return { value: mounted ? last.current : null, leaving };
 }
 
@@ -38,7 +38,7 @@ export function useLingering<T>(current: T | null | undefined, ms = EXIT_MS): { 
  * A list where removed items stay for their exit animation. Items are matched
  * by key; each comes back with `leaving` while it is on its way out.
  */
-export function usePresentList<T>(items: readonly T[], keyOf: (t: T) => string, ms = EXIT_MS): { item: T; key: string; leaving: boolean }[] {
+export function usePresentList<T>(items: readonly T[], keyOf: (t: T) => string): { item: T; key: string; leaving: boolean }[] {
   const gone = useRef(new Map<string, { item: T; at: number; index: number }>());
   const prev = useRef<{ item: T; key: string }[]>([]);
   const [, bump] = useState(0);
@@ -50,12 +50,12 @@ export function usePresentList<T>(items: readonly T[], keyOf: (t: T) => string, 
   });
   // anything that came back stops leaving
   for (const k of keys) gone.current.delete(k);
-  for (const [k, g] of gone.current) if (now - g.at > ms) gone.current.delete(k);
+  for (const [k, g] of gone.current) if (now - g.at > EXIT_MS) gone.current.delete(k);
   prev.current = items.map((item) => ({ item, key: keyOf(item) }));
 
   useEffect(() => {
     if (!gone.current.size) return;
-    const t = setTimeout(() => bump((n) => n + 1), ms + 20);
+    const t = setTimeout(() => bump((n) => n + 1), EXIT_MS + 20);
     return () => clearTimeout(t);
   });
 

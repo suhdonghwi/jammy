@@ -7,28 +7,26 @@ import type { GlyphCommand } from './glyphs';
 
 function glyphShapes(path: GlyphCommand[], scale: number): THREE.Shape[] {
   const sp = new THREE.ShapePath();
-  const s = scale;
   for (const c of path) {
     // font outlines are y-down; flip to y-up
     switch (c[0]) {
       case 'M':
-        sp.moveTo(c[1] * s, -c[2] * s);
+        sp.moveTo(c[1] * scale, -c[2] * scale);
         break;
       case 'L':
-        sp.lineTo(c[1] * s, -c[2] * s);
+        sp.lineTo(c[1] * scale, -c[2] * scale);
         break;
       case 'Q':
-        sp.quadraticCurveTo(c[1] * s, -c[2] * s, c[3] * s, -c[4] * s);
+        sp.quadraticCurveTo(c[1] * scale, -c[2] * scale, c[3] * scale, -c[4] * scale);
         break;
       case 'C':
-        sp.bezierCurveTo(c[1] * s, -c[2] * s, c[3] * s, -c[4] * s, c[5] * s, -c[6] * s);
+        sp.bezierCurveTo(c[1] * scale, -c[2] * scale, c[3] * scale, -c[4] * scale, c[5] * scale, -c[6] * scale);
         break;
       case 'Z':
         sp.currentPath?.closePath();
         break;
     }
   }
-  if (sp.subPaths.length === 0) return [];
   // three's toShapes nests holes by containment, so contour orientation doesn't matter
   return sp.toShapes();
 }

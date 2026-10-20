@@ -7,6 +7,8 @@ import type { Rule } from '../checker/types';
 export const en = {
   /** Joins the last two names of a list: `i, j and n`. */
   and: ' and ',
+  /** Closes a card over everything (the rules, the syntax). */
+  gotIt: 'Got it',
 
   rules: {
     initialization: 'Initialization',
@@ -92,7 +94,6 @@ export const en = {
     initialization: 'Every egg sits on your area.',
     maintenance: 'A frog on your area that hops lands on your area.',
     termination: 'A frog that stops on your area is on a goal.',
-    gotIt: 'Got it',
   },
 
   syntax: {
@@ -103,7 +104,6 @@ export const en = {
     functions: 'Functions',
     arrays: 'Arrays',
     constants: 'Constants',
-    gotIt: 'Got it',
   },
 
   level: {

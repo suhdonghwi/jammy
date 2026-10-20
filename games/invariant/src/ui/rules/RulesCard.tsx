@@ -1,7 +1,5 @@
-import { Check } from 'lucide-react';
 import { useT } from '../../i18n/i18n';
-import { button } from '../classes';
-import { closeDialog, Dialog } from '../Dialog';
+import { Dialog } from '../Dialog';
 import { ArtTermination, ArtInitialization, ArtMaintenance } from './RuleArt';
 
 // The three rules, as a card over everything (from the top bar, and at the end of the tutorial).
@@ -19,9 +17,6 @@ export function RulesCard() {
         <Rule n={2} name={tr.rules.maintenance} text={card.maintenance} art={<ArtMaintenance />} />
         <Rule n={3} name={tr.rules.termination} text={card.termination} art={<ArtTermination />} />
       </div>
-      <button className={button('primary')} onClick={() => closeDialog('showRules')}>
-        <Check size={17} strokeWidth={2.6} /> {card.gotIt}
-      </button>
     </Dialog>
   );
 }

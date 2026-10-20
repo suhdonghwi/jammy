@@ -9,10 +9,8 @@ import { useT } from '../../i18n/i18n';
 import { GROUPS, levelNumber, levels } from '../../levels/catalog';
 import { groupName, localizeLevel } from '../../levels/localize';
 import { button } from '../classes';
-import { GitHubLink } from './GitHubLink';
+import { CornerControls } from './CornerControls';
 import { LangSwitch } from './LangSwitch';
-import { ResetProgress } from './ResetProgress';
-import { SoundToggle } from './SoundToggle';
 import { Title3D } from './title/Title3D';
 
 // The home screen over the 3D scene: the title, a line about the game, the way
@@ -44,9 +42,7 @@ export function HomeOverlay() {
           view === 'levels' ? 'opacity-35' : ''
         }`}
       >
-        <GitHubLink />
-        <ResetProgress />
-        <SoundToggle />
+        <CornerControls />
         <LangSwitch />
       </div>
       {picker.mounted && <LevelPicker leaving={picker.leaving} instant={instant} />}

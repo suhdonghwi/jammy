@@ -18,26 +18,17 @@ function renderBlock(block: string, key: number): ReactNode {
   const lines = block.split('\n');
   const bullet = /^\s*[-*]\s+/;
   const numbered = /^\s*\d+[.)]\s+/;
-  if (lines.every((l) => bullet.test(l))) {
+  const marker = [bullet, numbered].find((m) => lines.every((l) => m.test(l)));
+  if (marker) {
+    const Tag = marker === bullet ? 'ul' : 'ol';
     return (
-      <ul key={key} className={`list-disc pl-5.5 ${gap(key)}`}>
+      <Tag key={key} className={`${marker === bullet ? 'list-disc' : 'list-decimal'} pl-5.5 ${gap(key)}`}>
         {lines.map((l, j) => (
           <li key={j} className={LI}>
-            {renderInline(l.replace(bullet, ''))}
+            {renderInline(l.replace(marker, ''))}
           </li>
         ))}
-      </ul>
-    );
-  }
-  if (lines.every((l) => numbered.test(l))) {
-    return (
-      <ol key={key} className={`list-decimal pl-5.5 ${gap(key)}`}>
-        {lines.map((l, j) => (
-          <li key={j} className={LI}>
-            {renderInline(l.replace(numbered, ''))}
-          </li>
-        ))}
-      </ol>
+      </Tag>
     );
   }
   return (

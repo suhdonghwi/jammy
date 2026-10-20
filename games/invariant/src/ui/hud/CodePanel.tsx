@@ -1,12 +1,11 @@
 import { ChevronDown } from 'lucide-react';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useGame } from '../../game/store';
+import { PHONE, useMedia } from '../../hooks/media';
 import { useT } from '../../i18n/i18n';
-import { tokenize } from '../../lang/parser';
 import { planeExists, type CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
-import { tokenClass } from '../codeColors';
-import { PHONE, useMedia } from '../../hooks/media';
+import { HighlightedCode } from '../codeColors';
 import { inputRows, InputsSection } from './Inputs';
 
 // The program, with the loop lighting up as frogs hop and a ghost `assert(?)`
@@ -48,24 +47,6 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   const src = level.program.source;
   const header = level.program.loop.headerSpan;
   const stmts = level.program.loop.body;
-  const toks = tokenize(src).filter((t) => t.kind !== 'eof');
-  const piece = (from: number, to: number, keyBase: string): React.ReactNode[] => {
-    const out: React.ReactNode[] = [];
-    let p = from;
-    toks.forEach((t, i) => {
-      if (t.span.from < from || t.span.to > to) return;
-      if (t.span.from > p) out.push(<Fragment key={`${keyBase}g${i}`}>{src.slice(p, t.span.from)}</Fragment>);
-      const cls = tokenClass(t);
-      out.push(
-        <span key={`${keyBase}t${i}`} className={cls}>
-          {t.text}
-        </span>,
-      );
-      p = t.span.to;
-    });
-    if (to > p) out.push(<Fragment key={`${keyBase}end`}>{src.slice(p, to)}</Fragment>);
-    return out;
-  };
   const lines: { from: number; to: number }[] = [];
   for (let from = 0; ; ) {
     const k = src.indexOf('\n', from);
@@ -97,7 +78,9 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
     if (requiresLines.includes(i)) cls += ' bg-warn-soft';
     return (
       <div key={key} className={cls} style={style}>
-        <span>{piece(l.from, l.to, `l${i}`)}</span>
+        <span>
+          <HighlightedCode src={src.slice(l.from, l.to)} />
+        </span>
       </div>
     );
   });
@@ -123,7 +106,7 @@ export function CodePanel() {
   const hopDur = useGame((s) => s.hopDur);
   const landTick = useGame((s) => s.landTick);
   const landGuard = useGame((s) => s.landGuard);
-  const reveal = useGame((s) => s.reveal);
+  const shown = useGame((s) => s.reveal.code);
   const spotLines = useGame((s) => s.spotLines);
   const assert = useGame((s) => s.reveal.assert);
   const inputHover = useGame((s) => s.inputHover);
@@ -145,7 +128,7 @@ export function CodePanel() {
   const pointedAt = spot === 'code' || spotLines.length > 0 || (tutorial && phone && spot === 'step');
   const open = pointedAt || !(folded ?? (tutorial && phone));
   const hasInputs = inputRows(level).length > 0;
-  if (!reveal.code) return null;
+  if (!shown) return null;
   return (
     // wide enough for the longest program line in the catalog; anything longer scrolls sideways rather than spilling.
     // No taller than the room between the top bar and the caption (a long caption on a phone): the code scrolls

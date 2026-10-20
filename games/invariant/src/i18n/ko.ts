@@ -14,6 +14,7 @@ import type { Messages } from './en';
 
 export const ko: Messages = {
   and: ', ',
+  gotIt: '확인',
 
   rules: {
     initialization: '초기화',
@@ -98,7 +99,6 @@ export const ko: Messages = {
     initialization: '모든 알이 영역 위에 있습니다.',
     maintenance: '영역 위의 개구리는 뛰어도 다시 영역 위에 착지합니다.',
     termination: '영역 위에서 멈춘 개구리는 목표 위에 있습니다.',
-    gotIt: '확인',
   },
 
   syntax: {
@@ -109,7 +109,6 @@ export const ko: Messages = {
     functions: '함수',
     arrays: '배열',
     constants: '상수',
-    gotIt: '확인',
   },
 
   level: {

@@ -1,5 +1,6 @@
 import { Languages } from 'lucide-react';
 import { setLang, useLang, useT, type Lang } from '../../i18n/i18n';
+import { PILL } from './CornerControls';
 
 // The language switch in the home screen's corner: English or 한국어, each
 // written in its own language. It lives only on the home screen; a level or
@@ -17,11 +18,7 @@ export function LangSwitch() {
   const current = useLang((s) => s.lang);
   const tr = useT();
   return (
-    <div
-      role="group"
-      aria-label={tr.home.language}
-      className="flex items-center gap-1 rounded-full border border-line bg-card p-1 pl-2.5 shadow-card backdrop-blur-md"
-    >
+    <div role="group" aria-label={tr.home.language} className={`${PILL} gap-1 pl-2.5`}>
       <Languages size={15} strokeWidth={2.2} className="mr-0.5 text-faint" aria-hidden />
       {OPTIONS.map((o) => (
         <button

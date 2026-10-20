@@ -10,8 +10,8 @@ import { SyntaxCard } from './ui/rules/SyntaxCard';
 // The page: the 3D world behind everything, and the home screen or the level's HUD over it.
 
 /** The link preview image's page (`?poster`, see ui/dev/Poster), in development only: it isn't in the built game. */
-const Poster = import.meta.env.DEV ? lazy(() => import('./ui/dev/Poster').then((m) => ({ default: m.Poster }))) : null;
-const showPoster = import.meta.env.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).has('poster');
+const Poster =
+  import.meta.env.DEV && new URLSearchParams(location.search).has('poster') ? lazy(() => import('./ui/dev/Poster').then((m) => ({ default: m.Poster }))) : null;
 
 export function App() {
   const mode = useGame((s) => s.mode);
@@ -26,20 +26,19 @@ export function App() {
     if (wantSolver) void browserZ3().catch(() => {});
   }, [wantSolver]);
 
-  if (Poster && showPoster)
-    return (
-      <Suspense fallback={null}>
-        <Poster />
-      </Suspense>
-    );
-
   return (
     <div className="fixed inset-0">
       {/* the 3D world fades in on load rather than popping in */}
       <div className="fixed inset-0 bg-linear-to-b from-sky via-horizon via-60% to-[#e3e8ef] [&_canvas]:animate-[fade_0.8s_ease-out_both]">
         <World />
       </div>
-      {mode === 'menu' && <HomeOverlay />}
+      {Poster ? (
+        <Suspense fallback={null}>
+          <Poster />
+        </Suspense>
+      ) : (
+        mode === 'menu' && <HomeOverlay />
+      )}
       {mode !== 'menu' && level && <Hud />}
       <RulesCard />
       <SyntaxCard />

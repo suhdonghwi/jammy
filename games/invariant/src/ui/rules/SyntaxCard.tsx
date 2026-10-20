@@ -1,10 +1,8 @@
-import { Check } from 'lucide-react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { scalarNames } from '../../levels/level';
-import { button } from '../classes';
 import { HighlightedCode } from '../codeColors';
-import { closeDialog, Dialog } from '../Dialog';
+import { Dialog } from '../Dialog';
 
 // What can be typed into the area box, as a card over everything (from the
 // top bar): examples only, coloured like the code, using the open level's own
@@ -35,9 +33,6 @@ export function SyntaxCard() {
         )}
         <Row name={s.constants} code={['true', 'false']} />
       </div>
-      <button className={button('primary')} onClick={() => closeDialog('showSyntax')}>
-        <Check size={17} strokeWidth={2.6} /> {s.gotIt}
-      </button>
     </Dialog>
   );
 }
