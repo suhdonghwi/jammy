@@ -38,13 +38,13 @@ function firstEggs(count: number): State[] {
     .map(([x, y]) => toBig(tileState(L, x, y, inputs)));
 }
 
-export function hatch(s: State, quiet = false): FrogSim {
+export function hatch(s: State): FrogSim {
   const L = currentLevel();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
   const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
   hatchFx.push({ x, y, plane: planeKey(inputsOf(L, s)), dx: slot.dx, dy: slot.dy, s: slot.scale });
-  if (!quiet) sfx.hatch();
+  sfx.hatch();
   return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale, home: [x, y] });
 }
 
@@ -188,11 +188,11 @@ export function loopFrogs(eggs: State[]) {
   void (async () => {
     await sleep(400);
     for (let k = 0; tok.alive; k = (k + 1) % eggs.length) {
-      const f = hatch(eggs[k], true);
+      const f = hatch(eggs[k]);
       await sleep(650);
       while (tok.alive && !f.stopped) {
         const n = hop(L, f.state);
-        await frogWorld.hopTo(L, f, n, 0.42, true);
+        await frogWorld.hopTo(L, f, n, 0.42);
         f.stopped = !running(L, n);
         await sleep(160);
       }
