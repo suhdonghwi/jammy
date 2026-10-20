@@ -133,7 +133,7 @@ export function HopArcs() {
 
   return (
     <>
-      <instancedMesh ref={dots} args={[parts.dot.g, parts.dot.mat, MAX * DOTS]} count={0} frustumCulled={false} renderOrder={6} />
+      <instancedMesh ref={dots} args={[parts.dot.g, parts.dot.mat, MAX * DOTS]} count={0} frustumCulled={false} renderOrder={10} />
       <instancedMesh ref={rings} args={[parts.ring.g, parts.ring.mat, MAX]} count={0} frustumCulled={false} renderOrder={9} />
     </>
   );
