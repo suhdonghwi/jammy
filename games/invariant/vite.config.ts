@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
+import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { titleGlyphs } from './scripts/title-glyphs.ts';
 
 // Z3's WebAssembly build uses threads (SharedArrayBuffer), which requires
@@ -17,7 +18,8 @@ const siteUrl = { name: 'site-url', transformIndexHtml: (html: string) => html.r
 export default defineConfig({
   // Served from a subpath in production (e.g. BASE_PATH=/invariant/).
   base: process.env.BASE_PATH ?? '/',
-  plugins: [react(), tailwindcss(), titleGlyphs(), siteUrl],
+  // React Compiler memoizes components and hooks, through Babel
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss(), titleGlyphs(), siteUrl],
   server: { headers: isolation },
   preview: { headers: isolation },
 });

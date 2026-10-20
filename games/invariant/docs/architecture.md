@@ -4,7 +4,7 @@ How the code is organised, and the rules that keep it working. For what the
 game is, see [design.md](design.md); for how it should feel, see
 [experience.md](experience.md).
 
-Stack: Vite, React, TypeScript, react-three-fiber (three.js) with drei,
+Stack: Vite, React (with React Compiler), TypeScript, react-three-fiber (three.js) with drei,
 zustand, GSAP, Tailwind CSS v4, z3-solver (WebAssembly). The area box is a
 plain textarea over a coloured copy of its text; the 3D title's letter
 outlines are read from the font at build time (`scripts/title-glyphs.ts`); the
