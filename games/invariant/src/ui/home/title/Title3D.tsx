@@ -1,18 +1,17 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { COLORS } from '../../../scene/constants';
 import { frogGeometry, frogMaterial, outlineMaterial } from '../../../scene/models';
 import { sceneNow } from '../../../scene/sceneTime';
 import { LINE1, LINE2 } from './glyphs';
 import { letterGeometries, type LetterOptions } from './text3d';
-import { entrance, OUTLINE, STAGGER, waveAt, Word } from './Word';
+import { OUTLINE, waveAt, Word } from './Word';
 
 // The home screen's title as 3D lettering, in its own small transparent canvas
 // so the page layout places it (left-aligned, above the copy) at any size.
 // A frog hides behind the "o" of "Frog" and peeks over it, riding the wave
-// that runs through the letters. The letters pop in one by one, and then the
-// frog peeks up.
+// that runs through the letters.
 
 const SIZE = 1;
 const LINE_GAP = 1.18;
@@ -21,8 +20,6 @@ const WAVE = 0.08;
 const PHASE2 = 1.4;
 /** The frog, relative to the letters. */
 const FROG_SCALE = 1.12;
-/** When the frog peeks up in the entrance: once the letters are in. */
-const FROG_AT = (LINE1.length + LINE2.length) * STAGGER + 0.2;
 /** The camera's field of view: narrow, so the perspective is gentle. */
 const FOV = 18;
 
@@ -106,7 +103,7 @@ const dummy = new THREE.Object3D();
  * The frog behind the "o": only its head shows over the top. It rises and
  * falls exactly as the "o" does in the wave, and otherwise just breathes.
  */
-function PeekingFrog({ x, y, letterIndex, wave, clock }: { x: number; y: number; letterIndex: number; wave: number; clock: { t: number } }) {
+function PeekingFrog({ x, y, letterIndex, wave }: { x: number; y: number; letterIndex: number; wave: number }) {
   const mesh = useMemo(() => {
     const geom = frogGeometry({ fine: true });
     const body = new THREE.InstancedMesh(geom, frogMaterial(), 1);
@@ -122,11 +119,9 @@ function PeekingFrog({ x, y, letterIndex, wave, clock }: { x: number; y: number;
     // the same wave as Word gives this letter
     const ride = waveAt(t, letterIndex, PHASE2) * wave;
     const breath = 0.02 * Math.sin(t * 2.4);
-    // it grows from its feet, so it comes up from behind the letter
-    const s = FROG_SCALE * entrance(clock.t, FROG_AT);
     dummy.position.set(x, y + ride, -0.58);
     dummy.rotation.set(0, 0, 0);
-    dummy.scale.set(s * (1 - breath * 0.5), s * (1 + breath), s * (1 - breath * 0.5));
+    dummy.scale.set(FROG_SCALE * (1 - breath * 0.5), FROG_SCALE * (1 + breath), FROG_SCALE * (1 - breath * 0.5));
     dummy.updateMatrix();
     for (const m of [mesh.body, mesh.line]) {
       m.setMatrixAt(0, dummy.matrix);
@@ -141,17 +136,16 @@ function PeekingFrog({ x, y, letterIndex, wave, clock }: { x: number; y: number;
   );
 }
 
-function TitleScene({ align, wave }: { align: TitleAlign; wave: number }) {
+function TitleScene({ align, wave, onDrawn }: { align: TitleAlign; wave: number; onDrawn: () => void }) {
   const L = useMemo(() => layout(align), [align]);
   const { camera, size } = useThree();
-  // The entrance runs on its own clock, from the first frame drawn (building
-  // the letters takes a moment), and a slow frame slows it rather than skipping ahead.
-  const clock = useMemo(() => ({ t: 0 }), []);
+  const drawn = useRef(false);
 
   // A gentle perspective lens straight in front of the title: the letters face
   // the viewer and their sides show just a little toward the edges.
-  useFrame((_, dt) => {
-    clock.t += Math.min(dt, 1 / 30);
+  useFrame(() => {
+    if (!drawn.current) onDrawn();
+    drawn.current = true;
     const cam = camera as THREE.PerspectiveCamera;
     cam.position.copy(cameraFor(L, cam.fov, size.width / size.height));
     cam.lookAt(cam.position.x, cam.position.y, 0);
@@ -162,10 +156,10 @@ function TitleScene({ align, wave }: { align: TitleAlign; wave: number }) {
   const frogHeight = 0.53 * FROG_SCALE;
   return (
     <group>
-      <Word text={LINE1} position={[L.x1, LINE_GAP, 0]} letters={L.opts1} face={COLORS.slabTop} side={COLORS.slabSide} wave={wave} clock={clock} />
+      <Word text={LINE1} position={[L.x1, LINE_GAP, 0]} letters={L.opts1} face={COLORS.slabTop} side={COLORS.slabSide} wave={wave} />
       {/* a deeper green than the frog itself, so the frog peeking over it stands out */}
-      <Word text={LINE2} position={[L.x2, 0, 0]} letters={L.opts2} face="#46b83e" side="#2f8a29" wave={wave} phase={PHASE2} clock={clock} first={LINE1.length} />
-      <PeekingFrog x={L.o.x} y={L.o.top - frogHeight * 0.6} letterIndex={L.o.index} wave={wave} clock={clock} />
+      <Word text={LINE2} position={[L.x2, 0, 0]} letters={L.opts2} face="#46b83e" side="#2f8a29" wave={wave} phase={PHASE2} />
+      <PeekingFrog x={L.o.x} y={L.o.top - frogHeight * 0.6} letterIndex={L.o.index} wave={wave} />
     </group>
   );
 }
@@ -190,15 +184,19 @@ export function Title3D({
   align?: TitleAlign;
   still?: boolean;
 }) {
+  // The title rises into place rather than popping in, once its first frame is
+  // drawn: building the letters takes a moment, which a fade from mounting
+  // would mostly spend on an empty canvas.
+  const [drawn, setDrawn] = useState(false);
   return (
-    <div className={width} style={{ aspectRatio: TITLE_ASPECT }}>
+    <div className={`${width} ${drawn ? 'animate-[title-in_0.7s_ease-out_both]' : 'opacity-0'}`} style={{ aspectRatio: TITLE_ASPECT }}>
       <Canvas flat dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: FOV, near: 0.1, far: 200 }}>
         <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
         <directionalLight position={[4, 10, 6]} intensity={1.6} color="#ffffff" />
         <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
         {/* the letters face the viewer, so light them from the front too */}
         <directionalLight position={[1, 2, 10]} intensity={1.1} color="#ffffff" />
-        <TitleScene align={align} wave={still ? 0 : WAVE} />
+        <TitleScene align={align} wave={still ? 0 : WAVE} onDrawn={() => setDrawn(true)} />
       </Canvas>
     </div>
   );
