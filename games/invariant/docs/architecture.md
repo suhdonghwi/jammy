@@ -17,26 +17,29 @@ src/
   main.tsx, App.tsx   entry point and the page's top-level layout
   lang/        parser, type checker, AST, interpreter, symbolic body execution
   checker/     box search (nice counterexamples) + Z3 (proofs), verdicts
-  levels/      the level format (level.ts), every level (catalog.ts) and its Korean text (catalog.ko.ts)
+  levels/      the level format (level.ts), every level (catalog.ts) and its Korean text (catalog.ko.ts), the plane's tiles (tiles.ts)
   i18n/        the language switch, and every other line the game says, in English (en.ts) and Korean (ko.ts)
   game/        the zustand store, and what the app's buttons do (actions.ts)
   director/    scripted sequences: the hand, Step/Run, check playback
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
+  audio/       the sound effects
+  hooks/       React hooks the scene and the DOM share: exit animations, media queries
   scene/       the 3D world
-    floor/       the infinite floor, drawn per pixel from the level's formulas
+    floor/       the infinite floor, drawn per pixel from the level's formulas (formulas → GLSL)
     area/        the learner's slabs, eggs and goal columns
     frogs/       frog state, motion, rendering, hatching
     hand/        the pointing hand that brings ghost frogs
     labels/      tags over tiles and frogs (callouts, failures, frog values)
     level/       a level's scene and hover preview
     home/        the home screen's scene
-    shaders/     shared GLSL, and formulas → GLSL
+    shaders/     shared GLSL
   ui/          the DOM over the scene
     hud/         level screen: top bar, code panel, inputs card, caption, formula box, controls
     home/        title (3D lettering), home copy, level list
-    rules/       the rules card
+    rules/       the rules and syntax cards
+    dev/         the link preview's page (`?poster`, development only)
   styles.css   Tailwind setup: design tokens, keyframes, the page, the spotlight
-scripts/       validate-levels.ts, copy-z3.mjs
+scripts/       level validation, the Z3 copy, font subsets, the title's glyphs, the link preview image
 tests/         unit tests (language, box search)
 ```
 
@@ -126,8 +129,8 @@ agree. `pnpm validate` and the tests are the safety net.
   postcondition are evaluated per pixel, so the plane is truly infinite.
 - Slabs, eggs, goal columns, frogs and hatching shells are **instanced**; only
   the tiles near the camera are built, in a window that moves in steps.
-- Shadows are soft blobs, not shadow maps. Models are procedural (no assets
-  except the bundled fonts).
+- Shadows are soft blobs, not shadow maps. Models are procedural (the only assets
+  are the bundled fonts and sound clips).
 
 ## Styling
 
@@ -145,7 +148,7 @@ agree. `pnpm validate` and the tests are the safety net.
 Z3 runs as WebAssembly with threads, so the page must be **cross-origin
 isolated**: every host must send `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp`. Its browser build is copied into
-`public/z3/` on install and loaded lazily: it is warmed up once the player
+`public/z3/` by `pnpm dev` and `pnpm build`, and loaded lazily: it is warmed up once the player
 opens the level list or a level, never on the home screen alone.
 
 ## Conventions

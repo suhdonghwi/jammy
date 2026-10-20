@@ -94,8 +94,8 @@ behind many small decisions; keep them when changing or adding UI.
 ## Layout
 
 - Desktop first; the 3D scene is full-screen and panels float over it.
-- Narrow or tall windows stack the home copy under the scene; very small
-  screens show only the copy. Level panels shrink on narrow screens.
+- Narrow or tall windows stack the home copy under the scene; on very small
+  screens the copy fills the screen over a faint backdrop of the scene. Level panels shrink on narrow screens.
 - Spacing, type and radii come from Tailwind's scales (plus a 15 px text size
   for the UI's base). Small deviations from a mock-up are fine for the sake of
   consistency.
