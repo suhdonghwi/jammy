@@ -247,8 +247,8 @@ export const en = {
     questionTermination: 'Would it pass all three rules?',
     afterDemoTermination: (mine: string) =>
       `\`i >= 0\` is a true claim: every real frog keeps \`i >= 0\`. But it leaves room to stop off a goal, so it is too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
-    afterOwnTermination: (mine: string) =>
-      `Your earlier area was a true claim too, but it left room to stop off a goal, so it was too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
+    afterOwnTermination: (weak: string, mine: string) =>
+      `Your earlier area ${weak} was a true claim too, but it left room to stop off a goal, so it was too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
     twoWays:
       'So for an area to prove the program, it has to avoid two things:\n\n- Too **small**: an egg is off it, or a hop can lead off it.\n- Too **large**: it leaves room to stop off a goal.\n\nThe right invariant sits somewhere in between.',
     tooSmallTag: 'too small: egg off it',

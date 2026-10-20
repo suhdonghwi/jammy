@@ -34,11 +34,13 @@ interface Step {
 export let learnerFormula = '';
 const witnessed = new Set<Rule>();
 let predictedGoal: boolean | null = null;
+let weakArea = '';
 
 export function resetProgress() {
   learnerFormula = '';
   witnessed.clear();
   predictedGoal = null;
+  weakArea = '';
 }
 
 const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
@@ -410,6 +412,7 @@ export const STEPS: Step[] = [
         return;
       }
       witnessed.add(failing);
+      if (failing === 'termination') weakArea = `\`${useGame.getState().formulaText.trim()}\``;
       if (failing === 'termination') await showFailure(gen, cex!, { prefix: verdict(false), tone: tone(false) });
       else await showFailure(gen, cex!, { ghostExtra: failing === 'maintenance' ? T().ghostMaintenance : undefined });
       await beat(gen, T().ruleTermination(T().endingsSomeNot), { region: endings((goal) => (goal ? 'good' : 'info')) });
@@ -430,7 +433,7 @@ export const STEPS: Step[] = [
       witness(gen, 'termination', 'i >= 0', {
         question: T().questionTermination,
         afterDemo: T().afterDemoTermination(mine()),
-        afterOwn: T().afterOwnTermination(mine()),
+        afterOwn: T().afterOwnTermination(weakArea, mine()),
         ghost: T().objectionDemo,
       }),
   },
