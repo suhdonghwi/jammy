@@ -223,7 +223,7 @@ export const en = {
       'The see-through frog is a **ghost frog**. Check never runs real frogs; for every tile of your area it asks: if a frog were here, where would it land? No real frog may ever get here, but your area says one could.',
     passedMaintenance:
       'Correct! No hop leads off your area: **Maintenance** holds.\n\nThe see-through frogs are **ghost frogs**. Check never runs real frogs. It asks every tile of your area at once: if a frog were here, where would it land? Every answer is on your area.',
-    questionMaintenance: 'Would every hop from it land on it?',
+    questionMaintenance: 'Does every hop from the area land on the area?',
 
     together:
       'With rules 1 and 2 together, a frog never leaves your area: every frog starts on it, and no number of hops takes it off.\n\nThat’s why it’s called an **invariant**: with every hop the state changes, but “it is on the area” stays true.',
