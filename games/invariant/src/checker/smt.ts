@@ -1,9 +1,7 @@
 import type { Arith, Bool, Context, FuncDecl, Model } from 'z3-solver';
-import { hasQuantifier, subst, type Expr, type State } from '../lang/ast';
-import { holds } from '../lang/eval';
-import { hop, MAX_LEN, startState, type CompiledLevel } from '../levels/level';
-import { brokenConjunct } from './box';
-import type { Counterexample, Rule } from './types';
+import { hasQuantifier, mk, subst, type Expr, type RangeOp, type State } from '../lang/ast';
+import { MAX_LEN, type CompiledLevel } from '../levels/level';
+import type { Rule } from './types';
 import { whileSolving } from './z3-guard';
 
 // Rules and formulas as Z3 queries: proving rules, finding counterexamples
@@ -99,27 +97,20 @@ function unroll(e: Expr, b: number): Expr {
       case 'index': return { ...e, index: go(e.index) };
       case 'ite': return { ...e, cond: go(e.cond), then: go(e.then), else: go(e.else) };
       case 'quant': {
-        const width = 2 * b + 1;
-        if (width ** e.vars.length > MAX_UNROLL * 2) return { ...e, lo: go(e.lo), hi: go(e.hi), body: go(e.body) };
         const lo = go(e.lo);
         const hi = go(e.hi);
         const body = go(e.body);
-        const span = e.span;
-        const num = (v: number): Expr => ({ kind: 'num', value: BigInt(v), span });
-        const cmp = (op: '<' | '<=', l: Expr, r: Expr): Expr => ({ kind: 'binary', op, left: l, right: r, span });
+        if ((2 * b + 1) ** e.vars.length > MAX_UNROLL * 2) return { ...e, lo, hi, body };
+        const num = (v: number): Expr => ({ kind: 'num', value: BigInt(v), span: e.span });
+        const cmp = (op: RangeOp, l: Expr, r: Expr): Expr => ({ kind: 'binary', op, left: l, right: r, span: e.span });
         const instances: Expr[] = [];
         const tuple: number[] = [];
         const emit = () => {
           const map: Record<string, Expr> = {};
           e.vars.forEach((v, i) => (map[v] = num(tuple[i])));
-          const range: Expr[] = [cmp(e.ops[0], lo, num(tuple[0])), cmp(e.ops[e.ops.length - 1], num(tuple[tuple.length - 1]), hi)];
-          const inRange = range.reduce((a, c) => ({ kind: 'binary', op: '&&', left: a, right: c, span }));
+          const inRange = mk.and(cmp(e.ops[0], lo, num(tuple[0])), cmp(e.ops[e.ops.length - 1], num(tuple[tuple.length - 1]), hi));
           const inst = subst(body, map);
-          instances.push(
-            e.q === 'forall'
-              ? { kind: 'binary', op: '||', left: { kind: 'unary', op: '!', arg: inRange, span }, right: inst, span }
-              : { kind: 'binary', op: '&&', left: inRange, right: inst, span },
-          );
+          instances.push(e.q === 'forall' ? mk.or(mk.not(inRange), inst) : mk.and(inRange, inst));
         };
         const walk = (k: number, from: number) => {
           if (instances.length > MAX_UNROLL) return;
@@ -132,9 +123,8 @@ function unroll(e: Expr, b: number): Expr {
         };
         walk(0, -b);
         if (instances.length > MAX_UNROLL) return { ...e, lo, hi, body };
-        const join = e.q === 'forall' ? '&&' : '||';
-        if (instances.length === 0) return { kind: 'bool', value: e.q === 'forall', span };
-        return instances.reduce((a, c) => ({ kind: 'binary', op: join, left: a, right: c, span }));
+        if (instances.length === 0) return { kind: 'bool', value: e.q === 'forall', span: e.span };
+        return instances.reduce(e.q === 'forall' ? mk.and : mk.or);
       }
       default: return e;
     }
@@ -228,55 +218,23 @@ export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], quer
   return { kind: 'unsat' };
 }
 
-const not = (e: Expr): Expr => ({ kind: 'unary', op: '!', arg: e, span: e.span });
-const and = (...es: Expr[]): Expr =>
-  es.reduce((a, b) => ({ kind: 'binary', op: '&&', left: a, right: b, span: a.span }));
-
 /** The negation of each rule, as a query over the right dims. */
 export function ruleQuery(level: CompiledLevel, inv: Expr, rule: Rule): { dims: string[]; query: Expr } {
   if (rule === 'initialization') {
     return {
       dims: level.freeDims,
-      query: and(subst(level.planeReq, level.initExprs), subst(level.eggReq, level.initExprs), not(subst(inv, level.initExprs))),
+      query: mk.andAll([subst(level.planeReq, level.initExprs), subst(level.eggReq, level.initExprs), mk.not(subst(inv, level.initExprs))]),
     };
   }
   if (rule === 'maintenance') {
-    return { dims: level.names, query: and(level.planeReq, inv, level.guard, not(subst(inv, level.next))) };
+    return { dims: level.names, query: mk.andAll([level.planeReq, inv, level.guard, mk.not(subst(inv, level.next))]) };
   }
-  return { dims: level.names, query: and(level.planeReq, inv, not(level.guard), not(level.post)) };
-}
-
-/** Does this state break the rule, exactly? (A model of an unrolled query is checked with this.) */
-export function breaksRule(level: CompiledLevel, inv: Expr, rule: Rule, s: State): boolean {
-  if (rule === 'initialization') {
-    const start = startState(level, s);
-    return holds(level.planeReq, start) && holds(level.eggReq, start) && !holds(inv, start);
-  }
-  if (!holds(level.planeReq, s) || !holds(inv, s)) return false;
-  if (rule === 'maintenance') return holds(level.guard, s) && !holds(inv, hop(level, s));
-  return !holds(level.guard, s) && !holds(level.post, s);
-}
-
-export function cexFromModel(level: CompiledLevel, inv: Expr, invText: string, rule: Rule, s: State): Counterexample {
-  if (rule === 'initialization') {
-    const start = startState(level, s);
-    return { rule, state: start, broken: brokenConjunct(inv, invText, start), far: true };
-  }
-  if (rule === 'maintenance') {
-    const n = hop(level, s);
-    return { rule, state: s, next: n, broken: brokenConjunct(inv, invText, n), far: true };
-  }
-  return { rule, state: s, far: true };
+  return { dims: level.names, query: mk.andAll([level.planeReq, inv, mk.not(level.guard), mk.not(level.post)]) };
 }
 
 /** Is `a` equivalent to `b` on every existing state? */
 export async function equivalent(ctx: Ctx, level: CompiledLevel, a: Expr, b: Expr, timeout: number): Promise<boolean> {
-  return (await sameArea(ctx, level, a, b, timeout)) === true;
-}
-
-/** Do `a` and `b` describe the same area on every existing state? `undefined` when the solver can't tell. */
-export async function sameArea(ctx: Ctx, level: CompiledLevel, a: Expr, b: Expr, timeout: number): Promise<boolean | undefined> {
   const differ: Expr = { kind: 'binary', op: '!=', left: a, right: b, span: a.span };
-  const r = await solve(ctx, level, level.names, and(level.planeReq, differ), { timeout, bounds: [] });
-  return r.kind === 'unsat' ? true : r.kind === 'sat' ? false : undefined;
+  const r = await solve(ctx, level, level.names, mk.and(level.planeReq, differ), { timeout, bounds: [] });
+  return r.kind === 'unsat';
 }

@@ -1,9 +1,9 @@
 import type { CheckResult } from '../checker/check';
-import type { Counterexample, Rule } from '../checker/types';
+import type { Rule } from '../checker/types';
 import { events } from '../director/events';
 import { handIn } from '../director/hand';
 import { playCounterexample, playShrug, runChecker } from '../director/verdicts';
-import { useGame, type CaptionTone, type Game } from '../game/store';
+import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
@@ -64,7 +64,7 @@ function earlyNext(label = messages().caption.next) {
 }
 
 /** The Next button for a counterexample's caption: the live one if a step is already waiting on it (a replay), or an early one. */
-export const nextAfterCounterexample = () => useGame.getState().nextAction ?? earlyNext();
+const nextAfterCounterexample = () => useGame.getState().nextAction ?? earlyNext();
 
 type Spot = Game['spotlight'];
 
@@ -138,14 +138,14 @@ export async function beat(
 }
 
 /** Keep the caption currently shown (e.g. a counterexample) until Next. */
-export function holdCaption(gen: number): Promise<void> {
+function holdCaption(gen: number): Promise<void> {
   const c = useGame.getState().caption;
   return next(gen, c?.text ?? '', messages().caption.next, null, c?.tone ?? 'info');
 }
 
 /** Let the learner use these controls (and only these) for now. */
 export function allow(a: Partial<Game['tutorialAllow']>) {
-  useGame.setState({ tutorialAllow: { step: false, run: false, eggs: false, formula: false, ...a } });
+  useGame.setState({ tutorialAllow: { ...ALLOW_NONE, ...a } });
 }
 
 /** Wait for the learner's Step or Run (optionally until a condition holds). */
@@ -180,7 +180,7 @@ export function waitStore(gen: number, test: (g: Game) => boolean): Promise<void
 }
 
 /** A question with a few answers as buttons; resolves with the chosen key. */
-export function choose<K extends string>(gen: number, text: string, choices: { key: K; label: string; tone?: 'yes' | 'no' }[]): Promise<K> {
+function choose<K extends string>(gen: number, text: string, choices: { key: K; label: string; tone?: 'yes' | 'no' }[]): Promise<K> {
   return new Promise((resolve, reject) => {
     const pick = (k: K) => () => {
       if (gen !== generation) reject(new Aborted());
@@ -240,7 +240,7 @@ export function showHint() {
 
 // ---- stages and demos ----
 
-export interface StageOptions {
+interface StageOptions {
   /** What this stage asks for (shown with Check spotlit). */
   ask: string;
   /** The rules checked: everything introduced so far. */
@@ -256,9 +256,9 @@ export interface StageOptions {
 /**
  * One stage: the learner draws an area and presses Check; the rules
  * introduced so far run on it. A failure is acted out and the stage waits for
- * another Check; the stage ends on the first pass, returning the verdicts.
+ * another Check; the stage ends on the first pass.
  */
-export async function stage(gen: number, o: StageOptions): Promise<CheckResult> {
+export async function stage(gen: number, o: StageOptions): Promise<void> {
   useGame.setState({ hint: { ask: o.ask, nudge: o.nudge, shown: false }, callouts: [] });
   // after a failure its caption stays (with Replay) while the learner fixes
   // the area, so the ask is only said at the start
@@ -288,7 +288,7 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
       frogWorld.clear();
       allow({});
       useGame.setState({ hint: null });
-      return res;
+      return;
     }
     o.onFail?.(failing);
     const cex = failureOf(res, failing)!;
@@ -303,27 +303,17 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
 }
 
 /**
- * Show a formula in the box, slabs and all, for the learner to look at (the
- * box stays read-only). `preview()` then puts the learner's own area back.
- */
-export function preview(formula: string): () => void {
-  const mine = useGame.getState().formulaText;
-  useGame.getState().setFormula(formula);
-  return () => useGame.getState().setFormula(mine);
-}
-
-/**
  * A formula of the tutorial's own is tried: the hand types it into the box
  * (the slabs follow) unless it is already there, the rules run, and the
  * counterexample is acted out. Next restores the learner's area (`restore`,
- * or whatever the box held) and its verdicts. Returns the counterexample.
+ * or whatever the box held) and its verdicts.
  */
 export async function demo(
   gen: number,
   formula: string,
   rules: Rule[],
   opts: { extra?: string; restore?: string; /** The learner's prediction, if there was one: the caption opens with the verdict. */ guessedRight?: boolean } = {},
-): Promise<Counterexample | null> {
+): Promise<void> {
   const g = useGame.getState();
   const mine = opts.restore ?? g.formulaText;
   useGame.setState({ busy: true, callouts: [] });
@@ -364,11 +354,10 @@ export async function demo(
   g.setFormula(mine);
   await runChecker(rules);
   guard(gen);
-  return cex;
 }
 
 /** The counterexample a check found for a rule, if it failed. */
-export function failureOf(res: CheckResult, rule: Rule) {
+function failureOf(res: CheckResult, rule: Rule) {
   const v = res.verdicts[rule];
   return v?.status === 'fail' ? v.cex : null;
 }

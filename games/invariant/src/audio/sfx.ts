@@ -40,7 +40,7 @@ const VOLUME = 0.6;
 const URLS = import.meta.glob('../assets/sfx/*.m4a', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 
 /** What each sound is for; its clip is <role>.m4a (or takes <role>-1.m4a, <role>-2.m4a…). */
-export type Role = 'click' | 'hop' | 'land' | 'settle' | 'goal' | 'crack' | 'rise' | 'sink' | 'patter' | 'chime' | 'fail' | 'cleared';
+type Role = 'click' | 'hop' | 'land' | 'settle' | 'goal' | 'crack' | 'rise' | 'sink' | 'patter' | 'chime' | 'fail' | 'cleared';
 
 /** Each role's loudness in the mix. */
 const GAIN: Record<Role, number> = {

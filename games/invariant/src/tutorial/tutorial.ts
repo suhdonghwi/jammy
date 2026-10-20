@@ -1,5 +1,5 @@
 import { interrupt, placeFrog } from '../director/frogs';
-import { EMPTY_REVEAL, useGame } from '../game/store';
+import { ALLOW_NONE, EMPTY_REVEAL, useGame } from '../game/store';
 import { cameraRig } from '../scene/cameraRig';
 import { sleep } from '../scene/sceneTime';
 import { Aborted, allow, currentGeneration, guard, newGeneration } from './script';
@@ -79,7 +79,7 @@ export function stopTutorial() {
     nextAction: null,
     back: null,
     skip: null,
-    tutorialAllow: { step: false, run: false, eggs: false, formula: false },
+    tutorialAllow: ALLOW_NONE,
   });
 }
 

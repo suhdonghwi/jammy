@@ -28,7 +28,7 @@ ensures i == n;`,
   camera: { x: 2, y: 2, distance: 13 },
 };
 
-export interface LevelGroup {
+interface LevelGroup {
   name: string;
   levels: LevelDef[];
 }

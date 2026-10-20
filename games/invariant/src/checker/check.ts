@@ -1,18 +1,11 @@
 import type { Context } from 'z3-solver';
-import type { Expr } from '../lang/ast';
-import type { FastFn } from '../lang/eval';
-import { compileFormula, type CompiledLevel, type Pitfall } from '../levels/level';
+import { compileFormula, type CompiledLevel, type Formula, type Pitfall } from '../levels/level';
 import { boxSearch, sameOnBox, type Box } from './box';
-import { breaksRule, cexFromModel, equivalent, ruleQuery, solve } from './smt';
+import { breaksRule, counterexample } from './rules';
+import { equivalent, ruleQuery, solve } from './smt';
 import { RULES, type Rule, type RuleVerdict, type Verdicts } from './types';
 
 // Checking an area against the three rules.
-
-export interface Formula {
-  expr: Expr;
-  fast: FastFn;
-  text: string;
-}
 
 interface CheckOptions {
   /** Per-query solver timeout (ms). */
@@ -53,33 +46,24 @@ export async function checkFormula(
       r.kind === 'unsat'
         ? { status: 'pass', how: 'proved' }
         : r.kind === 'sat'
-          ? { status: 'fail', cex: cexFromModel(level, inv.expr, inv.text, rule, r.state) }
+          ? { status: 'fail', cex: counterexample(level, inv, rule, r.state, true) }
           : { status: 'undecided' };
   }
 
+  /** The first of `items` whose formula is provably equivalent to the area (a truth table on the box rules most out cheaply). */
+  const firstEquivalent = async <T>(items: T[], formula: (x: T) => string, timeout: number) => {
+    for (const x of items) {
+      const f = compileFormula(level, formula(x));
+      if (f.ok && sameOnBox(level, inv.fast, f.expr, box) && (await equivalent(ctx, level, inv.expr, f.expr, timeout))) return x;
+    }
+  };
+
   // Undecided: if the formula is equivalent to a known solution, the proof carries over.
   const undecided = rules.filter((r) => verdicts[r]?.status === 'undecided');
-  if (undecided.length > 0 && rules.every((r) => verdicts[r]?.status !== 'fail')) {
-    for (const solText of level.solutions) {
-      const sol = compileFormula(level, solText);
-      if (!sol.ok || !sameOnBox(level, inv.fast, sol.expr, box)) continue;
-      if (await equivalent(ctx, level, inv.expr, sol.expr, timeout * 2)) {
-        for (const r of undecided) verdicts[r] = { status: 'pass', how: 'equivalent' } satisfies RuleVerdict;
-        break;
-      }
-    }
+  const failed = rules.some((r) => verdicts[r]?.status === 'fail');
+  if (undecided.length > 0 && !failed && (await firstEquivalent(level.solutions, (s) => s, timeout * 2)) !== undefined) {
+    for (const r of undecided) verdicts[r] = { status: 'pass', how: 'equivalent' } satisfies RuleVerdict;
   }
-
-  let pitfall: Pitfall | undefined;
-  if (rules.some((r) => verdicts[r]?.status === 'fail')) {
-    for (const p of level.pitfalls ?? []) {
-      const pf = compileFormula(level, p.formula);
-      if (!pf.ok || !sameOnBox(level, inv.fast, pf.expr, box)) continue;
-      if (await equivalent(ctx, level, inv.expr, pf.expr, 1000)) {
-        pitfall = p;
-        break;
-      }
-    }
-  }
+  const pitfall = failed ? await firstEquivalent(level.pitfalls ?? [], (p) => p.formula, 1000) : undefined;
   return { verdicts, pitfall };
 }

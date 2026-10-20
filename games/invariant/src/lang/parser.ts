@@ -1,5 +1,5 @@
 import { t } from '../i18n/i18n';
-import { COMPARISON_OPS, spanOf, type BinOp, type BuiltinFn, type Expr, type InputDecl, type Program, type RangeOp, type Span, type Stmt, type VarDecl } from './ast';
+import { COMPARISON_OPS, NO_SPAN, spanOf, type BinOp, type BuiltinFn, type Expr, type InputDecl, type Program, type RangeOp, type Span, type Stmt, type VarDecl } from './ast';
 
 // Tokenizer and recursive-descent parser for programs and area formulas,
 // with friendly errors that point at a span of the source.
@@ -68,14 +68,14 @@ class Parser {
     this.toks = tokenize(src);
   }
 
-  peek(o = 0): Token {
-    return this.toks[Math.min(this.pos + o, this.toks.length - 1)];
+  peek(): Token {
+    return this.toks[Math.min(this.pos, this.toks.length - 1)];
   }
   next(): Token {
     return this.toks[this.pos++];
   }
-  isOp(text: string, o = 0): boolean {
-    const t = this.peek(o);
+  isOp(text: string): boolean {
+    const t = this.peek();
     return t.kind === 'op' && t.text === text;
   }
   isKw(text: string): boolean {
@@ -350,24 +350,19 @@ class Parser {
         const guard = this.expr();
         const close = this.expectOp(')');
         const body = this.block();
-        loop = {
-          guard,
-          body,
-          span: { from: w.span.from, to: this.toks[this.pos - 1].span.to },
-          headerSpan: { from: w.span.from, to: close.span.to },
-        };
+        loop = { guard, body, headerSpan: { from: w.span.from, to: close.span.to } };
       } else {
         throw new LangError(`Unexpected '${this.peek().text}'`, this.peek().span);
       }
     }
-    if (!loop) throw new LangError('The program needs a while loop', { from: 0, to: 0 });
+    if (!loop) throw new LangError('The program needs a while loop', NO_SPAN);
     return { source: this.src, inputs, inputDecls, arrays, vars, requires, ensures, loop };
   }
 }
 
 export function parseFormula(src: string): Expr {
   const p = new Parser(src);
-  if (p.peek().kind === 'eof') throw new LangError(tr().empty, { from: 0, to: 0 });
+  if (p.peek().kind === 'eof') throw new LangError(tr().empty, NO_SPAN);
   const e = p.expr();
   const t = p.peek();
   if (t.kind !== 'eof') throw new LangError(tr().unexpected(t.text), t.span);

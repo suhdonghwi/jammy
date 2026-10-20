@@ -1,7 +1,8 @@
-import { conjuncts, type Expr, type State } from '../lang/ast';
-import { compileFast, holds, type FastFn, type FastState } from '../lang/eval';
-import { hop, startState, toBig, type CompiledLevel, type Inputs } from '../levels/level';
-import type { Counterexample, Rule } from './types';
+import type { Expr } from '../lang/ast';
+import { compileFast, type FastFn, type FastState } from '../lang/eval';
+import { toBig, type CompiledLevel, type Formula, type Inputs } from '../levels/level';
+import { breaksRule, counterexample } from './rules';
+import { RULES, type Counterexample, type Rule } from './types';
 
 // Brute-force search of the states around the camera: finds the nicest
 // counterexamples quickly, before the solver has to. It looks through the
@@ -19,15 +20,6 @@ export interface Box {
   planeR: number;
 }
 
-/** Which conjunct of `inv` is false in state s (source text). */
-export function brokenConjunct(inv: Expr, src: string, s: State): string | undefined {
-  const cs = conjuncts(inv);
-  if (cs.length < 2) return undefined;
-  const bad = cs.find((c) => !holds(c, s));
-  return bad ? src.slice(bad.span.from, bad.span.to) : undefined;
-}
-
-type NumState = FastState;
 type Ranges = Record<string, (number | number[])[]>;
 
 /** The integer inputs the search varies: not on an axis, and not an array's length (which follows its array). */
@@ -56,9 +48,9 @@ function ranges(level: CompiledLevel, box: Box): Ranges {
   return out;
 }
 
-function* product(dims: string[], rs: Ranges): Generator<NumState> {
-  const s: NumState = {};
-  function* go(k: number): Generator<NumState> {
+function* product(dims: string[], rs: Ranges): Generator<FastState> {
+  const s: FastState = {};
+  function* go(k: number): Generator<FastState> {
     if (k === dims.length) {
       yield s;
       return;
@@ -77,14 +69,14 @@ function* product(dims: string[], rs: Ranges): Generator<NumState> {
  */
 export function boxSearch(
   level: CompiledLevel,
-  inv: { expr: Expr; fast: FastFn; text: string },
+  inv: Formula,
   box: Box,
-  rules: Rule[] = ['initialization', 'maintenance', 'termination'],
+  rules: Rule[] = RULES,
 ): Partial<Record<Rule, Counterexample>> {
   const rs = ranges(level, box);
   const f = level.fast;
   const free = freeInputs(level);
-  const score = (s: NumState) => {
+  const score = (s: FastState) => {
     let pd = 0;
     for (const n of free) pd += Math.abs(Number(s[n]) - Number(box.inputs[n] ?? 0));
     const x = s[level.view.x] as number;
@@ -93,18 +85,18 @@ export function boxSearch(
     const cam = Math.abs(x - box.cx) + Math.abs(y - box.cy);
     return pd * 1e8 + mag * 1e4 + cam;
   };
-  const best: Partial<Record<Rule, { s: NumState; next?: NumState; score: number }>> = {};
-  const offer = (rule: Rule, s: NumState, next?: NumState) => {
+  const best: Partial<Record<Rule, { s: FastState; score: number }>> = {};
+  const offer = (rule: Rule, s: FastState) => {
     const sc = score(s);
     const cur = best[rule];
-    if (!cur || sc < cur.score) best[rule] = { s: { ...s }, next: next && { ...next }, score: sc };
+    if (!cur || sc < cur.score) best[rule] = { s: { ...s }, score: sc };
   };
 
   if (rules.includes('initialization')) {
     // Enumerate free dims; free dims are always on an axis or in the inputs card.
     for (const free of product(level.freeDims, rs)) {
       if (!f.planeReq(free)) continue;
-      const start: NumState = { ...free };
+      const start: FastState = { ...free };
       for (const v in f.init) start[v] = f.init[v](free) as number;
       if (!f.eggReq(start)) continue;
       if (!inv.fast(start)) offer('initialization', start);
@@ -116,9 +108,9 @@ export function boxSearch(
       if (!inv.fast(s)) continue;
       if (f.guard(s)) {
         if (!rules.includes('maintenance')) continue;
-        const n: NumState = { ...s };
+        const n: FastState = { ...s };
         for (const v in f.next) n[v] = f.next[v](s) as number;
-        if (!inv.fast(n)) offer('maintenance', s, n);
+        if (!inv.fast(n)) offer('maintenance', s);
       } else if (rules.includes('termination') && !f.post(s)) {
         offer('termination', s);
       }
@@ -129,22 +121,8 @@ export function boxSearch(
   const out: Partial<Record<Rule, Counterexample>> = {};
   for (const rule of rules) {
     const b = best[rule];
-    if (!b) continue;
-    const state = toBig(b.s);
-    if (rule === 'initialization') {
-      const free: State = {};
-      for (const d of level.freeDims) free[d] = state[d];
-      const st = startState(level, free);
-      if (holds(inv.expr, st)) continue;
-      out.initialization = { rule, state: st, broken: brokenConjunct(inv.expr, inv.text, st) };
-    } else if (rule === 'maintenance') {
-      const n = hop(level, state);
-      if (!holds(inv.expr, state) || holds(inv.expr, n)) continue;
-      out.maintenance = { rule, state, next: n, broken: brokenConjunct(inv.expr, inv.text, n) };
-    } else {
-      if (!holds(inv.expr, state) || holds(level.guard, state) || holds(level.post, state)) continue;
-      out.termination = { rule, state };
-    }
+    const s = b && toBig(b.s);
+    if (s && breaksRule(level, inv.expr, rule, s)) out[rule] = counterexample(level, inv, rule, s, false);
   }
   return out;
 }

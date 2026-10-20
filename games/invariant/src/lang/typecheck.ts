@@ -1,10 +1,10 @@
-import type { Expr, Program, Stmt } from './ast';
 import { t as messages } from '../i18n/i18n';
+import type { Expr, Program, Span, Stmt } from './ast';
 import { LangError } from './parser';
 
 // Type checking: a name is an int or an array input; conditions must be true/false.
 
-export type Type = 'int' | 'bool';
+type Type = 'int' | 'bool';
 
 /** What each name is: an integer, or an array (which is only ever indexed). */
 export type Scope = ReadonlyMap<string, 'int' | 'array'>;
@@ -127,7 +127,7 @@ export function programScope(p: Program): Scope {
 export function checkProgram(p: Program): void {
   const src = p.source;
   const names = new Set<string>();
-  const declare = (n: string, span = { from: 0, to: 0 }) => {
+  const declare = (n: string, span: Span) => {
     if (names.has(n)) throw new LangError(`'${n}' is declared twice`, span);
     names.add(n);
   };

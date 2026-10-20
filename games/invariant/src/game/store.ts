@@ -1,7 +1,6 @@
 import { create } from 'zustand';
-import type { Formula } from '../checker/check';
-import type { Rule, Verdicts } from '../checker/types';
-import { compileFormula, compileLevel, startInputs, type CompiledLevel, type FormulaResult, type Inputs, type LevelDef } from '../levels/level';
+import { RULES, type Rule, type Verdicts } from '../checker/types';
+import { compileFormula, compileLevel, startInputs, type CompiledLevel, type Formula, type FormulaResult, type Inputs, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 
 // The game's state, shared by the scene, the HUD and the scripted sequences.
@@ -24,7 +23,7 @@ export interface Reveal {
   awake: Rule[];
 }
 
-export const FULL_REVEAL: Reveal = {
+const FULL_REVEAL: Reveal = {
   code: true,
   axes: true,
   stop: true,
@@ -35,8 +34,8 @@ export const FULL_REVEAL: Reveal = {
   step: true,
   formula: true,
   assert: true,
-  lights: ['initialization', 'maintenance', 'termination'],
-  awake: ['initialization', 'maintenance', 'termination'],
+  lights: RULES,
+  awake: RULES,
 };
 
 export const EMPTY_REVEAL: Reveal = {
@@ -68,7 +67,7 @@ export interface Caption {
 }
 
 /** The tutorial's hint for the current stage: one sentence, shown under the stage's ask. */
-export interface Hint {
+interface Hint {
   ask: string;
   nudge: string;
   /** The learner has asked for it (the button goes). */
@@ -140,11 +139,11 @@ export interface Game {
   setReveal(r: Partial<Reveal>): void;
 }
 
-export const useGame = create<Game>((set, get) => ({
-  mode: 'menu',
-  menuView: 'home',
-  level: null,
-  inputs: {},
+/** Tutorial: no control is the learner's to use. */
+export const ALLOW_NONE: Game['tutorialAllow'] = { step: false, run: false, eggs: false, formula: false };
+
+/** What opening a level resets: no area, no checks, nothing of the tutorial's. */
+const FRESH = {
   formulaText: '',
   formula: null,
   valid: null,
@@ -152,62 +151,49 @@ export const useGame = create<Game>((set, get) => ({
   checking: false,
   busy: false,
   running: false,
-  caption: null,
-  reveal: FULL_REVEAL,
-  hopTick: 0,
-  hopDur: 0.42,
-  landTick: 0,
-  landGuard: 'true',
   hint: null,
   hintsShown: 0,
-  showRules: false,
-  showSyntax: false,
   pitfallMessage: null,
   failMark: null,
-  errorNudge: 0,
   callouts: [],
   stepping: false,
   frogTags: false,
   back: null,
   skip: null,
   awaitingCheck: false,
-  tutorialAllow: { step: false, run: false, eggs: false, formula: false },
+  tutorialAllow: ALLOW_NONE,
   spotLines: [],
   nextAction: null,
   spotlight: null,
   inputHover: null,
+} satisfies Partial<Game>;
+
+export const useGame = create<Game>((set, get) => ({
+  ...FRESH,
+  mode: 'menu',
+  menuView: 'home',
+  level: null,
+  inputs: {},
+  caption: null,
+  reveal: FULL_REVEAL,
+  hopTick: 0,
+  hopDur: 0.42,
+  landTick: 0,
+  landGuard: 'true',
+  showRules: false,
+  showSyntax: false,
+  errorNudge: 0,
 
   openLevel(def, mode) {
     // in the current language: its title, intro, hints and pitfalls
     const level = compileLevel(localizeLevel(def));
     set({
+      ...FRESH,
       mode,
       level,
       inputs: startInputs(level),
-      formulaText: '',
-      formula: null,
-      valid: null,
-      verdicts: {},
-      checking: false,
-      busy: false,
-      running: false,
       caption: level.intro ? { text: level.intro, tone: 'info' } : null,
       reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
-      hint: null,
-      hintsShown: 0,
-      pitfallMessage: null,
-      failMark: null,
-      callouts: [],
-      stepping: false,
-      frogTags: false,
-      back: null,
-      skip: null,
-      awaitingCheck: false,
-      tutorialAllow: { step: false, run: false, eggs: false, formula: false },
-      spotLines: [],
-      nextAction: null,
-      spotlight: null,
-      inputHover: null,
     });
   },
   backToMenu(view = 'home') {
@@ -224,7 +210,7 @@ export const useGame = create<Game>((set, get) => ({
     set({
       formulaText: text,
       formula,
-      valid: formula.ok ? { expr: formula.expr, fast: formula.fast, text } : get().valid,
+      valid: formula.ok ? formula : get().valid,
       verdicts: {},
       pitfallMessage: null,
       failMark: null,

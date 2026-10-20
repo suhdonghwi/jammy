@@ -1,4 +1,4 @@
-import { mk, subst, type Expr, type State, type Stmt } from './ast';
+import { mk, NO_SPAN, subst, type Expr, type State, type Stmt } from './ast';
 
 // Integer semantics: unbounded integers. `/` and `%` only ever divide by a
 // positive literal k; `%` is Euclidean (result in 0..k-1) and `/` is the
@@ -18,10 +18,10 @@ export function euclidMod(a: bigint, k: bigint): bigint {
 /** A quantifier's range is walked cell by cell; wider than this and the formula is refused rather than hanging the page. */
 const MAX_RANGE = 100_000;
 
-export type Value = bigint | boolean;
+type Value = bigint | boolean;
 
 /** An array cell, exact: 0 outside the array. */
-export function cell(arr: bigint[], k: bigint): bigint {
+function cell(arr: bigint[], k: bigint): bigint {
   return k >= 0n && k < BigInt(arr.length) ? arr[Number(k)] : 0n;
 }
 
@@ -136,7 +136,7 @@ export function symbolicStep(body: Stmt[], vars: string[]): Record<string, Expr>
     return cur;
   };
   const init: Record<string, Expr> = {};
-  for (const v of vars) init[v] = { kind: 'var', name: v, span: { from: 0, to: 0 } };
+  for (const v of vars) init[v] = { kind: 'var', name: v, span: NO_SPAN };
   return exec(body, init);
 }
 

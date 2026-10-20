@@ -64,7 +64,6 @@ export interface Program {
   loop: {
     guard: Expr;
     body: Stmt[];
-    span: Span;
     /** Span of `while (...)` — highlighted when frogs land. */
     headerSpan: Span;
   };
@@ -119,7 +118,7 @@ export function hasQuantifier(e: Expr): boolean {
   }
 }
 
-const NO_SPAN: Span = { from: 0, to: 0 };
+export const NO_SPAN: Span = { from: 0, to: 0 };
 
 export const mk = {
   and(a: Expr, b: Expr): Expr {
@@ -128,6 +127,9 @@ export const mk = {
   andAll(es: Expr[]): Expr {
     if (es.length === 0) return { kind: 'bool', value: true, span: NO_SPAN };
     return es.reduce((a, b) => mk.and(a, b));
+  },
+  or(a: Expr, b: Expr): Expr {
+    return { kind: 'binary', op: '||', left: a, right: b, span: NO_SPAN };
   },
   not(a: Expr): Expr {
     return { kind: 'unary', op: '!', arg: a, span: NO_SPAN };
@@ -163,7 +165,7 @@ export function subst(e: Expr, map: Record<string, Expr>): Expr {
   }
 }
 
-/** Pretty-print an expression back to source form (used in captions). */
+/** Pretty-print an expression back to source form (the tests read parses with it). */
 export function show(e: Expr): string {
   const prec: Record<BinOp, number> = {
     '||': 1, '&&': 2,

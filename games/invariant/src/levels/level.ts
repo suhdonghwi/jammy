@@ -17,7 +17,7 @@ export type Inputs = Record<string, number | number[]>;
 export const MAX_LEN = 32;
 
 /** How the dice button draws an array input: a length and cell values in these ranges, sorted when the level needs it. */
-export interface Dice {
+interface Dice {
   length: [number, number];
   values: [number, number];
   sorted?: boolean;
@@ -51,8 +51,6 @@ export interface LevelDef {
 
 export interface CompiledLevel extends LevelDef {
   program: Program;
-  inputs: string[];
-  vars: string[];
   /** Every name: inputs (arrays too), then variables. */
   names: string[];
   scope: Scope;
@@ -134,8 +132,6 @@ export function compileLevel(def: LevelDef): CompiledLevel {
   return {
     ...def,
     program,
-    inputs,
-    vars,
     names,
     scope,
     arrays,
@@ -161,9 +157,14 @@ export function compileLevel(def: LevelDef): CompiledLevel {
   };
 }
 
-export type FormulaResult =
-  | { ok: true; expr: Expr; fast: FastFn; text: string }
-  | { ok: false; error: LangError; text: string };
+/** An area formula, compiled: exact, fast, and its source text. */
+export interface Formula {
+  expr: Expr;
+  fast: FastFn;
+  text: string;
+}
+
+export type FormulaResult = ({ ok: true } & Formula) | { ok: false; error: LangError; text: string };
 
 export function compileFormula(level: CompiledLevel, text: string): FormulaResult {
   try {

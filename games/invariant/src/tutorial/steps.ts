@@ -1,4 +1,4 @@
-import type { Rule } from '../checker/types';
+import { RULES, type Rule } from '../checker/types';
 import { hatch, placeFrog, resetFrogs, stepFrogs } from '../director/frogs';
 import { playRain } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
@@ -8,7 +8,7 @@ import { eggsNear, tileState } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { allow, ask, beat, demo, guard, preview, say, sayWaiting, stage, waitEvent, waitStore } from './script';
+import { allow, ask, beat, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
 
 // The story, as steps. Each step knows the scene it starts from, so Back can
 // rebuild it and replay the step; moving forward just runs the next one.
@@ -56,13 +56,11 @@ export function resetProgress() {
 }
 
 const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
-const DRAW = { ...WORLD, assert: true, formula: true, lights: ['initialization', 'maintenance', 'termination'] as Rule[] };
-
-const ALL: Rule[] = ['initialization', 'maintenance', 'termination'];
+const DRAW = { ...WORLD, assert: true, formula: true, lights: RULES };
 
 /** Run hatches the first ten eggs: n = 0 to 9, each frog stopping on its goal (n, n). */
 const TESTED = Array.from({ length: 10 }, (_, n): [number, number] => [n, n]);
-const upTo = (r: Rule): Rule[] => ALL.slice(0, ALL.indexOf(r) + 1);
+const upTo = (r: Rule): Rule[] => RULES.slice(0, RULES.indexOf(r) + 1);
 
 /** The tutorial's lines, in the current language. */
 const T = () => t().tutorial;
@@ -134,7 +132,7 @@ async function witness(
   if (!witnessed.has(rule)) {
     // the pitfall is shown in the box and on the plane while the learner decides
     const mine = useGame.getState().formulaText;
-    preview(pitfall);
+    useGame.getState().setFormula(pitfall);
     const yes = await ask(gen, T().whatIf(pitfall, o.question));
     guard(gen);
     await demo(gen, pitfall, upTo(rule), { extra: o.extra, restore: mine, guessedRight: !yes });
@@ -151,29 +149,21 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: {} },
     run: (gen) =>
-      beat(
-        gen,
-        T().hello,
-        { label: T().letsGo, settle: 0 },
-      ),
+      beat(gen, T().hello, { label: T().letsGo, settle: 0 }),
   },
   // 1.1 a frog and its tile
   {
     scene: { reveal: {} },
     run: (gen) =>
-      beat(
-        gen,
-        T().frog,
-        {
-          prepare: async () => {
-            useGame.getState().setReveal({ axes: true });
-            // the frog's own tag shows its values (and animates them as it hops)
-            useGame.setState({ frogTags: true });
-            hatch(st(0, 3));
-            await sleep(600);
-          },
+      beat(gen, T().frog, {
+        prepare: async () => {
+          useGame.getState().setReveal({ axes: true });
+          // the frog's own tag shows its values (and animates them as it hops)
+          useGame.setState({ frogTags: true });
+          hatch(st(0, 3));
+          await sleep(600);
         },
-      ),
+      }),
   },
   // 1.2a the program
   {
@@ -188,11 +178,7 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: { axes: true, code: true }, frogs: [[0, 3]], tags: true },
     run: (gen) =>
-      beat(
-        gen,
-        T().contracts,
-        { spot: 'code', lines: [2, 9] },
-      ),
+      beat(gen, T().contracts, { spot: 'code', lines: [2, 9] }),
   },
   // 1.3 step
   {
@@ -211,63 +197,47 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: { axes: true, code: true, step: true }, frogs: [[3, 3]], tags: true },
     run: (gen) =>
-      beat(
-        gen,
-        T().stops,
-        {
-          prepare: () => useGame.getState().setReveal({ stop: true, hover: true }),
-          settle: 1000,
-          callouts: [{ x: 3, y: 3, text: T().stopsTag, tone: 'info' }],
-        },
-      ),
+      beat(gen, T().stops, {
+        prepare: () => useGame.getState().setReveal({ stop: true, hover: true }),
+        settle: 1000,
+        callouts: [{ x: 3, y: 3, text: T().stopsTag, tone: 'info' }],
+      }),
   },
   // 1.5 eggs
   {
     scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true }, frogs: [[3, 3]], tags: true },
     run: (gen) =>
-      beat(
-        gen,
-        T().eggs,
-        {
-          callouts: [{ x: 0, y: 2, text: T().eggsTag, tone: 'info' }],
-          prepare: () => {
-            resetFrogs();
-            useGame.setState({ frogTags: false });
-            useGame.getState().setReveal({ eggs: true });
-          },
-          settle: 1100,
+      beat(gen, T().eggs, {
+        callouts: [{ x: 0, y: 2, text: T().eggsTag, tone: 'info' }],
+        prepare: () => {
+          resetFrogs();
+          useGame.setState({ frogTags: false });
+          useGame.getState().setReveal({ eggs: true });
         },
-      ),
+        settle: 1100,
+      }),
   },
   // 1.6 goals: the frog from 1.3 stopped on one
   {
     scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true }, frogs: [[3, 3]], camera: [2, 2, 15.6] },
     run: (gen) =>
-      beat(
-        gen,
-        T().goals,
-        {
-          callouts: [{ x: 3, y: 3, text: T().goalsTag, tone: 'good' }],
-          prepare: () => {
-            if (!frogWorld.frogs.some((f) => f.kind === 'real')) placeFrog(st(3, 3));
-            useGame.getState().setReveal({ goals: true });
-          },
-          settle: 1000,
+      beat(gen, T().goals, {
+        callouts: [{ x: 3, y: 3, text: T().goalsTag, tone: 'good' }],
+        prepare: () => {
+          if (!frogWorld.frogs.some((f) => f.kind === 'real')) placeFrog(st(3, 3));
+          useGame.getState().setReveal({ goals: true });
         },
-      ),
+        settle: 1000,
+      }),
   },
   // 1.6b what a bug would look like, and the question the whole game asks
   {
     scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true }, frogs: [[3, 3]], camera: [2, 2, 15.6] },
     run: async (gen) => {
-      await beat(
-        gen,
-        T().bug,
-        {
-          prepare: () => useGame.setState({ failMark: { x: 3, y: 1, label: T().bugTag, t0: sceneNow() } }),
-          settle: 800,
-        },
-      );
+      await beat(gen, T().bug, {
+        prepare: () => useGame.setState({ failMark: { x: 3, y: 1, label: T().bugTag, t0: sceneNow() } }),
+        settle: 800,
+      });
       useGame.setState({ failMark: null });
     },
   },
@@ -288,22 +258,18 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: WORLD, frogs: TESTED },
     run: async (gen) => {
-      await beat(
-        gen,
-        T().endless,
-        {
-          callouts: [
-            { x: 9, y: 9, text: T().testedTag, tone: 'good' },
-            { x: 0, y: 18, text: T().endlessTag, tone: 'info' },
-          ],
-          prepare: async () => {
-            await cameraRig.lookAtTile(4, 10, 55);
-            // a fast Next may have moved on during the glide: a stale allow() would lock the next step's box
-            guard(gen);
-            allow({ eggs: true });
-          },
+      await beat(gen, T().endless, {
+        callouts: [
+          { x: 9, y: 9, text: T().testedTag, tone: 'good' },
+          { x: 0, y: 18, text: T().endlessTag, tone: 'info' },
+        ],
+        prepare: async () => {
+          await cameraRig.lookAtTile(4, 10, 55);
+          // a fast Next may have moved on during the glide: a stale allow() would lock the next step's box
+          guard(gen);
+          allow({ eggs: true });
         },
-      );
+      });
       allow({});
     },
   },
@@ -311,24 +277,20 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: WORLD, camera: [4, 10, 55] },
     run: (gen) =>
-      beat(
-        gen,
-        T().invariant,
-        {
-          spot: 'code',
-          prepare: async () => {
-            resetFrogs();
-            await cameraRig.lookAtTile(2, 2, 15.6);
-            guard(gen);
-            useGame.getState().setReveal({ assert: true, lights: ALL });
-          },
-          settle: 500,
+      beat(gen, T().invariant, {
+        spot: 'code',
+        prepare: async () => {
+          resetFrogs();
+          await cameraRig.lookAtTile(2, 2, 15.6);
+          guard(gen);
+          useGame.getState().setReveal({ assert: true, lights: RULES });
         },
-      ),
+        settle: 500,
+      }),
   },
   // 1.10 draw before you check
   {
-    scene: { reveal: { ...WORLD, assert: true, lights: ALL }, camera: [2, 2, 15.6] },
+    scene: { reveal: { ...WORLD, assert: true, lights: RULES }, camera: [2, 2, 15.6] },
     run: async (gen) => {
       useGame.getState().setReveal({ formula: true });
       allow({ formula: true });
@@ -449,23 +411,19 @@ export const STEPS: Step[] = [
       const strong = offGoal.length === 0;
       const right = predictedGoal === null ? null : predictedGoal === strong;
       const verdict = right === null ? '' : right ? T().predictedRight : T().guessedWrong;
-      await beat(
-        gen,
-        verdict + (strong ? T().stopsAllGoals : T().onlyIfGoal),
-        {
-          spot: 'lights',
-          tone: right ? 'success' : 'info',
-          callouts: strong ? outlines(stops) : [...outlines(stops.filter((t) => !offGoal.includes(t)), 'info'), ...outlines(offGoal, 'fail')],
-          prepare: () => {
-            useGame.getState().setReveal({ awake: ALL });
-            void cameraRig.lookAtTile(2, 2, 15.6);
-          },
+      await beat(gen, verdict + (strong ? T().stopsAllGoals : T().onlyIfGoal), {
+        spot: 'lights',
+        tone: right ? 'success' : 'info',
+        callouts: strong ? outlines(stops) : [...outlines(stops.filter((t) => !offGoal.includes(t)), 'info'), ...outlines(offGoal, 'fail')],
+        prepare: () => {
+          useGame.getState().setReveal({ awake: RULES });
+          void cameraRig.lookAtTile(2, 2, 15.6);
         },
-      );
+      });
       resetFrogs();
       await stage(gen, {
         ask: strong ? T().confirmTermination : T().askTermination,
-        rules: ALL,
+        rules: RULES,
         nudge: T().nudgeTermination,
         // the objection every learner raises at Termination, and its answer
         explain: { termination: T().objection },
@@ -490,17 +448,13 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
-      beat(
-        gen,
-        T().twoWays,
-        {
-          spot: 'lights',
-          callouts: [
-            { x: 0, y: 2, text: T().tooSmallTag, tone: 'info' },
-            { x: 3, y: 2, text: T().tooLargeTag, tone: 'info' },
-          ],
-        },
-      ),
+      beat(gen, T().twoWays, {
+        spot: 'lights',
+        callouts: [
+          { x: 0, y: 2, text: T().tooSmallTag, tone: 'info' },
+          { x: 3, y: 2, text: T().tooLargeTag, tone: 'info' },
+        ],
+      }),
   },
 
   // ======================= Act 3: Wrap-up =======================
@@ -508,11 +462,7 @@ export const STEPS: Step[] = [
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
       // the caption first, then the rain it celebrates; Finish once the rain has fallen
-      await beat(
-        gen,
-        T().wrapUp(mine()),
-        { label: T().finish, prepare: () => playRain() },
-      );
+      await beat(gen, T().wrapUp(mine()), { label: T().finish, prepare: () => playRain() });
       // the three rules, as a card; the tutorial ends (and the first level
       // opens) once it is closed, after its exit animation, not underneath it
       useGame.setState({ showRules: true });
