@@ -30,7 +30,7 @@ export function HomeOverlay() {
     <>
       {/* the title and buttons stay, faded back behind the level list */}
       <div
-        className={`pointer-events-none fixed inset-0 isolate flex flex-col items-start justify-center pl-[max(5vw,24px)] transition-opacity duration-180 narrow:items-center narrow:px-4 narrow:pb-[5vh] ${
+        className={`pointer-events-none fixed inset-0 isolate flex flex-col items-start justify-center pl-[max(5vw,24px)] [--copy-end:calc(max(5vw,24px)+29.5rem)] transition-opacity duration-180 narrow:items-center narrow:px-4 narrow:pb-[5vh] ${
           compact ? BACKDROP : `narrow:justify-end ${WASH}`
         } ${view === 'levels' ? 'opacity-35' : ''}`}
       >
@@ -53,9 +53,13 @@ export function HomeOverlay() {
 /** On very small screens the copy fills the screen, over the scene washed almost away: there, but quiet. */
 const BACKDROP = 'before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-wash/72';
 
-/** A soft wash behind the copy so the grid doesn't fight the type: from the left, or from below when stacked. */
+/**
+ * A soft wash behind the copy so the grid doesn't fight the type: from the left, or from below when stacked.
+ * From the left it reaches as far as the copy does (`--copy-end`, its padding and max-w-118) and fades out
+ * past it, so the title stays clear of the scene on any width.
+ */
 const WASH =
-  'before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-linear-to-r before:from-wash/94 before:via-wash/70 before:via-26% before:to-wash/0 before:to-42% narrow:before:bg-linear-to-t narrow:before:from-wash/95 narrow:before:via-wash/80 narrow:before:via-42% narrow:before:to-62%';
+  'before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-linear-to-r before:from-wash/94 before:via-wash/70 before:via-(length:--copy-end) before:to-wash/0 before:to-[length:calc(var(--copy-end)+15rem)] narrow:before:bg-linear-to-t narrow:before:from-wash/95 narrow:before:via-wash/80 narrow:before:via-42% narrow:before:to-62%';
 
 function HomeButtons() {
   const tr = useT();
