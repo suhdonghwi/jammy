@@ -13,13 +13,16 @@ program state. Running the program is a **frog** hopping between tiles, one hop
 per loop iteration. The learner writes a formula describing an **area** of the
 plane — the loop invariant — and **Check** tests it against three rules:
 
-| Rule | Formal | Learner-facing wording |
-|---|---|---|
-| **Initialization** | `pre ⇒ Inv` (after the initialisation code) | Every egg sits on your area. |
-| **Maintenance** | `Inv ∧ guard ⇒ Inv[body]` | A frog on your area that hops lands on your area. |
-| **Termination** | `Inv ∧ ¬guard ⇒ post` | A frog that stops on your area is on a goal. |
+| Rule | Formal | Learner-facing wording | In the code |
+|---|---|---|---|
+| **Initialization** | `pre ⇒ Inv` (after the initialisation code) | Every egg is on your area. | After `requires` and the code before the loop, the `assert` holds. |
+| **Maintenance** | `Inv ∧ guard ⇒ Inv[body]` | No hop leads off your area. | If the `assert` and the loop condition hold, the `assert` holds again after the body. |
+| **Termination** | `Inv ∧ ¬guard ⇒ post` | Every striped tile on your area is a goal. | If the `assert` holds and the loop condition is false, the `ensures` holds. |
 
-If all three hold, every frog, for every input, stops on a goal. That is the
+The area is a **claim**: every frog is always somewhere on it. Initialization
+and Maintenance make the claim true (frogs start on it and no hop leaves it);
+Termination makes it strong enough (the only stops it allows are goals). If
+all three hold, every frog, for every input, stops on a goal. That is the
 loop-invariant proof rule, presented as a game.
 
 **Audience:** programmers who write loops every day but have never (or only
@@ -56,28 +59,45 @@ and in the text they are **ghost frogs** (유령 개구리): see-through and
 floating a little above their tile, so they read as "not really there" without
 an explanation.
 
-## The narrative: earn the rules
+## The narrative: intuition first, then the rules
 
-The game never leads with the rules; it earns them:
+The game never leads with the rules; it earns them, and each rule is met as
+a picture before it is met as a rule:
 
 1. **Testing looks convincing** — run the frogs; every one reaches a goal.
 2. **Testing can't be enough** — zoom out; the eggs never end.
-3. **Draw an area instead** — if one area passes three checks, every frog is
-   covered without running any of them.
-4. **Induction, shown with one frog** — it starts on the area (Initialization), every hop
-   lands on it again (Maintenance), so it never leaves; when it stops, is that
-   enough? (Termination).
+3. **What an invariant is for, on an example** — a different loop, with a
+   fixed area and frogs that keep hopping on it. The area is a claim that
+   every frog is always on it; bad stopping tiles are off it, and the only
+   stops on it are goals, so if the claim is true every frog stops on a goal.
+   That argument never followed a frog, which is why it survives endless
+   eggs. It takes three things, which are the three rules.
+4. **Each rule on our loop, three ways** — the picture (callouts, outlines),
+   the plain sentence, and what it means in the code (the lines light up,
+   the `assert` among them); then the learner checks their own area, and a
+   what-if shows the rule's typical failure.
+5. **Induction, shown with one frog** — it starts on the area, every hop lands
+   on it again, so it never leaves; when it stops, is that a goal? That
+   question opens Termination.
 
 ## Ghost frogs: why unreachable frogs matter
 
 The most common objection is *"that frog could never actually be there!"* The
-answer: the area is a **claim** that frogs could be anywhere on it, and Check
-tests every part of the claim, placing a ghost frog on any tile of it. If you
-don't want a frog there, shrink the claim — that is **strengthening**.
+answer: Check never runs real frogs, because where they go is exactly what
+is being proved. All it knows is the area, and the area claims a frog could
+be on any of its tiles, so Check asks the question of every tile: if a frog
+were here, where would it land, or where would it stop? A ghost frog acts
+out that question. If you don't want a frog there, shrink the claim — that
+is **strengthening**.
 
-A white cartoon hand brings the ghost frogs and points at what a caption
-talks about. It is staging, not a character: no caption names it or gives it
-a will.
+Ghost frogs break up through the slab of the tile they test (chips of slab
+fly off), spinning as they rise, to a siren that plays once per wave. A
+failure a real frog can reach (from a nearby egg within a few hops) is acted
+out by that real frog instead: then the area is simply wrong, while a ghost
+frog's failure says the area claims more than real frogs do.
+
+Nothing else stages the scene: tags, outlines, the spotlight, lit code lines
+and the camera show where to look.
 
 ## Planes and the inputs card
 
@@ -122,9 +142,10 @@ has room for arrays.)
   with small bounds so its counterexamples are small too. If the only
   counterexample is far away, the camera flies to it: "everything you could see
   looked fine" is not a proof.
-- **Verdicts:** proved (a rain of ghost frogs that all land on the area again,
-  level cleared); counterexample (a ghost frog acts it out); **undecided** (the
-  hand shrugs, the level is *not* cleared). Before giving up, the checker
+- **Verdicts:** proved (a wave of ghost frogs rises across the area and all of
+  them land on it again, level cleared); counterexample (a real frog acts it
+  out if one can reach it, otherwise a ghost frog); **undecided** (said in the
+  caption, the lights turn amber, the level is *not* cleared). Before giving up, the checker
   tries proving the formula equivalent to a known solution.
 - **One definition, three uses.** The same parsed program and formula drive the
   frogs' animation, the proofs, and the floor's rendering, so what the learner
@@ -214,21 +235,29 @@ touching levels, the language or the checker.
 
 ## The tutorial
 
-A scripted story on one program, a counter (`i` from `0` up to `n`), built on
-the same engine as the levels. The steps are `src/tutorial/steps.ts`; their
+A scripted story on one program, a counter (`i` from `0` up to `n`), with a
+detour through a second, the **example** (a zigzag over a 5 × 5 area, with
+stopping tiles both on and off it). Both are real levels on the same engine
+(`tutorialLevel`, `exampleLevel`). The steps are `src/tutorial/steps.ts`; their
 words are in `src/i18n/en.ts` and `ko.ts`. `?step=N` on the URL starts it at
 step N, for playtesting.
 
 - **Progressive reveal:** a bare plane and one frog first; the code, Step,
-  eggs, goals, Run, the assert line, the formula box and the rule lights
-  appear only when the story needs them.
+  eggs (with `requires`), goals (with `ensures`), Run, then the example, then
+  the formula box, the assert line and the rule lights appear only when the
+  story needs them.
+- **The example is shown, not solved.** Its area is fixed and its code
+  hidden; its frogs hatch, run and go back into their eggs, over and over,
+  so the claim is seen holding while the captions explain it.
 - **Any formula is a valid move.** Each of three stages asks for one rule's
   worth of area and checks only the rules introduced so far; the story
   branches on which rule failed, never on which formula was typed. The
   learner is never asked for "the invariant": it emerges by strengthening.
 - **Every failure is witnessed:** by the learner's own formula if it fails,
   or, if it passes, by a demo of that stage's pitfall after the learner
-  predicts the outcome (yes or no; never scored).
+  predicts the outcome (yes or no; never scored). Initialization's and
+  Maintenance's pitfalls fail on real frogs; Termination's (`i >= 0`) on a
+  ghost frog, which is where the objection above is answered.
 - **One hint per stage:** a sentence behind a Hint button that names the fact
   that matters, without giving the formula.
 - **Say what things are once, then keep one name each** (below).
@@ -255,6 +284,7 @@ the invariant sits between.
 | The learner's formula | the **area**; it is the **loop invariant** | 영역, 루프 불변식 |
 | Raised tiles | **slabs** | 블록 |
 | A state placed to test the area's claim | a **ghost frog** | 유령 개구리 |
+| What an area says | a **claim**: every frog is always on it | 주장 |
 | Passes Initialization and Maintenance | an **invariant** | 불변식 |
 | Also passes Termination | **strong enough** to prove the postcondition | 사후 조건을 증명할 만큼 강한 |
 | Shrinking the area | **strengthening** | 강화 |
@@ -265,9 +295,9 @@ Rule names are the textbook ones (CLRS): **Initialization**, **Maintenance**,
 the loop terminates*, not a termination proof; the rule's own sentence carries
 that.
 
-Not used: "run" for a frog, "input" for eggs, "watching" for testing, and the
-hand as something that acts or decides (it is only the pointer that shows
-where to look).
+Not used: "run" for a frog, "input" for eggs, and "watching" for testing or
+for proving: the point of a proof is that it covers infinitely many inputs
+without checking any of them.
 
 ## Scope
 

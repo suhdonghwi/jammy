@@ -37,8 +37,8 @@ behind many small decisions; keep them when changing or adding UI.
 - **Visible, not loud.** A goal landing should be noticed (a ripple, a flash, the
   pool's light column brightening) without becoming a splash.
 - **Things come from somewhere.** Frogs climb out of their egg, from where the
-  egg sat; ghost frogs arrive in the hand's palm; the hand points at the thing
-  itself.
+  egg sat; ghost frogs break up through the slab of the tile they test; a
+  frog that is done goes back into its egg, and the egg grows back.
 - **The scene pauses when the page is hidden** and carries on where it was. All
   scene timing runs on scene time (see architecture.md), never the wall clock.
 

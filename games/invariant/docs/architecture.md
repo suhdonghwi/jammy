@@ -20,7 +20,7 @@ src/
   levels/      the level format (level.ts), every level (catalog.ts) and its Korean text (catalog.ko.ts), the plane's tiles (tiles.ts)
   i18n/        the language switch, and every other line the game says, in English (en.ts) and Korean (ko.ts)
   game/        the zustand store, and what the app's buttons do (actions.ts)
-  director/    scripted sequences: the hand, Step/Run, check playback
+  director/    scripted sequences: Step/Run, looping frogs, ghost frogs, check playback
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
   audio/       the sound effects
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
@@ -28,7 +28,6 @@ src/
     floor/       the infinite floor, drawn per pixel from the level's formulas (formulas → GLSL)
     area/        the learner's slabs, eggs and goal columns
     frogs/       frog state, motion, rendering, hatching
-    hand/        the pointing hand that brings ghost frogs
     labels/      tags over tiles and frogs (callouts, failures, frog values)
     level/       a level's scene and hover preview
     home/        the home screen's scene
@@ -81,12 +80,12 @@ agree. `pnpm validate` and the tests are the safety net.
   writes `useGame.setState()`. Store actions exist only where there is logic
   (opening a level, compiling a formula).
 - **Per-frame scene data lives outside the store**, in plain module objects read
-  in `useFrame`: the frogs (`frogWorld`), slab heights (`field`), the hand's
-  pose (`handState`), tile occupancy, goal ripples, the hovered tile. Never put
+  in `useFrame`: the frogs (`frogWorld`), slab heights (`field`), hatching
+  shells and slab chips, tile occupancy, goal ripples, the hovered tile. Never put
   per-frame data in zustand.
 - **Slab height has one source**: `field`. Slabs animate on the GPU from
   `(from, to, t0)`, and `field.heightAt` gives the same height on the CPU, so
-  anything standing on the floor (frogs, eggs, tags, the hand's shadow) uses it.
+  anything standing on the floor (frogs, eggs, tags, chips) uses it.
 
 ## Time
 
@@ -110,7 +109,7 @@ agree. `pnpm validate` and the tests are the safety net.
 
 ## Sequences
 
-- Anything scripted — the hand's demonstrations, Run, frog rain — is a
+- Anything scripted — counterexamples, Run, the ghost wave, looping frogs — is a
   `director/` function. Each starts with `begin()`, which
   cancels whatever was playing; after every `await` it checks `tok.alive` and
   stops if it was superseded. `busy` locks the learner's input while one plays.
@@ -125,12 +124,16 @@ agree. `pnpm validate` and the tests are the safety net.
   through Check and through caption buttons; it never polls.
 - **A stage accepts any formula.** `stage()` in `tutorial/script.ts` waits for
   Check, runs the rules introduced so far, acts out the first failing rule and
-  waits again; it returns on the first pass. `demo()` has the hand type a
-  pitfall formula and act out its failure, then restores the learner's area.
+  waits again; it returns on the first pass. `demo()` types a
+  pitfall formula into the area box and acts out its failure, then restores
+  the learner's area.
   Steps after the formula box opens declare `formula: 'learner'`: the area the
   learner last had pass a stage, kept in `tutorial/steps.ts` so Back restores
   it. A rule the learner saw fail on their own area is remembered there too,
-  and the hand's demo of that rule is skipped.
+  and the demo of that rule is skipped.
+- **Two levels, one story.** A step's scene says whether it is on the example;
+  stepping forward onto the other level fades the screen (`switchScene`),
+  Back and Next rebuild it at once.
 - **Playtesting:** `?step=N` on the URL starts the tutorial at step N (the
   index in `STEPS`), with an empty area.
 
@@ -173,4 +176,5 @@ opens the level list or a level, never on the home screen alone.
 - Before committing: `pnpm typecheck`, `pnpm test`, `pnpm validate` (when
   levels, the language or the checker changed), `pnpm build`.
 - In development, `window.__game`, `__open(id)`, `__check()`, `__frogs`,
-  `__hand` and `__rig` are available in the console.
+  `__rig` and `__siren(n)` (plays ghost siren candidate n; `?siren=n` picks
+  the one the game uses) are available in the console.
