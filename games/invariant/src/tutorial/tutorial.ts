@@ -1,7 +1,7 @@
 import { interrupt, placeFrog } from '../director/frogs';
-import { sleep } from '../director/sequence';
 import { EMPTY_REVEAL, useGame } from '../game/store';
 import { cameraRig } from '../scene/cameraRig';
+import { sleep } from '../scene/sceneTime';
 import { Aborted, allow, currentGeneration, guard, newGeneration } from './script';
 import { learnerFormula, resetProgress, st, STEPS, type Scene } from './steps';
 

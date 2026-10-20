@@ -10,9 +10,9 @@ import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { occupancy } from '../scene/frogs/occupancy';
 import { handState } from '../scene/hand/handState';
-import { after, sceneNow } from '../scene/sceneTime';
+import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { events } from './events';
-import { begin, currentLevel, sleep } from './sequence';
+import { begin, currentLevel } from './sequence';
 
 // The learner's frogs: hatching from eggs, Step, Run and Pause, and clearing
 // the board.

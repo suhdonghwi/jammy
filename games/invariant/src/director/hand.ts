@@ -5,8 +5,8 @@ import { SLAB_H } from '../scene/constants';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { occupancy } from '../scene/frogs/occupancy';
 import { handState } from '../scene/hand/handState';
-import { sceneNow } from '../scene/sceneTime';
-import { currentLevel, sleep, tween, type Token } from './sequence';
+import { sceneNow, sleep } from '../scene/sceneTime';
+import { currentLevel, tween, type Token } from './sequence';
 
 // The skeptical hand's moves. Positions are tiles (x, y) in the focused plane.
 

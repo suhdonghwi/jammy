@@ -2,7 +2,6 @@ import gsap from 'gsap';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
 import type { CompiledLevel } from '../levels/level';
 import { handState } from '../scene/hand/handState';
-import { sceneSleep } from '../scene/sceneTime';
 
 // Helpers for the scripted sequences (the hand's demonstrations, runs, the
 // tutorial). Every sequence gets a token; starting a new one cancels the old.
@@ -23,9 +22,6 @@ export function begin(): Token {
     },
   };
 }
-
-/** Wait in scene time (paused while the page is hidden). */
-export const sleep = sceneSleep;
 
 /** A GSAP tween as a promise; it also resolves if the tween is killed. */
 export function tween(target: object, vars: gsap.TweenVars): Promise<void> {

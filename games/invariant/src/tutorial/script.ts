@@ -2,12 +2,12 @@ import type { CheckResult } from '../checker/check';
 import type { Counterexample, Rule } from '../checker/types';
 import { events } from '../director/events';
 import { handIn } from '../director/hand';
-import { sleep } from '../director/sequence';
 import { playCounterexample, playShrug, runChecker } from '../director/verdicts';
 import { useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
+import { sleep } from '../scene/sceneTime';
 
 // The tutorial's vocabulary: captions, beats, waiting for the learner, and
 // the stages where the learner draws an area. Every step runs under a

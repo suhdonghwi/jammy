@@ -40,8 +40,8 @@ export function after(ms: number, fn: () => void): () => void {
   };
 }
 
-/** A promise that resolves after `ms` of scene time. */
-export const sceneSleep = (ms: number) => new Promise<void>((r) => after(ms, r));
+/** Wait `ms` of scene time (paused while the page is hidden). */
+export const sleep = (ms: number) => new Promise<void>((r) => after(ms, r));
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {

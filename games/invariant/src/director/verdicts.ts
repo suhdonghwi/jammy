@@ -11,10 +11,10 @@ import { areaNear, tileState } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { handState } from '../scene/hand/handState';
-import { after, sceneNow } from '../scene/sceneTime';
+import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { hatch } from './frogs';
 import { handIn, handOut, placeTestFrog, pointAt } from './hand';
-import { begin, caption, currentLevel, sleep, tween } from './sequence';
+import { begin, caption, currentLevel, tween } from './sequence';
 
 // Checking the learner's area, and the hand acting out the result: a
 // counterexample, a shrug when the solver can't decide, or frog rain on success.
