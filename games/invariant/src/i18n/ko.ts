@@ -208,13 +208,13 @@ export const ko: Messages = {
     backToOurs: '우리 루프로',
 
     draw: '우리 루프로 돌아왔습니다. 이번에는 직접 영역을 그려 봅시다. `i`와 `n`으로 아무 조건이나 써 보세요. 조건이 참인 칸들이 **블록**으로 솟아오릅니다.\n\n`i == 2`, `i % 2 == 0`, `i < n` 같은 식을 써 보세요. 쓸 수 있는 식은 입력 칸 아래 **문법**에서 볼 수 있습니다.',
-    ruleInitialization: '**규칙 1 · 초기화:** 모든 알이 영역 위에 있어야 합니다. 그러면 예시의 왼쪽 알들처럼, 첫 점프 전부터 주장이 참입니다.',
+    ruleInitialization: '**규칙 1 · 초기화:** 모든 알이 영역 위에 있어야 합니다.',
     askInitialization: '**모든 알이 영역 위에 있도록** 영역을 고친 뒤 **검사**를 눌러 보세요.',
     nudgeInitialization: '알은 모두 `i` 값이 같습니다. 얼마일까요?',
     passedInitialization: '정답입니다! 모든 알이 영역 위에 있으므로 **초기화** 규칙이 성립합니다.',
     questionInitialization: '알이 모두 그 위에 있나요?',
-    afterDemoInitialization: (mine) => `\`i == n\`은 \`n = 0\`인 알 하나만 덮습니다. 지금 쓴 ${mine} 조건은 전부 덮습니다.`,
-    afterOwnInitialization: (mine) => `처음에는 놓친 알이 있었지만, 지금 쓴 ${mine} 조건은 전부 덮습니다.`,
+    afterDemoInitialization: (mine) => `\`i == n\`은 \`n = 0\`인 알 하나만 덮는 반면, 지금 쓴 ${mine} 조건은 모든 알을 덮습니다.`,
+    afterOwnInitialization: (mine) => `처음에는 놓친 알이 있었지만, 지금 쓴 ${mine} 조건은 모든 알을 덮습니다.`,
 
     ruleMaintenance: '**규칙 2 · 유지:** 어떤 점프도 영역 밖으로 나가지 않아야 합니다. 영역 위의 어느 칸에서든, 한 번 뛰면 다시 영역 위에 착지해야 합니다.',
     askMaintenance: '이제 **어떤 점프도 영역 밖으로 나가지 않도록** 고쳐 보세요. **검사**는 규칙 1과 2를 함께 확인합니다.',

@@ -209,13 +209,13 @@ export const en = {
     backToOurs: 'Back to our loop',
 
     draw: 'Back to our loop, and this time you draw the area. Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**.\n\nTry something like `i == 2`, `i % 2 == 0` or `i < n`. **Syntax**, below the box, lists what you can write.',
-    ruleInitialization: '**Rule 1 · Initialization:** every egg is on your area. Then the claim is already true before the first hop, like the eggs on the left of the example.',
+    ruleInitialization: '**Rule 1 · Initialization:** every egg must be on your area.',
     askInitialization: 'Change your area so **every egg is on it**, then press **Check**.',
     nudgeInitialization: 'Every egg has the same `i`. What is it?',
     passedInitialization: 'Correct! Every egg is on your area: **Initialization** holds.',
     questionInitialization: 'Is every egg on it?',
-    afterDemoInitialization: (mine: string) => `\`i == n\` only covers the egg at \`n = 0\`. Yours, ${mine}, covers them all.`,
-    afterOwnInitialization: (mine: string) => `Your first try missed an egg. ${mine} covers them all.`,
+    afterDemoInitialization: (mine: string) => `\`i == n\` only covers the egg at \`n = 0\`, while yours, ${mine}, covers every egg.`,
+    afterOwnInitialization: (mine: string) => `Your first try missed an egg, but ${mine} covers every egg.`,
 
     ruleMaintenance: '**Rule 2 · Maintenance:** no hop leads off your area. From any tile of it, one hop lands on it again.',
     askMaintenance: 'Now change your area so **no hop leads off it**. **Check** tests rules 1 and 2 together.',
