@@ -24,7 +24,7 @@ pnpm dev
 
 The solver (Z3 compiled to WebAssembly) needs a cross-origin isolated page, so the dev and preview servers send
 `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. Any production host must send
-the same headers. `pnpm install` copies Z3's browser build into `public/z3/`.
+the same headers. `pnpm dev` and `pnpm build` copy Z3's browser build into `public/z3/`.
 
 ## Scripts
 

@@ -212,9 +212,6 @@ touching levels, the language or the checker.
 | **Advanced** | a fact every branch of an `if` keeps, then one equation across branches, two facts at once, a staircase with `/`; then an equation with a product in it, and the finale where the guard supplies half the goal | Even Out (the first `if`), Absolute Value, Deal the Cards, Count the Threes, Sum to n (Tag Along's loop again), Square Root |
 | **Arrays** | the goal with `n` replaced by `i` (`forall`); an input on an axis, with the fence the array's end needs; `exists` for a witness; then binary search, two `forall`s and a chain of fences on a sorted array | Biggest So Far, Find It, One of Them, Sorted Search |
 
-The reasoning behind this ladder, and the full text of the levels it changed,
-is in [levels-redesign.md](levels-redesign.md).
-
 ## The tutorial
 
 A scripted story on one program, a counter (`i` from `0` up to `n`), built on

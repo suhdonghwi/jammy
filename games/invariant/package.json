@@ -4,7 +4,6 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "postinstall": "node scripts/copy-z3.mjs",
     "predev": "node scripts/copy-z3.mjs",
     "prebuild": "node scripts/copy-z3.mjs",
     "dev": "vite",
