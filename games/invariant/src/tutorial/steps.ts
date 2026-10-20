@@ -367,7 +367,6 @@ export const STEPS: Step[] = [
         ask: T().askTermination,
         rules: RULES,
         nudge: T().nudgeTermination,
-        region: endingsRegion(() => 'info'),
         ghost: { maintenance: T().ghostMaintenance, termination: T().objection },
         onFail: (r) => {
           witnessed.add(r);

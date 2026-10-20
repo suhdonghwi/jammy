@@ -230,7 +230,7 @@ export const en = {
     stillOnTag: 'still on your area',
 
     leadTermination:
-      'When it reaches a striped tile and the loop stops, the frog is still on your area. The outlined tiles are where a frog can stop on this area.\n\nSo does a frog that stops on the area always stop on a goal? Making sure of that is the third rule.',
+      'When it reaches a striped tile and the loop stops, the frog is still on your area. The outlined tiles are where a frog can stop on this area.\n\n**So does a frog that stops on the area always stop on a goal?** Making sure of that is the third rule.',
 
     askTermination:
       '**Rule 3 · Termination:** every striped tile on your area must be a goal.\n\nChange your area so **every striped tile on it is a goal**, then press **Check**. It now tests all three rules.',
