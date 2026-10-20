@@ -171,7 +171,7 @@ export const en = {
     whatIf: (pitfall: string, question: string) => `Before we move on: what if we had tried \`${pitfall}\`? ${question}`,
 
     hello:
-      'Hi. This is a game about **loop invariants**: a way to prove that a loop works for every input, even when there are infinitely many.\n\nIn this tutorial you’ll prove a small loop correct. First, the world it lives in.',
+      'Hi. This is a game about **loop invariants**, which are used to prove that a loop works correctly for every input.\n\nIn this tutorial you’re going to prove a small loop correct. First, the world it lives in.',
     letsGo: 'Let’s go',
     frog: 'Each frog stands for the program, run on one input. The tile it sits on is its **program state**, the current values of its variables.',
     program: 'Here is the **code** of the program we are running. The loop runs its body again and again while `i < n`.',
