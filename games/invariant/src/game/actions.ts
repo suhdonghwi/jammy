@@ -7,31 +7,39 @@ import { levels, tutorialLevel } from '../levels/catalog';
 import type { LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 import { frogWorld } from '../scene/frogs/frogWorld';
+import { switchScene } from '../scene/sceneTime';
 import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';
 import { markCleared } from './progress';
 import { useGame } from './store';
 
 // What the app's buttons do: open a level or the tutorial, go back to the
-// menu, and check the learner's area.
+// menu, and check the learner's area. Each of the first three is a new screen,
+// which fades this one out first (see switchScene).
 
 export function openLevel(def: LevelDef) {
-  stopTutorial();
-  resetLevel();
-  useGame.getState().openLevel(def, 'level');
+  switchScene(() => {
+    stopTutorial();
+    resetLevel();
+    useGame.getState().openLevel(def, 'level');
+  });
 }
 
 export function openTutorial() {
-  resetLevel();
-  useGame.getState().openLevel(tutorialLevel, 'tutorial');
-  // when it's done, on to the first level; `?step=N` starts partway in (playtesting)
-  const from = Number(new URLSearchParams(location.search).get('step') ?? 0);
-  startTutorial(() => openLevel(levels[0]), from);
+  switchScene(() => {
+    resetLevel();
+    useGame.getState().openLevel(tutorialLevel, 'tutorial');
+    // when it's done, on to the first level; `?step=N` starts partway in (playtesting)
+    const from = Number(new URLSearchParams(location.search).get('step') ?? 0);
+    startTutorial(() => openLevel(levels[0]), from);
+  });
 }
 
 export function goMenu(view: 'home' | 'levels' = 'home') {
-  stopTutorial();
-  resetLevel();
-  useGame.getState().backToMenu(view);
+  switchScene(() => {
+    stopTutorial();
+    resetLevel();
+    useGame.getState().backToMenu(view);
+  });
 }
 
 /** The Hint button in a level: the first hint, or (pressed again) the ones already asked for, in the caption. */

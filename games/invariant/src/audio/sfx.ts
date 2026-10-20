@@ -7,8 +7,10 @@ import { create } from 'zustand';
 // frogs all stopping, goal pools, egg cracks and proved rules, for now).
 //
 // Browsers only allow sound after the page has been used, so the audio
-// context starts (and the clips load) at the first press or key; anything
-// before that is silent.
+// context starts at the first press or key; anything before that is silent.
+// Making the context is slow the first time (a fifth of a second on a Mac),
+// so it is made, and the clips loaded, while the page is still waiting to
+// come in (prepareSound, from World), and the first press only resumes it.
 
 const MUTE_KEY = 'invariant-frog:muted';
 
@@ -64,7 +66,8 @@ const roleOf = (path: string) => path.slice(path.lastIndexOf('/') + 1, -'.m4a'.l
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 
-function start() {
+/** Make the audio context (suspended until a press) and load the clips. */
+export function prepareSound() {
   if (!ctx) {
     const c = new AudioContext();
     ctx = c;
@@ -86,7 +89,11 @@ function start() {
         .catch(() => {});
     }
   }
-  if (ctx.state === 'suspended') void ctx.resume();
+}
+
+function start() {
+  prepareSound();
+  if (ctx!.state === 'suspended') void ctx!.resume();
 }
 
 /** The context, if sound can play right now. */

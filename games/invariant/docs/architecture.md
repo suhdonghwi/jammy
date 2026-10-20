@@ -95,11 +95,17 @@ agree. `pnpm validate` and the tests are the safety net.
   waits. Scene time stops while the page is hidden, so the scene pauses instead
   of jumping ahead. Don't use `performance.now()` or `setTimeout` for anything
   that animates in the scene.
-- **The page's entrance starts once, together**: scene time holds, and
-  `styles.css` pauses every CSS animation, until the world's first frame is
+- **Each screen comes in on its own, together**: scene time holds, and
+  `styles.css` pauses every CSS animation, until the screen's first frame is
   drawn and the fonts are in (`startScene`). Entrances then play in order:
-  the world fades in, then the home copy from the top down (staggered with
+  the world fades in, then the copy from the top down (staggered with
   `animation-delay`). Time new entrances from that moment, not from mounting.
+  Going to another screen (`switchScene`, used by the actions that open a
+  level, the tutorial or the menu) fades the current one out first and then
+  starts over the same way; nothing, the camera included, carries over from
+  one screen to the next. Slow one-off work belongs in that wait, on a still
+  page (the title's geometry is built once and kept; the audio context is made
+  before the first press).
 - **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`).
 
 ## Sequences

@@ -16,7 +16,7 @@ export function TopBar() {
   if (!level) return null;
   return (
     // .topbar and .pill-group: HoverReadout measures them to lift itself into this row when the middle is free
-    <div className="topbar pointer-events-none! flex items-center" data-frame="top">
+    <div className="topbar pointer-events-none! flex animate-slide-in items-center" data-frame="top">
       <div className={PILLS}>
         {/* just an arrow: the level's name is what this pill is about */}
         <button

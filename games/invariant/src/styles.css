@@ -125,6 +125,18 @@ html:not([data-started]) *::before,
 html:not([data-started]) *::after {
   animation-play-state: paused;
 }
+/* The world waits for the start too, then fades in: on load, and on each new
+   screen. Going to another screen (switchScene), the screen fades out first. */
+.world {
+  opacity: 0;
+}
+html[data-started] .world {
+  opacity: 1;
+  transition: opacity 0.8s ease-out;
+}
+html[data-leaving] .screen {
+  animation: var(--animate-fade-out);
+}
 
 /* RoundWind has one weight, and already a heavy one: a label of any weight
    uses it as it is, never thickened further (Fredoka has real weights, so it

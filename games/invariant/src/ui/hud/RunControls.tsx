@@ -31,7 +31,7 @@ export function RunControls() {
   // a button that gives up its label on phones is square there, like an icon button
   const square = (iconOnly: boolean) => (iconOnly ? 'max-sm:w-9.5 max-sm:self-stretch max-sm:px-0!' : '');
   return (
-    <div className="flex items-center gap-1.5 max-[22.5rem]:gap-1">
+    <div className="flex animate-[rise_0.4s_ease-out] items-center gap-1.5 max-[22.5rem]:gap-1">
       {/* three alike buttons: their icons carry the colour that tells them apart */}
       {reveal.run &&
         (runningNow ? (

@@ -1,6 +1,7 @@
 import { CameraControls, PerformanceMonitor } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { prepareSound } from '../audio/sfx';
 import { useGame } from '../game/store';
 import { cameraRig } from './cameraRig';
 import { HomeScene } from './home/HomeScene';
@@ -53,12 +54,19 @@ function Controls() {
   );
 }
 
-/** Starts the scene (see sceneTime) once the world's first frame is drawn and the fonts are in. */
+/**
+ * Starts the scene (see sceneTime) once its first frame is drawn and the fonts
+ * are in. Mounted with each scene, so a new screen waits for its own frame.
+ */
 function Start() {
   const frames = useRef(0);
   useFrame(() => {
     // the first frame is the slow one (its shaders compile); it is on screen once the next begins
-    if (++frames.current === 2) void document.fonts.ready.then(startScene);
+    if (++frames.current === 2) {
+      // slow too, and better now, with nothing on screen to stall, than at the first press
+      prepareSound();
+      void document.fonts.ready.then(startScene);
+    }
   });
   return null;
 }
@@ -67,8 +75,19 @@ function Start() {
 function SceneSwitch() {
   const mode = useGame((s) => s.mode);
   const level = useGame((s) => s.level);
-  if (mode === 'menu' || !level) return <HomeScene />;
-  return <LevelScene />;
+  if (mode === 'menu' || !level)
+    return (
+      <>
+        <HomeScene />
+        <Start key="home" />
+      </>
+    );
+  return (
+    <>
+      <LevelScene />
+      <Start key={level.id} />
+    </>
+  );
 }
 
 /** The sharpest the world is drawn (device pixels per CSS pixel). */
@@ -80,11 +99,6 @@ export function World() {
   // fewer pixels is what keeps it smooth.
   const top = Math.max(1, Math.min(window.devicePixelRatio, MAX_DPR));
   const [dpr, setDpr] = useState(top);
-  // however slow the first frame is, the page doesn't wait for it forever
-  useEffect(() => {
-    const t = setTimeout(startScene, 3000);
-    return () => clearTimeout(t);
-  }, []);
   return (
     <Canvas
       flat
@@ -103,7 +117,6 @@ export function World() {
       <Controls />
       <PhoneFraming />
       <SceneSwitch />
-      <Start />
     </Canvas>
   );
 }

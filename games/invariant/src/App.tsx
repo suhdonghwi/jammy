@@ -27,21 +27,24 @@ export function App() {
   }, [wantSolver]);
 
   return (
-    <div className="fixed inset-0">
-      {/* the 3D world fades in on load rather than popping in */}
-      <div className="fixed inset-0 bg-linear-to-b from-sky via-horizon via-60% to-[#e3e8ef] [&_canvas]:animate-[fade_0.8s_ease-out_both]">
-        <World />
+    // the sky, and over it the screen: the world and what floats over it, which
+    // come in and go out together (.screen and .world, see scene/sceneTime)
+    <div className="fixed inset-0 bg-linear-to-b from-sky via-horizon via-60% to-[#e3e8ef]">
+      <div className="screen">
+        <div className="world fixed inset-0">
+          <World />
+        </div>
+        {Poster ? (
+          <Suspense fallback={null}>
+            <Poster />
+          </Suspense>
+        ) : (
+          mode === 'menu' && <HomeOverlay />
+        )}
+        {mode !== 'menu' && level && <Hud />}
+        <RulesCard />
+        <SyntaxCard />
       </div>
-      {Poster ? (
-        <Suspense fallback={null}>
-          <Poster />
-        </Suspense>
-      ) : (
-        mode === 'menu' && <HomeOverlay />
-      )}
-      {mode !== 'menu' && level && <Hud />}
-      <RulesCard />
-      <SyntaxCard />
     </div>
   );
 }

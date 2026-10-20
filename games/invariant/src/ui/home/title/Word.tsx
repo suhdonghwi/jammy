@@ -36,16 +36,22 @@ interface WordProps {
   first?: number;
 }
 
+/** Each word's extruded letters, outlines and middles: slow to build, so built once and kept (by the options, which the title keeps too). */
+const built = new WeakMap<LetterOptions, Map<string, ReturnType<typeof build>>>();
+
+function build(text: string, opts: LetterOptions) {
+  return letterGeometries(text, opts).map((l) => {
+    l.geom.computeBoundingBox();
+    return { ...l, line: outlineGeometry(l.geom), mid: l.geom.boundingBox!.getCenter(new THREE.Vector3()) };
+  });
+}
+
 /** An extruded, outlined word with a gentle wave running through its letters, which pop in one by one. */
 export function Word({ text, letters: opts, position, face, side, wave, phase = 0, clock, first = 0 }: WordProps) {
-  const letters = useMemo(
-    () =>
-      letterGeometries(text, opts).map((l) => {
-        l.geom.computeBoundingBox();
-        return { ...l, line: outlineGeometry(l.geom), mid: l.geom.boundingBox!.getCenter(new THREE.Vector3()) };
-      }),
-    [text, opts],
-  );
+  const letters = useMemo(() => {
+    const byText = built.get(opts) ?? built.set(opts, new Map()).get(opts)!;
+    return byText.get(text) ?? byText.set(text, build(text, opts)).get(text)!;
+  }, [text, opts]);
   const mats = useMemo(
     () => [new THREE.MeshStandardMaterial({ color: face, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: side, roughness: 0.6 })],
     [face, side],

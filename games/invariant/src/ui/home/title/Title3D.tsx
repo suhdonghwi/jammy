@@ -89,9 +89,13 @@ function cameraFor(L: Layout, fov: number, aspect: number) {
 /**
  * The layout, with the letters spaced as the camera sees them. That camera
  * depends on the layout, so it is found in turn: once as if from far away,
- * then from where that puts the camera.
+ * then from where that puts the camera. It takes a moment to work out, so it
+ * is worked out once per alignment and kept (the title comes back with the home screen).
  */
-function layout(align: TitleAlign) {
+const layouts = new Map<TitleAlign, ReturnType<typeof computeLayout>>();
+const layout = (align: TitleAlign) => layouts.get(align) ?? layouts.set(align, computeLayout(align)).get(align)!;
+
+function computeLayout(align: TitleAlign) {
   let L = place(align, letterOpts, letterOpts);
   const eye = cameraFor(L, FOV, TITLE_ASPECT);
   const opts1 = { ...letterOpts, eye: eye.clone().sub(new THREE.Vector3(L.x1, LINE_GAP, 0)) };
@@ -101,6 +105,7 @@ function layout(align: TitleAlign) {
 }
 
 const dummy = new THREE.Object3D();
+let frogGeom: THREE.BufferGeometry | undefined;
 
 /**
  * The frog behind the "o": only its head shows over the top. It rises and
@@ -108,7 +113,7 @@ const dummy = new THREE.Object3D();
  */
 function PeekingFrog({ x, y, letterIndex, wave, clock }: { x: number; y: number; letterIndex: number; wave: number; clock: { t: number } }) {
   const mesh = useMemo(() => {
-    const geom = frogGeometry({ fine: true });
+    const geom = (frogGeom ??= frogGeometry({ fine: true }));
     const body = new THREE.InstancedMesh(geom, frogMaterial(), 1);
     body.setColorAt(0, new THREE.Color(COLORS.frog));
     body.frustumCulled = false;

@@ -10,11 +10,10 @@ import { sceneNow } from '../sceneTime';
 const FOCUS = { x: 4.6, y: 9, span: 11 };
 /** Where the home copy ends on wide screens, in pixels past its padding (HomeOverlay's max-w-118). */
 const COPY_W = 29.5 * 16;
-/** The glide into place on arrival (seconds), and where it starts on a fresh page load. */
+/** The glide into place on arrival (seconds), and where it starts, above where it ends. */
 const INTRO_SECONDS = 1.6;
 const OVERVIEW = new THREE.Vector3(0, 9, 7);
 
-let firstArrival = true;
 const eye = new THREE.Vector3();
 const target = new THREE.Vector3();
 
@@ -42,36 +41,24 @@ function restingPose(t: number, { width, height }: { width: number; height: numb
 }
 
 /**
- * The home screen drives the camera itself. On arrival it glides into place:
- * from a high overview when the page loads, or from wherever the camera was (a
- * level) when coming back home.
+ * The home screen drives the camera itself. On arrival it glides down into
+ * place from a high overview, whether the page just loaded or a level was
+ * left: the home screen is its own scene, and starts the same way each time.
  */
 export function useHomeCamera() {
   const mode = useGame((s) => s.mode);
   const intro = useRef<{ t0: number; eye: THREE.Vector3; target: THREE.Vector3 } | null>(null);
   const compact = useMedia(COMPACT_HOME);
 
-  // Decide where the glide starts before the first frame is drawn, and on a
-  // fresh page load put the camera there right away (no default-camera frame).
+  // Put the camera where the glide starts before the first frame is drawn.
   const { camera, size } = useThree();
   useLayoutEffect(() => {
     const t = sceneNow();
     restingPose(t, size, compact);
-    const c = cameraRig.controls;
-    if (firstArrival) {
-      firstArrival = false;
-      intro.current = { t0: t, eye: eye.clone().add(OVERVIEW), target: target.clone() };
-      camera.position.copy(intro.current.eye);
-      camera.lookAt(intro.current.target);
-      void c?.setLookAt(...intro.current.eye.toArray(), ...intro.current.target.toArray(), false);
-    } else {
-      // where the camera is right now (not where a running camera move is headed)
-      intro.current = {
-        t0: t,
-        eye: c ? c.getPosition(new THREE.Vector3(), false) : camera.position.clone(),
-        target: c ? c.getTarget(new THREE.Vector3(), false) : target.clone(),
-      };
-    }
+    intro.current = { t0: t, eye: eye.clone().add(OVERVIEW), target: target.clone() };
+    camera.position.copy(intro.current.eye);
+    camera.lookAt(intro.current.target);
+    void cameraRig.controls?.setLookAt(...intro.current.eye.toArray(), ...intro.current.target.toArray(), false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

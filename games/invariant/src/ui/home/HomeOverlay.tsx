@@ -1,5 +1,4 @@
 import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { openLevel, openTutorial } from '../../game/actions';
 import { useProgress } from '../../game/progress';
 import { useGame } from '../../game/store';
@@ -20,12 +19,6 @@ export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
   const compact = useMedia(COMPACT_HOME);
   const picker = usePresence(view === 'levels');
-  // Arriving straight on the level list (back from a level), it is simply
-  // there; opened from the home screen, it fades in.
-  const [instant, setInstant] = useState(view === 'levels');
-  useEffect(() => {
-    if (view === 'home') setInstant(false);
-  }, [view]);
   return (
     <>
       {/* the title and buttons stay, faded back behind the level list */}
@@ -45,7 +38,7 @@ export function HomeOverlay() {
         <CornerControls />
         <LangSwitch />
       </div>
-      {picker.mounted && <LevelPicker leaving={picker.leaving} instant={instant} />}
+      {picker.mounted && <LevelPicker leaving={picker.leaving} />}
     </>
   );
 }
@@ -93,20 +86,19 @@ function HeroCopy({ behind }: { behind: boolean }) {
   );
 }
 
-function LevelPicker({ leaving, instant }: { leaving: boolean; instant: boolean }) {
+function LevelPicker({ leaving }: { leaving: boolean }) {
   const tr = useT();
   const cleared = useProgress((s) => s.cleared);
   const done = levels.filter((l) => cleared.includes(l.id)).length;
   return (
-    // arriving straight on the list (back from a level), it is simply there
     <div
       className={`fixed inset-0 flex items-center justify-center bg-horizon/45 p-4 backdrop-blur-xs max-sm:p-2.5 ${
-        leaving ? 'pointer-events-none animate-fade-out' : instant ? '' : 'animate-[fade_0.18s_ease-out]'
+        leaving ? 'pointer-events-none animate-fade-out' : 'animate-[fade_0.18s_ease-out]'
       }`}
     >
       <div
         className={`flex max-h-full w-full max-w-110 flex-col rounded-3xl border border-line bg-card shadow-float backdrop-blur-lg ${
-          leaving ? 'animate-pop-out' : instant ? '' : 'animate-rise'
+          leaving ? 'animate-pop-out' : 'animate-rise'
         }`}
       >
         <div className="flex items-center px-4 pt-3.5 pb-1.5">

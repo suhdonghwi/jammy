@@ -12,7 +12,11 @@
 // the fonts arrive late. So the clock holds until both are done (`startScene`,
 // from World), and so does every entrance animation on the page (styles.css
 // pauses them until `data-started` is set): everything comes in together, in
-// order, rather than playing out unseen or popping in one by one.
+// order, rather than playing out unseen or popping in one by one. Going to
+// another screen (`switchScene`) fades this one out and then starts over the
+// same way, so each screen comes in on its own, as it does on load.
+
+import { EXIT_MS } from '../hooks/presence';
 
 let started = false;
 let hidden = typeof document !== 'undefined' && document.hidden;
@@ -77,11 +81,43 @@ export const sceneStarted = () => started;
 export function startScene() {
   if (started) return;
   started = true;
-  document.documentElement.dataset.started = '';
+  const html = document.documentElement;
+  html.dataset.started = '';
+  delete html.dataset.leaving;
   update();
 }
 
+let leaving = false;
+
+/**
+ * Go to another screen: this one fades out (styles.css, `data-leaving`),
+ * then the clock holds, `go` sets up the next one, and it comes in once its
+ * first frame is drawn (see World), on a page with nothing moving to
+ * stutter while that frame is slow. Presses during the fade are ignored.
+ */
+export function switchScene(go: () => void) {
+  if (leaving || !started) return;
+  leaving = true;
+  document.documentElement.dataset.leaving = '';
+  setTimeout(() => {
+    leaving = false;
+    started = false;
+    delete document.documentElement.dataset.started;
+    update();
+    go();
+    startAnyway();
+  }, EXIT_MS);
+}
+
+/** However slow the first frame is, the page doesn't wait for it forever. */
+let fallback = 0;
+function startAnyway() {
+  clearTimeout(fallback);
+  fallback = window.setTimeout(startScene, 3000);
+}
+
 if (typeof document !== 'undefined') {
+  startAnyway();
   document.addEventListener('visibilitychange', () => {
     hidden = document.hidden;
     update();
