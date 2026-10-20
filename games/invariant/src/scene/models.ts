@@ -10,13 +10,17 @@ const PART = { body: 0, torso: 1, sclera: 2, pupil: 3, shine: 4, mouth: 5, cheek
 
 /** The whole frog is scaled by this once its parts are put together. */
 const FROG_SCALE = 1.15;
+/** The torso: a sphere, stretched upright, leaning forward and placed. */
+const TORSO = { r: 0.15, stretch: 1.3, lean: -0.42, at: [0, 0.18, -0.03] } as const;
 /**
- * The pale belly, painted on the torso where it lies inside this ellipsoid
- * (radii, centre, and the torso's lean). It used to be a second, flatter
- * sphere poking out of the torso, but the two met at so shallow an angle that
- * their facets took turns in front along the edge, in jagged pale slivers.
+ * The pale belly, painted on the torso: an oval of directions from its centre
+ * (in the sphere it is made from, before its stretch and lean), centred low
+ * on its front, `wide` across and `tall` up and down (in sines). It used to be
+ * a second, flatter sphere poking out of the torso, but the two met at so
+ * shallow an angle that their facets took turns in front along the edge, in
+ * jagged pale slivers. A direction is smooth across facets, as a normal is.
  */
-const BELLY = { r: [0.1035, 0.1265, 0.0575], c: [0, 0.17, 0.06], lean: -0.42 };
+const BELLY = { pitch: -0.777, wide: 0.6, tall: 0.29 };
 
 // Parts stay indexed: a vertex shared by its neighbouring triangles is shaded
 // once, not once per triangle, which matters with a few hundred frogs out.
@@ -41,7 +45,7 @@ export function frogGeometry({ fine = false }: { fine?: boolean } = {}): THREE.B
   const add = (g: THREE.BufferGeometry, p: number) => parts.push(tag(g, p));
 
   // A slim frog sitting up: leaning body, a wide head, eyes on top.
-  add(lp(0.15, 9, 7).scale(1.0, 1.3, 1.0).rotateX(BELLY.lean).translate(0, 0.18, -0.03), PART.torso);
+  add(lp(TORSO.r, 9, 7).scale(1.0, TORSO.stretch, 1.0).rotateX(TORSO.lean).translate(...TORSO.at), PART.torso);
   add(lp(0.14, 10, 7).scale(1.2, 0.72, 1.0).translate(0, 0.32, 0.06), PART.body);
   for (const s of [-1, 1]) {
     add(lp(0.062, 8, 6).translate(s * 0.1, 0.39, 0.06), PART.body);
@@ -83,11 +87,10 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
   });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uTint = { value: new THREE.Color(COLORS.frog) };
-    const [rx, ry, rz] = BELLY.r.map((r) => r.toFixed(4));
-    const [cx, cy, cz] = BELLY.c.map((c) => c.toFixed(4));
-    const lean = (-BELLY.lean).toFixed(4);
+    const f = (x: number) => x.toFixed(4);
+    const [ax, ay, az] = TORSO.at.map(f);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aPart;\nuniform vec3 uTint;\nvarying vec3 vBelly;\nvarying float vTorso;')
+      .replace('#include <common>', '#include <common>\nattribute float aPart;\nuniform vec3 uTint;\nvarying vec3 vTorsoDir;\nvarying float vTorso;')
       .replace(
         '#include <color_vertex>',
         /* glsl */ `
@@ -95,10 +98,10 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         #ifdef USE_INSTANCING_COLOR
           tint = instanceColor.xyz;
         #endif
-        // where this point is in the belly's ellipsoid (inside: length < 1), undoing its placement and lean
-        vec3 b = position / ${FROG_SCALE.toFixed(4)} - vec3(${cx}, ${cy}, ${cz});
-        float cl = cos(${lean}), sl = sin(${lean});
-        vBelly = vec3(b.x, b.y * cl - b.z * sl, b.y * sl + b.z * cl) / vec3(${rx}, ${ry}, ${rz});
+        // this point as seen from the torso's centre, in the sphere it is made from (undoing its placement, lean and stretch)
+        vec3 t = position / ${f(FROG_SCALE)} - vec3(${ax}, ${ay}, ${az});
+        float cl = cos(${f(-TORSO.lean)}), sl = sin(${f(-TORSO.lean)});
+        vTorsoDir = vec3(t.x, (t.y * cl - t.z * sl) / ${f(TORSO.stretch)}, t.y * sl + t.z * cl);
         vTorso = aPart > 0.5 && aPart < 1.5 ? 1.0 : 0.0;
         vec3 c;
         if (aPart < 1.5) c = tint;
@@ -110,12 +113,21 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         vColor = vec4(c, 1.0);
         `,
       );
-    // the belly, painted per pixel with a soft edge
+    // the belly, painted per pixel, its edge a pixel or so of anti-aliasing
+    const c = Math.cos(BELLY.pitch);
+    const s = Math.sin(BELLY.pitch);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBelly;\nvarying float vTorso;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vTorsoDir;\nvarying float vTorso;')
       .replace(
         '#include <color_fragment>',
-        '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 1.0, 0.86), 0.55 * vTorso * (1.0 - smoothstep(0.92, 1.0, length(vBelly))));',
+        /* glsl */ `#include <color_fragment>
+        vec3 dir = normalize(vTorsoDir);
+        // across, and up along the surface, from the belly's centre
+        vec2 e = vec2(dir.x / ${f(BELLY.wide)}, dot(dir.yz, vec2(${f(c)}, ${f(-s)})) / ${f(BELLY.tall)});
+        float d = length(e);
+        float edge = fwidth(d);
+        float front = step(0.0, dot(dir.yz, vec2(${f(s)}, ${f(c)})));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 1.0, 0.86), 0.55 * vTorso * front * (1.0 - smoothstep(1.0 - edge, 1.0 + edge, d)));`,
       );
   };
   return m;
