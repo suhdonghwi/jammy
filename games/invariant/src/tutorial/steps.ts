@@ -377,6 +377,12 @@ export const STEPS: Step[] = [
         },
         settle: 200,
       });
+    },
+  },
+  {
+    scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[3, 3]], camera: [1.5, 3, 12] },
+    run: async (gen) => {
+      predictedGoal = null;
       predictedGoal = await ask(gen, T().neverLeaves(mine()));
     },
   },
