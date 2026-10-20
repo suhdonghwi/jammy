@@ -185,12 +185,6 @@
     transform: translateX(-12px);
   }
 }
-@keyframes title-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-}
 @keyframes shake {
   25% {
     transform: translateX(-5px);
