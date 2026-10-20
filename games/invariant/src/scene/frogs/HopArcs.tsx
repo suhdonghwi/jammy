@@ -12,7 +12,7 @@ import { frogWorld } from './frogWorld';
 import { hopHeight } from './motion';
 
 const DOTS = 16;
-const DRAW = 0.45;
+export const ARC_DRAW = 0.45;
 const MAX = 80;
 const LIFT = 0.22;
 
@@ -104,7 +104,7 @@ export function HopArcs() {
       const H = hopHeight(Math.hypot(a.tx - fx, a.ty - fy));
       for (let k = 0; k < DOTS; k++) {
         const f = (k + 0.5) / DOTS;
-        const shown = clamp01((t - a.t0 - f * DRAW) / 0.08);
+        const shown = clamp01((t - a.t0 - f * ARC_DRAW) / 0.08);
         if (shown <= 0) continue;
         pos.set(fx + (a.tx - fx) * f, h0 + (h1 - h0) * f + 4 * H * f * (1 - f) + LIFT, -(fy + (a.ty - fy) * f));
         m.compose(pos, q, scl.setScalar(0.6 + 0.4 * shown));
@@ -113,7 +113,7 @@ export function HopArcs() {
         parts.dot.alpha.setX(nd, 0.9 * shown * a.fade);
         nd++;
       }
-      const ring = clamp01((t - a.t0 - DRAW) / 0.25);
+      const ring = clamp01((t - a.t0 - ARC_DRAW) / 0.25);
       if (ring > 0) {
         m.compose(pos.set(a.tx, h1 + 0.014, -a.ty), q, scl.setScalar(0.9 + 0.1 * ring));
         r.setMatrixAt(nr, m);

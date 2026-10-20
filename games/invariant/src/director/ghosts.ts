@@ -3,8 +3,9 @@ import { hop, inputsOf, running, toBig } from '../levels/level';
 import { eggsNear, tileState } from '../levels/tiles';
 import { burstFx } from '../scene/frogs/Burst';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
-import { hopArcs } from '../scene/frogs/HopArcs';
-import { sceneNow } from '../scene/sceneTime';
+import { ARC_DRAW, hopArcs } from '../scene/frogs/HopArcs';
+import { after, sceneNow } from '../scene/sceneTime';
+import { sfx } from '../audio/sfx';
 import { currentLevel } from './sequence';
 
 export const GHOST_RISE = 0.6;
@@ -31,6 +32,7 @@ export function previewHop(s: State, delay = 0, fade = 1): FrogSim {
     t0: sceneNow() + delay + GHOST_RISE + 0.1,
     fade,
   });
+  after((delay + GHOST_RISE + 0.1 + ARC_DRAW) * 1000, () => frogWorld.frogs.includes(f) && sfx.landing());
   return f;
 }
 

@@ -268,6 +268,6 @@ async function proofWave() {
   const hops = spreadHops(candidates.sort((a, b) => a.d - b.d));
   const fadeAt = (d: number) => 1 - smoothstep(clamp01((d - PROOF_NEAR) / (PROOF_FAR - PROOF_NEAR)));
   sfx.ghost();
-  hops.forEach((h) => previewHop(h.from, (h.d / PROOF_FAR) * 0.6, fadeAt(h.d)));
-  await sleep((0.6 + GHOST_RISE + 0.9) * 1000);
+  hops.forEach((h) => previewHop(h.from, 0, fadeAt(h.d)));
+  await sleep((GHOST_RISE + 1.0) * 1000);
 }

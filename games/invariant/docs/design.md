@@ -144,7 +144,7 @@ has room for arrays.)
   counterexample is far away, the camera flies to it: "everything you could see
   looked fine" is not a proof.
 - **Verdicts** are played rule by rule (see experience.md, *Verifying*):
-  proved (Maintenance's picture is ghost frogs rising on tiles of the area
+  proved (Maintenance's picture is ghost frogs rising together on tiles of the area
   spread apart enough not to tangle, fading with distance; each shows where it
   would hop, a dotted path to its landing tile, which ticks green, without
   hopping: Check asks the question, it doesn't run the frog; level cleared); counterexample (a real frog acts it
