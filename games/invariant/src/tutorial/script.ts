@@ -1,5 +1,5 @@
 import type { CheckResult } from '../checker/check';
-import type { Rule } from '../checker/types';
+import type { Counterexample, Rule } from '../checker/types';
 import { events } from '../director/events';
 import { playCounterexample, runChecker, showUndecided } from '../director/verdicts';
 import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
@@ -228,6 +228,37 @@ export async function stage(gen: number, o: StageOptions): Promise<void> {
     await playCounterexample(cex, { prefix, extra: messages().tutorial.fixAndCheck, ghostExtra: o.ghost?.[failing] });
     guard(gen);
   }
+}
+
+export async function checkOnce(gen: number, ask: string, rules: Rule[]): Promise<{ failing?: Rule; cex: Counterexample | null }> {
+  for (;;) {
+    say(ask, 'check');
+    await waitCheck(gen);
+    useGame.setState({ spotlight: null });
+    frogWorld.clear('test');
+    const res = await runChecker(rules);
+    guard(gen);
+    if (!res) continue;
+    const failing = rules.find((r) => res.verdicts[r]?.status === 'fail');
+    if (failing) return { failing, cex: failureOf(res, failing) };
+    if (rules.some((r) => res.verdicts[r]?.status === 'undecided')) {
+      showUndecided(messages().tutorial.undecided);
+      await sleep(1800);
+      guard(gen);
+      continue;
+    }
+    allow({});
+    return { cex: null };
+  }
+}
+
+export async function showFailure(gen: number, cex: Counterexample, opts: { prefix?: string; tone?: CaptionTone; ghostExtra?: string } = {}) {
+  useGame.setState({ pitfallMessage: null });
+  await playCounterexample(cex, { ...opts, action: nextAfterCounterexample });
+  guard(gen);
+  await holdCaption(gen);
+  frogWorld.clear('test');
+  useGame.setState({ failMark: null });
 }
 
 export async function demo(

@@ -231,15 +231,16 @@ export const en = {
     stillOnTag: 'still on your area',
     neverLeaves: (mine: string) =>
       `When it reaches a striped tile and the loop stops, the frog is still on your area.\n\nSo here is a question: does a frog that stops on your area ${mine} always stop on a goal?`,
-    ruleTermination: (endings: string) =>
-      `**Rule 3 · Termination:** every striped tile on your area is a goal. A frog never leaves your area, so the outlined tiles are the only places one can stop, like the column in the example.\n\n${endings}`,
-    endingsAllGoals: 'For your area, they are all goals.',
-    endingsSomeNot: 'For your area, the red ones are not goals.',
-    confirmTermination: 'Press **Check** to confirm it: it now tests all three rules.',
-    askTermination: 'Change your area so **every striped tile on it is a goal**, then press **Check**: it now tests all three rules.',
+    ruleTermination:
+      '**Rule 3 · Termination:** every striped tile on your area must be a goal. A frog never leaves your area, so the outlined tiles are the only places one can stop, like the column in the example.',
+    checkToSee: 'Press **Check** to find out. It now tests all three rules.',
+    firstPassTermination: 'Every striped tile on your area is a goal, so a frog that stops on your area always stops on a goal.',
+    askTermination: 'Change your area so **every striped tile on it is a goal**, then press **Check**.',
     nudgeTermination: 'A real frog never passes `n`, so `i` is never greater than `n`.',
     objection:
       '“But `i` can never pass `n`!” True, no real frog gets to this tile. But your area claims “a frog could be here too”, so checking that claim covers tiles where `i` is greater than `n` as well. **Shrink** your area so it doesn’t claim that.',
+    objectionMine:
+      '“But `i` can never pass `n`!” True, no real frog gets to this tile. But your area claims “a frog could be here too”, so checking that claim covers tiles where `i` is greater than `n` as well.',
     objectionDemo:
       '“But `i` can never pass `n`!” True, no real frog gets to this tile. But the area `i >= 0` claims “a frog could be here too”, so checking that claim covers tiles where `i` is greater than `n` as well.',
     passedTermination: 'Correct! Every striped tile on your area is a goal: **Termination** holds.',
