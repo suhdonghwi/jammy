@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../audio/sfx';
 import type { FastFn } from '../../lang/eval';
 import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
-import { tileState, type TileWindow } from '../../levels/tiles';
+import { tilesNear, type TileWindow } from '../../levels/tiles';
 import { cameraRig } from '../cameraRig';
 import { after } from '../sceneTime';
 import { Eggs } from './Eggs';
@@ -60,19 +60,12 @@ export function AreaLayer({ level, inputs, inv, dim, showStop, showGoal, showEgg
     if (fresh) field.reset();
     const animate = fresh || prev.inv !== inv || prev.showArea !== showArea;
     last.current = { level: level.id, inv, showArea };
-    const tiles: TileFlags[] = [];
-    if (inv && showArea) {
-      const f = level.fast;
-      const { cx, cy, R } = win;
-      for (let y = cy - R; y <= cy + R; y++) {
-        for (let x = cx - R; x <= cx + R; x++) {
-          const s = tileState(level, x, y, inputs);
-          if (!f.planeReq(s) || inv(s) !== true) continue;
-          const stop = f.guard(s) !== true;
-          tiles.push({ x, y, stop, goal: stop && f.post(s) === true });
-        }
-      }
-    }
+    const f = level.fast;
+    const tiles: TileFlags[] = !inv || !showArea ? [] : tilesNear(level, inputs, win, (s, x, y) => {
+      if (!f.planeReq(s) || inv(s) !== true) return;
+      const stop = f.guard(s) !== true;
+      return { x, y, stop, goal: stop && f.post(s) === true };
+    });
     const moved = field.update(tiles, animate);
     sfx.slabs(moved.rose, moved.sank);
     setVersion((v) => v + 1);

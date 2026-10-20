@@ -121,14 +121,17 @@ class FrogWorld {
         // look ahead to the next hop (a stopped frog keeps looking the way it came)
         f.face = facingFor(level, next, f.face);
         if (batch) landInBatch(batch, holds(level.guard, next));
-        if (!holds(level.guard, next) && holds(level.post, next)) {
-          goalEvents.push(tx, ty, f.plane);
-          if (!quiet) sfx.goal();
-          f.cheerT0 = sceneNow();
-        }
+        if (!holds(level.guard, next) && holds(level.post, next)) this.landOnGoal(f, quiet);
         res();
       }),
     );
+  }
+
+  /** A frog landed on a goal: rings on its pool, a chime, and a little happy hop. */
+  landOnGoal(f: FrogSim, quiet = false) {
+    goalEvents.push(f.x, f.y, f.plane);
+    if (!quiet) sfx.goal();
+    f.cheerT0 = sceneNow();
   }
 }
 

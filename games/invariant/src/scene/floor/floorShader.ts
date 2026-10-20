@@ -60,6 +60,7 @@ void main() {
   float aa = fwidth(d);
   float inside = 1.0 - smoothstep(-aa, aa, d);
 
+  bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
   vec3 col = uGap;
   if (ex) {
     bool st = stopAt(t);
@@ -71,7 +72,6 @@ void main() {
     }
     // the axes: the row and column that carry the labels are a soft band
     if (uShowAxes > 0.002 && (t.x == 0 || t.y == 0)) tcol = mix(tcol, uCross, (st ? 0.35 : 0.6) * uShowAxes);
-    bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
     // the hovered tile's row and column, across striped tiles too (tinted
     // more lightly there, so the stripes still show through)
     if (onCross) tcol = st ? mix(tcol, uCross * vec3(0.9, 0.94, 1.0), 0.7) : mix(tcol, uCross, 0.9);
@@ -88,7 +88,6 @@ void main() {
     // tile, so the plane doesn't just end, yet clearly not a place frogs go.
     // It still takes part in hovering (the row/column band, faintly).
     vec3 ghost = mix(uVoid, uTile, 0.3);
-    bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
     if (onCross) ghost = mix(ghost, uCross, 0.55);
     col = mix(uVoid, ghost, inside);
   }

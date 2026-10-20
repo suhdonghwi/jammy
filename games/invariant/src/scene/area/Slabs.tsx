@@ -23,7 +23,7 @@ import {
   updateFade,
 } from '../shaders/common';
 import { field } from './field';
-import { GLSL_HEIGHT } from './glsl';
+import { GLSL_HEIGHT, instanced } from './glsl';
 
 // The learner's area: rounded slabs rising out of the floor, one per tile of
 // the field. Slabs where the loop stops are striped (and carry the goal pools).
@@ -58,7 +58,7 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
-uniform vec3 uTop, uSide, uStopTop, uLabelOn;
+uniform vec3 uTop, uSide, uStopTop;
 uniform vec2 uHover;
 uniform float uHoverOn;
 uniform float uDim;
@@ -89,7 +89,7 @@ void main() {
     if (stop && vFlags.y > 0.5 && uGoalAmt > 0.002) col = mix(col, drawGoal(col, vF, fwr, vTile), uGoalAmt);
     if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.45 * uGoalAmt);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
-    col = mix(col, uLabelOn, axisLabelMask(vF, t) * 0.85);
+    col = mix(col, vec3(1.0), axisLabelMask(vF, t) * 0.85);
     if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
       col = mix(col, vec3(1.0), (1.0 - smoothstep(-fwRing, fwRing, ringD)) * 0.95);
     }
@@ -146,15 +146,8 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
       anim.set([a.from, a.to, a.t0], i * 3);
       flags.set([a.stop ? 1 : 0, a.goal ? 1 : 0], i * 2);
     });
-    const geom = new THREE.InstancedBufferGeometry().copy(base as unknown as THREE.InstancedBufferGeometry);
-    geom.instanceCount = n;
-    geom.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));
-    geom.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
-    geom.setAttribute('aFlags', new THREE.InstancedBufferAttribute(flags, 2));
-    const shadowGeom = new THREE.InstancedBufferGeometry().copy(shadowBase as unknown as THREE.InstancedBufferGeometry);
-    shadowGeom.instanceCount = n;
-    shadowGeom.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));
-    shadowGeom.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
+    const geom = instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3], aFlags: [flags, 2] });
+    const shadowGeom = instanced(shadowBase, n, { aTile: [tile, 2], aAnim: [anim, 3] });
     return { geom, shadowGeom };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, base, shadowBase]);
@@ -171,7 +164,6 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
           uSide: colorUniform('slabSide'),
           uStopTop: colorUniform('slabStopTop'),
           ...goalUniforms(),
-          uLabelOn: { value: new THREE.Color('#ffffff') },
           uHover: { value: new THREE.Vector2() },
           uHoverOn: { value: 0 },
           uDim: { value: 0 },
@@ -191,16 +183,14 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
         fragmentShader: shadowFragment,
         transparent: true,
         depthWrite: false,
-        uniforms: { uTime: { value: 0 }, uMap: { value: getBlobTexture() } },
+        uniforms: { uTime: material.uniforms.uTime, uMap: { value: getBlobTexture() } },
       }),
-    [],
+    [material],
   );
   useFrame((_, frameDt) => {
     // the first frame after the page was hidden carries the whole gap: don't let fades jump
     const dt = Math.min(frameDt, 0.1);
-    const t = sceneNow();
-    material.uniforms.uTime.value = t;
-    shadowMat.uniforms.uTime.value = t;
+    material.uniforms.uTime.value = sceneNow();
     const g = useGame.getState();
     // the slabs are shared by every scene: the names follow whichever level is open (none on the home screen)
     setAxisNames(material.uniforms, g.level);

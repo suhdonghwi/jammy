@@ -3,7 +3,7 @@ import { clickTile, tileClickable } from '../../director/frogs';
 import { useGame } from '../../game/store';
 import { planeKey, startView } from '../../levels/level';
 import { AreaLayer } from '../area/AreaLayer';
-import { cameraRig, VIEW } from '../cameraRig';
+import { cameraRig } from '../cameraRig';
 import { Floor } from '../floor/Floor';
 import { Frogs } from '../frogs/Frogs';
 import { HatchShells } from '../frogs/Hatch';
@@ -30,7 +30,7 @@ export function LevelScene() {
   // a fresh level: the camera is placed at its starting view, without animation
   useEffect(() => {
     const v = startView(level);
-    void cameraRig.controls?.rotateTo(VIEW.azimuth, VIEW.polar, false);
+    void cameraRig.resetAngle(false);
     void cameraRig.lookAtTile(v.x, v.y, v.distance, false);
   }, [level]);
 
@@ -40,7 +40,6 @@ export function LevelScene() {
         key={`floor-${key}`}
         level={level}
         inputs={inputs}
-        opacity={1}
         interactive
         showStop={reveal.stop}
         showGoal={reveal.goals}

@@ -52,10 +52,7 @@ export function hatch(s: State): FrogSim {
   const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
   hatchFx.push({ x, y, plane: planeKey(inputsOf(L, s)), dx: slot.dx, dy: slot.dy, s: slot.scale });
   sfx.hatch();
-  frogWorld.markHatched(x, y);
-  const f = frogWorld.add(L, 'real', s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
-  f.stopped = !running(L, s);
-  return f;
+  return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
 }
 
 /** Real frogs in the focused plane that still have hops to make. */
@@ -115,11 +112,11 @@ export function resetFrogs() {
   useGame.setState({ running: false, failMark: null });
 }
 
-/** Put a real frog straight on its tile (no hatching): rebuilding a scene. */
-export function placeFrog(s: State): FrogSim {
+/** Put a real frog straight on its tile, its egg gone: rebuilding a scene (`opts`: how it appears, as when hatching). */
+export function placeFrog(s: State, opts: Partial<FrogSim> = {}): FrogSim {
   const L = currentLevel();
   frogWorld.markHatched(Number(s[L.view.x]), Number(s[L.view.y]));
-  const f = frogWorld.add(L, 'real', s);
+  const f = frogWorld.add(L, 'real', s, opts);
   f.stopped = !running(L, s);
   return f;
 }

@@ -1,5 +1,5 @@
+import { clamp01, smoothstep } from '../easing';
 import { sceneNow } from '../sceneTime';
-import { smoothstep } from '../easing';
 
 // Animated heights of the area's slabs, per tile. Slabs rise and sink on the
 // GPU from (from, to, t0); the same function gives frogs and eggs their base
@@ -24,23 +24,20 @@ interface SlabAnim extends TileFlags {
 const key = (x: number, y: number) => `${x},${y}`;
 
 function animValue(a: { from: number; to: number; t0: number }, t: number): number {
-  const u = Math.min(1, Math.max(0, (t - a.t0) / RISE_DUR));
-  return a.from + (a.to - a.from) * smoothstep(u);
+  return a.from + (a.to - a.from) * smoothstep(clamp01((t - a.t0) / RISE_DUR));
 }
 
 class AreaField {
   anims = new Map<string, SlabAnim>();
-  version = 0;
 
   reset() {
     this.anims.clear();
-    this.version++;
   }
 
   /** 0..1 slab height at a tile right now. */
-  heightAt(x: number, y: number, t = sceneNow()): number {
+  heightAt(x: number, y: number): number {
     const a = this.anims.get(key(Math.round(x), Math.round(y)));
-    return a ? animValue(a, t) : 0;
+    return a ? animValue(a, sceneNow()) : 0;
   }
 
   /**
@@ -73,7 +70,6 @@ class AreaField {
       }
     }
     this.anims = next;
-    this.version++;
     return { rose, sank };
   }
 
@@ -87,7 +83,6 @@ class AreaField {
         changed = true;
       }
     }
-    if (changed) this.version++;
     return changed;
   }
 }

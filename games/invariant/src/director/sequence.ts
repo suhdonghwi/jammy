@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { useGame, type Caption, type CaptionTone } from '../game/store';
+import { useGame, type CaptionTone } from '../game/store';
 import type { CompiledLevel } from '../levels/level';
 import { handState } from '../scene/hand/handState';
 
@@ -33,6 +33,6 @@ export function tween(target: object, vars: gsap.TweenVars): Promise<void> {
 /** The open level (sequences only run while one is open). */
 export const currentLevel = (): CompiledLevel => useGame.getState().level!;
 
-export function caption(text: string, tone: CaptionTone = 'info', action?: Caption['action']) {
-  useGame.setState({ caption: { text, tone, action } });
+export function caption(text: string, tone: CaptionTone = 'info') {
+  useGame.setState({ caption: { text, tone } });
 }

@@ -1,14 +1,14 @@
 import { field } from '../area/field';
 import { SLAB_H } from '../constants';
-import type { FrogSim } from './frogWorld';
 import { bump, clamp01, smoothstep } from '../easing';
+import type { FrogSim } from './frogWorld';
 
 // How a frog moves: where it is and how it is squashed, tilted and turned at
 // time t, from its hop, drop, carry, cheer and hatch timelines.
 
 const baseAt = (x: number, y: number) => field.heightAt(x, y) * SLAB_H;
 
-export interface Pose {
+interface Pose {
   x: number;
   y: number;
   z: number;

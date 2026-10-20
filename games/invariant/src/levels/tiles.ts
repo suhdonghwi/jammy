@@ -1,4 +1,4 @@
-import type { FastFn, FastState } from '../lang/eval';
+import type { FastState } from '../lang/eval';
 import type { CompiledLevel, Inputs } from './level';
 
 // Tiles are the plane's integer points: tile (x, y) sits at world (x, 0, -y),
@@ -49,13 +49,13 @@ export function eggsNear(level: CompiledLevel, inputs: Inputs, cx: number, cy: n
   return out;
 }
 
-/** Tiles of the area within a square around (cx, cy). */
-export function areaNear(level: CompiledLevel, inputs: Inputs, inv: FastFn, cx: number, cy: number, R: number): [number, number][] {
-  const out: [number, number][] = [];
+/** What `pick` makes of each tile in the window (given its state), skipping the tiles it returns nothing for. */
+export function tilesNear<T>(level: CompiledLevel, inputs: Inputs, { cx, cy, R }: TileWindow, pick: (s: FastState, x: number, y: number) => T | undefined): T[] {
+  const out: T[] = [];
   for (let y = cy - R; y <= cy + R; y++) {
     for (let x = cx - R; x <= cx + R; x++) {
-      const s = tileState(level, x, y, inputs);
-      if (level.fast.planeReq(s) && inv(s) === true) out.push([x, y]);
+      const v = pick(tileState(level, x, y, inputs), x, y);
+      if (v !== undefined) out.push(v);
     }
   }
   return out;

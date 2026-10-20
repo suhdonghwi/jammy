@@ -1,13 +1,13 @@
 import gsap from 'gsap';
 import { sfx } from '../audio/sfx';
 import { checkFormula, type CheckResult } from '../checker/check';
-import { RULES, type Counterexample, type Rule } from '../checker/types';
+import type { Counterexample, Rule } from '../checker/types';
 import { browserZ3 } from '../checker/z3-browser';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
 import { hop, inputsOf, planeKey, running, showState, toBig } from '../levels/level';
-import { areaNear, tileState } from '../levels/tiles';
+import { tilesNear } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { handState } from '../scene/hand/handState';
@@ -52,7 +52,7 @@ async function focusState(s: State, far = false) {
 }
 
 /** Check the current area against the given rules (the lights show the verdicts); the hand taps while it thinks. */
-export async function runChecker(rules: Rule[] = RULES): Promise<CheckResult | null> {
+export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
   const g = useGame.getState();
   const inv = g.valid;
   if (!g.level || !inv || (g.formula && !g.formula.ok)) return null;
@@ -187,9 +187,9 @@ export async function playRain({ max = 160, zoomOut = true }: { max?: number; zo
     const t = cameraRig.target();
     const tx = t.x;
     const ty = -t.z;
-    const tiles: State[] = areaNear(L, inputs, inv.fast, Math.round(tx), Math.round(ty), 16)
-      .filter(([x, y]) => Math.hypot(x - tx, y - ty) <= 15)
-      .map(([x, y]) => toBig(tileState(L, x, y, inputs)));
+    const tiles: State[] = tilesNear(L, inputs, { cx: Math.round(tx), cy: Math.round(ty), R: 16 }, (s, x, y) =>
+      L.fast.planeReq(s) && inv.fast(s) === true && Math.hypot(x - tx, y - ty) <= 15 ? toBig(s) : undefined,
+    );
     // shuffle and cap
     for (let i = tiles.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

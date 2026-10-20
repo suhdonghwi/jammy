@@ -3,17 +3,15 @@ import * as THREE from 'three';
 
 // The camera, for code outside the canvas: where it looks and gliding it to tiles.
 
-type Controls = CameraControls;
-
-let controls: Controls | null = null;
+let controls: CameraControls | null = null;
 const tmp = new THREE.Vector3();
 const onScreen = new THREE.Vector3();
 
 /** Default viewing angle: looking "north", slightly from the right, fairly top-down. */
-export const VIEW = { polar: 0.8, azimuth: 0.26 };
+const VIEW = { polar: 0.8, azimuth: 0.26 };
 
 export const cameraRig = {
-  attach(c: Controls | null) {
+  attach(c: CameraControls | null) {
     controls = c;
   },
   get controls() {
@@ -43,9 +41,9 @@ export const cameraRig = {
     if (distance !== undefined) moves.push(controls.dollyTo(distance, smooth));
     await Promise.all(moves);
   },
-  async zoomTo(distance: number, smooth = true) {
+  async zoomTo(distance: number) {
     if (!controls) return;
-    await controls.dollyTo(distance, smooth);
+    await controls.dollyTo(distance, true);
   },
   async resetAngle(smooth = true) {
     if (!controls) return;

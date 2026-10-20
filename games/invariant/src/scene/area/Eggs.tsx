@@ -4,14 +4,14 @@ import * as THREE from 'three';
 import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
 import { eggsNear, type TileWindow } from '../../levels/tiles';
 import { SLAB_H } from '../constants';
-import { smoothstep } from '../easing';
+import { clamp01, smoothstep } from '../easing';
 import { frogWorld } from '../frogs/frogWorld';
 import { occupancy, slotFor, type Slot } from '../frogs/occupancy';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 import { colorUniform, fadeUniforms, getBlobTexture, GLSL_COMMON, GLSL_FADE, updateFade } from '../shaders/common';
 import { field } from './field';
-import { GLSL_APPEAR, GLSL_HEIGHT, GLSL_SLOT } from './glsl';
+import { GLSL_APPEAR, GLSL_HEIGHT, GLSL_SLOT, instanced, SLOT_DUR } from './glsl';
 
 // The eggs: every start state the precondition allows, one per tile. A hatched
 // egg is hidden; an egg sharing its tile with frogs moves into a slot.
@@ -106,8 +106,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
       const prev = slots.current.get(key);
       let cur = { fx: target.dx, fy: target.dy, fs: target.scale, tx: target.dx, ty: target.dy, ts: target.scale, t0: 0 };
       if (prev) {
-        const u = Math.min(1, Math.max(0, (now - prev.t0) / 0.3));
-        const e = smoothstep(u);
+        const e = smoothstep(clamp01((now - prev.t0) / SLOT_DUR));
         const at = { x: prev.fx + (prev.tx - prev.fx) * e, y: prev.fy + (prev.ty - prev.fy) * e, s: prev.fs + (prev.ts - prev.fs) * e };
         cur =
           prev.tx === target.dx && prev.ty === target.dy && prev.ts === target.scale
@@ -121,21 +120,8 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
     });
     occupancy.eggs = visibleEggs;
     occupancy.eggSlots = eggSlots;
-    const geom = new THREE.InstancedBufferGeometry().copy(base as unknown as THREE.InstancedBufferGeometry);
-    geom.instanceCount = n;
-    geom.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));
-    geom.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
-    geom.setAttribute('aHide', new THREE.InstancedBufferAttribute(hide, 1));
-    geom.setAttribute('aSlot', new THREE.InstancedBufferAttribute(slot, 4));
-    geom.setAttribute('aSlotAnim', new THREE.InstancedBufferAttribute(slotAnim, 3));
-    const shadowGeom = new THREE.InstancedBufferGeometry().copy(shadowBase as unknown as THREE.InstancedBufferGeometry);
-    shadowGeom.instanceCount = n;
-    shadowGeom.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));
-    shadowGeom.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
-    shadowGeom.setAttribute('aHide', new THREE.InstancedBufferAttribute(hide, 1));
-    shadowGeom.setAttribute('aSlot', new THREE.InstancedBufferAttribute(slot, 4));
-    shadowGeom.setAttribute('aSlotAnim', new THREE.InstancedBufferAttribute(slotAnim, 3));
-    return { geom, shadowGeom };
+    const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aHide: [hide, 1], aSlot: [slot, 4], aSlotAnim: [slotAnim, 3] } as const;
+    return { geom: instanced(base, n, attrs), shadowGeom: instanced(shadowBase, n, attrs) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eggs, version, hatchVersion, occVersion, base, shadowBase]);
   useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
@@ -179,15 +165,12 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
           void main() { vec4 c = texture2D(uMap, vUv); gl_FragColor = vec4(c.rgb, c.a * 0.7 * vA); }`,
         transparent: true,
         depthWrite: false,
-        uniforms: { uTime: { value: 0 }, uMap: { value: getBlobTexture() }, uAppearT0: material.uniforms.uAppearT0, uAppearCenter: material.uniforms.uAppearCenter },
+        uniforms: { uTime: material.uniforms.uTime, uMap: { value: getBlobTexture() }, uAppearT0: material.uniforms.uAppearT0, uAppearCenter: material.uniforms.uAppearCenter },
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [material],
   );
   useFrame(() => {
-    const t = sceneNow();
-    material.uniforms.uTime.value = t;
-    shadowMat.uniforms.uTime.value = t;
+    material.uniforms.uTime.value = sceneNow();
     updateFade(material.uniforms);
   });
   return (

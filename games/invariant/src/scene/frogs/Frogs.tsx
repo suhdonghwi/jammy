@@ -3,10 +3,8 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { sfx } from '../../audio/sfx';
 import { useGame } from '../../game/store';
-import { planeKey } from '../../levels/level';
-import { toNum } from '../../levels/level';
+import { planeKey, toNum } from '../../levels/level';
 import { COLORS } from '../constants';
-import { goalEvents } from '../goalEvents';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
 import { getBlobTexture } from '../shaders/common';
@@ -21,9 +19,6 @@ import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
 
 const MAX_FROGS = 400;
 const BADGES = 24;
-
-/** Frogs that touched down this frame after being dropped (for goal ripples). */
-const dropLandings: FrogSim[] = [];
 
 const dummy = new THREE.Object3D();
 const GHOST = new THREE.Color(COLORS.ghostFrog);
@@ -54,7 +49,6 @@ export function Frogs() {
     [],
   );
   const plane = useGame((s) => planeKey(s.inputs));
-  const visibleList = useRef<FrogSim[]>([]);
   const lastT = useRef<number | undefined>(undefined);
   const badgeRefs = useRef<(THREE.Sprite | null)[]>([]);
   // nothing renders until the first frame has placed every instance
@@ -93,17 +87,19 @@ export function Frogs() {
     let n = 0;
     let nReal = 0;
     let nGhost = 0;
-    const list: FrogSim[] = [];
     const dt = Math.min(0.1, t - (lastT.current ?? t));
     const k = 1 - Math.exp(-dt * 11);
     lastT.current = t;
     let badges = 0;
+    const level = useGame.getState().level;
     for (const f of visible) {
       if (n >= MAX_FROGS) break;
       const p = pose(f, t);
       if (p.landed) {
-        dropLandings.push(f);
         sfx.touch();
+        // dropped onto a goal
+        const s = toNum(f.state);
+        if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f);
       }
       // slot within a shared tile; glide toward it so nothing pops
       let target = { dx: 0, dy: 0, scale: 1 };
@@ -157,25 +153,12 @@ export function Frogs() {
       dummy.scale.set(ss, 1, ss);
       dummy.updateMatrix();
       sh.setMatrixAt(n, dummy.matrix);
-      list.push(f);
       n++;
     }
-    const level = useGame.getState().level;
-    if (level) {
-      for (const f of dropLandings) {
-        if (level.fast.guard(toNum(f.state)) !== true && level.fast.post(toNum(f.state)) === true) {
-          goalEvents.push(f.x, f.y, f.plane);
-          sfx.goal();
-          f.cheerT0 = sceneNow();
-        }
-      }
-    }
-    dropLandings.length = 0;
     for (let i = badges; i < BADGES; i++) {
       const sp = badgeRefs.current[i];
       if (sp) sp.visible = false;
     }
-    visibleList.current = list;
     b.count = nReal;
     gh.count = gd.count = nGhost;
     sh.count = n;

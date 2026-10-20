@@ -106,7 +106,7 @@ export function HomeScene() {
 
   return (
     <group>
-      <Floor level={DIAGONAL} inputs={{}} opacity={1} initialOpacity={0} fadeSpeed={2.6} showAxes={false} />
+      <Floor level={DIAGONAL} inputs={{}} fadeIn={2.6} showAxes={false} />
       <Slabs version={version} dim={false} showStop showGoal />
       <GoalColumns level={DIAGONAL} inputs={{}} win={WINDOW} version={version} />
       <StartEggs eggs={eggs} />

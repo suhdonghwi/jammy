@@ -10,8 +10,8 @@ import { MAX_LEN, type CompiledLevel, type Inputs } from '../../levels/level';
 // with a loop; a range wider than MAX_LEN + 1 is cut off (visual only).
 
 const ident = (name: string) => `v_${name}`;
-export const inputUniform = (name: string) => `uIn_${name}`;
-export const arrayUniform = (name: string) => `uArr_${name}`;
+const inputUniform = (name: string) => `uIn_${name}`;
+const arrayUniform = (name: string) => `uArr_${name}`;
 
 /** The GLSL for a level's formulas: helper functions and an expression per formula. */
 class Compiler {

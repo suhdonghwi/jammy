@@ -3,13 +3,13 @@ import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
-import { tileState, type TileWindow } from '../../levels/tiles';
+import { tilesNear, type TileWindow } from '../../levels/tiles';
 import { COLORS, SLAB_H } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
 import { MAX_EVENTS } from '../shaders/common';
 import { field } from './field';
-import { GLSL_HEIGHT } from './glsl';
+import { GLSL_HEIGHT, instanced } from './glsl';
 
 // A column of warm light over every goal pool, like a checkpoint pad: clearest
 // at its edges and fading upward. When a frog lands on a goal, its column
@@ -22,7 +22,6 @@ varying float vV;
 varying float vBurst;
 varying vec3 vN;
 varying vec3 vWorld;
-varying vec2 vTile;
 // 1 right after a frog lands on this goal, falling back to 0
 float burstNow() {
   float b = 0.0;
@@ -31,14 +30,12 @@ float burstNow() {
     float age = uTime - e.z;
     if (age < 0.0 || age > 1.0) continue;
     if (abs(e.x - aTile.x) > 0.5 || abs(e.y - aTile.y) > 0.5) continue;
-    float u = age / 1.0;
-    b = max(b, smoothstep(0.0, 0.06, u) * pow(1.0 - u, 1.6));
+    b = max(b, smoothstep(0.0, 0.06, age) * pow(1.0 - age, 1.6));
   }
   return b;
 }
 void main() {
   vV = uv.y;
-  vTile = aTile;
   float burst = burstNow();
   vBurst = burst;
   // shoot up and widen a little on a landing
@@ -53,13 +50,11 @@ void main() {
 const fragment = /* glsl */ `
 uniform float uTime;
 uniform vec3 uColor;
-uniform vec3 uEvents[${MAX_EVENTS}];
 uniform float uAppearT0;
 varying float vV;
 varying float vBurst;
 varying vec3 vN;
 varying vec3 vWorld;
-varying vec2 vTile;
 void main() {
   vec3 V = normalize(cameraPosition - vWorld);
   // clearest where the column is seen edge-on
@@ -67,11 +62,10 @@ void main() {
   float fall = pow(1.0 - vV, 1.6);
   float a = fall * (0.2 + 0.32 * edge);
   // glow brighter for a moment when a frog lands here
-  float burst = vBurst;
-  a += (0.25 + 0.45 * edge) * burst * pow(1.0 - vV, 0.8);
+  a += (0.25 + 0.45 * edge) * vBurst * pow(1.0 - vV, 0.8);
   // fade in when the goals are revealed
   a *= smoothstep(0.0, 0.7, uTime - uAppearT0);
-  vec3 col = mix(uColor, vec3(1.0, 0.93, 0.72), 0.25 + 0.4 * burst);
+  vec3 col = mix(uColor, vec3(1.0, 0.93, 0.72), 0.25 + 0.4 * vBurst);
   gl_FragColor = vec4(col, min(a, 0.92));
   #include <colorspace_fragment>
 }
@@ -90,22 +84,13 @@ export function GoalColumns({
 }) {
   const key = planeKey(inputs);
   const tiles = useMemo(() => {
-    const out: [number, number][] = [];
     const f = level.fast;
-    const R = Math.min(win.R, 24);
-    for (let y = win.cy - R; y <= win.cy + R; y++) {
-      for (let x = win.cx - R; x <= win.cx + R; x++) {
-        const s = tileState(level, x, y, inputs);
-        if (f.planeReq(s) && f.guard(s) !== true && f.post(s) === true) out.push([x, y]);
-      }
-    }
-    return out;
+    return tilesNear(level, inputs, { ...win, R: Math.min(win.R, 24) }, (s, x, y) => (f.planeReq(s) && f.guard(s) !== true && f.post(s) === true ? [x, y] : undefined));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level, key, win]);
 
   const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
   const geom = useMemo(() => {
-    const g = new THREE.InstancedBufferGeometry().copy(base as unknown as THREE.InstancedBufferGeometry);
     const n = tiles.length;
     const tile = new Float32Array(n * 2);
     const anim = new Float32Array(n * 3);
@@ -114,10 +99,7 @@ export function GoalColumns({
       const a = field.anims.get(`${x},${y}`);
       anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
     });
-    g.instanceCount = n;
-    g.setAttribute('aTile', new THREE.InstancedBufferAttribute(tile, 2));
-    g.setAttribute('aAnim', new THREE.InstancedBufferAttribute(anim, 3));
-    return g;
+    return instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiles, version, base]);
   useEffect(() => () => geom.dispose(), [geom]);

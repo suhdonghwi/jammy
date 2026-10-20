@@ -8,7 +8,7 @@ import { SLAB_H } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
-import { axisNameUniforms, colorUniform, getDigitTexture, goalUniforms, setAxisNames, updateFade } from '../shaders/common';
+import { axisNameUniforms, colorUniform, fadeUniforms, getDigitTexture, goalUniforms, setAxisNames, updateFade } from '../shaders/common';
 import { floorFragment, floorVertex } from './floorShader';
 import { inputUniforms, setInputUniforms } from './levelGlsl';
 
@@ -35,17 +35,12 @@ function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
   return [Math.round(e.point.x), Math.round(-e.point.z)];
 }
 
-export interface FloorProps {
+interface FloorProps {
   level: CompiledLevel | null;
   /** The plane: the off-axis inputs' values. */
   inputs: Inputs;
-  opacity: number;
-  /** Opacity to start from (fades toward `opacity`). */
-  initialOpacity?: number;
-  /** Fade rate (per second). */
-  fadeSpeed?: number;
-  /** Seconds to hold the initial opacity before fading. */
-  fadeDelay?: number;
+  /** Fades in from nothing at this rate (per second); without it the floor shows at once. */
+  fadeIn?: number;
   interactive?: boolean;
   showStop?: boolean;
   showGoal?: boolean;
@@ -55,7 +50,7 @@ export interface FloorProps {
   clickable?: (x: number, y: number) => boolean;
 }
 
-export function Floor({ level, inputs, opacity, initialOpacity, fadeSpeed = 5, fadeDelay = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, clickable }: FloorProps) {
+export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, clickable }: FloorProps) {
   const mesh = useRef<THREE.Mesh>(null);
   const canvas = useThree((s) => s.gl.domElement);
   const material = useMemo(() => {
@@ -68,9 +63,8 @@ export function Floor({ level, inputs, opacity, initialOpacity, fadeSpeed = 5, f
         ...inputUniforms(level),
         uHover: { value: new THREE.Vector2() },
         uHoverOn: { value: 0 },
-        uCenter: { value: new THREE.Vector2() },
-        uFade: { value: new THREE.Vector2(20, 30) },
-        uOpacity: { value: initialOpacity ?? opacity },
+        ...fadeUniforms(),
+        uOpacity: { value: fadeIn ? 0 : 1 },
         uShowStop: { value: showStop ? 1 : 0 },
         uShowGoal: { value: showGoal ? 1 : 0 },
         uShowAxes: { value: showAxes ? 1 : 0 },
@@ -103,10 +97,6 @@ export function Floor({ level, inputs, opacity, initialOpacity, fadeSpeed = 5, f
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 
-  const target = useRef(opacity);
-  target.current = opacity;
-  const born = useRef(sceneNow());
-
   useFrame((_, frameDt) => {
     // the first frame after the page was hidden carries the whole gap: don't let fades jump
     const dt = Math.min(frameDt, 0.1);
@@ -130,10 +120,9 @@ export function Floor({ level, inputs, opacity, initialOpacity, fadeSpeed = 5, f
     u.uShowStop.value = towards(u.uShowStop.value, shows.current.stop);
     u.uShowGoal.value = towards(u.uShowGoal.value, shows.current.goal);
     u.uShowAxes.value = towards(u.uShowAxes.value, shows.current.axes);
-    if (sceneNow() - born.current >= fadeDelay) {
-      const k = 1 - Math.exp(-dt * fadeSpeed);
-      u.uOpacity.value += (target.current - u.uOpacity.value) * k;
-      if (Math.abs(target.current - u.uOpacity.value) < 0.002) u.uOpacity.value = target.current;
+    if (u.uOpacity.value < 1) {
+      u.uOpacity.value += (1 - u.uOpacity.value) * (1 - Math.exp(-dt * fadeIn));
+      if (1 - u.uOpacity.value < 0.002) u.uOpacity.value = 1;
     }
     if (interactive && hover.tile) {
       u.uHover.value.set(hover.tile[0], hover.tile[1]);
