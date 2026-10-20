@@ -27,7 +27,7 @@ export function setMuted(muted: boolean) {
 }
 
 const VOLUME = 0.6;
-const SIREN_GAIN = 0.16;
+const SIREN_GAIN = 0.12;
 
 const URLS = import.meta.glob('../assets/sfx/*.m4a', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 

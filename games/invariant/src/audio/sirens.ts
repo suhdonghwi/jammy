@@ -54,13 +54,24 @@ function voice(ctx: BaseAudioContext, out: AudioNode, at: number, v: Voice) {
   osc.stop(at + end + 0.02);
 }
 
-function twoTone(hi: number, lo: number, half: number, cycles: number): Glide {
-  const g: Glide = [];
-  for (let k = 0; k < cycles * 2; k++) {
-    const f = k % 2 === 0 ? hi : lo;
-    g.push([k * half, f], [(k + 1) * half - 0.001, f]);
-  }
-  return g;
+function noise(ctx: BaseAudioContext, out: AudioNode, at: number, dur: number, from: number, to: number, gain: number) {
+  const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const f = ctx.createBiquadFilter();
+  f.type = 'bandpass';
+  f.Q.value = 6;
+  f.frequency.setValueAtTime(from, at);
+  f.frequency.exponentialRampToValueAtTime(to, at + dur);
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0, at);
+  env.gain.linearRampToValueAtTime(gain, at + dur * 0.3);
+  env.gain.linearRampToValueAtTime(0, at + dur);
+  src.connect(f).connect(env).connect(out);
+  src.start(at);
+  src.stop(at + dur);
 }
 
 function echo(ctx: BaseAudioContext, out: AudioNode, delay: number, feedback: number): AudioNode {
@@ -70,7 +81,7 @@ function echo(ctx: BaseAudioContext, out: AudioNode, delay: number, feedback: nu
   const wet = ctx.createGain();
   d.delayTime.value = delay;
   fb.gain.value = feedback;
-  wet.gain.value = 0.45;
+  wet.gain.value = 0.35;
   input.connect(out);
   input.connect(d).connect(fb).connect(d);
   d.connect(wet).connect(out);
@@ -79,99 +90,120 @@ function echo(ctx: BaseAudioContext, out: AudioNode, delay: number, feedback: nu
 
 export const SIRENS: Siren[] = [
   {
-    name: 'Toy nee-naw',
-    play(ctx, out, at) {
-      voice(ctx, out, at, { type: 'triangle', glide: twoTone(980, 760, 0.2, 2), gain: 0.9, vibrato: { rate: 9, depth: 14 }, filter: { type: 'lowpass', freq: 3200 } });
-    },
-  },
-  {
-    name: 'Ghostly woo-ee',
-    play(ctx, out, at) {
-      const wet = echo(ctx, out, 0.16, 0.35);
-      voice(ctx, wet, at, {
-        type: 'sine',
-        glide: [
-          [0, 520],
-          [0.22, 880],
-          [0.42, 600],
-          [0.64, 900],
-          [0.95, 480],
-        ],
-        gain: 0.85,
-        vibrato: { rate: 6.5, depth: 22 },
-        attack: 0.06,
-        release: 0.25,
-      });
-    },
-  },
-  {
-    name: 'Little wail',
+    name: 'Tiny slide',
     play(ctx, out, at) {
       voice(ctx, out, at, {
         type: 'sine',
         glide: [
-          [0, 620],
-          [0.35, 1250],
-          [0.7, 620],
-          [1.0, 1100],
+          [0, 760],
+          [0.26, 1480],
+          [0.34, 1520],
         ],
         gain: 0.8,
-        vibrato: { rate: 11, depth: 10 },
-        release: 0.18,
+        vibrato: { rate: 7, depth: 9 },
+        attack: 0.03,
+        release: 0.1,
       });
+    },
+  },
+  {
+    name: 'Whispered wee-woo',
+    play(ctx, out, at) {
+      voice(ctx, out, at, {
+        type: 'sine',
+        glide: [
+          [0, 820],
+          [0.1, 1240],
+          [0.2, 860],
+          [0.3, 1260],
+          [0.42, 1180],
+        ],
+        gain: 0.7,
+        filter: { type: 'lowpass', freq: 2400 },
+        attack: 0.03,
+        release: 0.12,
+      });
+    },
+  },
+  {
+    name: 'Bubble up',
+    play(ctx, out, at) {
+      for (const [t, f0, f1, g] of [
+        [0, 380, 1050, 0.6],
+        [0.09, 560, 1500, 0.35],
+      ] as const) {
+        voice(ctx, out, at + t, {
+          type: 'sine',
+          glide: [
+            [0, f0],
+            [0.11, f1],
+            [0.16, f1],
+          ],
+          gain: g,
+          attack: 0.01,
+          release: 0.06,
+        });
+      }
+    },
+  },
+  {
+    name: 'Airy whoosh',
+    play(ctx, out, at) {
+      noise(ctx, out, at, 0.32, 500, 3200, 3.6);
+      voice(ctx, out, at + 0.06, {
+        type: 'sine',
+        glide: [
+          [0, 900],
+          [0.24, 1400],
+        ],
+        gain: 0.25,
+        attack: 0.05,
+        release: 0.12,
+      });
+    },
+  },
+  {
+    name: 'Ghost hum',
+    play(ctx, out, at) {
       voice(ctx, out, at, {
         type: 'triangle',
         glide: [
-          [0, 310],
-          [0.35, 625],
-          [0.7, 310],
-          [1.0, 550],
+          [0, 520],
+          [0.22, 740],
+          [0.48, 700],
         ],
-        gain: 0.25,
-        release: 0.18,
+        gain: 0.8,
+        vibrato: { rate: 7, depth: 16 },
+        filter: { type: 'lowpass', freq: 1300 },
+        attack: 0.08,
+        release: 0.2,
       });
     },
   },
   {
-    name: 'Chiptune',
+    name: 'Glass slide',
     play(ctx, out, at) {
-      const glide: Glide = [];
-      const notes = [1175, 880, 1175, 880];
-      notes.forEach((f, k) => {
-        for (let j = 0; j < 4; j++) glide.push([k * 0.16 + j * 0.04, j % 2 ? f * 1.5 : f]);
-      });
-      glide.push([0.64, 880]);
-      voice(ctx, out, at, { type: 'square', glide, gain: 0.32, step: true, filter: { type: 'lowpass', freq: 5000 }, attack: 0.005, release: 0.04 });
-    },
-  },
-  {
-    name: 'Kazoo',
-    play(ctx, out, at) {
-      voice(ctx, out, at, {
-        type: 'sawtooth',
-        glide: twoTone(560, 440, 0.21, 2),
-        gain: 0.55,
-        vibrato: { rate: 7, depth: 9 },
-        filter: { type: 'bandpass', freq: 1300, q: 1.6 },
-        attack: 0.03,
-      });
-    },
-  },
-  {
-    name: 'Slide whistle',
-    play(ctx, out, at) {
-      voice(ctx, out, at, {
+      const wet = echo(ctx, out, 0.11, 0.25);
+      voice(ctx, wet, at, {
         type: 'sine',
         glide: [
-          [0, 700],
-          [0.18, 1400],
-          [0.36, 900],
-          [0.54, 1500],
-          [0.8, 1700],
+          [0, 1150],
+          [0.22, 1760],
+          [0.3, 1800],
         ],
-        gain: 0.7,
-        vibrato: { rate: 5, depth: 6 },
-        attack: 0.03,
+        gain: 0.55,
+        attack: 0.02,
+        release: 0.12,
+      });
+      voice(ctx, wet, at, {
+        type: 'sine',
+        glide: [
+          [0, 2300],
+          [0.22, 3520],
+          [0.3, 3600],
+        ],
+        gain: 0.12,
+        attack: 0.02,
         release: 0.12,
       });
     },
