@@ -1,6 +1,6 @@
 import { field } from '../area/field';
 import { SLAB_H } from '../constants';
-import { bump, clamp01, smoothstep } from '../easing';
+import { bump, clamp01, popIn, smoothstep } from '../easing';
 import type { FrogSim } from './frogWorld';
 
 const baseAt = (x: number, y: number) => field.heightAt(x, y) * SLAB_H;
@@ -15,6 +15,7 @@ interface Pose {
   yaw: number;
   pitch: number;
   landed: boolean;
+  emerged: number;
 }
 
 const angleDelta = (a: number, b: number) => {
@@ -84,6 +85,7 @@ const CHEER_KEYS = [
   [1, 0],
 ] as const;
 const TURN_DUR = 0.2;
+const RISE_DEPTH = 0.85;
 
 export function pose(f: FrogSim, t: number): Pose {
   const dt = f.lastT === undefined ? 0 : Math.min(0.1, t - f.lastT);
@@ -97,7 +99,7 @@ export function pose(f: FrogSim, t: number): Pose {
   let landed = false;
 
   const off = angleDelta(f.yaw, f.face);
-  if (!f.turn && !f.hop && !f.drop && f.carried === undefined && Math.abs(off) > 0.35) {
+  if (!f.turn && !f.hop && !f.rise && Math.abs(off) > 0.35) {
     f.turn = { t0: t, from: f.yaw, delta: off };
   }
   if (f.turn && (f.hop || Math.abs(angleDelta(f.turn.from + f.turn.delta, f.face)) > 0.35)) {
@@ -140,26 +142,19 @@ export function pose(f: FrogSim, t: number): Pose {
     h += 0.09 * turnLift;
     squash += 0.06 * turnLift;
   }
-  if (f.drop) {
-    const raw = (t - f.drop.t0) / f.drop.dur;
+  let emerged = 1;
+  if (f.rise) {
+    const raw = (t - f.rise.t0) / f.rise.dur;
     const u = clamp01(raw);
-    h += f.drop.from * (1 - u * u) + (f.drop.arc ?? 0) * bump(u);
-    const e = smoothstep(u);
-    x += (f.drop.dx ?? 0) * (1 - e);
-    ty += (f.drop.dy ?? 0) * (1 - e);
+    h -= RISE_DEPTH * (1 - popIn(u, 1.1));
+    f.yaw = f.face - f.rise.turns * Math.PI * 2 * Math.pow(1 - u, 3);
+    squash += 0.22 * bump(u) - 0.18 * bump(clamp01((raw - 1) / 0.3));
+    emerged = smoothstep(clamp01(u * 1.6 - 0.2));
     if (raw >= 1 && !f.touched) {
       f.touched = true;
       landed = true;
     }
-    squash += -0.2 * bump(clamp01((raw - 1) / 0.3));
-    if (raw >= 1.3) f.drop = undefined;
-  }
-  if (f.carried !== undefined) {
-    h += f.carried;
-    if (f.carryOff) {
-      x += f.carryOff.dx;
-      ty += f.carryOff.dy;
-    }
+    if (raw >= 1.3) f.rise = undefined;
   }
   const breath = 0.022 * Math.sin(t * 2.4 + f.phase);
   let s = 1;
@@ -168,7 +163,12 @@ export function pose(f: FrogSim, t: number): Pose {
     s = raw <= 0 ? 0 : raw >= 1 ? 1 : 0.15 + 0.85 * (1 - Math.pow(1 - raw, 3)) + Math.sin(raw * Math.PI) * 0.12;
     h += 0.16 * bump(raw);
   }
+  if (f.leave) {
+    const u = clamp01((t - f.leave.t0) / f.leave.dur);
+    s *= 1 - smoothstep(u);
+    h += 0.12 * bump(Math.min(u * 2, 1));
+  }
   const sy = (1 + squash + breath) * s;
   const sx = (1 - squash * 0.45 - breath * 0.5) * s;
-  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, landed };
+  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, landed, emerged };
 }

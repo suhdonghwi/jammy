@@ -5,9 +5,9 @@ import { planeKey, startView } from '../../levels/level';
 import { AreaLayer } from '../area/AreaLayer';
 import { cameraRig } from '../cameraRig';
 import { Floor } from '../floor/Floor';
+import { GroundBursts } from '../frogs/Burst';
 import { Frogs } from '../frogs/Frogs';
 import { HatchShells } from '../frogs/Hatch';
-import { Hand } from '../hand/Hand';
 import { Callouts } from '../labels/Callouts';
 import { FailMarker } from '../labels/FailMarker';
 import { FrogTags } from '../labels/FrogTags';
@@ -51,11 +51,11 @@ export function LevelScene() {
       />
       <Frogs />
       <HatchShells />
+      <GroundBursts />
       <FrogTags />
       {reveal.hover && <HoverPreview />}
       <FailMarker />
       <Callouts />
-      <Hand />
     </>
   );
 }

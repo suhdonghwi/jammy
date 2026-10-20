@@ -55,7 +55,6 @@ export function Frogs() {
     const visible = frogWorld.frogs.filter((f) => f.plane === plane);
     const groups = new Map<string, FrogSim[]>();
     for (const f of visible) {
-      if (f.carried !== undefined) continue;
       const key = tileOf(f);
       const g = groups.get(key);
       if (g) g.push(f);
@@ -84,15 +83,12 @@ export function Frogs() {
         const s = toNum(f.state);
         if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f);
       }
-      let target = { dx: 0, dy: 0, scale: 1 };
-      if (f.carried === undefined) {
-        const key = tileOf(f);
-        const g = groups.get(key)!;
-        const count = g.length + (occupancy.eggs.has(key) ? 1 : 0);
-        target = slotFor(g.indexOf(f), count);
-        if (g.length > MAX_SHOWN && g.indexOf(f) === 0 && badges < BADGES) {
-          placeBadge(badgeRefs.current[badges++], f.x, f.y, p.ground, g.length);
-        }
+      const key = tileOf(f);
+      const g = groups.get(key)!;
+      const count = g.length + (occupancy.eggs.has(key) ? 1 : 0);
+      const target = slotFor(g.indexOf(f), count);
+      if (g.length > MAX_SHOWN && g.indexOf(f) === 0 && badges < BADGES) {
+        placeBadge(badgeRefs.current[badges++], f.x, f.y, p.ground, g.length);
       }
       if (f.ox === undefined) {
         f.ox = target.dx;
@@ -109,7 +105,7 @@ export function Frogs() {
       const px = p.x + f.ox;
       const pz = p.z - f.oy!;
       const ghost = f.kind === 'test';
-      const py = ghost && f.carried === undefined ? p.y + FLOAT + BOB * Math.sin(t * 2.6 + f.id * 1.7) : p.y;
+      const py = ghost ? p.y + FLOAT + BOB * Math.sin(t * 2.6 + f.id * 1.7) : p.y;
       if (!f.drawn) f.drawn = { x: 0, y: 0, ground: 0, z: 0, scale: 1 };
       f.drawn.x = px;
       f.drawn.y = py;
@@ -126,7 +122,7 @@ export function Frogs() {
         gh.setColorAt(nGhost++, GHOST);
       } else b.setMatrixAt(nReal++, dummy.matrix);
       const air = Math.max(0, py - p.ground);
-      const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2) * os * (ghost ? 0.75 : 1);
+      const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2) * os * (ghost ? 0.75 : 1) * p.emerged;
       dummy.position.set(px, p.ground + 0.008, pz);
       dummy.rotation.set(0, 0, 0);
       dummy.scale.set(ss, 1, ss);

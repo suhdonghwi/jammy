@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { chosenSiren, SIRENS } from './sirens';
 
 const MUTE_KEY = 'invariant-frog:muted';
 
@@ -26,6 +27,7 @@ export function setMuted(muted: boolean) {
 }
 
 const VOLUME = 0.6;
+const SIREN_GAIN = 0.16;
 
 const URLS = import.meta.glob('../assets/sfx/*.m4a', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 
@@ -167,6 +169,15 @@ export const sfx = {
 
   cleared() {
     play('cleared');
+  },
+
+  ghost(siren = chosenSiren()) {
+    const c = live();
+    if (!c || !gap('ghost', 700)) return;
+    const g = c.createGain();
+    g.gain.value = SIREN_GAIN;
+    g.connect(master!);
+    SIRENS[siren].play(c, g, c.currentTime + 0.02);
   },
 };
 

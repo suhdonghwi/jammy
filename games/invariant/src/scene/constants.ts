@@ -18,7 +18,6 @@ export const COLORS = {
   frog: '#52c24a',
   ghostFrog: '#b9caff',
   fail: '#f04f55',
-  glove: '#ffffff',
   outline: '#2a3142',
   label: '#9aa4b4',
 };

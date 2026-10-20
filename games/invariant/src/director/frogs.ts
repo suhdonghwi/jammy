@@ -1,4 +1,3 @@
-import gsap from 'gsap';
 import { sfx } from '../audio/sfx';
 import { useGame } from '../game/store';
 import type { State } from '../lang/ast';
@@ -7,9 +6,9 @@ import { eggsNear, tileState } from '../levels/tiles';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
+import { burstFx } from '../scene/frogs/Burst';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { occupancy } from '../scene/frogs/occupancy';
-import { handState } from '../scene/hand/handState';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { events } from './events';
 import { begin, currentLevel } from './sequence';
@@ -78,7 +77,7 @@ export function interrupt() {
   frogWorld.clear();
   occupancy.eggs = new Set();
   hatchFx.clear();
-  handState.visible = 0;
+  burstFx.clear();
   useGame.setState({ busy: false, running: false, stepping: false, checking: false, failMark: null });
 }
 
@@ -121,7 +120,6 @@ export async function runFrogs() {
   const tok = begin();
   frogWorld.clear('test');
   useGame.setState({ failMark: null, running: true });
-  gsap.to(handState, { visible: 0, duration: 0.3 });
   if (movingFrogs().length === 0) {
     frogWorld.clear('real');
     const L = currentLevel();

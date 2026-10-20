@@ -1,6 +1,6 @@
 import { RULES, type Rule } from '../checker/types';
 import { hatch, placeFrog, resetFrogs, stepFrogs } from '../director/frogs';
-import { playRain } from '../director/verdicts';
+import { playGhostWave } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
 import { EXIT_MS } from '../hooks/presence';
 import { t } from '../i18n/i18n';
@@ -76,7 +76,7 @@ async function passed(gen: number, rule: Rule) {
     await beat(gen, T().passedMaintenance, {
       spot: 'lights',
       tone: 'success',
-      prepare: () => playRain({ max: 28, zoomOut: false }),
+      prepare: () => playGhostWave({ max: 28, zoomOut: false }),
     });
     frogWorld.clear('test');
   } else {
@@ -391,7 +391,7 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
-      await beat(gen, T().wrapUp(mine()), { label: T().finish, prepare: () => playRain() });
+      await beat(gen, T().wrapUp(mine()), { label: T().finish, prepare: () => playGhostWave() });
       useGame.setState({ showRules: true });
       await waitStore(gen, (g) => !g.showRules);
       await sleep(EXIT_MS + 60);

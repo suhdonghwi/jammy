@@ -1,11 +1,9 @@
 import type { CheckResult } from '../checker/check';
 import type { Rule } from '../checker/types';
 import { events } from '../director/events';
-import { handIn } from '../director/hand';
-import { playCounterexample, playShrug, runChecker } from '../director/verdicts';
+import { playCounterexample, runChecker, showUndecided } from '../director/verdicts';
 import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';
-import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sleep } from '../scene/sceneTime';
 
@@ -212,8 +210,7 @@ export async function stage(gen: number, o: StageOptions): Promise<void> {
     const failing = o.rules.find((r) => res.verdicts[r]?.status === 'fail');
     if (!failing) {
       if (o.rules.some((r) => res.verdicts[r]?.status === 'undecided')) {
-        await playShrug(messages().tutorial.undecided);
-        guard(gen);
+        showUndecided(messages().tutorial.undecided);
         continue;
       }
       frogWorld.clear();
@@ -244,8 +241,7 @@ export async function demo(
   frogWorld.clear('test');
   say(messages().tutorial.trying(formula), null, 'muted');
   if (g.formulaText.trim() !== formula) {
-    const t = cameraRig.target();
-    void handIn(t.x + 2.5, -t.z + 1.5, 2.4, { tap: 1, curl: 0.15, tilt: 0.1 });
+    useGame.setState({ spotlight: 'formula' });
     await sleep(500);
     guard(gen);
     for (let k = 1; k <= formula.length; k++) {
