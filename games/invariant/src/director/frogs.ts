@@ -90,14 +90,20 @@ export function resetLevel() {
 
 export function resetFrogs() {
   begin();
-  frogWorld.clear();
+  dismissFrogs();
   useGame.setState({ running: false, failMark: null });
+}
+
+export function dismissFrogs() {
+  for (const f of frogWorld.frogs) if (!f.leave) void sendHome(f);
 }
 
 export function placeFrog(s: State, opts: Partial<FrogSim> = {}): FrogSim {
   const L = currentLevel();
-  frogWorld.markHatched(Number(s[L.view.x]), Number(s[L.view.y]));
-  const f = frogWorld.add(L, 'real', s, opts);
+  const x = Number(s[L.view.x]);
+  const y = Number(s[L.view.y]);
+  frogWorld.markHatched(x, y);
+  const f = frogWorld.add(L, 'real', s, { home: [x, y], ...opts });
   f.stopped = !running(L, s);
   return f;
 }
@@ -208,7 +214,8 @@ async function sendHome(f: FrogSim) {
   f.leave = { t0: sceneNow(), dur: 0.35 };
   await sleep(400);
   frogWorld.remove(f);
-  if (f.home) frogWorld.returnEgg(...f.home);
+  const home = f.home;
+  if (home && !frogWorld.frogs.some((g) => g.home?.[0] === home[0] && g.home?.[1] === home[1])) frogWorld.returnEgg(...home);
 }
 
 export function sendFrogsHome() {
