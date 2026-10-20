@@ -4,12 +4,12 @@ import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import type { FastState } from '../../lang/eval';
+import { tileState } from '../../levels/tiles';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { useHover } from '../hover';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
-import { tileState } from '../tiles';
 
 /** Where would a frog on the hovered tile hop? A dashed arc and a ghost frog. */
 export function HoverPreview() {

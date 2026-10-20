@@ -3,6 +3,7 @@ import { sfx } from '../audio/sfx';
 import { useGame } from '../game/store';
 import type { State } from '../lang/ast';
 import { hop, inputsOf, planeKey, running, startView, toBig } from '../levels/level';
+import { eggsNear, tileState } from '../levels/tiles';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
@@ -10,7 +11,6 @@ import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { occupancy } from '../scene/frogs/occupancy';
 import { handState } from '../scene/hand/handState';
 import { after, sceneNow } from '../scene/sceneTime';
-import { eggsNear, tileState } from '../scene/tiles';
 import { events } from './events';
 import { begin, currentLevel, sleep } from './sequence';
 

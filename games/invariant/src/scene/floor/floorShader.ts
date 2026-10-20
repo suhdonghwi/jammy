@@ -1,6 +1,6 @@
 import type { CompiledLevel } from '../../levels/level';
 import { GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL } from '../shaders/common';
-import { GLSL_INT_HELPERS, levelGlsl } from '../shaders/levelGlsl';
+import { GLSL_INT_HELPERS, levelGlsl } from './levelGlsl';
 
 // The floor is one big plane drawn per pixel: each pixel works out which tile
 // it is on and asks the level's formulas (compiled to GLSL) whether that tile

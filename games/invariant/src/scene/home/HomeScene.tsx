@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { TileWindow } from '../../levels/tiles';
 import { field } from '../area/field';
 import { GoalColumns } from '../area/GoalColumns';
 import { Slabs } from '../area/Slabs';
@@ -8,7 +9,6 @@ import { frogWorld, yawToward } from '../frogs/frogWorld';
 import { HATCH_EMERGE, HatchShells, hatchFx } from '../frogs/Hatch';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
-import type { TileWindow } from '../tiles';
 import { DIAGONAL } from './decor';
 import { StartEggs, type StartEgg } from './StartEggs';
 import { useHomeCamera } from './useHomeCamera';

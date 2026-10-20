@@ -1,14 +1,14 @@
+import type { Rule } from '../checker/types';
 import { hatch, placeFrog, resetFrogs, stepFrogs } from '../director/frogs';
 import { sleep } from '../director/sequence';
 import { playRain } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
+import { EXIT_MS } from '../hooks/presence';
 import { t } from '../i18n/i18n';
-import type { Rule } from '../levels/level';
+import { eggsNear, tileState } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
-import { sceneNow } from '../scene/sceneTime';
 import { frogWorld } from '../scene/frogs/frogWorld';
-import { eggsNear, tileState } from '../scene/tiles';
-import { EXIT_MS } from '../ui/presence';
+import { sceneNow } from '../scene/sceneTime';
 import { allow, ask, beat, demo, guard, preview, say, sayWaiting, stage, waitEvent, waitStore } from './script';
 
 // The story, as steps. Each step knows the scene it starts from, so Back can

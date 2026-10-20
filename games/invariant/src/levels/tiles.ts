@@ -1,5 +1,5 @@
 import type { FastFn, FastState } from '../lang/eval';
-import type { CompiledLevel, Inputs } from '../levels/level';
+import type { CompiledLevel, Inputs } from './level';
 
 // Tiles are the plane's integer points: tile (x, y) sits at world (x, 0, -y),
 // so +y goes away from the camera.

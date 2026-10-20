@@ -1,5 +1,7 @@
 import type { State } from '../lang/ast';
-import type { Rule } from '../levels/level';
+
+export type Rule = 'initialization' | 'maintenance' | 'termination';
+export const RULES: Rule[] = ['initialization', 'maintenance', 'termination'];
 
 // What a check reports for each rule.
 

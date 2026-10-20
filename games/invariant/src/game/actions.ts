@@ -1,9 +1,10 @@
 import { sfx } from '../audio/sfx';
+import { RULES } from '../checker/types';
 import { resetLevel } from '../director/frogs';
 import { playCounterexample, playRain, playShrug, runChecker } from '../director/verdicts';
 import { listNames, t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
-import { RULES, type LevelDef } from '../levels/level';
+import type { LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';

@@ -8,7 +8,7 @@ behind many small decisions; keep them when changing or adding UI.
 - **Everything that appears or disappears animates**: dialogs, the level list,
   captions, toasts, tags in the scene. Entrances fade or rise in (about 0.2 s);
   exits play a short reverse (`EXIT_MS`, 150 ms). Use the presence helpers in
-  `ui/presence.ts` rather than unmounting things outright.
+  `hooks/presence.ts` rather than unmounting things outright.
 - **Quick, never sluggish.** Dialog and caption animations are short; the
   learner should never wait on decoration.
 - **No layout shift.** Reserve space up front (the 3D title has a fixed aspect;

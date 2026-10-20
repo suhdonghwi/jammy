@@ -1,5 +1,5 @@
 import { useGame, type Game } from '../game/store';
-import { usePresence } from './presence';
+import { usePresence } from '../hooks/presence';
 
 // A card over everything, closed by its button, a click outside, or Escape's
 // sibling: the overlay. Opened by a boolean in the store (showRules,

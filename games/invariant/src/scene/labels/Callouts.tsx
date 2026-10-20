@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useGame, type Game } from '../../game/store';
-import { usePresentList } from '../../ui/presence';
+import { usePresentList } from '../../hooks/presence';
 import { frogWorld, type FrogSim } from '../frogs/frogWorld';
 import { SceneTag } from './SceneTag';
 import { TileTag, TONE_PREFIX } from './TileTag';

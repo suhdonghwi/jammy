@@ -1,9 +1,9 @@
 import type { Arith, Bool, Context, FuncDecl, Model } from 'z3-solver';
 import { hasQuantifier, subst, type Expr, type State } from '../lang/ast';
 import { holds } from '../lang/eval';
-import { hop, MAX_LEN, startState, type CompiledLevel, type Rule } from '../levels/level';
+import { hop, MAX_LEN, startState, type CompiledLevel } from '../levels/level';
 import { brokenConjunct } from './box';
-import type { Counterexample } from './types';
+import type { Counterexample, Rule } from './types';
 import { whileSolving } from './z3-guard';
 
 // Rules and formulas as Z3 queries: proving rules, finding counterexamples

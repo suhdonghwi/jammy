@@ -23,11 +23,6 @@ export interface Dice {
   sorted?: boolean;
 }
 
-export type Rule = 'initialization' | 'maintenance' | 'termination';
-export const RULES: Rule[] = ['initialization', 'maintenance', 'termination'];
-/** A rule's name in the current language. */
-export const ruleName = (r: Rule): string => t().rules[r];
-
 export interface Pitfall {
   formula: string;
   message: string;

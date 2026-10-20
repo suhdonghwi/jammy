@@ -2,7 +2,7 @@ import { CircleCheck, CircleDashed, CircleHelp, CircleX, LoaderCircle } from 'lu
 import { playCounterexample } from '../../director/verdicts';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
-import { RULES } from '../../levels/level';
+import { RULES } from '../../checker/types';
 
 // The three rule lights, under the formula: what Check found, rule by rule
 // (dim until the tutorial reaches them; a failed one replays its counterexample).

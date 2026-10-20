@@ -1,12 +1,11 @@
 import type { CheckResult } from '../checker/check';
-import type { Counterexample } from '../checker/types';
+import type { Counterexample, Rule } from '../checker/types';
 import { events } from '../director/events';
 import { handIn } from '../director/hand';
 import { sleep } from '../director/sequence';
 import { playCounterexample, playShrug, runChecker } from '../director/verdicts';
 import { useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';
-import { ruleName, type Rule } from '../levels/level';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 
@@ -294,7 +293,7 @@ export async function stage(gen: number, o: StageOptions): Promise<CheckResult> 
     o.onFail?.(failing);
     const cex = failureOf(res, failing)!;
     const stageRule = o.rules[o.rules.length - 1];
-    const prefix = failing !== stageRule ? messages().tutorial.lostRule(ruleName(failing)) : undefined;
+    const prefix = failing !== stageRule ? messages().tutorial.lostRule(messages().rules[failing]) : undefined;
     // the level's pitfall line duplicates the explanations here
     useGame.setState({ pitfallMessage: null });
     const extra = `${o.explain?.[failing] ?? ''}\n\n${messages().tutorial.fixAndCheck}`.trim();

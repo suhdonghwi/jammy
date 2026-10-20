@@ -3,25 +3,24 @@ import { useEffect, useState } from 'react';
 import { openLevel, openTutorial } from '../../game/actions';
 import { useProgress } from '../../game/progress';
 import { useGame } from '../../game/store';
+import { COMPACT_HOME, NARROW_HOME, useMedia } from '../../hooks/media';
+import { usePresence } from '../../hooks/presence';
 import { useT } from '../../i18n/i18n';
 import { GROUPS, levelNumber, levels } from '../../levels/catalog';
 import { groupName, localizeLevel } from '../../levels/localize';
 import { button } from '../classes';
-import { usePresence } from '../presence';
 import { GitHubLink } from './GitHubLink';
 import { LangSwitch } from './LangSwitch';
 import { ResetProgress } from './ResetProgress';
 import { SoundToggle } from './SoundToggle';
 import { Title3D } from './title/Title3D';
-import { useCompactHome } from './useCompactHome';
-import { useNarrowHome } from './useNarrowHome';
 
 // The home screen over the 3D scene: the title, a line about the game, the way
 // in, the level list, and in the corner, the source, resetting progress and the language.
 
 export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
-  const compact = useCompactHome();
+  const compact = useMedia(COMPACT_HOME);
   const picker = usePresence(view === 'levels');
   // Arriving straight on the level list (back from a level), it is simply
   // there; opened from the home screen, it fades in.
@@ -79,7 +78,7 @@ function HomeButtons() {
 /** The title, a line about the game, and the way in. */
 function HeroCopy({ behind }: { behind: boolean }) {
   const tr = useT();
-  const narrow = useNarrowHome();
+  const narrow = useMedia(NARROW_HOME);
   return (
     <div className={`max-w-118 animate-[rise_0.6s_ease-out_both] narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
       <p className="mb-3 font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>

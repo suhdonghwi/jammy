@@ -2,16 +2,16 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
+import { eggsNear, type TileWindow } from '../../levels/tiles';
 import { SLAB_H } from '../constants';
+import { smoothstep } from '../easing';
 import { frogWorld } from '../frogs/frogWorld';
 import { occupancy, slotFor, type Slot } from '../frogs/occupancy';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 import { colorUniform, fadeUniforms, getBlobTexture, GLSL_COMMON, GLSL_FADE, updateFade } from '../shaders/common';
-import { eggsNear, type TileWindow } from '../tiles';
 import { field } from './field';
 import { GLSL_APPEAR, GLSL_HEIGHT, GLSL_SLOT } from './glsl';
-import { smoothstep } from '../easing';
 
 // The eggs: every start state the precondition allows, one per tile. A hatched
 // egg is hidden; an egg sharing its tile with frogs moves into a slot.

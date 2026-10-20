@@ -6,7 +6,7 @@ import { tokenize } from '../../lang/parser';
 import { planeExists, type CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
 import { tokenClass } from '../codeColors';
-import { usePhone } from '../usePhone';
+import { PHONE, useMedia } from '../../hooks/media';
 import { inputRows, InputsSection } from './Inputs';
 
 // The program, with the loop lighting up as frogs hop and a ghost `assert(?)`
@@ -134,7 +134,7 @@ export function CodePanel() {
   );
   const spot = useGame((s) => s.spotlight);
   const tutorial = useGame((s) => s.mode === 'tutorial');
-  const phone = usePhone();
+  const phone = useMedia(PHONE);
   // null: as the learner left it, nothing yet
   const [folded, setFolded] = useState<boolean | null>(null);
   const tr = useT();

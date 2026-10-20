@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
-import { useCompactHome } from '../../ui/home/useCompactHome';
+import { COMPACT_HOME, useMedia } from '../../hooks/media';
 import { cameraRig } from '../cameraRig';
 import { sceneNow } from '../sceneTime';
 
@@ -45,7 +45,7 @@ function restingPose(t: number, aspect: number, compact: boolean) {
 export function useHomeCamera() {
   const mode = useGame((s) => s.mode);
   const intro = useRef<{ t0: number; eye: THREE.Vector3; target: THREE.Vector3 } | null>(null);
-  const compact = useCompactHome();
+  const compact = useMedia(COMPACT_HOME);
 
   // Decide where the glide starts before the first frame is drawn, and on a
   // fresh page load put the camera there right away (no default-camera frame).

@@ -9,8 +9,8 @@ import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
 import { axisNameUniforms, colorUniform, getDigitTexture, goalUniforms, setAxisNames, updateFade } from '../shaders/common';
-import { inputUniforms, setInputUniforms } from '../shaders/levelGlsl';
 import { floorFragment, floorVertex } from './floorShader';
+import { inputUniforms, setInputUniforms } from './levelGlsl';
 
 // The floor of a plane: one quad shaded per pixel (see floorShader), which
 // fades in and out, follows the camera, and reports the tile under the pointer.

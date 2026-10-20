@@ -3,7 +3,7 @@ import { useGame, type CaptionTone } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { button } from '../classes';
 import { Markdown } from '../Markdown';
-import { useLingering } from '../presence';
+import { useLingering } from '../../hooks/presence';
 
 // What the game is saying: the caption, with its buttons (and Back, in the tutorial).
 

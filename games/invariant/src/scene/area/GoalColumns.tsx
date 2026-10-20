@@ -3,11 +3,11 @@ import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
+import { tileState, type TileWindow } from '../../levels/tiles';
 import { COLORS, SLAB_H } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
 import { MAX_EVENTS } from '../shaders/common';
-import { tileState, type TileWindow } from '../tiles';
 import { field } from './field';
 import { GLSL_HEIGHT } from './glsl';
 

@@ -1,10 +1,10 @@
 import type { Context } from 'z3-solver';
 import type { Expr } from '../lang/ast';
 import type { FastFn } from '../lang/eval';
-import { compileFormula, RULES, type CompiledLevel, type Pitfall, type Rule } from '../levels/level';
+import { compileFormula, type CompiledLevel, type Pitfall } from '../levels/level';
 import { boxSearch, sameOnBox, type Box } from './box';
 import { breaksRule, cexFromModel, equivalent, ruleQuery, solve } from './smt';
-import type { RuleVerdict, Verdicts } from './types';
+import { RULES, type Rule, type RuleVerdict, type Verdicts } from './types';
 
 // Checking an area against the three rules.
 

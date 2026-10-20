@@ -4,7 +4,7 @@ import { useT } from '../../i18n/i18n';
 import { scalarNames } from '../../levels/level';
 import type { FastState } from '../../lang/eval';
 import { useHover } from '../../scene/hover';
-import { tileState } from '../../scene/tiles';
+import { tileState } from '../../levels/tiles';
 
 // What is the pointer on? The hovered tile's values, where a frog there would
 // go, and whether it is in the area.

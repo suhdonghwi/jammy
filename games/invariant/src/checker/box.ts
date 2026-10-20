@@ -1,7 +1,7 @@
 import { conjuncts, type Expr, type State } from '../lang/ast';
 import { compileFast, holds, type FastFn, type FastState } from '../lang/eval';
-import { hop, startState, toBig, type CompiledLevel, type Inputs, type Rule } from '../levels/level';
-import type { Counterexample } from './types';
+import { hop, startState, toBig, type CompiledLevel, type Inputs } from '../levels/level';
+import type { Counterexample, Rule } from './types';
 
 // Brute-force search of the states around the camera: finds the nicest
 // counterexamples quickly, before the solver has to. It looks through the

@@ -1,4 +1,4 @@
-import type { Rule } from '../levels/level';
+import type { Rule } from '../checker/types';
 
 // Everything the game says in English, apart from the levels' own text (which
 // lives with the levels in catalog.ts). ko.ts says the same in Korean, key for

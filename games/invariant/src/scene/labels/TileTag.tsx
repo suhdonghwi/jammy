@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
-import { EXIT_MS } from '../../ui/presence';
+import { EXIT_MS } from '../../hooks/presence';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';

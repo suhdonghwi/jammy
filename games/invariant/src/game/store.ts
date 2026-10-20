@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Formula } from '../checker/check';
-import type { Verdicts } from '../checker/types';
-import { compileFormula, compileLevel, startInputs, type CompiledLevel, type FormulaResult, type Inputs, type LevelDef, type Rule } from '../levels/level';
+import type { Rule, Verdicts } from '../checker/types';
+import { compileFormula, compileLevel, startInputs, type CompiledLevel, type FormulaResult, type Inputs, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 
 // The game's state, shared by the scene, the HUD and the scripted sequences.

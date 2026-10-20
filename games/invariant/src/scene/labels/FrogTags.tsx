@@ -1,9 +1,9 @@
 import { useFrame } from '@react-three/fiber';
 import { useState } from 'react';
 import { useGame } from '../../game/store';
+import { usePresentList } from '../../hooks/presence';
 import type { State } from '../../lang/ast';
 import { scalarNames, type CompiledLevel } from '../../levels/level';
-import { usePresentList } from '../../ui/presence';
 import { frogWorld, type FrogSim } from '../frogs/frogWorld';
 import { SceneTag } from './SceneTag';
 

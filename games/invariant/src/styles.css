@@ -92,7 +92,7 @@
   --animate-slide-in: slide-in 0.4s ease-out;
   --animate-shake: shake 0.32s ease-in-out;
   --animate-tag-in: tag-in 0.2s ease-out;
-  /* exits last EXIT_MS (ui/presence.ts) */
+  /* exits last EXIT_MS (hooks/presence.ts) */
   --animate-fade-out: fade-out 0.15s ease-in forwards;
   --animate-pop-out: pop-out 0.15s ease-in forwards;
   --animate-sink-out: sink-out 0.15s ease-in forwards;
