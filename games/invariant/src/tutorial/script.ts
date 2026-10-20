@@ -29,12 +29,15 @@ export function guard(gen: number) {
 
 const DOUBLE_CLICK_MS = 120;
 
-function earlyNext(label = messages().caption.next) {
+function earlyNext(label = messages().caption.next, last?: () => void) {
   const shownAt = performance.now();
   return {
     label,
     onClick: () => {
-      if (performance.now() - shownAt >= DOUBLE_CLICK_MS) useGame.getState().skip?.();
+      if (performance.now() - shownAt < DOUBLE_CLICK_MS) return;
+      const skip = useGame.getState().skip;
+      if (skip) skip();
+      else last?.();
     },
   };
 }
@@ -43,9 +46,9 @@ const nextAfterCounterexample = () => useGame.getState().nextAction ?? earlyNext
 
 type Spot = Game['spotlight'];
 
-export function say(text: string, spot: Spot = null, tone: CaptionTone = 'info', reserve?: string) {
+export function say(text: string, spot: Spot = null, tone: CaptionTone = 'info', reserve?: string, last?: () => void) {
   captionShownAt = performance.now();
-  useGame.setState({ caption: { text, tone, action: reserve ? earlyNext(reserve) : undefined }, spotlight: spot });
+  useGame.setState({ caption: { text, tone, action: reserve ? earlyNext(reserve, last) : undefined }, spotlight: spot });
 }
 
 export function sayWaiting(text: string, spot: Spot = null) {
@@ -92,11 +95,19 @@ export async function beat(
   if (!opts.keep) useGame.setState({ callouts: opts.callouts ?? [], region: opts.region ?? null, spotLines: opts.lines ?? [] });
   const tone = opts.tone ?? 'info';
   const label = opts.label ?? messages().caption.next;
-  say(text, opts.spot ?? null, tone, label);
-  if (opts.prepare) await opts.prepare();
+  let pressed = false;
+  let press = () => {};
+  const early = new Promise<void>((resolve) => (press = resolve));
+  say(text, opts.spot ?? null, tone, label, () => {
+    pressed = true;
+    press();
+  });
+  if (opts.prepare) await Promise.race([opts.prepare(), early]);
   guard(gen);
-  await sleep(opts.settle ?? 300);
+  if (pressed) return;
+  await Promise.race([sleep(opts.settle ?? 300), early]);
   guard(gen);
+  if (pressed) return;
   await next(gen, text, label, opts.spot ?? null, tone);
 }
 
