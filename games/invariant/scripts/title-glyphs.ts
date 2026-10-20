@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import opentype from 'opentype.js';
 import type { Plugin } from 'vite';
-import { LINE1, LINE2, type TitleGlyphs } from '../src/ui/home/title/glyphs';
+import { LINE1, LINE2, type TitleGlyphs } from '../src/ui/home/title/glyphs.ts';
 
 const require = createRequire(import.meta.url);
 const FONT = '@fontsource/fredoka/files/fredoka-latin-700-normal.woff';

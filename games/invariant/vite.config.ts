@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { titleGlyphs } from './scripts/title-glyphs';
+import { titleGlyphs } from './scripts/title-glyphs.ts';
 
 // Z3's WebAssembly build uses threads (SharedArrayBuffer), which requires
 // cross-origin isolation.
