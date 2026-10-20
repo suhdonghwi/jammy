@@ -100,7 +100,7 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
   }
 }
 
-const HOLD_MS = 500;
+const HOLD_MS = 1300;
 const REGION_MS = 1300;
 const TAG_ABOVE = 2;
 const BETWEEN_MS = 300;
