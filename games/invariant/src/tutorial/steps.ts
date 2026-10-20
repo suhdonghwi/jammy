@@ -3,7 +3,7 @@ import { RULES, type Rule } from '../checker/types';
 import { hatch, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs } from '../director/frogs';
 import { previewHop } from '../director/ghosts';
 import { playProof } from '../director/verdicts';
-import { useGame, type Game, type Region, type RegionTile, type Reveal } from '../game/store';
+import { useGame, type Region, type RegionTile, type Reveal } from '../game/store';
 import { EXIT_MS } from '../hooks/presence';
 import { t } from '../i18n/i18n';
 import { toBig } from '../levels/level';
@@ -48,10 +48,9 @@ const DRAW = { ...WORLD, formula: true, area: true, lights: RULES };
 const CAM: [number, number, number] = [2, 2, 15.6];
 
 const EXAMPLE = { axes: true, stop: true, hover: true, eggs: true, goals: true } as const;
-const EXAMPLE_AREA = '0 <= x <= 4 && 0 <= y <= 4';
+const EXAMPLE_AREA = '0 <= x <= 4';
 const EXAMPLE_CAM: [number, number, number] = [2.5, 2, 14.4];
 const EXAMPLE_WIDE: [number, number, number] = [3, 2, 17];
-const ENDINGS: [number, number][] = [0, 1, 2, 3, 4].map((y) => [4, y]);
 
 const TESTED = Array.from({ length: 10 }, (_, n): [number, number] => [n, n]);
 const upTo = (r: Rule): Rule[] => RULES.slice(0, RULES.indexOf(r) + 1);
@@ -60,20 +59,17 @@ const T = () => t().tutorial;
 
 const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
-type Callout = Game['callouts'][number];
 
-const outlines = (tiles: [number, number][], tone: Callout['tone'] = 'good'): Callout[] => tiles.map(([x, y]) => ({ x, y, text: '', tone }));
-
-function eggRegion(tone: RegionTile['tone']): Region {
+function eggRegion(tone: RegionTile['tone'], center: [number, number, number] = CAM): Region {
   const { level, inputs } = useGame.getState();
-  return { center: [CAM[0], CAM[1]], tiles: (win) => eggsNear(level!, inputs, win.cx, win.cy, win.R).map(([x, y]) => ({ x, y, tone })) };
+  return { center: [center[0], center[1]], tiles: (win) => eggsNear(level!, inputs, win.cx, win.cy, win.R).map(([x, y]) => ({ x, y, tone })) };
 }
 
-function endings(toneOf: (goal: boolean) => RegionTile['tone']): Region {
+function endings(toneOf: (goal: boolean) => RegionTile['tone'], center: [number, number, number] = CAM): Region {
   const { level, inputs, valid } = useGame.getState();
   const L = level!;
   return {
-    center: [CAM[0], CAM[1]],
+    center: [center[0], center[1]],
     tiles: (win) =>
       tilesNear(L, inputs, win, (s, x, y) =>
         L.fast.planeReq(s) === true && L.fast.guard(s) !== true && valid?.fast(s) === true ? { x, y, tone: toneOf(L.fast.post(s) === true) } : undefined,
@@ -84,7 +80,7 @@ function endings(toneOf: (goal: boolean) => RegionTile['tone']): Region {
 export function loopExampleFrogs() {
   const L = useGame.getState().level!;
   const { inputs } = useGame.getState();
-  const eggs = eggsNear(L, inputs, 0, 2, 4).sort((a, b) => a[1] - b[1]);
+  const eggs = eggsNear(L, inputs, 0, 2, 2).sort((a, b) => [2, 0, 4, 1, 3].indexOf(a[1]) - [2, 0, 4, 1, 3].indexOf(b[1]));
   loopFrogs(eggs.map(([x, y]) => toBig(tileState(L, x, y, inputs))));
 }
 
@@ -269,7 +265,7 @@ export const STEPS: Step[] = [
       beat(gen, T().exWhy, {
         callouts: [
           { x: 6, y: 3, text: T().exBadTag, tone: 'fail' },
-          { x: 4, y: -1, text: T().exBadTag, tone: 'fail' },
+          { x: 6, y: 0, text: T().exBadTag, tone: 'fail' },
         ],
         prepare: () => {
           sendFrogsHome();
@@ -281,7 +277,8 @@ export const STEPS: Step[] = [
     scene: { example: true, reveal: { ...EXAMPLE, area: true }, formula: EXAMPLE_AREA, camera: EXAMPLE_WIDE },
     run: (gen) =>
       beat(gen, T().exEndings, {
-        callouts: [...outlines(ENDINGS.slice(0, 4)), { x: 4, y: 4, text: T().exEndingTag, tone: 'good' }],
+        region: endings(() => 'good', EXAMPLE_CAM),
+        callouts: [{ x: 4, y: 3, text: T().exEndingTag, tone: 'good' }],
         prepare: () => void cameraRig.lookAtTile(...EXAMPLE_CAM),
       }),
   },

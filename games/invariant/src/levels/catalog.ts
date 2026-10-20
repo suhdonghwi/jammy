@@ -27,19 +27,14 @@ export const exampleLevel: LevelDef = {
   title: 'Tutorial',
   source: `var x = 0;
 var y;
-requires 0 <= y <= 4;
 
 while (x < 4) {
-  if (x % 2 == 0) {
-    if (y < 4) { y = y + 1; } else { x = x + 1; }
-  } else {
-    if (y > 0) { y = y - 1; } else { x = x + 1; }
-  }
+  x = x + 1;
 }
 
-ensures x == 4 && 0 <= y <= 4;`,
+ensures x == 4;`,
   view: { x: 'x', y: 'y' },
-  solutions: ['0 <= x <= 4 && 0 <= y <= 4'],
+  solutions: ['0 <= x <= 4'],
   camera: { x: 2.5, y: 2, distance: 12 },
 };
 

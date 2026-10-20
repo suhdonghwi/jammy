@@ -193,7 +193,7 @@ export const en = {
     testedTag: 'tested: n = 0 to 9',
     endlessTag: 'n = 18, 19, … never end',
     detour: 'There is a way to be sure about every egg without hatching infinitely many of them. Let’s leave our loop for a moment.',
-    exWorld: 'Here is another loop. Its frogs hatch and zigzag, one column after another, until they stop in the stripes on the right.',
+    exWorld: 'Here is another loop. Its frogs hatch and hop straight to the right until they reach the stripes, where they stop.\n\nThis loop’s eggs never end either: they go on up and down forever.',
     exArea:
       'These blue slabs are an **invariant area**. Drawing an area is claiming that **“every tile a frog ever lands on is on this area.”**',
     exBadTag: 'stops, but not a goal',

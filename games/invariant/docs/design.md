@@ -239,8 +239,9 @@ touching levels, the language or the checker.
 ## The tutorial
 
 A scripted story on one program, a counter (`i` from `0` up to `n`), with a
-detour through a second, the **example** (a zigzag over a 5 × 5 area, with
-stopping tiles both on and off it). Both are real levels on the same engine
+detour through a second, the **example** (frogs hop straight right to a
+column of goals; its area, `0 <= x <= 4`, is an endless strip, so the example
+is as endless as the loop it stands in for). Both are real levels on the same engine
 (`tutorialLevel`, `exampleLevel`). The steps are `src/tutorial/steps.ts`; their
 words are in `src/i18n/en.ts` and `ko.ts`. `?step=N` on the URL starts it at
 step N, for playtesting.
