@@ -83,7 +83,7 @@ export async function beat(
     spot?: Spot;
     settle?: number;
     callouts?: Game['callouts'];
-    lines?: number[];
+    lines?: Game['spotLines'];
     tone?: CaptionTone;
   } = {},
 ): Promise<void> {
@@ -188,7 +188,7 @@ interface StageOptions {
   ask: string;
   rules: Rule[];
   nudge: string;
-  explain?: Partial<Record<Rule, string>>;
+  ghost?: Partial<Record<Rule, string>>;
   onFail?: (rule: Rule) => void;
 }
 
@@ -223,8 +223,7 @@ export async function stage(gen: number, o: StageOptions): Promise<void> {
     const stageRule = o.rules[o.rules.length - 1];
     const prefix = failing !== stageRule ? messages().tutorial.lostRule(messages().rules[failing]) : undefined;
     useGame.setState({ pitfallMessage: null });
-    const extra = `${o.explain?.[failing] ?? ''}\n\n${messages().tutorial.fixAndCheck}`.trim();
-    await playCounterexample(cex, { prefix, extra });
+    await playCounterexample(cex, { prefix, extra: messages().tutorial.fixAndCheck, ghostExtra: o.ghost?.[failing] });
     guard(gen);
   }
 }
@@ -233,7 +232,7 @@ export async function demo(
   gen: number,
   formula: string,
   rules: Rule[],
-  opts: { extra?: string; restore?: string; guessedRight?: boolean } = {},
+  opts: { ghostExtra?: string; restore?: string; guessedRight?: boolean } = {},
 ): Promise<void> {
   const g = useGame.getState();
   const mine = opts.restore ?? g.formulaText;
@@ -261,7 +260,7 @@ export async function demo(
     useGame.setState({ pitfallMessage: null });
     const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? messages().tutorial.guessedRight : messages().tutorial.guessedWrong;
     const tone = opts.guessedRight ? 'success' : 'fail';
-    await playCounterexample(cex, { prefix: verdict, tone, extra: opts.extra, area: messages().verdicts.theArea, action: nextAfterCounterexample });
+    await playCounterexample(cex, { prefix: verdict, tone, ghostExtra: opts.ghostExtra, area: messages().verdicts.theArea, action: nextAfterCounterexample });
     guard(gen);
     await holdCaption(gen);
   }

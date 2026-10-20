@@ -1,7 +1,7 @@
 import { checkFormula } from '../src/checker/check';
 import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import type { State } from '../src/lang/ast';
-import { allLevels, tutorialLevel } from '../src/levels/catalog';
+import { allLevels, exampleLevel, tutorialLevel } from '../src/levels/catalog';
 import { levelsKo } from '../src/levels/catalog.ko';
 import { compileFormula, compileLevel, hop, isEgg, running, startInputs, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
 
@@ -75,7 +75,7 @@ for (const def of allLevels) {
     fail(`does not compile: ${(e as Error).message}`);
     continue;
   }
-  if (def !== tutorialLevel) {
+  if (def !== tutorialLevel && def !== exampleLevel) {
     if ((def.hints?.length ?? 0) < 2) fail('needs at least two hints');
     checkHints(def, def.hints ?? []);
   }

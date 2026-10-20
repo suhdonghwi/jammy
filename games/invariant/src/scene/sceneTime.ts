@@ -63,8 +63,8 @@ export function startScene() {
 
 let leaving = false;
 
-export function switchScene(go: () => void) {
-  if (leaving || !started) return;
+export function switchScene(go: () => void): boolean {
+  if (leaving || !started) return false;
   leaving = true;
   document.documentElement.dataset.leaving = '';
   setTimeout(() => {
@@ -75,6 +75,7 @@ export function switchScene(go: () => void) {
     go();
     startAnyway();
   }, EXIT_MS);
+  return true;
 }
 
 let fallback = 0;

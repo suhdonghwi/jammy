@@ -37,13 +37,13 @@ function firstEggs(count: number): State[] {
     .map(([x, y]) => toBig(tileState(L, x, y, inputs)));
 }
 
-export function hatch(s: State): FrogSim {
+export function hatch(s: State, quiet = false): FrogSim {
   const L = currentLevel();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
   const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
   hatchFx.push({ x, y, plane: planeKey(inputsOf(L, s)), dx: slot.dx, dy: slot.dy, s: slot.scale });
-  sfx.hatch();
+  if (!quiet) sfx.hatch();
   return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
 }
 
@@ -178,4 +178,30 @@ export function clickTile(x: number, y: number) {
   if (!tileClickable(x, y)) return;
   const { level, inputs } = useGame.getState();
   void runEgg(toBig(tileState(level!, x, y, inputs)));
+}
+
+export function loopFrogs(eggs: State[], stagger = 1.6) {
+  const tok = begin();
+  const L = currentLevel();
+  const live = async (s: State) => {
+    while (tok.alive) {
+      const f = hatch(s, true);
+      await sleep(550);
+      while (tok.alive && !f.stopped) {
+        const n = hop(L, f.state);
+        await frogWorld.hopTo(L, f, n, 0.4, true);
+        f.stopped = !running(L, n);
+        await sleep(120);
+      }
+      await sleep(1400);
+      if (!tok.alive) return;
+      f.leave = { t0: sceneNow(), dur: 0.35 };
+      await sleep(400);
+      if (!tok.alive) return;
+      frogWorld.remove(f);
+      frogWorld.returnEgg(Number(s[L.view.x]), Number(s[L.view.y]));
+      await sleep(900);
+    }
+  };
+  eggs.forEach((s, i) => after(i * stagger * 1000, () => tok.alive && void live(s)));
 }

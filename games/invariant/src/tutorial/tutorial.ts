@@ -1,9 +1,10 @@
-import { interrupt, placeFrog } from '../director/frogs';
+import { interrupt, placeFrog, resetLevel } from '../director/frogs';
 import { ALLOW_NONE, EMPTY_REVEAL, useGame } from '../game/store';
+import { exampleLevel, tutorialLevel } from '../levels/catalog';
 import { cameraRig } from '../scene/cameraRig';
-import { sleep } from '../scene/sceneTime';
+import { after, sleep, switchScene } from '../scene/sceneTime';
 import { Aborted, allow, currentGeneration, guard, newGeneration } from './script';
-import { learnerFormula, resetProgress, st, STEPS, type Scene } from './steps';
+import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, type Scene } from './steps';
 
 export { tutorialCheck } from './script';
 
@@ -12,8 +13,15 @@ const TUTORIAL_CAMERA: [number, number, number] = [2, 2, 13];
 let stepIndex = 0;
 let onFinish: () => void = () => {};
 
+const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
+
 function restore(gen: number, scene: Scene) {
-  interrupt();
+  const level = levelOf(scene);
+  const switched = useGame.getState().level?.id !== level.id;
+  if (switched) {
+    resetLevel();
+    useGame.getState().openLevel(level, 'tutorial');
+  } else interrupt();
   allow({});
   useGame.setState({
     reveal: { ...EMPTY_REVEAL, ...scene.reveal },
@@ -27,10 +35,23 @@ function restore(gen: number, scene: Scene) {
     pitfallMessage: null,
   });
   useGame.getState().setFormula(scene.formula === 'learner' ? learnerFormula : (scene.formula ?? ''));
-  for (const [i, n] of scene.frogs ?? []) placeFrog(st(i, n));
+  if (level === tutorialLevel) for (const [i, n] of scene.frogs ?? []) placeFrog(st(i, n));
+  if (scene.loop) loopExampleFrogs();
   const [x, y, d] = scene.camera ?? TUTORIAL_CAMERA;
-  void cameraRig.lookAtTile(x, y, d);
+  if (switched) after(80, () => gen === currentGeneration() && void cameraRig.lookAtTile(x, y, d, false));
+  else void cameraRig.lookAtTile(x, y, d);
   guard(gen);
+}
+
+function crossTo(gen: number, scene: Scene): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const go = () => {
+      if (gen !== currentGeneration()) return reject(new Aborted());
+      restore(gen, scene);
+      resolve();
+    };
+    if (!switchScene(go)) go();
+  });
 }
 
 function play(from: number, rewound = false) {
@@ -43,6 +64,7 @@ function play(from: number, rewound = false) {
       guard(gen);
     }
     for (let i = from; i < STEPS.length; i++) {
+      if (i > from && levelOf(STEPS[i].scene).id !== useGame.getState().level?.id) await crossTo(gen, STEPS[i].scene);
       stepIndex = i;
       useGame.setState({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
       await STEPS[i].run(gen);

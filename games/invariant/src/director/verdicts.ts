@@ -14,6 +14,8 @@ import { hatch } from './frogs';
 import { GHOST_RISE, raiseGhost, realRunTo } from './ghosts';
 import { begin, caption, currentLevel } from './sequence';
 
+const ABOVE_CAPTION = 0.05;
+
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
 
 function markFailure(x: number, y: number, label: string) {
@@ -32,12 +34,12 @@ async function focusState(s: State, far = false) {
   }
   if (far) {
     await cameraRig.zoomTo(45);
-    await cameraRig.lookAtTile(x, y);
+    await cameraRig.lookAtTile(x, y - 1.5);
     await cameraRig.zoomTo(13);
   } else {
     const t = cameraRig.target();
     const dist = Math.hypot(t.x - x, -t.z - y);
-    if (dist > 3 || cameraRig.distance() > 22 || !cameraRig.inView(x, y)) await cameraRig.lookAtTile(x, y, Math.min(cameraRig.distance(), 16));
+    if (dist > 3 || cameraRig.distance() > 22 || !cameraRig.inView(x, y, 1, ABOVE_CAPTION)) await cameraRig.lookAtTile(x, y - 1.5, Math.min(cameraRig.distance(), 16));
   }
 }
 

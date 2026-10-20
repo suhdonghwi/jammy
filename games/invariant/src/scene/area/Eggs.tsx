@@ -18,13 +18,15 @@ ${GLSL_HEIGHT}
 ${GLSL_SLOT}
 ${GLSL_APPEAR}
 attribute float aHide;
+attribute float aBack;
+float backNow() { float b = clamp((uTime - aBack) / 0.35, 0.0, 1.0); return 1.0 - pow(1.0 - b, 3.0); }
 varying vec3 vN;
 varying vec3 vWorld;
 varying vec3 vLocal;
 void main() {
   float h = heightNow();
   vec3 sl = slotNow();
-  float s = (1.0 - aHide) * sl.z * appearNow();
+  float s = (1.0 - aHide) * backNow() * sl.z * appearNow();
   vec3 p = position * s;
   vec4 w = modelMatrix * vec4(p + vec3(aTile.x + sl.x, h * ${SLAB_H.toFixed(3)}, -aTile.y - sl.y), 1.0);
   vWorld = w.xyz;
@@ -81,6 +83,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
     const tile = new Float32Array(n * 2);
     const anim = new Float32Array(n * 3);
     const hide = new Float32Array(n);
+    const back = new Float32Array(n);
     const slot = new Float32Array(n * 4);
     const slotAnim = new Float32Array(n * 3);
     const now = sceneNow();
@@ -93,6 +96,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
       anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
       const hatched = frogWorld.hatched.has(key);
       hide[i] = hatched ? 1 : 0;
+      back[i] = frogWorld.returned.get(key) ?? -100;
       if (!hatched) visibleEggs.add(key);
       const frogs = occupancy.frogs.get(key) ?? 0;
       const target = slotFor(frogs, frogs + 1);
@@ -113,7 +117,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
     });
     occupancy.eggs = visibleEggs;
     occupancy.eggSlots = eggSlots;
-    const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aHide: [hide, 1], aSlot: [slot, 4], aSlotAnim: [slotAnim, 3] } as const;
+    const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aHide: [hide, 1], aBack: [back, 1], aSlot: [slot, 4], aSlotAnim: [slotAnim, 3] } as const;
     return { geom: instanced(base, n, attrs), shadowGeom: instanced(shadowBase, n, attrs) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eggs, version, hatchVersion, occVersion, base, shadowBase]);
@@ -142,12 +146,14 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
           ${GLSL_SLOT}
           ${GLSL_APPEAR}
           attribute float aHide;
+attribute float aBack;
+float backNow() { float b = clamp((uTime - aBack) / 0.35, 0.0, 1.0); return 1.0 - pow(1.0 - b, 3.0); }
           varying vec2 vUv;
           varying float vA;
           void main() {
             vUv = uv;
             vec3 sl = slotNow();
-            vA = (1.0 - aHide) * sl.z * clamp(appearNow(), 0.0, 1.0);
+            vA = (1.0 - aHide) * backNow() * sl.z * clamp(appearNow(), 0.0, 1.0);
             vec4 w = modelMatrix * vec4(position * sl.z + vec3(aTile.x + sl.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.006, -aTile.y - sl.y), 1.0);
             gl_Position = projectionMatrix * viewMatrix * w;
           }`,

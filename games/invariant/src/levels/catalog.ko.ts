@@ -17,6 +17,10 @@ export const levelsKo: Record<string, LevelText> = {
     ],
   },
 
+  example: {
+    title: '튜토리얼',
+  },
+
   countdown: {
     title: '카운트다운',
     pitfalls: ['튜토리얼에서는 맞는 경계였습니다. 그런데 이번 개구리는 어느 쪽으로 갈까요?', '개구리는 중간 칸들도 지나갑니다.'],

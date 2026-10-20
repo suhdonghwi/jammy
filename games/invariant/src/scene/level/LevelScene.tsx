@@ -47,7 +47,7 @@ export function LevelScene() {
         showStop={reveal.stop}
         showGoal={reveal.goals}
         showEggs={reveal.eggs}
-        showArea={reveal.formula}
+        showArea={reveal.area}
       />
       <Frogs />
       <HatchShells />

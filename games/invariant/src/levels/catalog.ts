@@ -22,6 +22,27 @@ ensures i == n;`,
   camera: { x: 2, y: 2, distance: 13 },
 };
 
+export const exampleLevel: LevelDef = {
+  id: 'example',
+  title: 'Tutorial',
+  source: `var x = 0;
+var y;
+requires 0 <= y <= 4;
+
+while (x < 4) {
+  if (x % 2 == 0) {
+    if (y < 4) { y = y + 1; } else { x = x + 1; }
+  } else {
+    if (y > 0) { y = y - 1; } else { x = x + 1; }
+  }
+}
+
+ensures x == 4 && 0 <= y <= 4;`,
+  view: { x: 'x', y: 'y' },
+  solutions: ['0 <= x <= 4 && 0 <= y <= 4'],
+  camera: { x: 2.5, y: 2, distance: 12 },
+};
+
 interface LevelGroup {
   name: string;
   levels: LevelDef[];
@@ -727,7 +748,7 @@ ensures forall lo <= k < n: A[k] >= x;`,
 
 export const levels: LevelDef[] = GROUPS.flatMap((g) => g.levels);
 
-export const allLevels = [tutorialLevel, ...levels];
+export const allLevels = [tutorialLevel, exampleLevel, ...levels];
 
 export function levelNumber(id: string): number {
   return levels.findIndex((l) => l.id === id) + 1;

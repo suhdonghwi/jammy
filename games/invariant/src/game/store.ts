@@ -13,6 +13,7 @@ export interface Reveal {
   run: boolean;
   step: boolean;
   formula: boolean;
+  area: boolean;
   assert: boolean;
   lights: Rule[];
   awake: Rule[];
@@ -28,6 +29,7 @@ const FULL_REVEAL: Reveal = {
   run: true,
   step: true,
   formula: true,
+  area: true,
   assert: true,
   lights: RULES,
   awake: RULES,
@@ -43,6 +45,7 @@ export const EMPTY_REVEAL: Reveal = {
   run: false,
   step: false,
   formula: false,
+  area: false,
   assert: false,
   lights: [],
   awake: [],
@@ -94,7 +97,7 @@ export interface Game {
   awaitingCheck: boolean;
   nextAction: { label: string; onClick: () => void } | null;
   tutorialAllow: { step: boolean; run: boolean; eggs: boolean; formula: boolean };
-  spotLines: number[];
+  spotLines: (number | 'assert')[];
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
   inputHover: string | null;
   callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];

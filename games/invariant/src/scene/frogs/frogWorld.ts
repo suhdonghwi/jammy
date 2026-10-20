@@ -50,11 +50,23 @@ class FrogWorld {
   frogs: FrogSim[] = [];
   private nextId = 1;
   hatched = new Set<string>();
+  returned = new Map<string, number>();
   hatchVersion = 0;
 
   markHatched(x: number, y: number) {
     this.hatched.add(`${x},${y}`);
     this.hatchVersion++;
+  }
+
+  returnEgg(x: number, y: number) {
+    const key = `${x},${y}`;
+    if (!this.hatched.delete(key)) return;
+    this.returned.set(key, sceneNow());
+    this.hatchVersion++;
+  }
+
+  remove(f: FrogSim) {
+    this.frogs = this.frogs.filter((g) => g !== f);
   }
 
   add(level: CompiledLevel, kind: FrogKind, state: State, opts: Partial<FrogSim> = {}): FrogSim {
@@ -80,6 +92,7 @@ class FrogWorld {
     this.frogs = kind ? this.frogs.filter((f) => f.kind !== kind) : [];
     if ((!kind || kind === 'real') && this.hatched.size) {
       this.hatched.clear();
+      this.returned.clear();
       this.hatchVersion++;
     }
   }

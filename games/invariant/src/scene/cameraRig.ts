@@ -21,10 +21,10 @@ export const cameraRig = {
   distance(): number {
     return controls ? controls.distance : 14;
   },
-  inView(x: number, y: number, reach = 1): boolean {
+  inView(x: number, y: number, reach = 1, floor = -0.5 * reach): boolean {
     if (!controls) return true;
     const p = onScreen.set(x, 0, -y).project(controls.camera);
-    return Math.abs(p.x) < 0.65 * reach && Math.abs(p.y) < 0.5 * reach;
+    return Math.abs(p.x) < 0.65 * reach && p.y < 0.5 * reach && p.y > floor;
   },
   async lookAtTile(x: number, y: number, distance?: number, smooth = true) {
     if (!controls) return;
