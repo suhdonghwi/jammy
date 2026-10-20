@@ -31,7 +31,7 @@ const SIREN_GAIN = 0.06;
 
 const URLS = import.meta.glob('../assets/sfx/*.m4a', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 
-type Role = 'click' | 'hop' | 'land' | 'settle' | 'goal' | 'crack' | 'rise' | 'sink' | 'patter' | 'chime' | 'fail' | 'cleared';
+type Role = 'click' | 'hop' | 'land' | 'settle' | 'goal' | 'crack' | 'rise' | 'sink' | 'chime' | 'fail' | 'cleared';
 
 const GAIN: Record<Role, number> = {
   click: 0.35,
@@ -42,7 +42,6 @@ const GAIN: Record<Role, number> = {
   crack: 0.45,
   rise: 0.35,
   sink: 0.25,
-  patter: 0.14,
   chime: 0.35,
   fail: 0.4,
   cleared: 0.45,
@@ -149,14 +148,6 @@ export const sfx = {
   slabs(rose: number, sank: number) {
     if ((!rose && !sank) || !gap('slabs', 120)) return;
     play(rose ? 'rise' : 'sink');
-  },
-
-  touch() {
-    const alone = gap('touch-alone', 250);
-    lastAt.set('touch-alone', performance.now());
-    if (alone) return play('land', { gain: 0.9, rate: wobble() });
-    if (!gap('patter', 22)) return;
-    play('patter', { rate: 1.4 + Math.random() * 0.8, pan: Math.random() * 1.2 - 0.6 });
   },
 
   pass(i: number) {

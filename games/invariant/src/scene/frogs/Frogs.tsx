@@ -1,7 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { sfx } from '../../audio/sfx';
 import { useGame } from '../../game/store';
 import { planeKey, toNum } from '../../levels/level';
 import { COLORS } from '../constants';
@@ -85,9 +84,8 @@ export function Frogs() {
       if (n >= MAX_FROGS) break;
       const p = pose(f, t);
       if (p.landed) {
-        sfx.touch();
         const s = toNum(f.state);
-        if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f);
+        if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f, true);
       }
       const key = tileOf(f);
       const g = groups.get(key)!;
