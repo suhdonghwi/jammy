@@ -43,10 +43,12 @@ interface TileTagProps {
   tone: TagTone;
   pulse?: boolean;
   wash?: boolean;
+  fade?: number;
+  delay?: number;
   leaving?: boolean;
 }
 
-export function TileTag({ x, y, label, tone, pulse = false, wash = false, leaving = false }: TileTagProps) {
+export function TileTag({ x, y, label, tone, pulse = false, wash = false, fade = 1, delay = 0, leaving = false }: TileTagProps) {
   const color = TONE_COLORS[tone];
   const group = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
@@ -61,7 +63,7 @@ export function TileTag({ x, y, label, tone, pulse = false, wash = false, leavin
     g.position.set(x, field.heightAt(x, y) * SLAB_H + 0.012, -y);
     if (leaving && leftAt.current === null) leftAt.current = performance.now();
     const out = leftAt.current === null ? 1 : Math.max(0, 1 - (performance.now() - leftAt.current) / EXIT_MS);
-    const pop = Math.min(1, t / 0.3) * out;
+    const pop = Math.min(1, Math.max(0, (t - delay) / 0.3)) * out * fade;
     const beat = pulse ? 0.5 + 0.5 * Math.sin(t * 4.2) : 1;
     if (ring.current) {
       ring.current.scale.setScalar(0.9 + 0.1 * pop + (pulse ? 0.035 * beat : 0));

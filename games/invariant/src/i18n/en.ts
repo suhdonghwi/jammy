@@ -87,10 +87,6 @@ export const en = {
     initialization: 'Every egg is on your area.',
     maintenance: 'No hop leads off your area.',
     termination: 'Every striped tile on your area is a goal.',
-    inCode: 'In the code',
-    initializationCode: 'After `requires` and the code before the loop, the `assert` holds.',
-    maintenanceCode: 'If the `assert` and the loop condition hold, the `assert` holds again after the body.',
-    terminationCode: 'If the `assert` holds and the loop condition is false, the `ensures` holds.',
   },
 
   syntax: {
@@ -217,11 +213,7 @@ export const en = {
     backToOurs: 'Back to our loop',
 
     draw: 'Back to our loop, and this time you draw the area. Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**.\n\nTry something like `i == 2`, `i % 2 == 0` or `i < n`. **Syntax**, below the box, lists what you can write.',
-    assert:
-      'In the code, your area is an `assert` at the top of the loop: a condition claimed to hold every time the loop comes round, before each hop and once more when it stops.\n\nNow let’s make your claim pass the three rules, one at a time.',
-
-    ruleInitialization:
-      '**Rule 1 · Initialization:** every egg is on your area. Then the claim is already true before the first hop.\n\nIn the code: after `requires n >= 0` and `var i = 0`, the `assert` holds.',
+    ruleInitialization: '**Rule 1 · Initialization:** every egg is on your area. Then the claim is already true before the first hop, like the eggs on the left of the example.',
     askInitialization: 'Change your area so **every egg is on it**, then press **Check**.',
     nudgeInitialization: 'Every egg has the same `i`. What is it?',
     passedInitialization: 'Correct! Every egg is on your area: **Initialization** holds.',
@@ -230,7 +222,7 @@ export const en = {
     afterOwnInitialization: (mine: string) => `Your first try missed an egg. ${mine} covers them all.`,
 
     ruleMaintenance:
-      '**Rule 2 · Maintenance:** no hop leads off your area. From any tile of it where the loop goes on, one hop lands on it again.\n\nIn the code: if the `assert` holds and `i < n`, then after `i = i + 1` the `assert` holds again.',
+      '**Rule 2 · Maintenance:** no hop leads off your area. From any tile of it where the loop goes on, one hop lands on it again. Hover over a slab to see where its hop lands.',
     askMaintenance: 'Change your area so **no hop leads off it**, and keep every egg on it. **Check** now tests rules 1 and 2.',
     nudgeMaintenance: 'Every frog starts at `i = 0`, and a hop only ever increases `i`.',
     ghostMaintenance:
@@ -247,7 +239,7 @@ export const en = {
     neverLeaves: 'When the loop stops, the frog is still on your area. Does that mean it stops on a goal?',
 
     ruleTermination: (endings: string) =>
-      `**Rule 3 · Termination:** every striped tile on your area is a goal. A frog never leaves your area, so the outlined tiles are the only places one can stop, like the column in the example. ${endings}\n\nIn the code: if the \`assert\` holds and \`i < n\` is false, the \`ensures\` holds.`,
+      `**Rule 3 · Termination:** every striped tile on your area is a goal. A frog never leaves your area, so the outlined tiles are the only places one can stop, like the column in the example.\n\n${endings}`,
     endingsAllGoals: 'For your area, they are all goals.',
     endingsSomeNot: 'For your area, the red ones are not goals.',
     confirmTermination: 'Press **Check** to confirm it: it now tests all three rules.',

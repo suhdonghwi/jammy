@@ -60,6 +60,8 @@ behind many small decisions; keep them when changing or adding UI.
 - **Captions are written, not dumped.** They use light Markdown (paragraphs,
   lists, bold, inline code for states and formulas), name concrete values
   (`i = 1, n = 0`), and avoid italics.
+- **One moving thing at a time** while a caption explains something; motion
+  that only decorates competes with the words.
 - **Draw what doesn't exist faintly**, rather than not at all: states the
   precondition rules out are ghost tiles, still hoverable, and the readout says
   they are not possible states.

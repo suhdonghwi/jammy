@@ -13,11 +13,11 @@ program state. Running the program is a **frog** hopping between tiles, one hop
 per loop iteration. The learner writes a formula describing an **area** of the
 plane — the loop invariant — and **Check** tests it against three rules:
 
-| Rule | Formal | Learner-facing wording | In the code |
-|---|---|---|---|
-| **Initialization** | `pre ⇒ Inv` (after the initialisation code) | Every egg is on your area. | After `requires` and the code before the loop, the `assert` holds. |
-| **Maintenance** | `Inv ∧ guard ⇒ Inv[body]` | No hop leads off your area. | If the `assert` and the loop condition hold, the `assert` holds again after the body. |
-| **Termination** | `Inv ∧ ¬guard ⇒ post` | Every striped tile on your area is a goal. | If the `assert` holds and the loop condition is false, the `ensures` holds. |
+| Rule | Formal | Learner-facing wording |
+|---|---|---|
+| **Initialization** | `pre ⇒ Inv` (after the initialisation code) | Every egg is on your area. |
+| **Maintenance** | `Inv ∧ guard ⇒ Inv[body]` | No hop leads off your area. |
+| **Termination** | `Inv ∧ ¬guard ⇒ post` | Every striped tile on your area is a goal. |
 
 The area is a **claim**: every frog is always somewhere on it. Initialization
 and Maintenance make the claim true (frogs start on it and no hop leaves it);
@@ -72,10 +72,10 @@ a picture before it is met as a rule:
    stops on it are goals, so if the claim is true every frog stops on a goal.
    That argument never followed a frog, which is why it survives endless
    eggs. It takes three things, which are the three rules.
-4. **Each rule on our loop, three ways** — the picture (callouts, outlines),
-   the plain sentence, and what it means in the code (the lines light up,
-   the `assert` among them); then the learner checks their own area, and a
-   what-if shows the rule's typical failure.
+4. **Each rule on our loop** — the picture (callouts, outlines) and the plain
+   sentence, pointing back at the example; then the learner checks their own
+   area, and a what-if shows the rule's typical failure. The tutorial stays
+   with the picture: it does not translate the rules into code.
 5. **Induction, shown with one frog** — it starts on the area, every hop lands
    on it again, so it never leaves; when it stops, is that a goal? That
    question opens Termination.
@@ -244,11 +244,13 @@ step N, for playtesting.
 
 - **Progressive reveal:** a bare plane and one frog first; the code, Step,
   eggs (with `requires`), goals (with `ensures`), Run, then the example, then
-  the formula box, the assert line and the rule lights appear only when the
-  story needs them.
+  the formula box and the rule lights appear only when the story needs them.
 - **The example is shown, not solved.** Its area is fixed and its code
-  hidden; its frogs hatch, run and go back into their eggs, over and over,
-  so the claim is seen holding while the captions explain it.
+  hidden. While the claim is introduced, one frog at a time hatches, runs and
+  goes back into its egg; once the captions turn to tiles, the frogs go home
+  and the scene is still.
+- **An endless region is drawn endless:** outlines (every egg, every stop on
+  the area) go on as far as the view does, fading with distance.
 - **Any formula is a valid move.** Each of three stages asks for one rule's
   worth of area and checks only the rules introduced so far; the story
   branches on which rule failed, never on which formula was typed. The

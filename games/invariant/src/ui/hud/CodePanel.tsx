@@ -22,7 +22,7 @@ interface Beat {
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
   assert: boolean;
-  spotLines: (number | 'assert')[];
+  spotLines: number[];
   inputHover: string | null;
   impossible: boolean;
 }
@@ -68,7 +68,7 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   if (beat.assert && headerLine >= 0) {
     const indent = stmts.length ? src.slice(lines[bodyFirst].from).match(/^\s*/)?.[0] ?? '  ' : '  ';
     rows.splice(headerLine + 1, 0, (
-      <div key="assert" className={`${ROW} text-faint ${beat.spotLines.includes('assert') ? 'bg-brand-soft' : ''}`}>
+      <div key="assert" className={`${ROW} text-faint`}>
         <span>
           {indent}
           <span className="font-semibold">assert</span>(?);

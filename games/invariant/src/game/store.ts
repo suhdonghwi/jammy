@@ -97,10 +97,10 @@ export interface Game {
   awaitingCheck: boolean;
   nextAction: { label: string; onClick: () => void } | null;
   tutorialAllow: { step: boolean; run: boolean; eggs: boolean; formula: boolean };
-  spotLines: (number | 'assert')[];
+  spotLines: number[];
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
   inputHover: string | null;
-  callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];
+  callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail'; fade?: number; delay?: number }[];
   failMark: { x: number; y: number; label: string; t0: number } | null;
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;

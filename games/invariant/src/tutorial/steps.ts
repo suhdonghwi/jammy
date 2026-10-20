@@ -1,5 +1,5 @@
 import { RULES, type Rule } from '../checker/types';
-import { hatch, loopFrogs, placeFrog, resetFrogs, stepFrogs } from '../director/frogs';
+import { hatch, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs } from '../director/frogs';
 import { playGhostWave } from '../director/verdicts';
 import { useGame, type Game, type Reveal } from '../game/store';
 import { EXIT_MS } from '../hooks/presence';
@@ -7,6 +7,7 @@ import { t } from '../i18n/i18n';
 import { toBig } from '../levels/level';
 import { eggsNear, tileState } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
+import { clamp01, smoothstep } from '../scene/easing';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
 import { allow, ask, beat, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
@@ -40,7 +41,7 @@ export function resetProgress() {
 }
 
 const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
-const DRAW = { ...WORLD, assert: true, formula: true, area: true, lights: RULES };
+const DRAW = { ...WORLD, formula: true, area: true, lights: RULES };
 const CAM: [number, number, number] = [2, 2, 15.6];
 
 const EXAMPLE = { axes: true, stop: true, hover: true, eggs: true, goals: true } as const;
@@ -58,22 +59,41 @@ const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
 type Callout = Game['callouts'][number];
 
-function tilesWhere(test: (x: number, y: number) => boolean): [number, number][] {
-  const out: [number, number][] = [];
-  for (let y = 0; y <= 9; y++) for (let x = 0; x <= 11; x++) if (test(x, y)) out.push([x, y]);
+const outlines = (tiles: [number, number][], tone: Callout['tone'] = 'good'): Callout[] => tiles.map(([x, y]) => ({ x, y, text: '', tone }));
+
+const FADE_NEAR = 6;
+const FADE_FAR = 18;
+
+function fadingOutlines(test: (x: number, y: number) => boolean, tone: (x: number, y: number) => Callout['tone']): Callout[] {
+  const [cx, cy] = CAM;
+  const out: Callout[] = [];
+  for (let y = Math.floor(cy - FADE_FAR); y <= cy + FADE_FAR; y++) {
+    for (let x = Math.floor(cx - FADE_FAR); x <= cx + FADE_FAR; x++) {
+      const d = Math.hypot(x - cx, y - cy);
+      if (d > FADE_FAR || !test(x, y)) continue;
+      out.push({ x, y, text: '', tone: tone(x, y), fade: 1 - smoothstep(clamp01((d - FADE_NEAR) / (FADE_FAR - FADE_NEAR))), delay: d * 0.03 });
+    }
+  }
   return out;
 }
 
-const outlines = (tiles: [number, number][], tone: Callout['tone'] = 'good'): Callout[] => tiles.map(([x, y]) => ({ x, y, text: '', tone }));
+function eggOutlines(tone: Callout['tone']): Callout[] {
+  const L = useGame.getState().level!;
+  const eggs = new Set(eggsNear(L, useGame.getState().inputs, CAM[0], CAM[1], FADE_FAR).map(([x, y]) => `${x},${y}`));
+  return fadingOutlines((x, y) => eggs.has(`${x},${y}`), () => tone);
+}
 
-function stopsOnArea(): [number, number][] {
+function stopsOnArea(x: number, y: number): boolean {
   const L = useGame.getState().level!;
   const { inputs, valid } = useGame.getState();
-  return tilesWhere((x, y) => {
-    const s = tileState(L, x, y, inputs);
-    return L.fast.planeReq(s) === true && L.fast.guard(s) !== true && !!valid && valid.fast(s) === true;
-  });
+  const s = tileState(L, x, y, inputs);
+  return L.fast.planeReq(s) === true && L.fast.guard(s) !== true && !!valid && valid.fast(s) === true;
 }
+
+const isGoal = (x: number, y: number) => {
+  const L = useGame.getState().level!;
+  return L.fast.post(tileState(L, x, y, useGame.getState().inputs)) === true;
+};
 
 export function loopExampleFrogs() {
   const L = useGame.getState().level!;
@@ -83,13 +103,11 @@ export function loopExampleFrogs() {
 }
 
 async function passed(gen: number, rule: Rule) {
-  const L = useGame.getState().level!;
-  const { inputs } = useGame.getState();
   if (rule === 'initialization') {
     await beat(gen, T().passedInitialization, {
       spot: 'lights',
       tone: 'success',
-      callouts: outlines(eggsNear(L, inputs, 4, 4, 6)),
+      callouts: eggOutlines('good'),
     });
   } else if (rule === 'maintenance') {
     await beat(gen, T().passedMaintenance, {
@@ -102,7 +120,7 @@ async function passed(gen: number, rule: Rule) {
     await beat(gen, T().passedTermination, {
       spot: 'lights',
       tone: 'success',
-      callouts: outlines(stopsOnArea()),
+      callouts: fadingOutlines(stopsOnArea, () => 'good'),
     });
   }
 }
@@ -260,18 +278,21 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { example: true, reveal: { ...EXAMPLE, area: true }, formula: EXAMPLE_AREA, camera: EXAMPLE_CAM, loop: true },
+    scene: { example: true, reveal: { ...EXAMPLE, area: true }, formula: EXAMPLE_AREA, camera: EXAMPLE_CAM },
     run: (gen) =>
       beat(gen, T().exWhy, {
         callouts: [
           { x: 6, y: 3, text: T().exBadTag, tone: 'fail' },
           { x: 4, y: -1, text: T().exBadTag, tone: 'fail' },
         ],
-        prepare: () => void cameraRig.lookAtTile(...EXAMPLE_WIDE),
+        prepare: () => {
+          sendFrogsHome();
+          void cameraRig.lookAtTile(...EXAMPLE_WIDE);
+        },
       }),
   },
   {
-    scene: { example: true, reveal: { ...EXAMPLE, area: true }, formula: EXAMPLE_AREA, camera: EXAMPLE_WIDE, loop: true },
+    scene: { example: true, reveal: { ...EXAMPLE, area: true }, formula: EXAMPLE_AREA, camera: EXAMPLE_WIDE },
     run: (gen) =>
       beat(gen, T().exEndings, {
         callouts: [...outlines(ENDINGS.slice(0, 4)), { x: 4, y: 4, text: T().exEndingTag, tone: 'good' }],
@@ -279,7 +300,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { example: true, reveal: { ...EXAMPLE, area: true }, formula: EXAMPLE_AREA, camera: EXAMPLE_CAM, loop: true },
+    scene: { example: true, reveal: { ...EXAMPLE, area: true }, formula: EXAMPLE_AREA, camera: EXAMPLE_CAM },
     run: (gen) =>
       beat(gen, T().exRules, {
         label: T().backToOurs,
@@ -294,7 +315,7 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: WORLD, camera: CAM },
     run: async (gen) => {
-      useGame.getState().setReveal({ formula: true, area: true });
+      useGame.getState().setReveal({ formula: true, area: true, lights: RULES });
       allow({ formula: true });
       sayWaiting(T().draw, 'formula');
       await waitStore(gen, (g) => g.valid !== null && g.formulaText.trim() !== '');
@@ -305,21 +326,12 @@ export const STEPS: Step[] = [
       learnerFormula = useGame.getState().formulaText;
     },
   },
-  {
-    scene: { reveal: { ...WORLD, formula: true, area: true }, formula: 'learner', camera: CAM },
-    run: (gen) =>
-      beat(gen, T().assert, {
-        lines: ['assert'],
-        prepare: () => useGame.getState().setReveal({ assert: true, lights: RULES }),
-        settle: 500,
-      }),
-  },
 
   {
     scene: { reveal: DRAW, formula: 'learner', camera: CAM },
     run: async (gen) => {
       useGame.getState().setReveal({ awake: ['initialization'] });
-      await beat(gen, T().ruleInitialization, { lines: [2, 4, 'assert'], callouts: outlines(eggsNear(useGame.getState().level!, useGame.getState().inputs, 4, 4, 6), 'info') });
+      await beat(gen, T().ruleInitialization, { callouts: eggOutlines('info') });
       await stage(gen, {
         ask: T().askInitialization,
         rules: ['initialization'],
@@ -343,7 +355,7 @@ export const STEPS: Step[] = [
     scene: { reveal: { ...DRAW, awake: ['initialization'] }, formula: 'learner', camera: CAM },
     run: async (gen) => {
       useGame.getState().setReveal({ awake: ['initialization', 'maintenance'] });
-      await beat(gen, T().ruleMaintenance, { lines: ['assert', 5, 6] });
+      await beat(gen, T().ruleMaintenance);
       await stage(gen, {
         ask: T().askMaintenance,
         rules: ['initialization', 'maintenance'],
@@ -391,17 +403,13 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[3, 3]], camera: [1.5, 3, 12] },
     run: async (gen) => {
-      const L = useGame.getState().level!;
-      const { inputs } = useGame.getState();
-      const stops = stopsOnArea();
-      const offGoal = stops.filter(([x, y]) => L.fast.post(tileState(L, x, y, inputs)) !== true);
-      const strong = offGoal.length === 0;
+      const endings = fadingOutlines(stopsOnArea, (x, y) => (isGoal(x, y) ? 'good' : 'fail'));
+      const strong = endings.every((c) => c.tone === 'good');
       const right = predictedGoal === null ? null : predictedGoal === strong;
       const verdict = right === null ? '' : right ? T().predictedRight : T().guessedWrong;
       await beat(gen, `${verdict}${T().ruleTermination(strong ? T().endingsAllGoals : T().endingsSomeNot)}`, {
-        lines: ['assert', 5, 9],
         tone: right ? 'success' : 'info',
-        callouts: strong ? outlines(stops) : [...outlines(stops.filter((s) => !offGoal.includes(s)), 'info'), ...outlines(offGoal, 'fail')],
+        callouts: strong ? endings : endings.map((c) => (c.tone === 'good' ? { ...c, tone: 'info' } : c)),
         prepare: () => {
           useGame.getState().setReveal({ awake: RULES });
           void cameraRig.lookAtTile(...CAM);

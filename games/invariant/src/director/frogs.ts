@@ -44,7 +44,7 @@ export function hatch(s: State, quiet = false): FrogSim {
   const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
   hatchFx.push({ x, y, plane: planeKey(inputsOf(L, s)), dx: slot.dx, dy: slot.dy, s: slot.scale });
   if (!quiet) sfx.hatch();
-  return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale });
+  return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale, home: [x, y] });
 }
 
 function movingFrogs(): FrogSim[] {
@@ -180,28 +180,36 @@ export function clickTile(x: number, y: number) {
   void runEgg(toBig(tileState(level!, x, y, inputs)));
 }
 
-export function loopFrogs(eggs: State[], stagger = 1.6) {
+export function loopFrogs(eggs: State[]) {
   const tok = begin();
   const L = currentLevel();
-  const live = async (s: State) => {
-    while (tok.alive) {
-      const f = hatch(s, true);
-      await sleep(550);
+  void (async () => {
+    await sleep(400);
+    for (let k = 0; tok.alive; k = (k + 1) % eggs.length) {
+      const f = hatch(eggs[k], true);
+      await sleep(650);
       while (tok.alive && !f.stopped) {
         const n = hop(L, f.state);
-        await frogWorld.hopTo(L, f, n, 0.4, true);
+        await frogWorld.hopTo(L, f, n, 0.42, true);
         f.stopped = !running(L, n);
-        await sleep(120);
+        await sleep(160);
       }
-      await sleep(1400);
+      await sleep(1200);
       if (!tok.alive) return;
-      f.leave = { t0: sceneNow(), dur: 0.35 };
-      await sleep(400);
-      if (!tok.alive) return;
-      frogWorld.remove(f);
-      frogWorld.returnEgg(Number(s[L.view.x]), Number(s[L.view.y]));
-      await sleep(900);
+      await sendHome(f);
+      await sleep(500);
     }
-  };
-  eggs.forEach((s, i) => after(i * stagger * 1000, () => tok.alive && void live(s)));
+  })();
+}
+
+async function sendHome(f: FrogSim) {
+  f.leave = { t0: sceneNow(), dur: 0.35 };
+  await sleep(400);
+  frogWorld.remove(f);
+  if (f.home) frogWorld.returnEgg(...f.home);
+}
+
+export function sendFrogsHome() {
+  begin();
+  for (const f of frogWorld.frogs) if (f.kind === 'real') void sendHome(f);
 }
