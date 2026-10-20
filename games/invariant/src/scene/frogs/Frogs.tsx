@@ -13,20 +13,14 @@ import { frogWorld, type FrogSim } from './frogWorld';
 import { pose } from './motion';
 import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
 
-// Every frog in two instanced draws (plus their shadows): the real frogs, and
-// the test frogs as see-through ghosts that float a little above their tile.
-// Frogs sharing a tile move into slots, and a crowded tile gets a "×n" badge.
-
 const MAX_FROGS = 400;
 const BADGES = 24;
 
 const dummy = new THREE.Object3D();
 const GHOST = new THREE.Color(COLORS.ghostFrog);
-/** How high a ghost floats over its tile, and how far it bobs up and down. */
 const FLOAT = 0.12;
 const BOB = 0.035;
 
-/** The tile a frog is on, or is landing on. */
 const tileOf = (f: FrogSim) => (f.hop ? `${f.hop.tx},${f.hop.ty}` : `${f.x},${f.y}`);
 
 export function Frogs() {
@@ -39,7 +33,6 @@ export function Frogs() {
   const ghostDepthMat = useMemo(() => ghostDepthMaterial(), []);
   const ghostMat = useMemo(() => {
     const m = frogMaterial({ ghost: true });
-    // more solid than the hover preview's, so the two never read as the same thing
     m.opacity = 0.8;
     return m;
   }, []);
@@ -51,7 +44,6 @@ export function Frogs() {
   const plane = useGame((s) => planeKey(s.inputs));
   const lastT = useRef<number | undefined>(undefined);
   const badgeRefs = useRef<(THREE.Sprite | null)[]>([]);
-  // nothing renders until the first frame has placed every instance
   useLayoutEffect(() => {
     for (const r of [body, ghosts, ghostDepth, shadows]) if (r.current) r.current.count = 0;
   }, []);
@@ -63,9 +55,6 @@ export function Frogs() {
     const sh = shadows.current;
     if (!b || !gh || !gd || !sh) return;
     const t = sceneNow();
-    // Which frogs share which tile (for slot layout). A hopping frog already
-    // counts on the tile it is landing on, so the frogs there make room while
-    // it is in the air and it touches down straight into its own slot.
     const visible = frogWorld.frogs.filter((f) => f.plane === plane);
     const groups = new Map<string, FrogSim[]>();
     for (const f of visible) {
@@ -75,8 +64,6 @@ export function Frogs() {
       if (g) g.push(f);
       else groups.set(key, [f]);
     }
-    // only the egg tiles' counts are published: the eggs rebuild when one
-    // changes, and a shower of frogs landing elsewhere shouldn't rebuild them
     let sig = '';
     for (const [k, g] of groups) if (occupancy.eggs.has(k)) sig += `${k}:${g.length}|`;
     if (sig !== occupancy.signature) {
@@ -97,11 +84,9 @@ export function Frogs() {
       const p = pose(f, t);
       if (p.landed) {
         sfx.touch();
-        // dropped onto a goal
         const s = toNum(f.state);
         if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f);
       }
-      // slot within a shared tile; glide toward it so nothing pops
       let target = { dx: 0, dy: 0, scale: 1 };
       if (f.carried === undefined) {
         const key = tileOf(f);
@@ -117,7 +102,6 @@ export function Frogs() {
         f.oy = target.dy;
         f.os = target.scale;
       } else {
-        // in the air: arrive at the slot exactly on landing; otherwise glide
         const left = f.hop ? f.hop.t0 + f.hop.dur - t : 0;
         const kk = left > 0 ? Math.min(1, dt / left) : k;
         f.ox += (target.dx - f.ox) * kk;
@@ -128,7 +112,6 @@ export function Frogs() {
       const px = p.x + f.ox;
       const pz = p.z - f.oy!;
       const ghost = f.kind === 'test';
-      // a ghost hovers, each at its own phase; one carried in the hand sits in it
       const py = ghost && f.carried === undefined ? p.y + FLOAT + BOB * Math.sin(t * 2.6 + f.id * 1.7) : p.y;
       if (!f.drawn) f.drawn = { x: 0, y: 0, ground: 0, z: 0, scale: 1 };
       f.drawn.x = px;
@@ -145,7 +128,6 @@ export function Frogs() {
         gh.setMatrixAt(nGhost, dummy.matrix);
         gh.setColorAt(nGhost++, GHOST);
       } else b.setMatrixAt(nReal++, dummy.matrix);
-      // the shadow shrinks as the frog rises (a ghost's is fainter: smaller still)
       const air = Math.max(0, py - p.ground);
       const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2) * os * (ghost ? 0.75 : 1);
       dummy.position.set(px, p.ground + 0.008, pz);
@@ -172,7 +154,6 @@ export function Frogs() {
   return (
     <group>
       <instancedMesh ref={shadows} args={[shadowGeom, shadowMat, MAX_FROGS]} frustumCulled={false} renderOrder={3} />
-      {/* a click on a frog isn't a click on the tile (or egg) under it */}
       <instancedMesh ref={body} args={[geom, mat, MAX_FROGS]} frustumCulled={false} onClick={(e) => e.stopPropagation()} />
       <instancedMesh ref={ghostDepth} args={[geom, ghostDepthMat, MAX_FROGS]} frustumCulled={false} renderOrder={4} />
       <instancedMesh ref={ghosts} args={[geom, ghostMat, MAX_FROGS]} frustumCulled={false} renderOrder={5} onClick={(e) => e.stopPropagation()} />

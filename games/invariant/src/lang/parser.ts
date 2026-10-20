@@ -1,10 +1,6 @@
 import { t } from '../i18n/i18n';
 import { COMPARISON_OPS, NO_SPAN, spanOf, type BinOp, type BuiltinFn, type Expr, type InputDecl, type Program, type RangeOp, type Span, type Stmt, type VarDecl } from './ast';
 
-// Tokenizer and recursive-descent parser for programs and area formulas,
-// with friendly errors that point at a span of the source.
-
-/** Error messages a learner can see, in the current language (named so a token `t` doesn't shadow it). */
 const tr = () => t().langErrors;
 
 export class LangError extends Error {
@@ -100,7 +96,6 @@ class Parser {
     return this.next();
   }
 
-  // ---- expressions ----
   expr(): Expr {
     return this.or();
   }
@@ -122,7 +117,6 @@ class Parser {
     }
     return l;
   }
-  // Chained comparisons: `0 <= i <= n` means `0 <= i && i <= n`.
   cmp(): Expr {
     const first = this.add();
     const operands: Expr[] = [first];
@@ -213,11 +207,6 @@ class Parser {
     throw new LangError(tr().unexpected(t.text), t.span);
   }
 
-  /**
-   * `forall lo <= k < hi: body`: a chain of `<` / `<=` comparisons whose
-   * inner names are the bound names (`forall 0 <= j <= k < n: …` binds two),
-   * then a colon and a single comparison (parenthesise anything bigger).
-   */
   quantifier(): Expr {
     const kw = this.next();
     const q = kw.text as 'forall' | 'exists';
@@ -240,7 +229,6 @@ class Parser {
     return { kind: 'quant', q, vars, ops, lo: parts[0], hi: parts[parts.length - 1], body, span: { from: kw.span.from, to: body.span.to } };
   }
 
-  // ---- statements ----
   block(): Stmt[] {
     if (this.isOp('{')) {
       this.next();
@@ -294,7 +282,6 @@ class Parser {
     const inputDecls: InputDecl[] = [];
     const arrays: Record<string, string> = {};
     const vars: VarDecl[] = [];
-    // `input n;` or `input A[n];` (an array whose length is the input `n`)
     const input = () => {
       const name = this.ident();
       const decl: InputDecl = { name: name.text, span: name.span };

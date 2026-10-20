@@ -4,9 +4,6 @@ import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { RULES } from '../../checker/types';
 
-// The three rule lights, under the formula: what Check found, rule by rule
-// (dim until the tutorial reaches them; a failed one replays its counterexample).
-
 export function RuleLights() {
   const lights = useGame((s) => s.reveal.lights);
   const awake = useGame((s) => s.reveal.awake);
@@ -43,12 +40,10 @@ export function RuleLights() {
 type LightStatus = 'dim' | 'idle' | 'checking' | 'pass' | 'fail' | 'undecided';
 
 const LIGHT: Record<LightStatus, string> = {
-  // revealed, but its stage hasn't come yet
   dim: 'text-faint opacity-60',
   idle: 'text-muted',
   checking: 'text-muted',
   pass: 'bg-pass-soft text-pass',
-  // a failed rule replays its counterexample
   fail: 'cursor-pointer bg-fail-soft text-fail',
   undecided: 'bg-warn-soft text-warn',
 };

@@ -6,24 +6,12 @@ import type { FastState } from '../../lang/eval';
 import { useHover } from '../../scene/hover';
 import { tileState } from '../../levels/tiles';
 
-// What is the pointer on? The hovered tile's values, where a frog there would
-// go, and whether it is in the area.
-
-// a dark pill; with tags on its right it hugs them more tightly than its text on the left.
-// On phones the tags wrap under the values instead of running off the screen.
 const READOUT =
   'flex animate-[fade_0.15s_ease-out] items-center gap-2 rounded-full bg-ink/86 px-3.5 py-1.75 text-sm text-white shadow-card has-[>span+span]:pr-2 max-sm:mx-4 max-sm:flex-wrap max-sm:justify-center max-sm:gap-y-1 max-sm:rounded-2xl';
 const TAG = 'rounded-full px-2.5 py-0.75 font-display text-sm font-medium';
 
-/** Room the readout needs to sit in the top bar's row (values plus two tags). */
 const READOUT_ROOM = 440;
 
-/**
- * Lift the readout into the top bar's row when the bar's middle is free (the
- * tutorial, wide screens); otherwise it stays just below the bar. The check
- * uses a fixed width, not the current text, so it never hops between rows
- * while you hover around.
- */
 function useTopRowPlacement(ref: React.RefObject<HTMLDivElement | null>) {
   useLayoutEffect(() => {
     const el = ref.current;
@@ -55,7 +43,6 @@ export function HoverReadout() {
   if (!tile || !reveal.axes) return null;
   const s = tileState(level, tile[0], tile[1], inputs);
   const vals = scalarNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
-  // tiles the precondition rules out: there is no such state, so nothing more to say
   if (!level.fast.planeReq(s)) {
     return (
       <div className={READOUT} ref={ref}>

@@ -11,10 +11,6 @@ import { MAX_EVENTS } from '../shaders/common';
 import { field } from './field';
 import { GLSL_HEIGHT, instanced } from './glsl';
 
-// A column of warm light over every goal pool, like a checkpoint pad: clearest
-// at its edges and fading upward. When a frog lands on a goal, its column
-// glows brighter for a moment.
-
 const vertex = /* glsl */ `
 ${GLSL_HEIGHT}
 uniform vec3 uEvents[${MAX_EVENTS}];
@@ -22,7 +18,6 @@ varying float vV;
 varying float vBurst;
 varying vec3 vN;
 varying vec3 vWorld;
-// 1 right after a frog lands on this goal, falling back to 0
 float burstNow() {
   float b = 0.0;
   for (int i = 0; i < ${MAX_EVENTS}; i++) {
@@ -38,7 +33,6 @@ void main() {
   vV = uv.y;
   float burst = burstNow();
   vBurst = burst;
-  // shoot up and widen a little on a landing
   vec3 pos = position * vec3(1.0 + 0.25 * burst, 1.0 + 2.2 * burst, 1.0 + 0.25 * burst);
   vec4 w = modelMatrix * vec4(pos + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.004, -aTile.y), 1.0);
   vWorld = w.xyz;
@@ -57,13 +51,10 @@ varying vec3 vN;
 varying vec3 vWorld;
 void main() {
   vec3 V = normalize(cameraPosition - vWorld);
-  // clearest where the column is seen edge-on
   float edge = pow(1.0 - abs(dot(normalize(vN), V)), 1.4);
   float fall = pow(1.0 - vV, 1.6);
   float a = fall * (0.2 + 0.32 * edge);
-  // glow brighter for a moment when a frog lands here
   a += (0.25 + 0.45 * edge) * vBurst * pow(1.0 - vV, 0.8);
-  // fade in when the goals are revealed
   a *= smoothstep(0.0, 0.7, uTime - uAppearT0);
   vec3 col = mix(uColor, vec3(1.0, 0.93, 0.72), 0.25 + 0.4 * vBurst);
   gl_FragColor = vec4(col, min(a, 0.92));

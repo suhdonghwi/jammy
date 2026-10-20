@@ -9,9 +9,6 @@ import { sceneNow } from '../sceneTime';
 import { getBlobTexture } from '../shaders/common';
 import { handState } from './handState';
 
-// A puffy cartoon glove — the skeptic. Palm faces down, fingers point along -z.
-// Every part has an inverted-hull outline so it reads clearly on the white world.
-
 const FINGERS = [
   { x: -0.235, len: [0.13, 0.11], spread: 0.12 },
   { x: -0.08, len: [0.15, 0.13], spread: 0.03 },
@@ -56,16 +53,14 @@ export function Hand() {
     g.visible = h.visible > 0.01;
     const s = (0.25 + 0.75 * h.visible) * 0.95;
     g.scale.setScalar(s);
-    // hold steady while carrying a frog in the palm
     const bob = Math.sin(t * 1.7) * 0.035 * (1 - h.palmUp);
     g.position.set(h.x, h.y + bob, h.z);
     const shrugWobble = Math.sin(t * 10) * 0.25 * h.shrug;
-    // base yaw π: the hand reaches in from the far side, fingers toward the viewer
     inner.current.rotation.set(-0.3 + h.tilt + h.shrug * -0.25, Math.PI + h.yaw, Math.PI * h.palmUp + shrugWobble, 'YXZ');
     inner.current.position.y = Math.abs(Math.sin(t * 10)) * 0.12 * h.shrug;
 
     fingers.current.forEach((f, i) => {
-      const isIndex = i === 0; // the finger next to the thumb
+      const isIndex = i === 0;
       let curl = isIndex ? h.curl * (1 - h.point) : Math.max(h.curl, h.point * 0.95);
       curl += Math.max(0, Math.sin(t * 13 - i * 0.9)) * 0.5 * h.tap;
       if (f.a) f.a.rotation.set(-curl * 1.05, FINGERS[i].spread * (1 - curl * 0.6), 0);
@@ -75,12 +70,8 @@ export function Hand() {
     if (thumb.current.a) thumb.current.a.rotation.set(-0.15 - tc * 0.4, 0.75 - tc * 0.5, -0.35);
     if (thumb.current.b) thumb.current.b.rotation.set(-tc * 0.8, 0, 0);
 
-    // soft shadow on the ground under the hand: larger and lighter when high
     const sh = shadow.current;
     if (sh) {
-      // straight below the hand, on whatever surface is there (floor or slab).
-      // The shadow is a child of the hand's group, so this is in its local
-      // frame: no x/z offset, and undo the group's height (bob included) and scale.
       const surface = field.heightAt(Math.round(h.x), Math.round(-h.z)) * SLAB_H;
       const height = Math.max(0.2, h.y - surface);
       sh.position.set(0, (surface + 0.012 - (h.y + bob)) / s, 0);
@@ -97,7 +88,6 @@ export function Hand() {
       </mesh>
       <group ref={inner}>
         <Part geometry={palm} material={mat} outline={outline} />
-        {/* wrist + rolled cuff */}
         <Part geometry={wrist} material={mat} outline={outline} position={[0, 0.01, 0.34]} />
         <Part geometry={cuff} material={cuffMat} outline={outline} position={[0, 0.01, 0.46]} />
         {FINGERS.map((f, i) => (

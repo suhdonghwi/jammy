@@ -2,9 +2,6 @@ import { useT } from '../../i18n/i18n';
 import { Dialog } from '../Dialog';
 import { ArtTermination, ArtInitialization, ArtMaintenance } from './RuleArt';
 
-// The three rules, as a card over everything (from the top bar, and at the end of the tutorial).
-// On a phone each rule is one row, its art beside its words, so the card fits without much scrolling.
-
 export function RulesCard() {
   const tr = useT();
   const card = tr.rulesCard;
@@ -21,7 +18,6 @@ export function RulesCard() {
   );
 }
 
-/** One rule: its art, its name, and what it says. */
 function Rule({ n, name, text, art }: { n: number; name: string; text: string; art: React.ReactNode }) {
   return (
     <div className="rounded-2xl bg-sky p-3 max-sm:flex max-sm:items-center max-sm:gap-2.5 max-sm:p-2.5 max-sm:text-left">

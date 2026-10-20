@@ -2,18 +2,10 @@ import type * as THREE from 'three';
 import { freeVars, type Expr } from '../../lang/ast';
 import { MAX_LEN, type CompiledLevel, type Inputs } from '../../levels/level';
 
-// Compiles level formulas to GLSL so the floor can be drawn per pixel —
-// an infinite plane with no per-tile geometry. Only used for visuals; the
-// checker always uses exact arithmetic. The off-axis inputs are uniforms:
-// an int per integer input, and an int array (MAX_LEN long) per array
-// input, read as 0 outside its length. A quantifier becomes a function
-// with a loop; a range wider than MAX_LEN + 1 is cut off (visual only).
-
 const ident = (name: string) => `v_${name}`;
 const inputUniform = (name: string) => `uIn_${name}`;
 const arrayUniform = (name: string) => `uArr_${name}`;
 
-/** The GLSL for a level's formulas: helper functions and an expression per formula. */
 class Compiler {
   fns: string[] = [];
   private n = 0;
@@ -49,7 +41,6 @@ class Compiler {
     }
   }
 
-  /** A quantifier as a function of its free integer names: nested loops, one per bound name, that stop early. */
   private quant(e: Expr & { kind: 'quant' }): string {
     const free = [...freeVars(e)].filter((n) => !this.level.arrays[n]);
     const name = `Q${this.n++}`;
@@ -59,7 +50,7 @@ class Compiler {
     for (let k = e.vars.length - 1; k >= 0; k--) {
       const v = ident(e.vars[k]);
       const from = k === 0 ? (e.ops[0] === '<' ? 'lo + 1' : 'lo') : e.ops[k] === '<' ? `${ident(e.vars[k - 1])} + 1` : ident(e.vars[k - 1]);
-      // GLSL ES 1.0 loops need a constant bound: count iterations and break
+      // GLSL ES 1.0 loops need a constant bound
       inner = `for (int i${k} = 0; i${k} <= ${MAX_LEN}; i${k}++) { int ${v} = ${from} + i${k}; if (${v} > ${last}) break; ${inner} }`;
     }
     const params = free.map((n) => `int ${ident(n)}`).join(', ');
@@ -73,14 +64,6 @@ int fdiv(int a, int k) { return int(floor(float(a) / float(k))); }
 int emod(int a, int k) { return a - k * fdiv(a, k); }
 `;
 
-/**
- * Functions over a tile (X, Y) of the plane the input uniforms pick:
- *   bool L_exists(ivec2 t), bool L_stop(ivec2 t), bool L_goal(ivec2 t)
- * L_exists is the part of the precondition that mentions an axis name (a row
- * `n < 0` on a level that plots `n`). The part over the off-axis inputs alone
- * is the same for every tile, so it is the uniform uExists, set from the CPU:
- * a quantifier over an array (sortedness, say) is checked once, not per pixel.
- */
 export function levelGlsl(level: CompiledLevel | null): string {
   if (!level) {
     return `
@@ -94,7 +77,6 @@ bool L_goal(ivec2 t) { return false; }
   const uniforms = level.offAxis
     .map((n) => (level.arrays[n] ? `uniform int ${arrayUniform(n)}[${MAX_LEN}];` : `uniform int ${inputUniform(n)};`))
     .join('\n');
-  // an array's cells, 0 outside 0..length-1
   const cells = Object.entries(level.arrays)
     .map(([a, len]) => `int cell_${a}(int k) { return (k >= 0 && k < ${inputUniform(len)}) ? ${arrayUniform(a)}[k] : 0; }`)
     .join('\n');
@@ -102,7 +84,6 @@ bool L_goal(ivec2 t) { return false; }
   const stop = c.expr(level.guard);
   const goal = c.expr(level.post);
   const decls = [`int ${ident(level.view.x)} = t.x;`, `int ${ident(level.view.y)} = t.y;`, ...level.offAxis.filter((n) => !level.arrays[n]).map((n) => `int ${ident(n)} = ${inputUniform(n)};`)].join(' ');
-  // the quantifier functions take the names they use as parameters, so they need the tile's values in scope: inline them as globals set per call
   return `
 uniform bool uExists;
 ${uniforms}
@@ -114,7 +95,6 @@ bool L_goal(ivec2 t) { ${decls} return ${goal}; }
 `;
 }
 
-/** Uniforms for the off-axis inputs, with their starting values. */
 export function inputUniforms(level: CompiledLevel | null): Record<string, THREE.IUniform> {
   const out: Record<string, THREE.IUniform> = { uExists: { value: true } };
   if (!level) return out;
@@ -122,7 +102,6 @@ export function inputUniforms(level: CompiledLevel | null): Record<string, THREE
   return out;
 }
 
-/** Point the input uniforms at a plane. */
 export function setInputUniforms(u: Record<string, THREE.IUniform>, level: CompiledLevel | null, inputs: Inputs, exists: boolean): void {
   u.uExists.value = exists;
   if (!level) return;

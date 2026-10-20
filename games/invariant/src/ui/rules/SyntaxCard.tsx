@@ -4,14 +4,9 @@ import { scalarNames } from '../../levels/level';
 import { HighlightedCode } from '../codeColors';
 import { Dialog } from '../Dialog';
 
-// What can be typed into the area box, as a card over everything (from the
-// top bar): examples only, coloured like the code, using the open level's own
-// variables.
-
 export function SyntaxCard() {
   const level = useGame((s) => s.level);
   const [a, b] = level ? scalarNames(level) : ['i', 'n'];
-  // array examples only in a level with an array, written with its own array and length
   const arr = level ? Object.entries(level.arrays)[0] : undefined;
   const s = useT().syntax;
   return (

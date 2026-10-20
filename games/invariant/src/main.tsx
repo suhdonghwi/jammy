@@ -12,7 +12,6 @@ import { levels } from './levels/catalog';
 import { frogWorld } from './scene/frogs/frogWorld';
 import { handState } from './scene/hand/handState';
 
-// handles for poking at the game from the console
 if (import.meta.env.DEV) {
   Object.assign(window, {
     __rig: cameraRig,

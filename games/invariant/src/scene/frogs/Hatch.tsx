@@ -10,14 +10,7 @@ import { sceneNow } from '../sceneTime';
 import { colorUniform, GLSL_COMMON } from '../shaders/common';
 import { clamp01, smoothstep } from '../easing';
 
-// Hatching: the egg wobbles, cracks along a zigzag, its cap pops off and
-// tumbles away, and the frog grows out of the bottom half, which then shrinks
-// away. The egg layer hides the egg the moment it hatches; from then on the
-// shell pieces are drawn here.
-
-/** Wobble before the crack. */
 const HATCH_WOBBLE = 0.16;
-/** The frog starts to climb out a beat after the cap has popped off. */
 export const HATCH_EMERGE = HATCH_WOBBLE + 0.05;
 const CAP_LIFE = 0.5;
 const CUP_LIFE = 0.55;
@@ -31,7 +24,6 @@ interface HatchFx {
   dx: number;
   dy: number;
   s: number;
-  /** Direction the cap flies off. */
   dir: number;
 }
 
@@ -59,12 +51,11 @@ void main() {
 
 const fragment = /* glsl */ `
 uniform vec3 uEgg;
-uniform float uPart; // 0 = bottom cup, 1 = top cap
+uniform float uPart;
 varying vec3 vN;
 varying vec3 vLocal;
 ${GLSL_COMMON}
 void main() {
-  // zigzag crack around the egg
   float a = atan(vLocal.z, vLocal.x) / 6.2831853 * 9.0;
   float tri = abs(fract(a) * 2.0 - 1.0) * 2.0 - 1.0;
   float crack = 0.2 + 0.024 * tri;
@@ -72,7 +63,6 @@ void main() {
   vec3 n = normalize(vN);
   vec3 col = uEgg;
   if (!gl_FrontFacing) {
-    // the inside of the shell: paler and a little shadowed
     n = -n;
     col = mix(uEgg, vec3(1.0), 0.35) * 0.9;
   }
@@ -125,7 +115,6 @@ export function HatchShells() {
       const bx = fx.x + fx.dx;
       const bz = -fx.y - fx.dy;
       if (u < HATCH_WOBBLE) {
-        // rock side to side on its base, harder and harder
         const w = u / HATCH_WOBBLE;
         const tilt = Math.sin(w * Math.PI * 4) * 0.22 * w;
         q.setFromAxisAngle(axis.set(Math.cos(fx.dir), 0, -Math.sin(fx.dir)), tilt);
@@ -135,20 +124,17 @@ export function HatchShells() {
         continue;
       }
       const v = u - HATCH_WOBBLE;
-      // bottom half stays a moment while the frog climbs out, then shrinks away
       if (v < CUP_LIFE) {
         const k = 1 - smoothstep(clamp01((v - 0.15) / (CUP_LIFE - 0.15)));
         q.identity();
         m.compose(pos.set(bx, base - 0.03 * (1 - k), bz), q, scl.set(fx.s * k, fx.s * k * k, fx.s * k));
         a.setMatrixAt(na++, m);
       }
-      // the cap pops up and off to one side, tumbling, then shrinks away
       if (v < CAP_LIFE) {
         const k = 1 - smoothstep(clamp01((v - 0.22) / (CAP_LIFE - 0.22)));
         const side = 0.9 * v;
         const lift = 2.8 * v - 6.5 * v * v;
         pos.set(bx + Math.cos(fx.dir) * side, base + Math.max(lift, -0.05), bz - Math.sin(fx.dir) * side);
-        // tumble about the crack line, away from the direction of travel
         q.setFromAxisAngle(axis.set(Math.sin(fx.dir), 0, Math.cos(fx.dir)), -7 * v);
         pivot.makeTranslation(0, 0.2 * fx.s, 0);
         unpivot.makeTranslation(0, -0.2 * fx.s, 0);

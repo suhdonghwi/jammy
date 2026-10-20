@@ -1,5 +1,3 @@
-// Build-time level validation: every level parses, every solution is proved,
-// every pitfall fails, real frogs terminate, and the Korean text matches.
 import { checkFormula } from '../src/checker/check';
 import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import type { State } from '../src/lang/ast';
@@ -14,7 +12,6 @@ const fail = (msg: string) => {
   console.log(`  ✗ ${msg}`);
 };
 
-/** A few arrays of each small length: ascending, descending, and a couple of fixed patterns. */
 function sampleArrays(n: number): bigint[][] {
   const up = Array.from({ length: n }, (_, k) => BigInt(k - 1));
   const down = [...up].reverse();
@@ -35,7 +32,6 @@ function sampleEggs(level: CompiledLevel): State[] {
     const d = level.freeDims[k];
     const len = level.arrays[d];
     if (len) {
-      // the array's length was chosen before it (its length input is declared first)
       const n = Number(s[len]);
       if (n < 0 || n > 6) return;
       for (const a of sampleArrays(n)) go(k + 1, { ...s, [d]: a });
@@ -45,7 +41,6 @@ function sampleEggs(level: CompiledLevel): State[] {
   return eggs;
 }
 
-/** A hint points the way; typing the answer is the learner's job. */
 function checkHints(def: LevelDef, hints: string[]) {
   for (const h of hints) {
     const quoted = [...h.matchAll(/`([^`]+)`/g)].map((m) => m[1].replace(/\s+/g, ''));
@@ -54,7 +49,6 @@ function checkHints(def: LevelDef, hints: string[]) {
   }
 }
 
-/** The Korean text says as much as the English: the same hints and pitfall messages, in the same order. */
 function checkKorean(def: LevelDef) {
   const ko = levelsKo[def.id];
   if (!ko) return fail('no Korean text in catalog.ko.ts');
@@ -69,7 +63,6 @@ for (const id of Object.keys(levelsKo)) {
   if (!allLevels.some((l) => l.id === id)) fail(`catalog.ko.ts has text for unknown level '${id}'`);
 }
 
-// `pnpm validate find-it sorted-search` checks only those levels
 const only = process.argv.slice(2);
 for (const def of allLevels) {
   if (only.length && !only.includes(def.id)) continue;

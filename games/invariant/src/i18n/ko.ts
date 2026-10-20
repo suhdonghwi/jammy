@@ -1,17 +1,5 @@
 import type { Messages } from './en';
 
-// Everything en.ts says, in Korean: written to read naturally in Korean, not
-// translated line by line, so a sentence may say a little more or less than
-// its English. Captions speak 합쇼체 (~습니다), with instructions as ~하세요
-// and open questions as ~ㄹ까요?; button labels are short nouns.
-//
-// No italics: Korean doesn't use them for emphasis (the browser only slants
-// the letters); bold or plain words carry it instead.
-//
-// Particles: a fixed name gets the one its reading takes (`i`가 — 아이,
-// `n`이 — 엔). A formula or state filled in at run time is followed by a noun
-// (조건, 칸…) or a particle that fits any word (에서, 의), never 이/가 or 을/를.
-
 export const ko: Messages = {
   and: ', ',
   gotIt: '확인',

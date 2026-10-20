@@ -1,17 +1,10 @@
 import { Fragment, type ReactNode } from 'react';
 
-// A tiny Markdown subset for captions, rendered straight to styled React
-// elements (no HTML strings):
-//   blank line → new paragraph, single newline → line break
-//   "- item" lines → bullet list, "1. item" lines → numbered list
-//   `code`, **bold**, *italic* / _italic_
-
 export function Markdown({ text }: { text: string }) {
   const blocks = text.trim().split(/\n[ \t]*\n/);
   return <>{blocks.map((b, i) => renderBlock(b, i))}</>;
 }
 
-/** Space between paragraphs and lists. */
 const gap = (key: number) => (key > 0 ? 'mt-2.5 max-sm:mt-2' : '');
 
 function renderBlock(block: string, key: number): ReactNode {
@@ -45,13 +38,11 @@ function renderBlock(block: string, key: number): ReactNode {
 
 const LI = 'marker:text-muted [&+li]:mt-0.5';
 
-// code first, so nothing inside backticks is treated as emphasis
 const INLINE = /(`[^`]+`|\*\*.+?\*\*|(?<![\w*])\*(?!\s)[^*]+?\*(?!\w)|(?<!\w)_(?!\s)[^_]+?_(?!\w))/g;
 
 function renderInline(text: string): ReactNode[] {
   return text.split(INLINE).map((part, i) => {
     if (!part) return null;
-    // inline code (states, formulas) never breaks across lines
     if (part.length > 2 && part.startsWith('`') && part.endsWith('`'))
       return (
         <code key={i} className="rounded-md bg-shade/6 px-1.5 py-px font-mono text-[0.9em] whitespace-nowrap">

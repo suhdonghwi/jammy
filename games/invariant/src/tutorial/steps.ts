@@ -10,28 +10,14 @@ import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
 import { allow, ask, beat, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
 
-// The story, as steps. Each step knows the scene it starts from, so Back can
-// rebuild it and replay the step; moving forward just runs the next one.
-//
-// Acts: the world (what is being proved) → the three rules, one stage each
-// (the learner draws an area; whatever passes or fails is the lesson) →
-// wrap-up. The principles and vocabulary are in docs/design.md ("The
-// tutorial"); the words themselves are in i18n/en.ts and ko.ts.
-
-/** A tutorial state (i, n). */
 export const st = (i: number, n: number) => ({ i: BigInt(i), n: BigInt(n) });
 const realFrogsStopped = () => frogWorld.frogs.filter((f) => f.kind === 'real').every((f) => f.stopped);
 
-/** What the scene looks like when a step begins. */
 export interface Scene {
   reveal: Partial<Reveal>;
-  /** Real frogs (as (i, n)) already on the board. */
   frogs?: [number, number][];
-  /** Frogs carry their value tags. */
   tags?: boolean;
-  /** A fixed formula, or whatever area the learner last had pass a stage. */
   formula?: string | 'learner';
-  /** Camera target tile and distance. */
   camera?: [number, number, number];
 }
 
@@ -40,13 +26,8 @@ interface Step {
   run: (gen: number) => Promise<void>;
 }
 
-// ---- what the learner has done so far (survives Back, cleared when the tutorial starts) ----
-
-/** The learner's area as of the last stage it passed. */
 export let learnerFormula = '';
-/** Rules the learner has seen fail on an area of their own (then the hand's demo of that rule is skipped). */
 const witnessed = new Set<Rule>();
-/** The learner's answer to "does stopping on your area mean stopping on a goal?" (null before they answer). */
 let predictedGoal: boolean | null = null;
 
 export function resetProgress() {
@@ -58,27 +39,21 @@ export function resetProgress() {
 const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
 const DRAW = { ...WORLD, assert: true, formula: true, lights: RULES };
 
-/** Run hatches the first ten eggs: n = 0 to 9, each frog stopping on its goal (n, n). */
 const TESTED = Array.from({ length: 10 }, (_, n): [number, number] => [n, n]);
 const upTo = (r: Rule): Rule[] => RULES.slice(0, RULES.indexOf(r) + 1);
 
-/** The tutorial's lines, in the current language. */
 const T = () => t().tutorial;
 
-/** The learner's area, as inline code. */
 const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
-/** Tiles in the tutorial's view that satisfy `test`. */
 function tilesWhere(test: (x: number, y: number) => boolean): [number, number][] {
   const out: [number, number][] = [];
   for (let y = 0; y <= 9; y++) for (let x = 0; x <= 11; x++) if (test(x, y)) out.push([x, y]);
   return out;
 }
 
-/** Outlines on tiles (no text: the caption says what they show); green unless `tone` says otherwise. */
 const outlines = (tiles: [number, number][], tone: 'good' | 'info' | 'fail' = 'good') => tiles.map(([x, y]) => ({ x, y, text: '', tone }));
 
-/** Stop tiles on the learner's area, in the tutorial's view: the only places a run on the area can end. */
 function stopsOnArea(): [number, number][] {
   const L = useGame.getState().level!;
   const { inputs, valid } = useGame.getState();
@@ -88,11 +63,6 @@ function stopsOnArea(): [number, number][] {
   });
 }
 
-/**
- * A stage passed: say so, with the rule's own evidence in the scene — the eggs
- * on the area outlined, a shower of frogs that all land on it again, or the
- * stop tiles on it (all goals) outlined.
- */
 async function passed(gen: number, rule: Rule) {
   const L = useGame.getState().level!;
   const { inputs } = useGame.getState();
@@ -118,11 +88,6 @@ async function passed(gen: number, rule: Rule) {
   }
 }
 
-/**
- * A rule's failure, witnessed: if the learner already saw it on an area of
- * their own, the rule is simply named; otherwise a pitfall formula is tried
- * before their eyes, after they predict the outcome.
- */
 async function witness(
   gen: number,
   rule: Rule,
@@ -130,7 +95,6 @@ async function witness(
   o: { question: string; afterDemo: string; afterOwn: string; extra?: string },
 ) {
   if (!witnessed.has(rule)) {
-    // the pitfall is shown in the box and on the plane while the learner decides
     const mine = useGame.getState().formulaText;
     useGame.getState().setFormula(pitfall);
     const yes = await ask(gen, T().whatIf(pitfall, o.question));
@@ -144,28 +108,23 @@ async function witness(
 }
 
 export const STEPS: Step[] = [
-  // ======================= Act 1: The world =======================
-  // 1.0 hello
   {
     scene: { reveal: {} },
     run: (gen) =>
       beat(gen, T().hello, { label: T().letsGo, settle: 0 }),
   },
-  // 1.1 a frog and its tile
   {
     scene: { reveal: {} },
     run: (gen) =>
       beat(gen, T().frog, {
         prepare: async () => {
           useGame.getState().setReveal({ axes: true });
-          // the frog's own tag shows its values (and animates them as it hops)
           useGame.setState({ frogTags: true });
           hatch(st(0, 3));
           await sleep(600);
         },
       }),
   },
-  // 1.2a the program
   {
     scene: { reveal: { axes: true }, frogs: [[0, 3]], tags: true },
     run: (gen) =>
@@ -174,13 +133,11 @@ export const STEPS: Step[] = [
         prepare: () => useGame.getState().setReveal({ code: true }),
       }),
   },
-  // 1.2b requires and ensures
   {
     scene: { reveal: { axes: true, code: true }, frogs: [[0, 3]], tags: true },
     run: (gen) =>
       beat(gen, T().contracts, { spot: 'code', lines: [2, 9] }),
   },
-  // 1.3 step
   {
     scene: { reveal: { axes: true, code: true }, frogs: [[0, 3]], tags: true },
     run: async (gen) => {
@@ -193,7 +150,6 @@ export const STEPS: Step[] = [
       allow({});
     },
   },
-  // 1.4 stops
   {
     scene: { reveal: { axes: true, code: true, step: true }, frogs: [[3, 3]], tags: true },
     run: (gen) =>
@@ -203,7 +159,6 @@ export const STEPS: Step[] = [
         callouts: [{ x: 3, y: 3, text: T().stopsTag, tone: 'info' }],
       }),
   },
-  // 1.5 eggs
   {
     scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true }, frogs: [[3, 3]], tags: true },
     run: (gen) =>
@@ -217,7 +172,6 @@ export const STEPS: Step[] = [
         settle: 1100,
       }),
   },
-  // 1.6 goals: the frog from 1.3 stopped on one
   {
     scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true }, frogs: [[3, 3]], camera: [2, 2, 15.6] },
     run: (gen) =>
@@ -230,7 +184,6 @@ export const STEPS: Step[] = [
         settle: 1000,
       }),
   },
-  // 1.6b what a bug would look like, and the question the whole game asks
   {
     scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true }, frogs: [[3, 3]], camera: [2, 2, 15.6] },
     run: async (gen) => {
@@ -241,7 +194,6 @@ export const STEPS: Step[] = [
       useGame.setState({ failMark: null });
     },
   },
-  // 1.7 test some
   {
     scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true }, camera: [2, 2, 15.6] },
     run: async (gen) => {
@@ -254,7 +206,6 @@ export const STEPS: Step[] = [
       await beat(gen, T().allTen);
     },
   },
-  // 1.8 testing can't be enough: the ten tested, and the eggs going on past them
   {
     scene: { reveal: WORLD, frogs: TESTED },
     run: async (gen) => {
@@ -265,7 +216,6 @@ export const STEPS: Step[] = [
         ],
         prepare: async () => {
           await cameraRig.lookAtTile(4, 10, 55);
-          // a fast Next may have moved on during the glide: a stale allow() would lock the next step's box
           guard(gen);
           allow({ eggs: true });
         },
@@ -273,7 +223,6 @@ export const STEPS: Step[] = [
       allow({});
     },
   },
-  // 1.9 the bridge: an assert at the top of the loop
   {
     scene: { reveal: WORLD, camera: [4, 10, 55] },
     run: (gen) =>
@@ -288,13 +237,11 @@ export const STEPS: Step[] = [
         settle: 500,
       }),
   },
-  // 1.10 draw before you check
   {
     scene: { reveal: { ...WORLD, assert: true, lights: RULES }, camera: [2, 2, 15.6] },
     run: async (gen) => {
       useGame.getState().setReveal({ formula: true });
       allow({ formula: true });
-      // Next is there from the start, greyed until there is something to look at
       sayWaiting(T().draw, 'formula');
       await waitStore(gen, (g) => g.valid !== null && g.formulaText.trim() !== '');
       await sleep(900);
@@ -304,8 +251,6 @@ export const STEPS: Step[] = [
     },
   },
 
-  // ======================= Act 2: The three rules, one at a time =======================
-  // 2.1 stage 1: every egg
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
@@ -320,7 +265,6 @@ export const STEPS: Step[] = [
       await passed(gen, 'initialization');
     },
   },
-  // 2.1b witness: Initialization
   {
     scene: { reveal: { ...DRAW, awake: ['initialization'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
@@ -330,7 +274,6 @@ export const STEPS: Step[] = [
         afterOwn: T().afterOwnInitialization(mine()),
       }),
   },
-  // 2.2 stage 2: every hop
   {
     scene: { reveal: { ...DRAW, awake: ['initialization'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
@@ -346,7 +289,6 @@ export const STEPS: Step[] = [
       await passed(gen, 'maintenance');
     },
   },
-  // 2.2b witness: Maintenance
   {
     scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
@@ -357,7 +299,6 @@ export const STEPS: Step[] = [
         extra: T().extraMaintenance,
       }),
   },
-  // 2.3 follow one frog: Initialization
   {
     scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
@@ -374,7 +315,6 @@ export const STEPS: Step[] = [
       });
     },
   },
-  // 2.3 follow one frog: Maintenance, and what the two together mean
   {
     scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[0, 3]], camera: [1.5, 3, 12] },
     run: async (gen) => {
@@ -384,23 +324,17 @@ export const STEPS: Step[] = [
         guard(gen);
         await stepFrogs(true);
         guard(gen);
-        // after the first landing, the label rides along with the frog
         const f = frogWorld.frogs.find((fr) => fr.kind === 'real');
         if (k === 0 && f) useGame.setState({ callouts: [{ x: f.x, y: f.y, frog: f.id, text: T().stillOnTag, tone: 'good' }] });
       }
       await sleep(500);
       guard(gen);
-      // a real question: the next step answers it for the learner's own area, which may already be strong enough
       const kept = useGame.getState().callouts;
       const answer = ask(gen, T().neverLeaves);
       useGame.setState({ callouts: kept });
       predictedGoal = await answer;
     },
   },
-  // 2.4 stage 3: stopping on a goal. First the answer to 2.3's question, for
-  // the learner's own area: the tiles where a frog can stop on it outlined,
-  // the ones off a goal in red. An area that is already strong enough (say
-  // `i <= n`) only needs a Check to confirm it; a weaker one gets changed.
   {
     scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[3, 3]], camera: [1.5, 3, 12] },
     run: async (gen) => {
@@ -425,7 +359,6 @@ export const STEPS: Step[] = [
         ask: strong ? T().confirmTermination : T().askTermination,
         rules: RULES,
         nudge: T().nudgeTermination,
-        // the objection every learner raises at Termination, and its answer
         explain: { termination: T().objection },
         onFail: (r) => witnessed.add(r),
       });
@@ -433,7 +366,6 @@ export const STEPS: Step[] = [
       await passed(gen, 'termination');
     },
   },
-  // 2.4b witness: Termination
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
@@ -444,7 +376,6 @@ export const STEPS: Step[] = [
         extra: T().objectionDemo,
       }),
   },
-  // 2.5 too small, too large
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: (gen) =>
@@ -457,14 +388,10 @@ export const STEPS: Step[] = [
       }),
   },
 
-  // ======================= Act 3: Wrap-up =======================
   {
     scene: { reveal: DRAW, formula: 'learner', camera: [2, 2, 15.6] },
     run: async (gen) => {
-      // the caption first, then the rain it celebrates; Finish once the rain has fallen
       await beat(gen, T().wrapUp(mine()), { label: T().finish, prepare: () => playRain() });
-      // the three rules, as a card; the tutorial ends (and the first level
-      // opens) once it is closed, after its exit animation, not underneath it
       useGame.setState({ showRules: true });
       await waitStore(gen, (g) => !g.showRules);
       await sleep(EXIT_MS + 60);

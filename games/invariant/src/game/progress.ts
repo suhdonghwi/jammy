@@ -1,8 +1,5 @@
 import { create } from 'zustand';
 
-// Which levels the learner has cleared, remembered in this browser. Storage
-// may be blocked (a private window, say): then progress lasts for the visit.
-
 const KEY = 'invariant-frog:cleared';
 
 function load(): string[] {
@@ -27,7 +24,6 @@ export const useProgress = create<{ cleared: string[] }>(() => ({
   cleared: typeof window === 'undefined' ? [] : load(),
 }));
 
-/** A level was proved. */
 export function markCleared(id: string) {
   const { cleared } = useProgress.getState();
   if (cleared.includes(id)) return;
@@ -36,7 +32,6 @@ export function markCleared(id: string) {
   save(next);
 }
 
-/** Forget every cleared level. */
 export function resetCleared() {
   useProgress.setState({ cleared: [] });
   save([]);

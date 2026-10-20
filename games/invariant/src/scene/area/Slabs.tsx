@@ -25,9 +25,6 @@ import {
 import { field } from './field';
 import { GLSL_HEIGHT, instanced } from './glsl';
 
-// The learner's area: rounded slabs rising out of the floor, one per tile of
-// the field. Slabs where the loop stops are striped (and carry the goal pools).
-
 const slabVertex = /* glsl */ `
 ${GLSL_HEIGHT}
 attribute vec2 aFlags;
@@ -71,8 +68,6 @@ ${GLSL_FADE}
 void main() {
   vec2 fw = fwidth(vF);
   float fwr = fwidth(length(vF));
-  // hover outline: kept on the flat top (the 0.07 bevel starts at 0.38), with
-  // corners rounded to match, so it never runs onto the bevel and breaks up
   float ringD = abs(sdRoundBox(vF, vec2(0.372), 0.1)) - 0.026;
   float fwRing = fwidth(ringD);
   vec3 n = normalize(vN);
@@ -134,8 +129,6 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
   const shadowBase = useMemo(() => new THREE.PlaneGeometry(1.45, 1.45).rotateX(-Math.PI / 2), []);
 
   const { geom, shadowGeom } = useMemo(() => {
-    // version 0: this layer's area hasn't been computed yet — draw nothing
-    // (the shared field may still hold another scene's slabs for a frame)
     const anims = version === 0 ? [] : [...field.anims.values()];
     const n = anims.length;
     const tile = new Float32Array(n * 2);
@@ -188,11 +181,9 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     [material],
   );
   useFrame((_, frameDt) => {
-    // the first frame after the page was hidden carries the whole gap: don't let fades jump
     const dt = Math.min(frameDt, 0.1);
     material.uniforms.uTime.value = sceneNow();
     const g = useGame.getState();
-    // the slabs are shared by every scene: the names follow whichever level is open (none on the home screen)
     setAxisNames(material.uniforms, g.level);
     material.uniforms.uLastEvent.value = goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], planeKey(g.inputs));
     const ht = hover.tile;

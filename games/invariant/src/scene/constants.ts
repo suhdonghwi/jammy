@@ -1,7 +1,3 @@
-// Visual language: everything the level fixes is quiet grayscale; the learner's
-// area is the only saturated surface (blue slabs). Goals are amber, real frogs
-// green, ghost frogs (the test frogs) a pale see-through white, failures red.
-
 export const COLORS = {
   horizon: '#e8ecf2',
   gap: '#d3d9e2',

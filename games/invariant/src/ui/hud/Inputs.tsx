@@ -5,19 +5,10 @@ import { useT } from '../../i18n/i18n';
 import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type CompiledLevel, type Inputs } from '../../levels/level';
 import { CARD_LABEL } from '../classes';
 
-// The inputs that are not on an axis, at the foot of the code card, one row
-// each: a number with − and + for an integer, a text field (and a dice) for an array. Changing one picks
-// another plane of the state space, and the scene swaps to it at once. A
-// value the precondition rules out is allowed: the plane is then all ghost
-// tiles, and the code panel's `requires` line says why.
-
-/** An array as the field shows it. */
 const showArray = (a: number[]) => `[${a.join(', ')}]`;
 
-/** A field with nothing typed yet (or only the opening bracket): the plane stays as it was, with no error shown. */
 const incomplete = (text: string) => /^\[?$/.test(text.trim());
 
-/** The integers typed into an array field: `1, 3 4` or `[1,3,4]`; null when it isn't a list of at most MAX_LEN integers. */
 function parseArray(text: string): number[] | null {
   if (incomplete(text)) return null;
   const inner = text.trim().replace(/^\[/, '').replace(/\]$/, '');
@@ -28,23 +19,16 @@ function parseArray(text: string): number[] | null {
 
 const INT = /^-?\d{1,9}$/;
 
-// as tall as the small buttons beside it, so a stepper's three parts line up
 const FIELD =
   'h-6 min-w-0 rounded-md border border-line bg-white px-1.5 font-mono text-sm text-ink outline-none transition-colors focus:border-brand/60 disabled:opacity-60';
 const SMALL_BUTTON =
   'flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md border border-line bg-sky text-muted transition-colors enabled:hover:bg-horizon enabled:hover:text-ink enabled:active:translate-y-px disabled:cursor-default';
 
-/** The inputs that get a row: those not on an axis, less arrays' lengths (a length follows its array). */
 export function inputRows(level: CompiledLevel): string[] {
   const lengths = new Set(Object.values(level.arrays));
   return level.offAxis.filter((n) => !lengths.has(n));
 }
 
-/**
- * The inputs, as the code card's last part. Under the code they get a label
- * and a rule across the card; with the code folded they sit beside its title,
- * so the folded card is one row (an array takes a second).
- */
 export function InputsSection({ inline }: { inline: boolean }) {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
@@ -61,7 +45,6 @@ export function InputsSection({ inline }: { inline: boolean }) {
   return (
     <div
       className={`flex min-w-0 flex-col transition-opacity ${busy ? 'opacity-60' : ''} ${
-        // an array's field needs the room: folded, it goes under the title rather than beside it
         inline ? (hasArrays ? 'basis-full' : 'min-w-36 flex-1') : '-mx-4 shrink-0 border-t border-line px-4 pt-2.5 max-md:-mx-2.5 max-md:px-2.5 max-md:pt-2'
       }`}
     >
@@ -89,7 +72,6 @@ export function InputsSection({ inline }: { inline: boolean }) {
           </div>
         ))}
       </div>
-      {/* under the rows: each array's length, and whether such an input exists at all */}
       {(hasArrays || !exists) && (
         <div className="mt-1.5 flex flex-wrap gap-x-3 font-mono text-xs text-faint">
           {Object.entries(level.arrays).map(([a, len]) => (
@@ -104,7 +86,6 @@ export function InputsSection({ inline }: { inline: boolean }) {
   );
 }
 
-/** A change made elsewhere (a check moving the view to a counterexample's plane) makes the field pop. */
 function usePop(value: string, own: RefObject<boolean>): number {
   const [pops, setPops] = useState(0);
   useEffect(() => {
@@ -119,7 +100,6 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
   const [text, setText] = useState(String(value));
   const [editing, setEditing] = useState(false);
   const pops = usePop(String(value), own);
-  // the field follows the value unless it is being typed in
   useEffect(() => {
     if (!editing) setText(String(value));
   }, [value, editing]);

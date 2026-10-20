@@ -5,10 +5,7 @@ import { breaksRule, counterexample } from './rules';
 import { equivalent, ruleQuery, solve } from './smt';
 import { RULES, type Rule, type RuleVerdict, type Verdicts } from './types';
 
-// Checking an area against the three rules.
-
 interface CheckOptions {
-  /** Per-query solver timeout (ms). */
   timeout?: number;
   rules?: Rule[];
 }
@@ -18,11 +15,6 @@ export interface CheckResult {
   pitfall?: Pitfall;
 }
 
-/**
- * Box search finds nice counterexamples fast; Z3 decides the rest.
- * A rule passes only if Z3 proves it (or the formula is provably
- * equivalent to a known solution).
- */
 export async function checkFormula(
   ctx: Context<'main'>,
   level: CompiledLevel,
@@ -50,7 +42,6 @@ export async function checkFormula(
           : { status: 'undecided' };
   }
 
-  /** The first of `items` whose formula is provably equivalent to the area (a truth table on the box rules most out cheaply). */
   const firstEquivalent = async <T>(items: T[], formula: (x: T) => string, timeout: number) => {
     for (const x of items) {
       const f = compileFormula(level, formula(x));
@@ -58,7 +49,6 @@ export async function checkFormula(
     }
   };
 
-  // Undecided: if the formula is equivalent to a known solution, the proof carries over.
   const undecided = rules.filter((r) => verdicts[r]?.status === 'undecided');
   const failed = rules.some((r) => verdicts[r]?.status === 'fail');
   if (undecided.length > 0 && !failed && (await firstEquivalent(level.solutions, (s) => s, timeout * 2)) !== undefined) {

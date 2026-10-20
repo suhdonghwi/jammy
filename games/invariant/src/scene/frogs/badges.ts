@@ -1,7 +1,5 @@
 import * as THREE from 'three';
 
-// "×n" badges over tiles crowded with more frogs than fit (see occupancy).
-
 const badgeTextures = new Map<number, THREE.Texture>();
 function badgeTexture(n: number): THREE.Texture {
   const hit = badgeTextures.get(n);

@@ -4,11 +4,6 @@ import { MAX_LEN, type CompiledLevel } from '../levels/level';
 import type { Rule } from './types';
 import { whileSolving } from './z3-guard';
 
-// Rules and formulas as Z3 queries: proving rules, finding counterexamples
-// anywhere, and checking two formulas are equivalent. An array input is an
-// uninterpreted function from index to value, read as 0 outside 0..length-1;
-// `forall` and `exists` are Z3's own quantifiers.
-
 type Ctx = Context<'main'>;
 type Z = Arith<'main'> | Bool<'main'>;
 
@@ -59,7 +54,7 @@ function toZ3(ctx: Ctx, e: Expr, env: Env): Z {
         case '+': return A(e.left).add(A(e.right));
         case '-': return A(e.left).sub(A(e.right));
         case '*': return A(e.left).mul(A(e.right));
-        // SMT-LIB div/mod: Euclidean, which for a positive divisor is our floor/mod.
+        // SMT-LIB's div/mod are Euclidean: for a positive divisor, our floor division and mod
         case '/': return A(e.left).div(A(e.right));
         case '%': return A(e.left).mod(A(e.right));
         case '<': return A(e.left).lt(A(e.right));
@@ -78,16 +73,8 @@ function toZ3(ctx: Ctx, e: Expr, env: Env): Z {
   }
 }
 
-/** The most instances a quantifier is unrolled into for a bounded search. */
 const MAX_UNROLL = 1200;
 
-/**
- * Quantifiers over the integers -b..b, written out as a conjunction (or
- * disjunction) of instances, so a bounded search is a quantifier-free query.
- * Beyond MAX_UNROLL instances the quantifier is kept. A model found this way
- * is checked exactly before it is trusted (a bound name outside -b..b is not
- * tested).
- */
 function unroll(e: Expr, b: number): Expr {
   const go = (e: Expr): Expr => {
     switch (e.kind) {
@@ -117,7 +104,6 @@ function unroll(e: Expr, b: number): Expr {
           if (k === e.vars.length) return emit();
           for (let v = from; v <= b; v++) {
             tuple[k] = v;
-            // the links between bound names are between constants here, so they prune
             walk(k + 1, e.ops[k + 1] === '<' ? v + 1 : v);
           }
         };
@@ -135,18 +121,11 @@ function unroll(e: Expr, b: number): Expr {
 type SolveResult = { kind: 'sat'; state: State } | { kind: 'unsat' } | { kind: 'unknown' };
 
 interface SolveOptions {
-  /** Per-query timeout in ms. */
   timeout: number;
-  /** Try bounded queries first so counterexamples are small. */
   bounds?: number[];
-  /** Does this state really satisfy the query? A model from an unrolled query is only trusted if it does. */
   verify?: (s: State) => boolean;
 }
 
-/**
- * Is there a state (over `dims`) satisfying `query`? Tries growing bounds
- * first so that counterexamples come out small (and arrays short).
- */
 export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], query: Expr, opts: SolveOptions): Promise<SolveResult> {
   const env: Env = { ints: {}, arrays: {} };
   for (const d of dims) {
@@ -187,12 +166,10 @@ export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], quer
   };
   const bounds = opts.bounds ?? [8, 64, 1024];
   for (const b of bounds) {
-    // a bounded search is quantifier-free: the quantifiers are unrolled, and a bound too wide to unroll is skipped
     const form = quantified ? unroll(query, b) : query;
     if (hasQuantifier(form)) continue;
     const r = await check(form, undefined, (solver) => {
       for (const d of Object.values(env.ints)) solver.add(d.ge(-b), d.le(b));
-      // the cells in view are small too
       for (const a of Object.values(env.arrays)) {
         for (let k = 0; k < Math.min(b, MAX_LEN); k++) {
           const c = a.fn.call(ctx.Int.val(k)) as Arith<'main'>;
@@ -200,13 +177,10 @@ export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], quer
         }
       }
     });
-    // a model of an unrolled query is only trusted if it holds up exactly; otherwise widen
     if (r.kind === 'sat' && (!opts.verify || opts.verify(r.state))) return r;
   }
-  // unbounded: first what the inputs card can show (arrays up to MAX_LEN), then arrays of any length
   const passes: ((solver: InstanceType<Ctx['Solver']>) => void)[] = arrayLens.length ? [(solver) => arrayLens.forEach((len) => solver.add(len.le(MAX_LEN))), () => {}] : [() => {}];
   for (const bound of passes) {
-    // QF_NIA is only right without quantifiers and arrays
     const logics = !quantified && arrayLens.length === 0 ? [undefined, 'QF_NIA'] : [undefined];
     let r: SolveResult = { kind: 'unknown' };
     for (const logic of logics) {
@@ -218,7 +192,6 @@ export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], quer
   return { kind: 'unsat' };
 }
 
-/** The negation of each rule, as a query over the right dims. */
 export function ruleQuery(level: CompiledLevel, inv: Expr, rule: Rule): { dims: string[]; query: Expr } {
   if (rule === 'initialization') {
     return {
@@ -232,7 +205,6 @@ export function ruleQuery(level: CompiledLevel, inv: Expr, rule: Rule): { dims: 
   return { dims: level.names, query: mk.andAll([level.planeReq, inv, mk.not(level.guard), mk.not(level.post)]) };
 }
 
-/** Is `a` equivalent to `b` on every existing state? */
 export async function equivalent(ctx: Ctx, level: CompiledLevel, a: Expr, b: Expr, timeout: number): Promise<boolean> {
   const differ: Expr = { kind: 'binary', op: '!=', left: a, right: b, span: a.span };
   const r = await solve(ctx, level, level.names, mk.and(level.planeReq, differ), { timeout, bounds: [] });

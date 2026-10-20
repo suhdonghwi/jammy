@@ -8,14 +8,8 @@ import { CARD, CARD_LABEL } from '../classes';
 import { HighlightedCode } from '../codeColors';
 import { inputRows, InputsSection } from './Inputs';
 
-// The program, with the loop lighting up as frogs hop and a ghost `assert(?)`
-// line standing for the invariant at the top of the loop, and the inputs at
-// its foot. It folds away to its title (and the inputs), so it doesn't hide the scene.
-
-/** A row of code: pulled out through the scroll area's padding (px-4, px-2.5 on small screens), so a highlight spans the card. */
 const ROW = '-mx-4 flex px-4 max-md:-mx-2.5 max-md:px-2.5';
 
-/** The loop condition's flash when frogs land: keep looping, stop, or some of each. */
 const LANDED = {
   true: 'animate-[check-true_0.9s_ease-out]',
   false: 'animate-[check-false_1.4s_ease-out_forwards]',
@@ -27,22 +21,12 @@ interface Beat {
   hopDur: number;
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
-  /** Show the ghost `assert(?)` line at the top of the loop body. */
   assert: boolean;
-  /** Lines the tutorial's caption is talking about (1-based). */
   spotLines: number[];
-  /** The input whose row under the code is hovered: its declaration lights up. */
   inputHover: string | null;
-  /** The inputs in view are ruled out by the precondition: its lines say so. */
   impossible: boolean;
 }
 
-/**
- * Syntax-highlighted program, one row per line. While frogs hop, the loop
- * body's lines light up (that is what a hop runs); when they land, the
- * condition's line flashes green (keep looping) or amber (stop). Highlights
- * cover whole rows, so they all share the same width.
- */
 function highlightSource(level: CompiledLevel, beat: Beat) {
   const src = level.program.source;
   const header = level.program.loop.headerSpan;
@@ -61,8 +45,6 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   const bodyFirst = stmts.length ? lineOf(stmts[0].span.from) : -1;
   const bodyLast = stmts.length ? lineOf(stmts[stmts.length - 1].span.to) : -2;
   const rows = lines.map((l, i) => {
-    // a line's height even when it is blank; highlights are square bands that run out through the code's padding
-    // to the card's edges (ROW matches the scroll area's padding)
     let cls = `${ROW} min-h-lh`;
     let key = `l${i}`;
     let style: React.CSSProperties | undefined;
@@ -71,7 +53,6 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
       key += `h${beat.landTick}`;
     } else if (i >= bodyFirst && i <= bodyLast) {
       key += `b${beat.hopTick}`;
-      // as long as the hop itself
       if (beat.hopTick > 0) style = { animation: `body-run ${Math.max(0.3, beat.hopDur + 0.15)}s ease-out` };
     }
     if (beat.spotLines.includes(i + 1) || i === hoverLine) cls += ' bg-brand-soft';
@@ -84,8 +65,6 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
       </div>
     );
   });
-  // the invariant, as the assert it stands for: a ghost line at the top of the
-  // loop body, indented like the body (the area itself lives in the box below)
   if (beat.assert && headerLine >= 0) {
     const indent = stmts.length ? src.slice(lines[bodyFirst].from).match(/^\s*/)?.[0] ?? '  ' : '  ';
     rows.splice(headerLine + 1, 0, (
@@ -118,27 +97,18 @@ export function CodePanel() {
   const spot = useGame((s) => s.spotlight);
   const tutorial = useGame((s) => s.mode === 'tutorial');
   const phone = useMedia(PHONE);
-  // null: as the learner left it, nothing yet
   const [folded, setFolded] = useState<boolean | null>(null);
   const tr = useT();
   useEffect(() => setFolded(null), [level]);
-  // A level starts unfolded. The tutorial on a phone starts folded: the card
-  // would cover a third of the scene its captions talk about, so it opens
-  // only for the captions about the code (and Step, which the code acts out).
   const pointedAt = spot === 'code' || spotLines.length > 0 || (tutorial && phone && spot === 'step');
   const open = pointedAt || !(folded ?? (tutorial && phone));
   const hasInputs = inputRows(level).length > 0;
   if (!shown) return null;
   return (
-    // wide enough for the longest program line in the catalog; anything longer scrolls sideways rather than spilling.
-    // No taller than the room between the top bar and the caption (a long caption on a phone): the code scrolls
-    // inside it, not the card, whose spotlight ring would be clipped. Folded, the title and the inputs share one row
     <div
       data-frame="top"
       className={`${CARD} flex min-h-0 animate-slide-in px-4 pt-3.25 pb-3 max-md:p-2.5 ${open ? 'flex-col' : 'flex-wrap items-center gap-x-3 gap-y-2'} ${spot === 'code' ? 'spotlight' : ''}`}
     >
-      {/* a chip around the title and its chevron, open or folded: a tint on hover, and padding that makes it easier
-          to hit than the small letters alone. Negative margins keep the letters where a plain label would be */}
       <button
         className={`${CARD_LABEL} -mx-1.5 -mt-1 flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-shade/6 hover:text-muted ${open ? 'mb-0.5! self-start' : '-mb-1!'}`}
         aria-expanded={open}
@@ -147,9 +117,6 @@ export function CodePanel() {
         {tr.code.title}
         <ChevronDown size={14} strokeWidth={2.6} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
-      {/* the scroll area runs to the card's edges (the card's padding is inside it, matching the classes above), so a
-          scrolling program clips at the rounded edge, with its scrollbar along it, not at a line floating above it;
-          with inputs below, it runs down to their rule */}
       {open && (
         <pre
           className={`m-0 -mx-4 min-h-0 overflow-auto px-4 max-md:-mx-2.5 max-md:px-2.5 ${hasInputs ? 'pb-2.5 max-md:pb-2' : '-mb-3 rounded-b-2xl pb-3 max-md:-mb-2.5 max-md:pb-2.5'} font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]`}
@@ -157,7 +124,6 @@ export function CodePanel() {
           {nodes}
         </pre>
       )}
-      {/* a fresh section per level: a field being typed in must not carry its text over */}
       <InputsSection key={level.id} inline={!open} />
     </div>
   );

@@ -1,11 +1,6 @@
 import { clamp01, smoothstep } from '../easing';
 import { sceneNow } from '../sceneTime';
 
-// Animated heights of the area's slabs, per tile. Slabs rise and sink on the
-// GPU from (from, to, t0); the same function gives frogs and eggs their base
-// height on the CPU, so everything stays in sync without per-frame loops.
-
-/** Seconds a slab takes to rise or sink: about as long as its sound (rise.m4a, sink.m4a). */
 export const RISE_DUR = 0.26;
 
 export interface TileFlags {
@@ -34,17 +29,11 @@ class AreaField {
     this.anims.clear();
   }
 
-  /** 0..1 slab height at a tile right now. */
   heightAt(x: number, y: number): number {
     const a = this.anims.get(key(Math.round(x), Math.round(y)));
     return a ? animValue(a, sceneNow()) : 0;
   }
 
-  /**
-   * Set the area to exactly `tiles` (within the window). With `animate`,
-   * new tiles rise and removed tiles sink; otherwise they appear instantly.
-   * Returns how many started rising and sinking.
-   */
   update(tiles: TileFlags[], animate: boolean): { rose: number; sank: number } {
     let rose = 0;
     let sank = 0;
@@ -73,7 +62,6 @@ class AreaField {
     return { rose, sank };
   }
 
-  /** Drop slabs that have finished sinking. Returns true if anything changed. */
   prune(): boolean {
     const now = sceneNow();
     let changed = false;
@@ -87,5 +75,4 @@ class AreaField {
   }
 }
 
-/** The field for the focused plane. */
 export const field = new AreaField();

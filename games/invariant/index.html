@@ -7,7 +7,6 @@
     <meta name="description" content="An interactive game for learning loop invariants." />
     <meta name="theme-color" content="#f6f8fb" />
     <link rel="canonical" href="%SITE_URL%" />
-    <!-- the link preview (public/og.png, drawn by `pnpm og`) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Invariant Frog" />
     <meta property="og:title" content="Invariant Frog" />
@@ -21,6 +20,7 @@
     <meta property="og:locale:alternate" content="ko_KR" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐸</text></svg>" />
+    <!-- z3-solver's Emscripten build expects Node's `global` -->
     <script>globalThis.global = globalThis;</script>
   </head>
   <body>

@@ -1,9 +1,6 @@
 import type { Context } from 'z3-solver';
 import { guardDecRefs } from './z3-guard';
 
-// Z3's Emscripten build must be loaded as a classic script (its thread workers
-// re-load it by URL), and threads need a cross-origin isolated page.
-
 let pending: Promise<Context<'main'>> | null = null;
 
 function loadScript(src: string): Promise<void> {
@@ -23,6 +20,7 @@ export function browserZ3(): Promise<Context<'main'>> {
       if (!globalThis.crossOriginIsolated) {
         throw new Error('The solver needs a cross-origin isolated page (COOP/COEP headers).');
       }
+      // a classic script, as its Emscripten thread workers re-load it by URL
       await loadScript(`${import.meta.env.BASE_URL}z3/z3-built.js`);
       const { init } = await import('z3-solver');
       const api = await init();

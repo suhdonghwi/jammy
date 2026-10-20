@@ -12,15 +12,7 @@ import { axisNameUniforms, colorUniform, fadeUniforms, getDigitTexture, goalUnif
 import { floorFragment, floorVertex } from './floorShader';
 import { inputUniforms, setInputUniforms } from './levelGlsl';
 
-// The floor of a plane: one quad shaded per pixel (see floorShader), which
-// fades in and out, follows the camera, and reports the tile under the pointer.
-
 const _p = new THREE.Vector3();
-/**
- * The tile under the pointer. A raised slab is hit first: intersect the ray
- * with the slab-top plane and keep that tile if it is raised; otherwise use the
- * floor hit.
- */
 function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
   const ray = e.ray;
   if (Math.abs(ray.direction.y) > 1e-4) {
@@ -37,16 +29,13 @@ function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
 
 interface FloorProps {
   level: CompiledLevel | null;
-  /** The plane: the off-axis inputs' values. */
   inputs: Inputs;
-  /** Fades in from nothing at this rate (per second); without it the floor shows at once. */
   fadeIn?: number;
   interactive?: boolean;
   showStop?: boolean;
   showGoal?: boolean;
   showAxes?: boolean;
   onTile?: (x: number, y: number) => void;
-  /** Whether a click on the tile would do something (the pointer cursor shows it). */
   clickable?: (x: number, y: number) => boolean;
 }
 
@@ -91,27 +80,22 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
   useEffect(() => () => material.dispose(), [material]);
 
   const u = material.uniforms;
-  // the plane's inputs, set when they change (a check may have moved the view to another plane)
   const key = planeKey(inputs);
   useMemo(() => setInputUniforms(u, level, inputs, level ? planeExists(level, inputs) : true), [u, level, inputs, key]);
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 
   useFrame((_, frameDt) => {
-    // the first frame after the page was hidden carries the whole gap: don't let fades jump
     const dt = Math.min(frameDt, 0.1);
     const m = mesh.current;
     if (!m) return;
-    // the plane follows the camera (snapped to whole tiles), as far as the fade reaches
     const R = updateFade(u);
     const t = cameraRig.target();
     m.position.set(Math.round(t.x), 0, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
     u.uTime.value = sceneNow();
-    // measured once the font has loaded, so set again as it may change
     setAxisNames(u, level);
     u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], key);
-    // revealed elements fade in rather than popping
     const kr = 1 - Math.exp(-dt * 3.2);
     const towards = (cur: number, on: boolean) => {
       const v = cur + ((on ? 1 : 0) - cur) * kr;
@@ -128,7 +112,6 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
       u.uHover.value.set(hover.tile[0], hover.tile[1]);
       u.uHoverOn.value = 1;
     } else u.uHoverOn.value = 0;
-    // checked every frame: a tile stops being clickable while the pointer rests on it (its egg hatched, a run started)
     if (interactive) {
       const cursor = hover.tile && clickable?.(hover.tile[0], hover.tile[1]) ? 'pointer' : '';
       if (canvas.style.cursor !== cursor) canvas.style.cursor = cursor;
@@ -140,9 +123,6 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     if (interactive) return () => void (canvas.style.cursor = '');
   }, [interactive, canvas]);
 
-  // A finger has no hover: dragging it pans the view, and shouldn't light up
-  // every tile it passes. On touch a tile is "hovered" once tapped (a second
-  // tap on it lets go), and a touch that starts a pan lets go too.
   const touch = useRef<{ on: boolean; was: [number, number] | null }>({ on: false, was: null });
   const handlers = interactive
     ? {

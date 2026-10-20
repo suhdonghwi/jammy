@@ -1,10 +1,5 @@
 import { mk, NO_SPAN, subst, type Expr, type State, type Stmt } from './ast';
 
-// Integer semantics: unbounded integers. `/` and `%` only ever divide by a
-// positive literal k; `%` is Euclidean (result in 0..k-1) and `/` is the
-// matching floor division, so a == k*(a/k) + a%k always holds. An array is
-// read only; a cell outside it reads as 0, so `A[k]` is defined for every k.
-
 export function floorDiv(a: bigint, k: bigint): bigint {
   const q = a / k;
   return a % k !== 0n && a < 0n ? q - 1n : q;
@@ -15,12 +10,10 @@ export function euclidMod(a: bigint, k: bigint): bigint {
   return r < 0n ? r + k : r;
 }
 
-/** A quantifier's range is walked cell by cell; wider than this and the formula is refused rather than hanging the page. */
 const MAX_RANGE = 100_000;
 
 type Value = bigint | boolean;
 
-/** An array cell, exact: 0 outside the array. */
 function cell(arr: bigint[], k: bigint): bigint {
   return k >= 0n && k < BigInt(arr.length) ? arr[Number(k)] : 0n;
 }
@@ -42,14 +35,12 @@ export function evaluate(e: Expr, s: State): Value {
     case 'quant': {
       const lo = evaluate(e.lo, s) as bigint;
       const hi = evaluate(e.hi, s) as bigint;
-      // every bound name runs from lo to hi; the chain of comparisons is tested per tuple
       const first = e.ops[0] === '<' ? lo + 1n : lo;
       const last = e.ops[e.ops.length - 1] === '<' ? hi - 1n : hi;
       if (last - first > BigInt(MAX_RANGE)) throw new Error(`a range of more than ${MAX_RANGE} values`);
       const inner: State = { ...s };
       const go = (k: number, prev: bigint): boolean => {
         if (k === e.vars.length) {
-          // the last link of the chain, to hi
           if (!(e.ops[k] === '<' ? prev < hi : prev <= hi)) return e.q === 'forall';
           return evaluate(e.body, inner) === true;
         }
@@ -101,7 +92,6 @@ export function holds(e: Expr, s: State): boolean {
   return evaluate(e, s) === true;
 }
 
-/** Run the loop body once (one frog hop). */
 export function step(body: Stmt[], s: State): State {
   const out: State = { ...s };
   const run = (stmts: Stmt[]) => {
@@ -114,10 +104,6 @@ export function step(body: Stmt[], s: State): State {
   return out;
 }
 
-/**
- * Symbolic execution of the body: for each variable, an expression for its
- * value after one iteration, in terms of the values before.
- */
 export function symbolicStep(body: Stmt[], vars: string[]): Record<string, Expr> {
   const exec = (stmts: Stmt[], env: Record<string, Expr>): Record<string, Expr> => {
     let cur = { ...env };
@@ -140,13 +126,9 @@ export function symbolicStep(body: Stmt[], vars: string[]): Record<string, Expr>
   return exec(body, init);
 }
 
-// ---- fast float evaluation for rendering large tile windows ----
-
-/** A state in plain numbers (arrays as number arrays), for the fast functions. */
 export type FastState = Record<string, number | number[]>;
 export type FastFn = (s: FastState) => number | boolean;
 
-/** An array cell, fast: 0 outside the array. */
 const fastCell = (arr: number[], k: number): number => (k >= 0 && k < arr.length ? arr[k] : 0);
 
 export function compileFast(e: Expr): FastFn {
@@ -158,7 +140,6 @@ export function compileFast(e: Expr): FastFn {
       case 'var': return `s[${JSON.stringify(e.name)}]`;
       case 'index': return `cell(s[${JSON.stringify(e.array)}],${go(e.index)})`;
       case 'quant': {
-        // nested loops, one per bound name, each starting where the chain allows; a copy of the state carries the bound names
         const id = tmp++;
         const lo = `lo${id}`;
         const hi = `hi${id}`;

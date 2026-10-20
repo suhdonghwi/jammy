@@ -1,22 +1,16 @@
 import type { FastState } from '../lang/eval';
 import type { CompiledLevel, Inputs } from './level';
 
-// Tiles are the plane's integer points: tile (x, y) sits at world (x, 0, -y),
-// so +y goes away from the camera.
-
-/** A square of tiles: centre (cx, cy), half-size R. */
 export interface TileWindow {
   cx: number;
   cy: number;
   R: number;
 }
 
-/** The state at tile (x, y) of the plane the inputs pick. */
 export function tileState(level: CompiledLevel, x: number, y: number, inputs: Inputs): FastState {
   return { ...inputs, [level.view.x]: x, [level.view.y]: y };
 }
 
-/** Egg tiles (start states) within a square around (cx, cy), in the given plane. */
 export function eggsNear(level: CompiledLevel, inputs: Inputs, cx: number, cy: number, R: number): [number, number][] {
   const out: [number, number][] = [];
   const f = level.fast;
@@ -49,7 +43,6 @@ export function eggsNear(level: CompiledLevel, inputs: Inputs, cx: number, cy: n
   return out;
 }
 
-/** What `pick` makes of each tile in the window (given its state), skipping the tiles it returns nothing for. */
 export function tilesNear<T>(level: CompiledLevel, inputs: Inputs, { cx, cy, R }: TileWindow, pick: (s: FastState, x: number, y: number) => T | undefined): T[] {
   const out: T[] = [];
   for (let y = cy - R; y <= cy + R; y++) {

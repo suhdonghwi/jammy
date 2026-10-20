@@ -4,14 +4,8 @@ import { setMuted, useSound } from '../../audio/sfx';
 import { resetCleared, useProgress } from '../../game/progress';
 import { useT } from '../../i18n/i18n';
 
-// The home screen's corner, each in a pill of its own: the game's source on
-// GitHub (in a new tab), forgetting which levels are cleared, and sound on or
-// off (remembered in this browser). The language switch comes after them.
-
-/** The pill a corner control sits in. */
 export const PILL = 'flex items-center rounded-full border border-line bg-card p-1 shadow-card backdrop-blur-md';
 
-/** A round icon button in a pill. */
 const ICON = 'grid size-7.5 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-shade/6 hover:text-ink';
 
 const SOURCE_URL = 'https://github.com/suhdonghwi/jammy/tree/main/games/invariant';
@@ -44,7 +38,6 @@ export function CornerControls() {
   );
 }
 
-/** GitHub's mark, drawn inline: lucide no longer ships brand icons. */
 function GitHubMark() {
   return (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -53,11 +46,6 @@ function GitHubMark() {
   );
 }
 
-/**
- * Forgetting which levels are cleared. An icon at rest, like its neighbours;
- * it takes two presses, the second within a few seconds (the button asks in
- * words in between), so a stray click loses nothing.
- */
 function ResetProgress() {
   const tr = useT();
   const any = useProgress((s) => s.cleared.length > 0);
@@ -69,7 +57,6 @@ function ResetProgress() {
   }, [confirming]);
   return (
     <div className={PILL}>
-      {/* the first press turns the icon into a red question that a second press answers */}
       <button
         className={`flex h-7.5 cursor-pointer items-center justify-center gap-1.5 rounded-full font-display text-sm font-medium transition-colors duration-150 disabled:cursor-default disabled:opacity-40 ${
           confirming ? 'bg-fail px-3 text-white' : 'w-7.5 text-muted enabled:hover:bg-shade/6 enabled:hover:text-ink'

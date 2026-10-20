@@ -166,8 +166,8 @@ opens the level list or a level, never on the home screen alone.
 
 - Components are `PascalCase.tsx`, other modules `camelCase.ts`; one focused
   concern per file — split a file when it grows several.
-- Each module opens with a short comment saying what it is for; comments say
-  *why*, not what.
+- No comments, except where code is otherwise nearly impossible to understand
+  (see AGENTS.md).
 - Imports: packages first, then local modules, each alphabetical by path.
 - Remove dead code rather than leaving it behind.
 - Before committing: `pnpm typecheck`, `pnpm test`, `pnpm validate` (when

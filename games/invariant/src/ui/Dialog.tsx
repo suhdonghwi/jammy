@@ -4,12 +4,6 @@ import { usePresence } from '../hooks/presence';
 import { useT } from '../i18n/i18n';
 import { button } from './classes';
 
-// Cards over everything, on the page dimmed behind them: a click outside
-// closes them. Overlay is the card and its backdrop (the level list uses it
-// as it is); Dialog is one opened by a boolean in the store (showRules,
-// showSyntax), so any button anywhere can open it, and closed by Got it too.
-
-/** A card over the dimmed page, closed by a click outside it; `card`: its size and inside. */
 export function Overlay({ open, onClose, card, children }: { open: boolean; onClose: () => void; card: string; children: React.ReactNode }) {
   const { mounted, leaving } = usePresence(open);
   if (!mounted) return null;

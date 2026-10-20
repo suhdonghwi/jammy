@@ -11,7 +11,6 @@ import { useHover } from '../hover';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
 
-/** Where would a frog on the hovered tile hop? A dashed arc and a ghost frog. */
 export function HoverPreview() {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
@@ -60,7 +59,6 @@ export function HoverPreview() {
         transparent
         opacity={0.85}
       />
-      {/* see-through as a whole (see ghostDepthMaterial) */}
       <group ref={ghost}>
         <mesh geometry={assets.geom} material={assets.depth} renderOrder={4} />
         <mesh geometry={assets.geom} material={assets.mat} renderOrder={5} />

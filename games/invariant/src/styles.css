@@ -1,10 +1,5 @@
 @import 'tailwindcss';
 
-/* Styles live in the components as Tailwind classes. This file holds what
-   reads better as CSS: the design tokens, keyframes, the page itself, and the
-   tutorial's spotlight ring. */
-
-/* Tall or narrow windows stack the home copy under the scene. */
 @custom-variant narrow {
   @media (max-width: 768px) {
     @slot;
@@ -14,9 +9,6 @@
   }
 }
 
-/* The Korean fonts, for Hangul only, so a symbol Nunito lacks (≠, say) on an
-   English page never pulls in a whole Korean font. They are subsets of the
-   full fonts, made by scripts/subset-fonts.mjs (`pnpm fonts`). */
 @font-face {
   font-family: 'NanumSquareRound';
   src: url('./assets/fonts/NanumSquareRound-Regular.woff2') format('woff2');
@@ -40,21 +32,16 @@
 }
 
 @theme {
-  /* Korean letters come from rounded fonts of the same feel: NanumSquareRound
-     beside Nunito, T-money RoundWind beside Fredoka (neither has Latin letters
-     loaded); headings show NanumSquareRound while RoundWind is still loading */
   --font-sans: 'Nunito Variable', 'NanumSquareRound', ui-rounded, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-display: 'Fredoka', 'TmoneyRoundWind', 'Nunito Variable', 'NanumSquareRound', ui-rounded, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
-  /* the UI's base size, between sm and base */
   --text-md: 0.9375rem;
   --text-md--line-height: 1.5;
 
   --color-ink: #1c2333;
   --color-muted: #66708a;
   --color-faint: #a3abbc;
-  /* the ink colour all faint washes and lines are made of */
   --color-shade: #202c46;
   --color-line: rgb(32 44 70 / 0.09);
   --color-card: rgb(255 255 255 / 0.9);
@@ -74,14 +61,12 @@
   --color-warn-soft: #fdf2dc;
   --color-slab: #5c9df5;
   --color-slab-side: #3a78d8;
-  /* the scene's dark labels */
   --color-tag: #2b3445;
   --color-tag-good: #2f9e44;
   --color-tag-fail: #f04f55;
 
   --shadow-card: 0 10px 30px rgb(32 44 70 / 0.08), 0 2px 6px rgb(32 44 70 / 0.05);
   --shadow-float: 0 24px 70px rgb(32 44 70 / 0.18);
-  /* chunky "toy" buttons: a solid bottom edge and a soft drop */
   --shadow-toy: 0 4px 0 #d5dbe5, 0 8px 18px rgb(32 44 70 / 0.1);
   --shadow-toy-pressed: 0 1px 0 #d5dbe5, 0 3px 8px rgb(32 44 70 / 0.1);
   --shadow-toy-brand: 0 4px 0 var(--color-brand-deep), 0 8px 18px rgb(59 130 246 / 0.3);
@@ -92,7 +77,6 @@
   --animate-slide-in: slide-in 0.4s ease-out;
   --animate-shake: shake 0.32s ease-in-out;
   --animate-tag-in: tag-in 0.2s ease-out;
-  /* exits last EXIT_MS (hooks/presence.ts) */
   --animate-fade-out: fade-out 0.15s ease-in forwards;
   --animate-pop-out: pop-out 0.15s ease-in forwards;
   --animate-sink-out: sink-out 0.15s ease-in forwards;
@@ -110,23 +94,18 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  /* Korean breaks lines between words, not inside them */
   :lang(ko) {
     word-break: keep-all;
     overflow-wrap: break-word;
   }
 }
 
-/* Until the page starts (scene/sceneTime.ts: the world's first frame is drawn
-   and the fonts are in), entrance animations wait on their first frame, so
-   they play in order once there is something to see. */
+/* entrances wait for the page to start: scene/sceneTime.ts, startScene */
 html:not([data-started]) *,
 html:not([data-started]) *::before,
 html:not([data-started]) *::after {
   animation-play-state: paused;
 }
-/* The world waits for the start too, then fades in: on load, and on each new
-   screen. Going to another screen (switchScene), the screen fades out first. */
 .world {
   opacity: 0;
 }
@@ -138,16 +117,10 @@ html[data-leaving] .screen {
   animation: var(--animate-fade-out);
 }
 
-/* RoundWind has one weight, and already a heavy one: a label of any weight
-   uses it as it is, never thickened further (Fredoka has real weights, so it
-   is unaffected) */
 .font-display {
   font-synthesis-weight: none;
 }
 
-/* The tutorial's spotlight: a pulsing ring around whatever the caption talks
-   about. It lives on a pseudo-element so it never replaces the element's own
-   animation (the code card's slide-in would otherwise replay when it moves on). */
 .spotlight {
   position: relative;
   z-index: 2;
@@ -162,16 +135,11 @@ html[data-leaving] .screen {
     fade 0.3s ease-out,
     spotlight 1.6s ease-in-out infinite;
 }
-/* A small target inside a card (the rule lights): a thinner ring with only a
-   faint halo, so the pulse doesn't flood the card around it. */
 .spotlight-soft::after {
   animation:
     fade 0.3s ease-out,
     spotlight-soft 1.6s ease-in-out infinite;
 }
-/* Check sits inside the formula row, with no room for the ring (and it would
-   cut across the button's 3D edge): the button pulses, and a glow wraps it
-   and its bottom edge. */
 .spotlight-glow:not(:disabled) {
   animation: check-pulse 1.6s ease-in-out infinite;
 }
@@ -235,8 +203,6 @@ html[data-leaving] .screen {
   }
 }
 
-/* the code panel's loop: the body lights up while frogs hop; the condition
-   flashes green (keep looping), amber (stop) or blue (some of each) */
 @keyframes body-run {
   0% {
     background: rgb(82 194 74 / 0.38);
@@ -273,8 +239,6 @@ html[data-leaving] .screen {
   }
 }
 
-/* scene tags: in and out, and a changed value (the old one slips up and away,
-   the new one rises into place with a brief warm tint) */
 @keyframes tag-in {
   from {
     opacity: 0;

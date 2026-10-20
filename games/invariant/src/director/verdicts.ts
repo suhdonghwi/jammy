@@ -16,19 +16,13 @@ import { hatch } from './frogs';
 import { handIn, handOut, placeTestFrog, pointAt } from './hand';
 import { begin, caption, currentLevel, tween } from './sequence';
 
-// Checking the learner's area, and the hand acting out the result: a
-// counterexample, a shrug when the solver can't decide, or frog rain on success.
-
-/** A state as inline code in captions, e.g. `n = 0, i = 1`. */
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
 
-/** Mark the tile where a check failed, with a short reason. */
 function markFailure(x: number, y: number, label: string) {
   useGame.setState({ failMark: { x, y, label, t0: sceneNow() } });
   sfx.fail();
 }
 
-/** Bring state s into view: switch to its plane, then glide (or, when it is far away, fly) over to it. */
 async function focusState(s: State, far = false) {
   const L = currentLevel();
   const x = Number(s[L.view.x]);
@@ -36,7 +30,6 @@ async function focusState(s: State, far = false) {
   const inputs = inputsOf(L, s);
   if (planeKey(inputs) !== planeKey(useGame.getState().inputs)) {
     useGame.setState({ inputs });
-    // a beat for the switch to register (the inputs card shows it) before the camera moves
     await sleep(250);
   }
   if (far) {
@@ -46,12 +39,10 @@ async function focusState(s: State, far = false) {
   } else {
     const t = cameraRig.target();
     const dist = Math.hypot(t.x - x, -t.z - y);
-    // near the edge (a phone's narrow view reaches it within a few tiles), it is brought to the middle too
     if (dist > 3 || cameraRig.distance() > 22 || !cameraRig.inView(x, y)) await cameraRig.lookAtTile(x, y, Math.min(cameraRig.distance(), 16));
   }
 }
 
-/** Check the current area against the given rules (the lights show the verdicts); the hand taps while it thinks. */
 export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
   const g = useGame.getState();
   const inv = g.valid;
@@ -61,7 +52,6 @@ export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
   const keep = { ...g.verdicts };
   for (const r of rules) delete keep[r];
   useGame.setState({ checking: true, verdicts: keep, failMark: null });
-  // a quick check needs no hand; a slow one gets it tapping its fingers
   let tapping = false;
   const tapTimer = setTimeout(() => {
     tapping = true;
@@ -72,7 +62,6 @@ export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
     const ctx = await browserZ3();
     const res = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
     useGame.setState({ verdicts: { ...keep, ...res.verdicts }, pitfallMessage: res.pitfall?.message ?? null });
-    // each proved rule chimes as its light turns on, a little higher each time
     rules.filter((r) => res.verdicts[r]?.status === 'pass').forEach((_, i) => after(i * 130, () => sfx.pass(i)));
     return res;
   } catch (e) {
@@ -86,19 +75,13 @@ export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
 }
 
 interface CounterexampleOptions {
-  /** Said before the explanation (default: a note when the frog was found far away). */
   prefix?: string;
-  /** Whose area it is: "your area" (the learner's, the default) or "the area" (one the tutorial is trying), in the current language. */
   area?: string;
-  /** The caption's tone (default: a failure). A demo the learner predicted right uses success. */
   tone?: CaptionTone;
-  /** A paragraph added after it. */
   extra?: string;
-  /** The caption's main button; by default it is Replay. Called when the caption is shown. */
   action?: () => Caption['action'];
 }
 
-/** The hand's demonstration of one counterexample. */
 export async function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
   const tok = begin();
   const L = currentLevel();
@@ -151,7 +134,6 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
   }
 }
 
-/** The solver could neither prove nor break the area: the hand shrugs. */
 export async function playShrug(text: string) {
   const tok = begin();
   useGame.setState({ busy: true });
@@ -170,11 +152,6 @@ export async function playShrug(text: string) {
   }
 }
 
-/**
- * Success: the hand scatters frogs everywhere on the area, and every one that
- * can hop lands on it again. `max` caps the frogs (a light shower, for a
- * stage's pass), and `zoomOut` pulls the camera back for the full one.
- */
 export async function playRain({ max = 160, zoomOut = true }: { max?: number; zoomOut?: boolean } = {}) {
   const tok = begin();
   const L = currentLevel();
@@ -190,13 +167,11 @@ export async function playRain({ max = 160, zoomOut = true }: { max?: number; zo
     const tiles: State[] = tilesNear(L, inputs, { cx: Math.round(tx), cy: Math.round(ty), R: 16 }, (s, x, y) =>
       L.fast.planeReq(s) && inv.fast(s) === true && Math.hypot(x - tx, y - ty) <= 15 ? toBig(s) : undefined,
     );
-    // shuffle and cap
     for (let i = tiles.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
     }
     const pick = tiles.slice(0, max);
-    // the hand sweeps across while sprinkling
     Object.assign(handState, { x: tx - 9, y: 5, z: -ty + 2, curl: 0.55, tap: 0.6, point: 0, shrug: 0, palmUp: 0, yaw: 0 });
     void tween(handState, { visible: 1, duration: 0.3 });
     void tween(handState, { x: tx + 9, z: -ty - 2, duration: 1.8, ease: 'sine.inOut' });

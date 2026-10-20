@@ -7,12 +7,8 @@ import { COLORS, SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';
 import { SceneTag, type TagTone } from './SceneTag';
 
-// A labelled tile: an outline (and optionally a faint wash) on the tile, and a
-// small tag above it (none when the label is empty: just the outline).
-
 const TONE_COLORS: Record<TagTone, string> = {
   info: '#2b3445',
-  // bright enough to read on a blue slab as well as a white tile
   good: '#34d058',
   fail: COLORS.fail,
 };
@@ -45,11 +41,8 @@ interface TileTagProps {
   y: number;
   label: string;
   tone: TagTone;
-  /** Pulse the outline (failures). */
   pulse?: boolean;
-  /** Fill the tile with a faint wash. */
   wash?: boolean;
-  /** On its way out: everything fades. */
   leaving?: boolean;
 }
 
@@ -59,7 +52,6 @@ export function TileTag({ x, y, label, tone, pulse = false, wash = false, leavin
   const ring = useRef<THREE.Mesh>(null);
   const washRef = useRef<THREE.Mesh>(null);
   const t0 = useRef(sceneNow());
-  // the exit runs in real time, in step with the tag's own CSS fade
   const leftAt = useRef<number | null>(null);
 
   useFrame(() => {

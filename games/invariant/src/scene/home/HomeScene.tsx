@@ -13,24 +13,14 @@ import { DIAGONAL } from './decor';
 import { StartEggs, type StartEgg } from './StartEggs';
 import { useHomeCamera } from './useHomeCamera';
 
-// The home screen's scene, in the counter program's world: striped tiles below
-// a diagonal of goal pools (where the loop would stop), and above it a ring of
-// area slabs with frogs hopping round and round it. They never leave. When
-// the page opens, each frog first hatches from an egg on its tile.
-
-/** The ring of slabs: wholly above the diagonal (every tile has x < y), off the axes. */
 const RING = { x0: 1, y0: 8, w: 7, h: 5 };
 const FROGS = 5;
-/** The tiles the goal columns are built for. */
 const WINDOW: TileWindow = { cx: 5, cy: 9, R: 16 };
-/** When the eggs appear, how long they sit, and the gap between hatchings (seconds). */
 const EGG_IN = 0.25;
 const EGG_HOLD = 0.9;
 const EGG_STAGGER = 0.3;
-/** Time between hops (ms). */
 const BEAT = 950;
 
-/** The rectangle's edge, clockwise as seen from the camera. */
 function edgePath({ x0, y0, w, h }: typeof RING): [number, number][] {
   const p: [number, number][] = [];
   for (let x = x0; x < x0 + w; x++) p.push([x, y0 + h - 1]);
@@ -41,11 +31,9 @@ function edgePath({ x0, y0, w, h }: typeof RING): [number, number][] {
 }
 const PATH = edgePath(RING);
 
-/** The home screen's 3D scene (on very small screens, a faint backdrop behind the copy: see HomeOverlay). */
 export function HomeScene() {
   useHomeCamera();
 
-  // Raise the ring. Slabs inside the striped zone are striped too, and carry its pools.
   const [version, setVersion] = useState(0);
   useEffect(() => {
     field.reset();
@@ -64,8 +52,6 @@ export function HomeScene() {
   useEffect(() => {
     frogWorld.clear();
     const pos = Array.from({ length: FROGS }, (_, j) => Math.floor((j * PATH.length) / FROGS));
-    // On arrival each frog starts as an egg on its tile: the egg pops up,
-    // then (one after another) wobbles, cracks and the frog climbs out.
     const t0 = sceneNow();
     const timers: (() => void)[] = [];
     eggs.current = [];
@@ -79,7 +65,6 @@ export function HomeScene() {
       f.face = f.yaw = yawToward(x, y, nx, ny);
       return f;
     });
-    // everyone starts hopping together, on the same beat, once the last frog is out
     const lastOut = Math.max(...frogs.map((f) => f.hatchT0 ?? t0)) + 0.6;
     const beat = () => {
       timers.push(after(BEAT, beat));
@@ -87,7 +72,6 @@ export function HomeScene() {
       frogs.forEach((f, j) => {
         pos[j] = (pos[j] + 1) % PATH.length;
         const [x, y] = PATH[pos[j]];
-        // landing in a pool on the way splashes (hopTo does that, as in a level)
         void frogWorld.hopTo(DIAGONAL, f, { x: BigInt(x), y: BigInt(y) }, 0.45, true).then(() => {
           const [nx, ny] = PATH[(pos[j] + 1) % PATH.length];
           f.face = yawToward(x, y, nx, ny);

@@ -6,10 +6,6 @@ import { useT } from '../../i18n/i18n';
 import { showHint } from '../../tutorial/script';
 import { button } from '../classes';
 
-// Run / Pause, Step and Reset; on the right, the hint (the tutorial stage's
-// one, or a level's few) and the two reference cards: the syntax (once there
-// is an area box) and the rules (once their lights are up).
-
 export function RunControls() {
   const reveal = useGame((s) => s.reveal);
   const runningNow = useGame((s) => s.running);
@@ -26,13 +22,10 @@ export function RunControls() {
   const hinting = tut && !!hint && !hint.shown && awaitingCheck;
   const onHint = hinting ? showHint : levelHints > 0 ? showLevelHint : null;
   const rules = reveal.lights.length > 0;
-  // on phones the row only has room for the labels of Reset and the references when neither Reset nor a hint is in it
   const crowded = !!onHint || (reveal.run && !tut) || (rules && reveal.formula);
-  // a button that gives up its label on phones is square there, like an icon button
   const square = (iconOnly: boolean) => (iconOnly ? 'max-sm:w-9.5 max-sm:self-stretch max-sm:px-0!' : '');
   return (
     <div className="flex animate-[rise_0.4s_ease-out] items-center gap-1.5 max-[22.5rem]:gap-1">
-      {/* three alike buttons: their icons carry the colour that tells them apart */}
       {reveal.run &&
         (runningNow ? (
           <button className={button()} onClick={pauseRun}>
@@ -58,12 +51,10 @@ export function RunControls() {
       )}
       {reveal.run && !tut && (
         <button className={`${button()} ${square(crowded)}`} disabled={busy} title={tr.controls.resetTitle} aria-label={tr.controls.reset} onClick={resetFrogs}>
-          {/* on phones a level's row also holds the hint and the references: Reset gives up its label */}
           <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> <span className={crowded ? 'max-sm:hidden' : ''}>{tr.controls.reset}</span>
         </button>
       )}
       <span className="flex-1" />
-      {/* the tutorial's one sentence goes once it's shown; a level's hints come one at a time from the caption */}
       {onHint && (
         <button className={`${button('glass')} ${square(!tut)}`} disabled={busy} title={tr.controls.hintTitle} aria-label={tr.controls.hint} onClick={onHint}>
           <Lightbulb size={16} strokeWidth={2.2} /> <span className={tut ? '' : 'max-sm:hidden'}>{tr.controls.hint}</span>

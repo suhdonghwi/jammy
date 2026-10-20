@@ -3,10 +3,6 @@ import { holds } from '../lang/eval';
 import { hop, startState, type CompiledLevel, type Formula } from '../levels/level';
 import type { Counterexample, Rule } from './types';
 
-// A rule on one state, exactly: does the state break it, and the
-// counterexample it makes. The box search and the solver both end here.
-
-/** Does this state break the rule, exactly? (A model of an unrolled query is checked with this.) */
 export function breaksRule(level: CompiledLevel, inv: Expr, rule: Rule, s: State): boolean {
   if (rule === 'initialization') {
     const start = startState(level, s);
@@ -17,7 +13,6 @@ export function breaksRule(level: CompiledLevel, inv: Expr, rule: Rule, s: State
   return !holds(level.guard, s) && !holds(level.post, s);
 }
 
-/** The counterexample a state breaking the rule makes; `far`: found by the solver, outside the box. */
 export function counterexample(level: CompiledLevel, inv: Formula, rule: Rule, s: State, far: boolean): Counterexample {
   if (rule === 'initialization') {
     const start = startState(level, s);
@@ -30,7 +25,6 @@ export function counterexample(level: CompiledLevel, inv: Formula, rule: Rule, s
   return { rule, state: s, far };
 }
 
-/** Which conjunct of `inv` is false in state s (source text). */
 function brokenConjunct(inv: Formula, s: State): string | undefined {
   const cs = conjuncts(inv.expr);
   if (cs.length < 2) return undefined;

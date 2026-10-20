@@ -1,10 +1,3 @@
-// Cuts the Korean fonts down to the Hangul a page can show, as woff2, into
-// src/assets/fonts. The full fonts cover all 11,172 syllables; the subsets keep
-// the 2,350 of KS X 1001 (which covers everyday Korean), the compatibility
-// jamo, and any other syllable the game's own text uses.
-//
-// Run with `pnpm fonts` after adding Korean text with an unusual syllable
-// (the script lists any it adds beyond KS X 1001).
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -20,15 +13,14 @@ const FONTS = [
   { from: '@kfonts/nanum-square-round/NanumSquareRoundB.woff2', to: 'NanumSquareRound-Bold.woff2' },
 ];
 
-// KS X 1001's Hangul: EUC-KR rows 0xB0–0xC8, cells 0xA1–0xFE
 const decoder = new TextDecoder('euc-kr');
 const chars = new Set();
+// KS X 1001's Hangul: EUC-KR rows 0xB0–0xC8, cells 0xA1–0xFE
 for (let hi = 0xb0; hi <= 0xc8; hi++) {
   for (let lo = 0xa1; lo <= 0xfe; lo++) chars.add(decoder.decode(new Uint8Array([hi, lo])));
 }
 for (let c = 0x3131; c <= 0x318e; c++) chars.add(String.fromCodePoint(c));
 
-// every Hangul syllable in the source, so none of the game's own text falls back
 const extra = new Set();
 function scan(dir) {
   for (const name of readdirSync(dir)) {

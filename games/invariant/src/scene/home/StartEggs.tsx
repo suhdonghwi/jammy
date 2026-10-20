@@ -10,7 +10,6 @@ import { sceneNow } from '../sceneTime';
 export interface StartEgg {
   x: number;
   y: number;
-  /** When it pops up and when it hatches (scene time). */
   appear: number;
   hatch: number;
 }
@@ -18,7 +17,6 @@ export interface StartEgg {
 const MAX = 16;
 const dummy = new THREE.Object3D();
 
-/** The eggs the home screen's frogs come from: they pop up, then vanish as the hatching shells take over. */
 export function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
   const mesh = useMemo(() => {
     const m = new THREE.InstancedMesh(eggGeometry(), new THREE.MeshStandardMaterial({ color: COLORS.egg, roughness: 0.7 }), MAX);
@@ -31,7 +29,6 @@ export function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
     let n = 0;
     for (const e of eggs.current) {
       if (t < e.appear || t >= e.hatch || n >= MAX) continue;
-      // pop in with a little overshoot
       dummy.position.set(e.x, field.heightAt(e.x, e.y) * SLAB_H, -e.y);
       dummy.scale.setScalar(popIn((t - e.appear) / 0.32));
       dummy.updateMatrix();

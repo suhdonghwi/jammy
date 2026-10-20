@@ -1,17 +1,5 @@
 import { create } from 'zustand';
 
-// The game's sounds: short clips from Kenney's CC0 packs (kenney.nl: Interface
-// Sounds, UI Audio, Impact Sounds, Music Jingles), played through Web Audio so
-// one clip can vary in pitch and loudness. The files are in src/assets/sfx,
-// named by what they are for. A role with no clip is silent (button clicks,
-// frogs all stopping, goal pools, egg cracks and proved rules, for now).
-//
-// Browsers only allow sound after the page has been used, so the audio
-// context starts at the first press or key; anything before that is silent.
-// Making the context is slow the first time (a fifth of a second on a Mac),
-// so it is made, and the clips loaded, while the page is still waiting to
-// come in (prepareSound, from World), and the first press only resumes it.
-
 const MUTE_KEY = 'invariant-frog:muted';
 
 function loadMuted(): boolean {
@@ -41,10 +29,8 @@ const VOLUME = 0.6;
 
 const URLS = import.meta.glob('../assets/sfx/*.m4a', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 
-/** What each sound is for; its clip is <role>.m4a (or takes <role>-1.m4a, <role>-2.m4a…). */
 type Role = 'click' | 'hop' | 'land' | 'settle' | 'goal' | 'crack' | 'rise' | 'sink' | 'patter' | 'chime' | 'fail' | 'cleared';
 
-/** Each role's loudness in the mix. */
 const GAIN: Record<Role, number> = {
   click: 0.35,
   hop: 0.4,
@@ -66,12 +52,10 @@ const roleOf = (path: string) => path.slice(path.lastIndexOf('/') + 1, -'.m4a'.l
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 
-/** Make the audio context (suspended until a press) and load the clips. */
 export function prepareSound() {
   if (!ctx) {
     const c = new AudioContext();
     ctx = c;
-    // a gentle limiter, so a crowd of frogs never clips
     const comp = c.createDynamicsCompressor();
     comp.threshold.value = -12;
     comp.ratio.value = 6;
@@ -96,16 +80,10 @@ function start() {
   if (ctx!.state === 'suspended') void ctx!.resume();
 }
 
-/** The context, if sound can play right now. */
 function live(): AudioContext | null {
   return ctx && ctx.state === 'running' && !useSound.getState().muted ? ctx : null;
 }
 
-/**
- * Play one of a role's clips (a random take, so repeats don't sound
- * mechanical): `gain` scales its usual loudness, `rate` speeds it up (and
- * raises its pitch), `at` delays it (seconds).
- */
 function play(role: Role, { gain = 1, rate = 1, at = 0, pan = 0 }: { gain?: number; rate?: number; at?: number; pan?: number } = {}) {
   const c = live();
   const bufs = takes.get(role);
@@ -121,14 +99,10 @@ function play(role: Role, { gain = 1, rate = 1, at = 0, pan = 0 }: { gain?: numb
   src.start(c.currentTime + at);
 }
 
-/** A little random pitch, so repeats don't sound mechanical. */
 const wobble = (amount = 0.06) => 1 + (Math.random() * 2 - 1) * amount;
-/** The playback rate that raises a clip by `semis` semitones. */
 const semitones = (semis: number) => 2 ** (semis / 12);
-/** Major pentatonic steps: notes that always agree with each other. */
 const PENTA = [0, 2, 4, 7, 9];
 
-/** True at most once per `ms` for a given sound, so a crowd doesn't become a roar. */
 const lastAt = new Map<string, number>();
 function gap(key: string, ms: number): boolean {
   const now = performance.now();
@@ -137,23 +111,15 @@ function gap(key: string, ms: number): boolean {
   return true;
 }
 
-// ---------------------------------------------------------------- the sounds
-
-/**
- * Consecutive hops climb the scale, so a running loop sounds like it's going
- * somewhere; a long run stays on the top note (higher, the clip gets squeaky).
- */
 const TOP_STEP = 7;
 let hopStep = 0;
 let lastHop = -Infinity;
 
 export const sfx = {
-  /** A button press. */
   click() {
     play('click');
   },
 
-  /** Frogs take off together (`count` of them). */
   hop(count: number) {
     const now = performance.now();
     hopStep = now - lastHop > 1300 ? 0 : Math.min(hopStep + 1, TOP_STEP);
@@ -162,32 +128,27 @@ export const sfx = {
     play('hop', { gain: 1 + Math.min(Math.log2(count), 4) * 0.1, rate: semitones(semis) });
   },
 
-  /** They land; `stopped`: none of them will hop again. */
   land(stopped: boolean) {
     play('land', { rate: wobble() });
     if (stopped) play('settle', { at: 0.1 });
   },
 
-  /** A frog arrives in a goal pool: a water drop. */
   goal() {
     if (!gap('goal', 70)) return;
     play('goal', { rate: wobble(0.08) });
   },
 
-  /** An egg cracks and a frog climbs out a moment later. */
   hatch() {
     if (!gap('hatch', 40)) return;
     play('crack', { rate: wobble(0.1) });
     play('hop', { gain: 0.6, rate: semitones(7), at: 0.2 });
   },
 
-  /** The area changed: `rose` slabs came up, `sank` went down. */
   slabs(rose: number, sank: number) {
     if ((!rose && !sank) || !gap('slabs', 120)) return;
     play(rose ? 'rise' : 'sink');
   },
 
-  /** A frog touches down after being dropped: alone a soft thud, in a shower a patter. */
   touch() {
     const alone = gap('touch-alone', 250);
     lastAt.set('touch-alone', performance.now());
@@ -196,24 +157,20 @@ export const sfx = {
     play('patter', { rate: 1.4 + Math.random() * 0.8, pan: Math.random() * 1.2 - 0.6 });
   },
 
-  /** A rule was proved (`i`: which, so three in a row climb a major chord). */
   pass(i: number) {
     play('chime', { rate: semitones([0, 4, 7][i] ?? 12) });
   },
 
-  /** The scene marks where the area breaks: a short falling tune. */
   fail() {
     play('fail');
   },
 
-  /** The level is cleared: a short rising tune. */
   cleared() {
     play('cleared');
   },
 };
 
 if (typeof window !== 'undefined') {
-  // the first press or key starts audio; every enabled button clicks
   window.addEventListener('pointerdown', start, { capture: true });
   window.addEventListener('keydown', start, { capture: true });
   window.addEventListener(

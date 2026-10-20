@@ -11,9 +11,6 @@ import { field, RISE_DUR, type TileFlags } from './field';
 import { GoalColumns } from './GoalColumns';
 import { Slabs } from './Slabs';
 
-// Everything that stands on the floor of a level: the learner's area (slabs),
-// the eggs and the goal columns, for the tiles around the camera.
-
 interface AreaLayerProps {
   level: CompiledLevel;
   inputs: Inputs;
@@ -25,7 +22,6 @@ interface AreaLayerProps {
   showArea: boolean;
 }
 
-/** The square of tiles around the camera's target that is built; it moves in steps as the camera does. */
 function useTileWindow(): TileWindow {
   const [win, setWin] = useState<TileWindow>({ cx: 0, cy: 0, R: 18 });
   const ref = useRef(win);
@@ -50,10 +46,6 @@ export function AreaLayer({ level, inputs, inv, dim, showStop, showGoal, showEgg
   const last = useRef<{ level: string; inv: FastFn | null; showArea: boolean } | null>(null);
   const key = planeKey(inputs);
 
-  // Recompute the area for the window. Slabs animate when the level or the
-  // formula changes — not when the window merely follows the camera, and not
-  // when an input moves to another plane: that switches at once, so an input
-  // stepped through values doesn't replay the slabs rising at every step.
   useEffect(() => {
     const prev = last.current;
     const fresh = !prev || prev.level !== level.id;

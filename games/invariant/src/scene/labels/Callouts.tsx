@@ -8,21 +8,15 @@ import { TileTag, TONE_PREFIX } from './TileTag';
 type Callout = Game['callouts'][number];
 const calloutKey = (c: Callout) => (c.frog !== undefined ? `f${c.frog},${c.text}` : `${c.x},${c.y},${c.text}`);
 
-/**
- * Tutorial labels ("egg: input n = 2", "Initialization", …): over a tile, with an
- * outline, or riding along with a frog. Removed ones fade out.
- */
 export function Callouts() {
   const callouts = usePresentList(
     useGame((s) => s.callouts),
     calloutKey,
   );
-  // the frog a label rides on, remembered so it can still fade out with it
   const frogs = useRef(new Map<number, FrogSim>());
   return (
     <>
       {callouts.map(({ item: c, key, leaving }) => {
-        // every tile callout washes its tile too (like failure marks), so the outline reads on a blue slab
         if (c.frog === undefined) return <TileTag key={key} x={c.x} y={c.y} label={c.text} tone={c.tone} wash leaving={leaving} />;
         const frog = frogWorld.frogs.find((f) => f.id === c.frog) ?? frogs.current.get(c.frog);
         if (!frog) return null;

@@ -6,42 +6,29 @@ import { field } from '../area/field';
 import { SLAB_H } from '../constants';
 import type { FrogSim } from '../frogs/frogWorld';
 
-// The one kind of label in the scene: a small pill with a pointer, floating
-// over a tile or riding along with a frog. Callouts, failure labels and the
-// frog's own state tag are all this component.
-
 export type TagTone = 'info' | 'good' | 'fail';
 
-/** Where a tag hangs: over a tile, or over a frog (following it as it hops). */
 type TagAnchor = { tile: [number, number] } | { frog: FrogSim };
 
-/** Height of the sitting frog model (its bounding box top). */
 const FROG_TOP = 0.53;
-/** Over a bare tile, where a frog's head would be. */
 const TILE_TAG_Y = 0.62;
 const GAP = 0.07;
-/** How close (px) a tag may come to the screen's side. */
 const EDGE = 8;
-/** How far (px) the pointer stays in from the pill's ends. */
 const POINTER_INSET = 18;
 const v = new THREE.Vector3();
 const onScreen = new THREE.Vector3();
 
-/** The point the tag's pointer touches: just above the frog's head (or a tile). */
 function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
   if ('tile' in a) {
     const [x, y] = a.tile;
     return v.set(x, field.heightAt(x, y) * SLAB_H + TILE_TAG_Y, -y);
   }
   const p = a.frog.drawn;
-  // rides with the frog, hops included, so the frog never runs into it
   return p ? v.set(p.x, p.y + FROG_TOP * p.scale + GAP, p.z) : null;
 }
 
-/** A dark pill with a pointer underneath (both in --tag-bg); a covered tag fades and dips away. */
 const TAG =
   'relative origin-bottom rounded-full bg-(--tag-bg) px-3.25 pt-1 pb-1.25 font-display text-md font-semibold whitespace-nowrap text-white tabular-nums transition-[opacity,translate,scale] duration-250 data-covered:translate-y-1 data-covered:scale-90 data-covered:opacity-0 after:absolute after:-bottom-1.25 after:left-[calc(50%+var(--tag-dx,0px))] after:-ml-1.5 after:border-6 after:border-b-0 after:border-transparent after:border-t-(--tag-bg)';
-/** The holder's place before the first frame sizes it: centred over the anchor, above it. */
 const HOLDER = { transform: 'translate(-50%, -100%)' };
 const TONE: Record<TagTone, string> = {
   info: '[--tag-bg:var(--color-tag)]',
@@ -58,24 +45,16 @@ export function SceneTag({
 }: {
   anchor: TagAnchor;
   tone?: TagTone;
-  /** On its way out (fades away). */
   leaving?: boolean;
-  /** Checked every frame; a hidden tag fades out (and back in). */
   hidden?: () => boolean;
   children: ReactNode;
 }) {
   const group = useRef<THREE.Group>(null);
   const holder = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
-  // the pill's width, for keeping it on screen (Html mounts it a moment after this component)
   const width = useRef(0);
   const watch = useRef<ResizeObserver | null>(null);
   useEffect(() => () => watch.current?.disconnect(), []);
-  // Html places the label where the group is when it mounts, and each frame
-  // before this component moves the group, so the group starts on the anchor:
-  // at the origin, a new tag would flash there for a frame (on a phone, at the
-  // screen's side). A frog not drawn yet has no anchor: its tag stays hidden
-  // until Html has followed the group there.
   const [start] = useState(() => anchorPoint(anchor)?.toArray());
   const placed = useRef(start ? 1 : 0);
   useFrame(({ camera, size }) => {
@@ -89,12 +68,8 @@ export function SceneTag({
       group.current.position.copy(p);
       placed.current++;
     }
-    // the pointer's tip sits on the anchor and the tag grows upward from it;
-    // a little smaller when the camera is far, so it never swamps the frog
     if (holder.current && box.current && p) {
       const k = THREE.MathUtils.clamp(14 / camera.position.distanceTo(p), 0.7, 1);
-      // near the screen's side (a phone's narrow view) the pill slides inward
-      // while its pointer stays on the anchor, as far as the pill reaches
       const x = ((onScreen.copy(p).project(camera).x + 1) / 2) * size.width;
       const half = (width.current * k) / 2;
       const reach = Math.max(0, half - POINTER_INSET * k);
@@ -108,7 +83,6 @@ export function SceneTag({
   return (
     <group ref={group} position={start}>
       <Html zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-        {/* positioned (above) so the pointer's tip sits on the anchor */}
         <div ref={holder} className="origin-bottom pb-1.5" style={start ? HOLDER : { ...HOLDER, visibility: 'hidden' }}>
           <div ref={box} className={`${TAG} ${TONE[tone]} ${leaving ? 'animate-tag-out' : 'animate-tag-in'}`}>
             {children}

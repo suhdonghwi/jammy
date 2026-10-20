@@ -1,11 +1,5 @@
 import { Title3D } from '../home/title/Title3D';
 
-// The link preview image (og.png), drawn by the game itself: the 3D title,
-// large, centred and standing straight (without its wave), over the home
-// screen's scene softened behind a white haze. App draws it in place of the
-// home screen, in development only, at `?poster`; scripts/make-og.ts opens
-// it, screenshots it and writes public/og.png.
-
 export function Poster() {
   return (
     <div className="fixed inset-0 grid place-items-center bg-white/45 backdrop-blur-[3px]">

@@ -3,8 +3,6 @@ import { RULES, type Rule, type Verdicts } from '../checker/types';
 import { compileFormula, compileLevel, startInputs, type CompiledLevel, type Formula, type FormulaResult, type Inputs, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 
-// The game's state, shared by the scene, the HUD and the scripted sequences.
-
 export interface Reveal {
   code: boolean;
   axes: boolean;
@@ -15,11 +13,8 @@ export interface Reveal {
   run: boolean;
   step: boolean;
   formula: boolean;
-  /** The ghost `assert(…)` line at the top of the loop body. */
   assert: boolean;
-  /** Rule lights shown under the formula. */
   lights: Rule[];
-  /** Lights that are live (the tutorial shows the rest dim until their stage). */
   awake: Rule[];
 }
 
@@ -58,79 +53,52 @@ export type CaptionTone = 'info' | 'fail' | 'success' | 'muted';
 export interface Caption {
   text: string;
   tone: CaptionTone;
-  /** Main button (Next, Replay, …); `disabled` shows it greyed, for a step that waits on the learner first. */
   action?: { label: string; onClick: () => void; disabled?: boolean };
-  /** Optional quieter button next to it (e.g. Replay). */
   secondary?: { label: string; onClick: () => void };
-  /** A question: these buttons instead of a main one (the tutorial's predictions); `tone` gives Yes and No their marks. */
   choices?: { label: string; onClick: () => void; tone?: 'yes' | 'no' }[];
 }
 
-/** The tutorial's hint for the current stage: one sentence, shown under the stage's ask. */
 interface Hint {
   ask: string;
   nudge: string;
-  /** The learner has asked for it (the button goes). */
   shown: boolean;
 }
 
 export interface Game {
   mode: 'menu' | 'level' | 'tutorial';
-  /** On the home screen: the title, or the level picker. */
   menuView: 'home' | 'levels';
   level: CompiledLevel | null;
-  /** The plane in view: the off-axis inputs' values (see the inputs card). */
   inputs: Inputs;
   formulaText: string;
   formula: FormulaResult | null;
-  /** Last valid formula — the slabs follow it. */
   valid: Formula | null;
   verdicts: Partial<Verdicts>;
   checking: boolean;
-  /** A director sequence is playing (input is locked). */
   busy: boolean;
   running: boolean;
   caption: Caption | null;
   reveal: Reveal;
-  /** Increments when frogs start a hop (the loop body runs). */
   hopTick: number;
   hopDur: number;
-  /** Increments when frogs land (the loop condition is checked). */
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
-  /** Tutorial: the stage's hint while it waits for Check. */
   hint: Hint | null;
-  /** Levels: how many of the level's hints the learner has asked for. */
   hintsShown: number;
   showRules: boolean;
-  /** The syntax reference card is open. */
   showSyntax: boolean;
   pitfallMessage: string | null;
-  /** A single Step is animating. */
   stepping: boolean;
-  /** Tutorial: real frogs carry a tag with their variables, animated as they change. */
   frogTags: boolean;
-  /** Tutorial: go back to the previous step (null on the first one). */
   back: (() => void) | null;
-  /** Tutorial: jump straight to the next step, its scene rebuilt at once (Next pressed mid-animation). */
   skip: (() => void) | null;
-  /** Tutorial: the current step is waiting for the learner to press Check. */
   awaitingCheck: boolean;
-  /** Tutorial: the Next action the script is currently waiting on (so replays can restore it). */
   nextAction: { label: string; onClick: () => void } | null;
-  /** Tutorial: which controls the current beat lets the learner use. */
   tutorialAllow: { step: boolean; run: boolean; eggs: boolean; formula: boolean };
-  /** Tutorial: program lines the caption is talking about (1-based). */
   spotLines: number[];
-  /** Tutorial: the UI element the caption is talking about. */
   spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
-  /** The input whose row in the inputs card is hovered: its declaration lights up in the code. */
   inputHover: string | null;
-  /** Bumped when Check is pressed with an invalid formula (shows the inline error at once). */
   errorNudge: number;
-  /** Tutorial labels: over tile (x, y), or riding along with a frog when `frog` (its id) is set; an empty text is an outline alone. */
   callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];
-  /** Where the last check failed (tile in the focused plane) and why. */
   failMark: { x: number; y: number; label: string; t0: number } | null;
 
   openLevel(def: LevelDef, mode: 'level' | 'tutorial'): void;
@@ -139,10 +107,8 @@ export interface Game {
   setReveal(r: Partial<Reveal>): void;
 }
 
-/** Tutorial: no control is the learner's to use. */
 export const ALLOW_NONE: Game['tutorialAllow'] = { step: false, run: false, eggs: false, formula: false };
 
-/** What opening a level resets: no area, no checks, nothing of the tutorial's. */
 const FRESH = {
   formulaText: '',
   formula: null,
@@ -185,7 +151,6 @@ export const useGame = create<Game>((set, get) => ({
   errorNudge: 0,
 
   openLevel(def, mode) {
-    // in the current language: its title, intro, hints and pitfalls
     const level = compileLevel(localizeLevel(def));
     set({
       ...FRESH,

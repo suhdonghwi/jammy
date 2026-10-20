@@ -1,10 +1,6 @@
-// Small isometric illustrations in the world's visual language, laid out on a
-// real isometric grid: cell (i, j) sits at x = (i − j)·20, y = (i + j)·9.
 const iso = (i: number, j: number) => ({ x: 60 + (i - j) * 20, y: 36 + (i + j) * 9 });
 const SLAB_T = 6;
 
-// Cells are drawn a little smaller than the grid pitch, so neighbours stay
-// visibly separate (like the world's tiles and slabs).
 const HW = 17;
 const HH = 7.65;
 
@@ -25,7 +21,6 @@ const Slab = ({ i, j }: { i: number; j: number }) => {
     </g>
   );
 };
-/** Top-centre of a slab, where things sit. */
 const top = (i: number, j: number) => {
   const { x, y } = iso(i, j);
   return { x, y: y - SLAB_T };
@@ -40,7 +35,6 @@ const Frog = ({ x, y }: { x: number; y: number }) => (
   </g>
 );
 
-/** Cells drawn back to front. */
 function Cells({ cells }: { cells: [number, number, 'tile' | 'slab'][] }) {
   return (
     <>
@@ -104,7 +98,6 @@ export function ArtTermination() {
         </linearGradient>
       </defs>
       <Cells cells={PLUS('slab')} />
-      {/* the goal: a pale amber pool with a column of light, as in the world */}
       <ellipse cx={p.x} cy={p.y} rx="11.5" ry="5.2" fill="#fde3a7" stroke="#efa52b" strokeWidth="2" />
       <path d={`M${p.x - 11.5} ${p.y} L${p.x - 11.5} ${p.y - 24} L${p.x + 11.5} ${p.y - 24} L${p.x + 11.5} ${p.y} Z`} fill="url(#goal-col)" />
       <Frog x={p.x} y={p.y - 2} />

@@ -1,6 +1,3 @@
-// A Vite plugin serving `virtual:title-glyphs`: the outlines of the 3D title's
-// letters, read from the bundled Fredoka Bold at build time. The page then
-// needs neither the font file nor a font parser (opentype.js) to draw the title.
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import opentype from 'opentype.js';
@@ -11,7 +8,6 @@ const require = createRequire(import.meta.url);
 const FONT = '@fontsource/fredoka/files/fredoka-latin-700-normal.woff';
 const ID = 'virtual:title-glyphs';
 
-/** Outlines are kept to a tenth of a font unit: far finer than the title is ever drawn. */
 const r = (v: number) => Math.round(v * 10) / 10;
 
 function extract(): TitleGlyphs {
@@ -21,7 +17,6 @@ function extract(): TitleGlyphs {
   const out: TitleGlyphs = { unitsPerEm: font.unitsPerEm, glyphs: {}, kerning: {} };
   for (const ch of unique) {
     const g = font.charToGlyph(ch);
-    // at size unitsPerEm the path is in font units (y down, baseline at 0)
     const path = g.getPath(0, 0, font.unitsPerEm).commands.map((c) => {
       switch (c.type) {
         case 'M':

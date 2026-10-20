@@ -2,28 +2,13 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { COLORS } from './constants';
 
-// Procedural models in a soft, toy-like style. Each frog part carries an
-// `aPart` id so a single draw call can tint the body per frog while keeping
-// eyes, pupils, mouth and cheeks their own colors.
-
 const PART = { body: 0, torso: 1, sclera: 2, pupil: 3, shine: 4, mouth: 5, cheek: 6 } as const;
 
-/** The whole frog is scaled by this once its parts are put together. */
 const FROG_SCALE = 1.15;
-/** The torso: a sphere, stretched upright, leaning forward and placed. */
 const TORSO = { r: 0.15, stretch: 1.3, lean: -0.42, at: [0, 0.18, -0.03] } as const;
-/**
- * The pale belly, painted on the torso: an oval of directions from its centre
- * (in the sphere it is made from, before its stretch and lean), centred low
- * on its front, `wide` across and `tall` up and down (in sines). It used to be
- * a second, flatter sphere poking out of the torso, but the two met at so
- * shallow an angle that their facets took turns in front along the edge, in
- * jagged pale slivers. A direction is smooth across facets, as a normal is.
- */
+// The belly: an oval of directions from the torso's centre, painted on it (smooth across facets, as a normal is).
 const BELLY = { pitch: -0.777, wide: 0.6, tall: 0.29 };
 
-// Parts stay indexed: a vertex shared by its neighbouring triangles is shaded
-// once, not once per triangle, which matters with a few hundred frogs out.
 function tag(g: THREE.BufferGeometry, part: number): THREE.BufferGeometry {
   const n = g.attributes.position.count;
   g.setAttribute('aPart', new THREE.BufferAttribute(new Float32Array(n).fill(part), 1));
@@ -32,29 +17,20 @@ function tag(g: THREE.BufferGeometry, part: number): THREE.BufferGeometry {
   return g;
 }
 
-/**
- * The frog. A board frog is small on screen and there can be a few hundred of
- * them (frog rain), so its parts are only as round as they look at the
- * closest zoom; `fine` is for the one big frog in the title.
- */
 export function frogGeometry({ fine = false }: { fine?: boolean } = {}): THREE.BufferGeometry {
   const k = fine ? 3 : 2;
-  /** Smooth sphere (segment hints are scaled up for a soft surface). */
   const lp = (r: number, w = 9, h = 7) => new THREE.SphereGeometry(r, Math.max(fine ? 20 : 12, w * k), Math.max(fine ? 14 : 8, h * k));
   const parts: THREE.BufferGeometry[] = [];
   const add = (g: THREE.BufferGeometry, p: number) => parts.push(tag(g, p));
 
-  // A slim frog sitting up: leaning body, a wide head, eyes on top.
   add(lp(TORSO.r, 9, 7).scale(1.0, TORSO.stretch, 1.0).rotateX(TORSO.lean).translate(...TORSO.at), PART.torso);
   add(lp(0.14, 10, 7).scale(1.2, 0.72, 1.0).translate(0, 0.32, 0.06), PART.body);
   for (const s of [-1, 1]) {
     add(lp(0.062, 8, 6).translate(s * 0.1, 0.39, 0.06), PART.body);
     add(lp(0.052, 10, 8).translate(s * 0.105, 0.405, 0.09), PART.sclera);
     add(lp(0.028, 8, 6).scale(1, 1.15, 0.7).translate(s * 0.11, 0.41, 0.133), PART.pupil);
-    // folded back legs and long feet
     add(lp(0.1, 8, 6).scale(0.5, 0.75, 1.25).translate(s * 0.135, 0.09, -0.06), PART.body);
     add(lp(0.06, 8, 4).scale(0.95, 0.3, 1.55).translate(s * 0.15, 0.016, 0.05), PART.body);
-    // thin front arms
     add(new THREE.CapsuleGeometry(0.028, 0.1, fine ? 6 : 3, fine ? 14 : 10).rotateX(0.2).translate(s * 0.078, 0.08, 0.1), PART.body);
     add(lp(0.034, 7, 4).scale(1.3, 0.4, 1.2).translate(s * 0.08, 0.012, 0.125), PART.body);
   }
@@ -64,18 +40,11 @@ export function frogGeometry({ fine = false }: { fine?: boolean } = {}): THREE.B
   return merged;
 }
 
-/**
- * A see-through frog is see-through as a whole, not part by part: this pass
- * draws its depth first (renderOrder one below the frog's), so only its front
- * surface is blended, once, over what is behind it. Both passes are in the
- * transparent queue, after the (transparent) floor, so the floor under the
- * frog is already there to blend over.
- */
+// Drawn just before a see-through frog, so only its front surface is blended, once.
 export function ghostDepthMaterial(): THREE.MeshBasicMaterial {
   return new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true });
 }
 
-/** MeshStandardMaterial that colors frog parts by `aPart`, tinting the body by instance color. */
 export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({
     vertexColors: true,
@@ -98,7 +67,6 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         #ifdef USE_INSTANCING_COLOR
           tint = instanceColor.xyz;
         #endif
-        // this point as seen from the torso's centre, in the sphere it is made from (undoing its placement, lean and stretch)
         vec3 t = position / ${f(FROG_SCALE)} - vec3(${ax}, ${ay}, ${az});
         float cl = cos(${f(-TORSO.lean)}), sl = sin(${f(-TORSO.lean)});
         vTorsoDir = vec3(t.x, (t.y * cl - t.z * sl) / ${f(TORSO.stretch)}, t.y * sl + t.z * cl);
@@ -113,7 +81,6 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         vColor = vec4(c, 1.0);
         `,
       );
-    // the belly, painted per pixel, its edge a pixel or so of anti-aliasing
     const c = Math.cos(BELLY.pitch);
     const s = Math.sin(BELLY.pitch);
     shader.fragmentShader = shader.fragmentShader
@@ -122,7 +89,6 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         '#include <color_fragment>',
         /* glsl */ `#include <color_fragment>
         vec3 dir = normalize(vTorsoDir);
-        // across, and up along the surface, from the belly's centre
         vec2 e = vec2(dir.x / ${f(BELLY.wide)}, dot(dir.yz, vec2(${f(c)}, ${f(-s)})) / ${f(BELLY.tall)});
         float d = length(e);
         float edge = fwidth(d);
@@ -133,12 +99,7 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
   return m;
 }
 
-/**
- * Inverted-hull outline: back faces pushed out along normals by a constant
- * thickness. Works for plain and instanced meshes. `back` sets it that much
- * further from the camera, so where the hull pokes through the shape's own
- * front (in its concave corners) it stays hidden behind it.
- */
+// `back` pushes the hull away from the camera, so it stays hidden where it pokes through the shape's own concave corners.
 export function outlineMaterial(thickness: number, color = COLORS.outline, back = 0): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     side: THREE.BackSide,
@@ -166,12 +127,6 @@ export function outlineMaterial(thickness: number, color = COLORS.outline, back 
   });
 }
 
-/**
- * A copy of `geom` for outlineMaterial to draw: its vertices welded and their
- * normals smoothed. On a hard-edged shape (an extruded letter) each corner has
- * a normal per face, so the hull pushed out along them would tear open at the
- * seams and show as a ragged, speckled edge.
- */
 export function outlineGeometry(geom: THREE.BufferGeometry): THREE.BufferGeometry {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', geom.getAttribute('position'));
@@ -181,14 +136,12 @@ export function outlineGeometry(geom: THREE.BufferGeometry): THREE.BufferGeometr
   return welded;
 }
 
-/** An egg, standing on its base at the origin. */
 export function eggGeometry() {
   const pts: THREE.Vector2[] = [];
   const N = 22;
   for (let i = 0; i <= N; i++) {
-    const t = i / N; // 0 bottom → 1 top
+    const t = i / N;
     const a = Math.PI * t;
-    // egg profile: wider near the bottom
     const r = Math.sin(a) * (0.19 - 0.042 * t);
     const y = (1 - Math.cos(a)) * 0.182;
     pts.push(new THREE.Vector2(Math.max(r, 0.0001), y));

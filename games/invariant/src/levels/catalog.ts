@@ -1,11 +1,5 @@
 import type { LevelDef } from './level';
 
-// Every level, in order (the tutorial's program first), getting harder from
-// first to last; the level list shows them in four tiers of difficulty. Each
-// level adds one new thing: a new mechanic (an input to change, `if`,
-// products, arrays) on content the learner can already do, or new content on
-// known mechanics.
-
 export const tutorialLevel: LevelDef = {
   id: 'tutorial',
   title: 'Tutorial',
@@ -735,7 +729,6 @@ export const levels: LevelDef[] = GROUPS.flatMap((g) => g.levels);
 
 export const allLevels = [tutorialLevel, ...levels];
 
-/** A level's place in the whole list, counting from 1 (what the level list and the top bar show). */
 export function levelNumber(id: string): number {
   return levels.findIndex((l) => l.id === id) + 1;
 }

@@ -2,7 +2,6 @@ import { useGame } from '../../game/store';
 import { useLingering } from '../../hooks/presence';
 import { TileTag } from './TileTag';
 
-/** Where the last check failed: a pulsing red outline and wash, and what went wrong. Frogs keep their own colours. */
 export function FailMarker() {
   const { value: mark, leaving } = useLingering(useGame((s) => s.failMark));
   if (!mark) return null;

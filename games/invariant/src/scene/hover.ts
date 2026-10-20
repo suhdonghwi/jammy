@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 
-/** The tile under the pointer (in the focused plane). */
 export const useHover = create<{ tile: [number, number] | null }>(() => ({ tile: null }));
 
 export const hover = {

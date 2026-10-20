@@ -13,9 +13,6 @@ import { colorUniform, fadeUniforms, getBlobTexture, GLSL_COMMON, GLSL_FADE, upd
 import { field } from './field';
 import { GLSL_APPEAR, GLSL_HEIGHT, GLSL_SLOT, instanced, SLOT_DUR } from './glsl';
 
-// The eggs: every start state the precondition allows, one per tile. A hatched
-// egg is hidden; an egg sharing its tile with frogs moves into a slot.
-
 const eggVertex = /* glsl */ `
 ${GLSL_HEIGHT}
 ${GLSL_SLOT}
@@ -51,7 +48,6 @@ void main() {
   float speck = step(0.93, hash(cell)) * 0.12;
   vec3 col = uEgg * (1.0 - speck);
   col = shadeLit(col, n);
-  // soft rim light
   col += pow(1.0 - max(n.y, 0.0), 3.0) * 0.04;
   col = applyFade(col, vWorld);
   gl_FragColor = vec4(col, 1.0);
@@ -68,13 +64,11 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
     if (frogWorld.hatchVersion !== hatchVersion) setHatchVersion(frogWorld.hatchVersion);
     if (occupancy.version !== occVersion) setOccVersion(occupancy.version);
   });
-  /** Current slot animation per egg tile, so changes continue from where they are. */
   const slots = useRef(new Map<string, { fx: number; fy: number; fs: number; tx: number; ty: number; ts: number; t0: number }>());
 
   const key = planeKey(inputs);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const eggs = useMemo(() => eggsNear(level, inputs, win.cx, win.cy, win.R), [level, key, win]);
-  // when eggs are hidden or this layer goes away, frogs must not make room for them
   useEffect(
     () => () => {
       occupancy.eggs = new Set();
@@ -100,7 +94,6 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
       const hatched = frogWorld.hatched.has(key);
       hide[i] = hatched ? 1 : 0;
       if (!hatched) visibleEggs.add(key);
-      // the egg takes the last slot after any frogs settled on its tile
       const frogs = occupancy.frogs.get(key) ?? 0;
       const target = slotFor(frogs, frogs + 1);
       const prev = slots.current.get(key);

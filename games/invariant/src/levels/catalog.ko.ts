@@ -1,14 +1,5 @@
 import type { LevelText } from './localize';
 
-// The levels' text in Korean, by level id: everything in catalog.ts a learner
-// reads, written to read naturally rather than translated line by line (see
-// i18n/ko.ts for the style). Hints and pitfall messages go in the same order
-// as the English ones (scripts/validate-levels.ts checks the counts).
-//
-// Particles follow how each variable is read: i 아이, n 엔, lo 로, hi 하이,
-// x 엑스, y 와이, q 큐, r 알, a 에이, b 비, c 씨, s 에스 — so `n`이, `r`은,
-// `i`가, `x`를.
-
 export const groupsKo: Record<string, string> = {
   Beginner: '초급',
   Intermediate: '중급',

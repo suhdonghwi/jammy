@@ -2,20 +2,15 @@ import { t as messages } from '../i18n/i18n';
 import type { Expr, Program, Span, Stmt } from './ast';
 import { LangError } from './parser';
 
-// Type checking: a name is an int or an array input; conditions must be true/false.
-
 type Type = 'int' | 'bool';
 
-/** What each name is: an integer, or an array (which is only ever indexed). */
 export type Scope = ReadonlyMap<string, 'int' | 'array'>;
 
-/** A scope where every name is an int. */
 export const intScope = (names: Iterable<string>): Scope => new Map([...names].map((n) => [n, 'int' as const]));
 
 const ARITH = new Set(['+', '-', '*', '/', '%']);
 const REL = new Set(['<', '<=', '>', '>=']);
 
-/** Type-check an expression. */
 function typeOf(e: Expr, scope: Scope, src: string): Type {
   const E = messages().langErrors;
   const text = (x: Expr) => src.slice(x.span.from, x.span.to);
@@ -99,7 +94,6 @@ function typeOf(e: Expr, scope: Scope, src: string): Type {
         want(e.right, l, `'${e.op}'`);
         return 'bool';
       }
-      // && ||
       want(e.left, 'bool', `'${e.op}'`);
       want(e.right, 'bool', `'${e.op}'`);
       return 'bool';
@@ -116,7 +110,6 @@ export function checkCondition(e: Expr, scope: Scope, src: string, what: string)
   }
 }
 
-/** The names a program declares and what each is. */
 export function programScope(p: Program): Scope {
   const scope = new Map<string, 'int' | 'array'>();
   for (const d of p.inputDecls) scope.set(d.name, d.length ? 'array' : 'int');
@@ -135,7 +128,6 @@ export function checkProgram(p: Program): void {
   for (const d of p.inputDecls) {
     declare(d.name, d.span);
     if (d.length) {
-      // the length is an input declared before the array, so the inputs card can show it under the array
       if (scope.get(d.length) !== 'int') throw new LangError(`Declare the length '${d.length}' as an input before the array '${d.name}'`, d.span);
       if (p.inputDecls.some((o) => o !== d && o.length === d.length)) throw new LangError(`'${d.length}' is already the length of another array`, d.span);
     }

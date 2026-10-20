@@ -1,8 +1,5 @@
 import { BUILTINS, KEYWORDS, tokenize } from '../lang/parser';
 
-// The colours code is shown in: keywords and functions, names, numbers and
-// operators. The code panel, the syntax card and the area box use them.
-
 const TOKEN = {
   keyword: 'font-semibold text-[#7c4ddb]',
   name: 'text-[#1f63c4]',
@@ -12,14 +9,12 @@ const TOKEN = {
 
 type Token = ReturnType<typeof tokenize>[number];
 
-/** A token's colour class. */
 function tokenClass(t: Token): string {
   if (t.kind === 'num') return TOKEN.num;
   if (t.kind === 'ident') return KEYWORDS.has(t.text) || BUILTINS.has(t.text) ? TOKEN.keyword : TOKEN.name;
   return TOKEN.op;
 }
 
-/** A short piece of code, coloured, keeping its spaces. */
 export function HighlightedCode({ src }: { src: string }) {
   const out: React.ReactNode[] = [];
   let p = 0;
@@ -37,14 +32,8 @@ export function HighlightedCode({ src }: { src: string }) {
   return <>{out}</>;
 }
 
-// one token at a time; anything else (a stray character) is one character on its own
 const SCAN = /\s+|[0-9]+|[A-Za-z_][A-Za-z0-9_]*|==|!=|<=|>=|&&|\|\||[^\sA-Za-z0-9_]/g;
 
-/**
- * Colour runs for text being typed, each with its class ('' for none): like
- * tokenize, but it never throws, so half-typed text and stray characters
- * still colour. In the area box names are bold too.
- */
 export function colorRuns(src: string): { from: number; to: number; cls: string }[] {
   return [...src.matchAll(SCAN)].map((m) => {
     const text = m[0];

@@ -1,13 +1,7 @@
 import type { Rule } from '../checker/types';
 
-// Everything the game says in English, apart from the levels' own text (which
-// lives with the levels in catalog.ts). ko.ts says the same in Korean, key for
-// key: its type is this file's.
-
 export const en = {
-  /** Joins the last two names of a list: `i, j and n`. */
   and: ' and ',
-  /** Closes a card over everything (the rules, the syntax). */
   gotIt: 'Got it',
 
   rules: {
@@ -50,7 +44,6 @@ export const en = {
   },
 
   formula: {
-    /** A failed rule light replays its counterexample. */
     replay: 'Replay the counterexample',
     area: 'area',
     placeholder: (names: string) => `condition on ${names}`,
@@ -132,7 +125,6 @@ export const en = {
     offGoal: (state: string) => `A frog that stops at ${state} doesn't meet the postcondition.`,
   },
 
-  /** The parts of the formula language's errors a learner can run into while typing an area. */
   langErrors: {
     anArea: 'an area',
     aCondition: 'a condition',
@@ -171,7 +163,6 @@ export const en = {
     trying: (f: string) => `Trying \`${f}\`…`,
     guessedRight: 'Right, no. ',
     guessedWrong: 'Not quite. ',
-    /** A prediction that was right, whichever way the answer went. */
     predictedRight: 'Right! ',
 
     passedInitialization: 'Correct! Every egg sits on your area: the first rule holds.',
@@ -240,10 +231,8 @@ export const en = {
     neverLeaves:
       'So it can never leave your area, no matter how many hops. That makes your area an **invariant**: true every time the program reaches the top of the loop.\n\nWhen the loop stops, the frog is still somewhere on your area. But what we need to show is that it stops on a **goal**. Does stopping on your area mean stopping on a goal?',
 
-    /** The answer to neverLeaves' question when the learner's area is already strong enough. */
     stopsAllGoals:
       'For your area, yes. Look at the outlined tiles: they are on your area and the loop stops there, so they are where a frog can end up. Every one is a goal.\n\nThat is the third rule: every frog that stops on your area is on a goal.',
-    /** The answer when it isn't: some of those tiles (outlined in red) are off a goal. */
     onlyIfGoal:
       'For your area, no. Look at the outlined tiles: they are on your area and the loop stops there, so they are where a frog can end up. The red ones are not goals.\n\nThe third rule says every one of them must be a goal.',
     confirmTermination: 'Press **Check** to confirm it: it now runs all three rules.',

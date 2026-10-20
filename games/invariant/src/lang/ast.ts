@@ -1,6 +1,3 @@
-// AST shared by the program language and the formula language.
-// The formula language is exactly the expression part of the program language.
-
 export interface Span {
   from: number;
   to: number;
@@ -13,7 +10,6 @@ export type BinOp =
 
 export type BuiltinFn = 'abs' | 'min' | 'max';
 
-/** A bound in a quantifier's range: strict or not. */
 export type RangeOp = '<' | '<=';
 
 export type Expr =
@@ -47,16 +43,13 @@ export interface VarDecl {
 export interface InputDecl {
   name: string;
   span: Span;
-  /** An array input: the name of the (integer) input that is its length. */
   length?: string;
 }
 
 export interface Program {
   source: string;
-  /** Every input's name, arrays included, in declaration order. */
   inputs: string[];
   inputDecls: InputDecl[];
-  /** Array inputs: name → the input that is its length. */
   arrays: Record<string, string>;
   vars: VarDecl[];
   requires: Expr[];
@@ -64,12 +57,10 @@ export interface Program {
   loop: {
     guard: Expr;
     body: Stmt[];
-    /** Span of `while (...)` — highlighted when frogs land. */
     headerSpan: Span;
   };
 }
 
-/** A program state: every integer name's value, and every array input's cells. */
 export type State = Record<string, bigint | bigint[]>;
 
 export const COMPARISON_OPS: ReadonlySet<BinOp> = new Set(['==', '!=', '<', '<=', '>', '>=']);
@@ -78,13 +69,11 @@ export function spanOf(a: { span: Span }, b: { span: Span }): Span {
   return { from: Math.min(a.span.from, b.span.from), to: Math.max(a.span.to, b.span.to) };
 }
 
-/** Split a formula at its top-level `&&` into conjuncts. */
 export function conjuncts(e: Expr): Expr[] {
   if (e.kind === 'binary' && e.op === '&&') return [...conjuncts(e.left), ...conjuncts(e.right)];
   return [e];
 }
 
-/** Names an expression reads: variables and arrays, but not a quantifier's own bound names. */
 export function freeVars(e: Expr, out: Set<string> = new Set()): Set<string> {
   switch (e.kind) {
     case 'var': out.add(e.name); break;
@@ -105,7 +94,6 @@ export function freeVars(e: Expr, out: Set<string> = new Set()): Set<string> {
   return out;
 }
 
-/** Does the expression use a quantifier anywhere? */
 export function hasQuantifier(e: Expr): boolean {
   switch (e.kind) {
     case 'quant': return true;
@@ -139,7 +127,6 @@ export const mk = {
   },
 };
 
-/** Substitute variables by expressions (simultaneously). A quantifier's bound names are never substituted. */
 export function subst(e: Expr, map: Record<string, Expr>): Expr {
   switch (e.kind) {
     case 'num':
@@ -165,7 +152,6 @@ export function subst(e: Expr, map: Record<string, Expr>): Expr {
   }
 }
 
-/** Pretty-print an expression back to source form (the tests read parses with it). */
 export function show(e: Expr): string {
   const prec: Record<BinOp, number> = {
     '||': 1, '&&': 2,
@@ -182,7 +168,6 @@ export function show(e: Expr): string {
       case 'index': return `${e.array}[${go(e.index, 0)}]`;
       case 'quant': {
         const chain = [go(e.lo, 4), ...e.vars.flatMap((v, i) => [e.ops[i], v]), e.ops[e.vars.length], go(e.hi, 4)].join(' ');
-        // a quantifier binds like a primary (its body is one comparison), so it needs no parentheses of its own
         return `${e.q} ${chain}: ${go(e.body, 3)}`;
       }
       case 'ite': return `(${go(e.cond, 0)} ? ${go(e.then, 0)} : ${go(e.else, 0)})`;
