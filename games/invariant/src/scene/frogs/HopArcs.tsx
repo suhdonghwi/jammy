@@ -74,8 +74,6 @@ const m = new THREE.Matrix4();
 const q = new THREE.Quaternion();
 const pos = new THREE.Vector3();
 const scl = new THREE.Vector3();
-const c = new THREE.Color();
-const HORIZON = new THREE.Color(COLORS.horizon);
 const DOT = new THREE.Color(COLORS.hover);
 const RING = new THREE.Color(TONE_COLORS.good);
 
@@ -109,17 +107,15 @@ export function HopArcs() {
         pos.set(a.fx + (a.tx - a.fx) * f, h0 + (h1 - h0) * f + 4 * H * f * (1 - f) + LIFT, -(a.fy + (a.ty - a.fy) * f));
         m.compose(pos, q, scl.setScalar(0.6 + 0.4 * shown));
         d.setMatrixAt(nd, m);
-        c.copy(DOT).lerp(HORIZON, 1 - a.fade);
-        parts.dot.color.setXYZ(nd, c.r, c.g, c.b);
-        parts.dot.alpha.setX(nd, 0.9 * shown);
+        parts.dot.color.setXYZ(nd, DOT.r, DOT.g, DOT.b);
+        parts.dot.alpha.setX(nd, 0.9 * shown * a.fade);
         nd++;
       }
       const ring = clamp01((t - a.land) / 0.25) * (1 - clamp01((t - a.land - RING_HOLD) / OUT));
       if (ring > 0) {
         m.compose(pos.set(a.tx, h1 + 0.014, -a.ty), q, scl.setScalar(0.9 + 0.1 * ring));
         r.setMatrixAt(nr, m);
-        c.copy(RING).lerp(HORIZON, 1 - a.fade);
-        parts.ring.color.setXYZ(nr, c.r, c.g, c.b);
+        parts.ring.color.setXYZ(nr, RING.r, RING.g, RING.b);
         parts.ring.alpha.setX(nr, 0.85 * ring * a.fade);
         nr++;
       }

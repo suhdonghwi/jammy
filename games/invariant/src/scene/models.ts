@@ -45,7 +45,7 @@ export function ghostDepthMaterial(): THREE.MeshBasicMaterial {
   return new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true });
 }
 
-export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandardMaterial {
+export function frogMaterial(opts: { ghost?: boolean; fade?: boolean } = {}): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({
     vertexColors: true,
     roughness: 0.45,
@@ -59,7 +59,7 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
     const f = (x: number) => x.toFixed(4);
     const [ax, ay, az] = TORSO.at.map(f);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aPart;\nuniform vec3 uTint;\nvarying vec3 vTorsoDir;\nvarying float vTorso;')
+      .replace('#include <common>', `#include <common>\nattribute float aPart;\nuniform vec3 uTint;\nvarying vec3 vTorsoDir;\nvarying float vTorso;${opts.fade ? '\nattribute float aFade;\nvarying float vFade;' : ''}`)
       .replace(
         '#include <color_vertex>',
         /* glsl */ `
@@ -79,12 +79,13 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         else if (aPart < 5.5) c = tint * 0.28;
         else c = vec3(1.0, 0.5, 0.56);
         vColor = vec4(c, 1.0);
+        ${opts.fade ? 'vFade = aFade;' : ''}
         `,
       );
     const c = Math.cos(BELLY.pitch);
     const s = Math.sin(BELLY.pitch);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vTorsoDir;\nvarying float vTorso;')
+      .replace('#include <common>', `#include <common>\nvarying vec3 vTorsoDir;\nvarying float vTorso;${opts.fade ? '\nvarying float vFade;' : ''}`)
       .replace(
         '#include <color_fragment>',
         /* glsl */ `#include <color_fragment>
@@ -93,9 +94,11 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         float d = length(e);
         float edge = fwidth(d);
         float front = step(0.0, dot(dir.yz, vec2(${f(s)}, ${f(c)})));
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 1.0, 0.86), 0.55 * vTorso * front * (1.0 - smoothstep(1.0 - edge, 1.0 + edge, d)));`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 1.0, 0.86), 0.55 * vTorso * front * (1.0 - smoothstep(1.0 - edge, 1.0 + edge, d)));
+        ${opts.fade ? 'diffuseColor.a *= vFade;' : ''}`,
       );
   };
+  m.customProgramCacheKey = () => (opts.fade ? 'frog-fade' : 'frog');
   return m;
 }
 

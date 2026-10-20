@@ -18,8 +18,6 @@ const BADGES = 24;
 
 const dummy = new THREE.Object3D();
 const GHOST = new THREE.Color(COLORS.ghostFrog);
-const HORIZON = new THREE.Color(COLORS.horizon);
-const tint = new THREE.Color();
 const FLOAT = 0.12;
 const BOB = 0.035;
 
@@ -31,10 +29,16 @@ export function Frogs() {
   const ghostDepth = useRef<THREE.InstancedMesh>(null);
   const shadows = useRef<THREE.InstancedMesh>(null);
   const geom = useMemo(() => frogGeometry(), []);
+  const { ghostGeom, fades } = useMemo(() => {
+    const g = geom.clone();
+    const a = new THREE.InstancedBufferAttribute(new Float32Array(MAX_FROGS).fill(1), 1);
+    g.setAttribute('aFade', a);
+    return { ghostGeom: g, fades: a };
+  }, [geom]);
   const mat = useMemo(() => frogMaterial(), []);
   const ghostDepthMat = useMemo(() => ghostDepthMaterial(), []);
   const ghostMat = useMemo(() => {
-    const m = frogMaterial({ ghost: true });
+    const m = frogMaterial({ ghost: true, fade: true });
     m.opacity = 0.8;
     return m;
   }, []);
@@ -121,7 +125,8 @@ export function Frogs() {
       if (ghost) {
         gd.setMatrixAt(nGhost, dummy.matrix);
         gh.setMatrixAt(nGhost, dummy.matrix);
-        gh.setColorAt(nGhost++, f.fade === undefined ? GHOST : tint.copy(GHOST).lerp(HORIZON, 1 - f.fade));
+        fades.setX(nGhost, f.fade ?? 1);
+        gh.setColorAt(nGhost++, GHOST);
       } else b.setMatrixAt(nReal++, dummy.matrix);
       const air = Math.max(0, py - p.ground);
       const ss = p.sx <= 0 ? 0 : Math.max(0.35, 1 - air * 0.5) * Math.min(p.sx, 1.2) * os * (ghost ? 0.75 : 1) * p.emerged * (f.fade ?? 1);
@@ -144,6 +149,7 @@ export function Frogs() {
     gd.instanceMatrix.needsUpdate = true;
     sh.instanceMatrix.needsUpdate = true;
     if (gh.instanceColor) gh.instanceColor.needsUpdate = true;
+    fades.needsUpdate = true;
   });
 
   return (
@@ -151,7 +157,7 @@ export function Frogs() {
       <instancedMesh ref={shadows} args={[shadowGeom, shadowMat, MAX_FROGS]} count={0} frustumCulled={false} renderOrder={3} />
       <instancedMesh ref={body} args={[geom, mat, MAX_FROGS]} count={0} frustumCulled={false} onClick={(e) => e.stopPropagation()} />
       <instancedMesh ref={ghostDepth} args={[geom, ghostDepthMat, MAX_FROGS]} count={0} frustumCulled={false} renderOrder={4} />
-      <instancedMesh ref={ghosts} args={[geom, ghostMat, MAX_FROGS]} count={0} frustumCulled={false} renderOrder={5} onClick={(e) => e.stopPropagation()} />
+      <instancedMesh ref={ghosts} args={[ghostGeom, ghostMat, MAX_FROGS]} count={0} frustumCulled={false} renderOrder={5} onClick={(e) => e.stopPropagation()} />
       {Array.from({ length: BADGES }, (_, i) => (
         <sprite key={i} ref={(el) => void (badgeRefs.current[i] = el)} visible={false} scale={[0.5, 0.3, 1]} renderOrder={10}>
           <spriteMaterial depthTest={false} transparent />
