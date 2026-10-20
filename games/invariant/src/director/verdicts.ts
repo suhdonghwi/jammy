@@ -17,6 +17,7 @@ import { eggRegion, endingsRegion } from './regions';
 import { begin, caption, currentLevel, type Token } from './sequence';
 
 const ABOVE_CAPTION = 0.05;
+const GLIDE_MS = 450;
 
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
 
@@ -25,7 +26,7 @@ function markFailure(x: number, y: number, label: string) {
   sfx.fail();
 }
 
-async function focusState(s: State, far = false) {
+async function focusState(s: State, far = false): Promise<boolean> {
   const L = currentLevel();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
@@ -38,11 +39,12 @@ async function focusState(s: State, far = false) {
     await cameraRig.zoomTo(45);
     await cameraRig.lookAtTile(x, y - 1.5);
     await cameraRig.zoomTo(13);
-  } else {
-    const t = cameraRig.target();
-    const dist = Math.hypot(t.x - x, -t.z - y);
-    if (dist > 3 || cameraRig.distance() > 22 || !cameraRig.inView(x, y, 1, ABOVE_CAPTION)) await cameraRig.lookAtTile(x, y - 1.5, Math.min(cameraRig.distance(), 16));
+    return true;
   }
+  if (cameraRig.distance() <= 22 && cameraRig.inView(x, y, 1, ABOVE_CAPTION)) return false;
+  void cameraRig.lookAtTile(x, y - 1.5, Math.min(cameraRig.distance(), 16));
+  await sleep(GLIDE_MS);
+  return true;
 }
 
 export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
@@ -98,8 +100,8 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
   }
 }
 
-const SETTLE_MS = 350;
-const HOLD_MS = 600;
+const HOLD_MS = 500;
+const REGION_MS = 1300;
 const BETWEEN_MS = 300;
 
 async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
@@ -109,8 +111,6 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
   const x = Number(cex.state[L.view.x]);
   const y = Number(cex.state[L.view.y]);
   await focusState(cex.state, cex.far);
-  if (!tok.alive) return;
-  await sleep(SETTLE_MS);
   if (!tok.alive) return;
   const say = messages().verdicts;
   const prefix = opts.prefix ?? (cex.far ? say.far : '');
@@ -203,8 +203,9 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
 
 async function showHolds(rule: Rule) {
   if (rule === 'maintenance') return proofWave();
-  useGame.setState({ region: rule === 'initialization' ? eggRegion('good') : endingsRegion(() => 'good') });
-  await sleep(1000);
+  const region = rule === 'initialization' ? eggRegion('good') : endingsRegion(() => 'good');
+  useGame.setState({ region: { ...region, tick: true } });
+  await sleep(REGION_MS);
 }
 
 export function showUndecided(text: string) {

@@ -28,6 +28,7 @@ export function setMuted(muted: boolean) {
 
 const VOLUME = 0.6;
 const SIREN_GAIN = 0.06;
+const TICK_GAIN = 0.05;
 
 const URLS = import.meta.glob('../assets/sfx/*.m4a', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 
@@ -160,6 +161,22 @@ export const sfx = {
 
   cleared() {
     play('cleared');
+  },
+
+  tick(step: number) {
+    const c = live();
+    if (!c || !gap('tick', 30)) return;
+    const at = c.currentTime;
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 1250 * semitones(PENTA[step % 5] + 12 * Math.min(1, Math.floor(step / 5)));
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(TICK_GAIN, at + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.07);
+    osc.connect(g).connect(master!);
+    osc.start(at);
+    osc.stop(at + 0.08);
   },
 
   ghost(siren = chosenSiren()) {

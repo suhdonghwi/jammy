@@ -1,13 +1,15 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { useGame } from '../../game/store';
+import { useGame, type Region } from '../../game/store';
 import { EXIT_MS, useLingering } from '../../hooks/presence';
 import { useTileWindow } from '../area/AreaLayer';
 import { field } from '../area/field';
 import { GLSL_HEIGHT, instanced } from '../area/glsl';
 import { SLAB_H } from '../constants';
-import { sceneNow } from '../sceneTime';
+import { after, sceneNow } from '../sceneTime';
+import { sfx } from '../../audio/sfx';
+import type { TileWindow } from '../../levels/tiles';
 import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/common';
 import { ringGeometry, TONE_COLORS, washGeometry } from './TileTag';
 
@@ -20,8 +22,9 @@ varying vec3 vColor;
 varying vec3 vWorld;
 varying float vA;
 void main() {
-  float a = clamp((uTime - uT0 - aDelay) / 0.3, 0.0, 1.0);
-  float s = 0.9 + 0.1 * a;
+  float a = clamp((uTime - uT0 - aDelay) / 0.24, 0.0, 1.0);
+  float s = a <= 0.0 ? 0.6 : 1.0 + 2.2 * pow(a - 1.0, 3.0) + 1.2 * pow(a - 1.0, 2.0);
+  s = 0.6 + 0.4 * s;
   vec4 w = modelMatrix * vec4(position * vec3(s, 1.0, s) + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.012, -aTile.y), 1.0);
   vWorld = w.xyz;
   vColor = aColor;
@@ -54,6 +57,27 @@ function regionMaterial(alpha: number) {
   });
 }
 
+const RIPPLE_STEP = 0.08;
+const RIPPLE_MAX = 0.9;
+const TICK_REACH = 10;
+
+const rippleDelay = (d: number) => Math.min(RIPPLE_MAX, d * RIPPLE_STEP);
+
+function useTicks(region: Region | null, win: TileWindow) {
+  useEffect(() => {
+    if (!region?.tick) return;
+    const [cx, cy] = region.center;
+    const near = region
+      .tiles(win)
+      .map((t) => Math.hypot(t.x - cx, t.y - cy))
+      .filter((d) => d <= TICK_REACH)
+      .sort((a, b) => a - b);
+    const cancels = near.map((d, k) => after(rippleDelay(d) * 1000, () => sfx.tick(k)));
+    return () => cancels.forEach((c) => c());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [region]);
+}
+
 const COLOR = Object.fromEntries(Object.entries(TONE_COLORS).map(([k, v]) => [k, new THREE.Color(v)]));
 
 export function OutlineRegion() {
@@ -63,6 +87,7 @@ export function OutlineRegion() {
   const ring = useMemo(() => regionMaterial(0.85), []);
   const wash = useMemo(() => regionMaterial(0.3), []);
   const leftAt = useRef<number | null>(null);
+  useTicks(region, win);
 
   const t0 = useMemo(() => (region ? sceneNow() : 0), [region]);
   const geoms = useMemo(() => {
@@ -80,7 +105,7 @@ export function OutlineRegion() {
       anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
       const c = COLOR[t.tone];
       color.set([c.r, c.g, c.b], i * 3);
-      delay[i] = Math.min(0.6, Math.hypot(t.x - cx, t.y - cy) * 0.03);
+      delay[i] = rippleDelay(Math.hypot(t.x - cx, t.y - cy));
     });
     const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aColor: [color, 3], aDelay: [delay, 1] } as const;
     return { ring: instanced(ringGeometry, n, attrs), wash: instanced(washGeometry, n, attrs) };

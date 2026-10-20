@@ -121,6 +121,7 @@ export interface RegionTile {
 export interface Region {
   tiles: (win: TileWindow) => RegionTile[];
   center: [number, number];
+  tick?: boolean;
 }
 
 export const ALLOW_NONE: Game['tutorialAllow'] = { step: false, run: false, eggs: false, formula: false };

@@ -49,12 +49,13 @@ behind many small decisions; keep them when changing or adding UI.
   rule checked is shown in turn in the scene, and only then does the caption
   say what happened.
 - **One rule at a time, with a visible seam.** Its light spins while its
-  picture plays (Initialization: every egg ringed, rippling out;
-  Maintenance: ghost frogs showing their hops; Termination: every stop on the
-  area ringed); then the light turns and chimes, the picture clears, and a
+  picture plays (Initialization: every egg ringed, one after another out from
+  the middle, each with a soft rising tick; Maintenance: ghost frogs showing
+  their hops; Termination: every stop on the area ringed, ticking the same); then the light turns and chimes, the picture clears, and a
   short pause separates it from the next rule.
-- **A failure is reached, not cut to.** The camera settles on the failing
-  case before the frog or ghost acts it out; the light turns red as the
+- **A failure is reached, not cut to.** If the failing case is off screen
+  the camera glides to it and the frog sets off as it arrives; if it is on
+  screen the camera stays put; the light turns red as the
   caption arrives. The last picture stays under the result caption.
 
 ## Clarity
