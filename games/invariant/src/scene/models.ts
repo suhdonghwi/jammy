@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { COLORS } from './constants';
 
 // Procedural models in a soft, toy-like style. Each frog part carries an
@@ -100,14 +100,17 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
 
 /**
  * Inverted-hull outline: back faces pushed out along normals by a constant
- * thickness. Works for plain and instanced meshes.
+ * thickness. Works for plain and instanced meshes. `back` sets it that much
+ * further from the camera, so where the hull pokes through the shape's own
+ * front (in its concave corners) it stays hidden behind it.
  */
-export function outlineMaterial(thickness: number, color = COLORS.outline): THREE.ShaderMaterial {
+export function outlineMaterial(thickness: number, color = COLORS.outline, back = 0): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     side: THREE.BackSide,
-    uniforms: { uThick: { value: thickness }, uColor: { value: new THREE.Color(color) } },
+    uniforms: { uThick: { value: thickness }, uBack: { value: back }, uColor: { value: new THREE.Color(color) } },
     vertexShader: /* glsl */ `
       uniform float uThick;
+      uniform float uBack;
       void main() {
         vec3 p = position + normalize(normal) * uThick;
         #ifdef USE_INSTANCING
@@ -115,7 +118,9 @@ export function outlineMaterial(thickness: number, color = COLORS.outline): THRE
         #else
           vec4 w = modelMatrix * vec4(p, 1.0);
         #endif
-        gl_Position = projectionMatrix * viewMatrix * w;
+        vec4 v = viewMatrix * w;
+        v.xyz += normalize(v.xyz) * uBack;
+        gl_Position = projectionMatrix * v;
       }`,
     fragmentShader: /* glsl */ `
       uniform vec3 uColor;
@@ -124,6 +129,21 @@ export function outlineMaterial(thickness: number, color = COLORS.outline): THRE
         #include <colorspace_fragment>
       }`,
   });
+}
+
+/**
+ * A copy of `geom` for outlineMaterial to draw: its vertices welded and their
+ * normals smoothed. On a hard-edged shape (an extruded letter) each corner has
+ * a normal per face, so the hull pushed out along them would tear open at the
+ * seams and show as a ragged, speckled edge.
+ */
+export function outlineGeometry(geom: THREE.BufferGeometry): THREE.BufferGeometry {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', geom.getAttribute('position'));
+  if (geom.index) g.setIndex(geom.index);
+  const welded = mergeVertices(g, 1e-4);
+  welded.computeVertexNormals();
+  return welded;
 }
 
 /** An egg, standing on its base at the origin. */

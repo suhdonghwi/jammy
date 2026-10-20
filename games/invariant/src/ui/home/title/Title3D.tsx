@@ -6,7 +6,7 @@ import { frogGeometry, frogMaterial, outlineMaterial } from '../../../scene/mode
 import { sceneNow } from '../../../scene/sceneTime';
 import { LINE1, LINE2 } from './glyphs';
 import { letterGeometries, type LetterOptions } from './text3d';
-import { waveAt, Word } from './Word';
+import { OUTLINE, waveAt, Word } from './Word';
 
 // The home screen's title as 3D lettering, in its own small transparent canvas
 // so the page layout places it (left-aligned, above the copy) at any size.
@@ -20,17 +20,22 @@ const WAVE = 0.08;
 const PHASE2 = 1.4;
 /** The frog, relative to the letters. */
 const FROG_SCALE = 1.12;
+/** The camera's field of view: narrow, so the perspective is gentle. */
+const FOV = 18;
 
-/** Room between letters: their bevel and outline make them a little wider than the glyphs, and they tilt in the wave. */
-const SPACING = 0.045;
-const letterOpts: LetterOptions = { size: SIZE, depth: SIZE * 0.42, letterSpacing: SIZE * SPACING };
+/**
+ * Neighbouring letters are kept just far enough apart that they meet along a
+ * single outline and never overlap on screen, with a little room for the wave
+ * lifting one above the other.
+ */
+const letterOpts: LetterOptions = { size: SIZE, depth: SIZE * 0.42, gap: OUTLINE, drift: WAVE * 0.25 };
 
 /**
  * A word's ink extents relative to its centre (as Word lays it out), and where
  * its "o" is (letter index, centre x and top).
  */
-function measure(text: string) {
-  const ls = letterGeometries(text, letterOpts);
+function measure(text: string, opts: LetterOptions) {
+  const ls = letterGeometries(text, opts);
   let min = Infinity;
   let max = -Infinity;
   let o = { index: -1, x: 0, top: 0 };
@@ -45,15 +50,16 @@ function measure(text: string) {
   return { min, max, o };
 }
 
+type Layout = ReturnType<typeof place>;
+
 /**
  * Both words are placed so their ink starts exactly at x = 0 (not at the
  * glyphs' built-in side bearing), so the title's left edge lines up with the
  * text below it. Centred, "Frog" sits in the middle under "Invariant".
  */
-function layout(align: TitleAlign) {
-  const m1 = measure(LINE1);
-  const m2 = measure(LINE2);
-  const OUTLINE = 0.02;
+function place(align: TitleAlign, opts1: LetterOptions, opts2: LetterOptions) {
+  const m1 = measure(LINE1, opts1);
+  const m2 = measure(LINE2, opts2);
   const indent2 = align === 'center' ? (m1.max - m1.min - (m2.max - m2.min)) / 2 : 0;
   return {
     /** Word centres, so each word's ink starts at x = 0 (or "Frog"'s is centred under "Invariant"). */
@@ -67,13 +73,37 @@ function layout(align: TitleAlign) {
   };
 }
 
+/** The camera: straight in front of the title, as close as fits it in a canvas of the given width : height. */
+function cameraFor(L: Layout, fov: number, aspect: number) {
+  const pad = 0.04;
+  const W = L.right - L.left + pad * 2;
+  const H = L.top - L.bottom + pad * 2;
+  const half = Math.tan(THREE.MathUtils.degToRad(fov / 2));
+  const dist = Math.max(H, W / aspect) / (2 * half);
+  return new THREE.Vector3((L.left + L.right) / 2, (L.top + L.bottom) / 2, dist + 0.3);
+}
+
+/**
+ * The layout, with the letters spaced as the camera sees them. That camera
+ * depends on the layout, so it is found in turn: once as if from far away,
+ * then from where that puts the camera.
+ */
+function layout(align: TitleAlign) {
+  let L = place(align, letterOpts, letterOpts);
+  const eye = cameraFor(L, FOV, TITLE_ASPECT);
+  const opts1 = { ...letterOpts, eye: eye.clone().sub(new THREE.Vector3(L.x1, LINE_GAP, 0)) };
+  const opts2 = { ...letterOpts, eye: eye.clone().sub(new THREE.Vector3(L.x2, 0, 0)) };
+  L = place(align, opts1, opts2);
+  return { ...L, opts1, opts2 };
+}
+
 const dummy = new THREE.Object3D();
 
 /**
  * The frog behind the "o": only its head shows over the top. It rises and
  * falls exactly as the "o" does in the wave, and otherwise just breathes.
  */
-function PeekingFrog({ x, y, letterIndex }: { x: number; y: number; letterIndex: number }) {
+function PeekingFrog({ x, y, letterIndex, wave }: { x: number; y: number; letterIndex: number; wave: number }) {
   const mesh = useMemo(() => {
     const geom = frogGeometry({ fine: true });
     const body = new THREE.InstancedMesh(geom, frogMaterial(), 1);
@@ -87,7 +117,7 @@ function PeekingFrog({ x, y, letterIndex }: { x: number; y: number; letterIndex:
   useFrame(() => {
     const t = sceneNow();
     // the same wave as Word gives this letter
-    const ride = waveAt(t, letterIndex, PHASE2) * WAVE;
+    const ride = waveAt(t, letterIndex, PHASE2) * wave;
     const breath = 0.02 * Math.sin(t * 2.4);
     dummy.position.set(x, y + ride, -0.58);
     dummy.rotation.set(0, 0, 0);
@@ -106,23 +136,16 @@ function PeekingFrog({ x, y, letterIndex }: { x: number; y: number; letterIndex:
   );
 }
 
-function TitleScene({ align }: { align: TitleAlign }) {
+function TitleScene({ align, wave }: { align: TitleAlign; wave: number }) {
   const L = useMemo(() => layout(align), [align]);
   const { camera, size } = useThree();
 
   // A gentle perspective lens straight in front of the title: the letters face
   // the viewer and their sides show just a little toward the edges.
   useFrame(() => {
-    const pad = 0.04;
-    const W = L.right - L.left + pad * 2;
-    const H = L.top - L.bottom + pad * 2;
     const cam = camera as THREE.PerspectiveCamera;
-    const half = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
-    const dist = Math.max(H, W / (size.width / size.height)) / (2 * half);
-    const cx = (L.left + L.right) / 2;
-    const cy = (L.top + L.bottom) / 2;
-    cam.position.set(cx, cy, dist + 0.3);
-    cam.lookAt(cx, cy, 0);
+    cam.position.copy(cameraFor(L, cam.fov, size.width / size.height));
+    cam.lookAt(cam.position.x, cam.position.y, 0);
     cam.updateProjectionMatrix();
   });
 
@@ -130,10 +153,10 @@ function TitleScene({ align }: { align: TitleAlign }) {
   const frogHeight = 0.53 * FROG_SCALE;
   return (
     <group>
-      <Word text={LINE1} position={[L.x1, LINE_GAP, 0]} letters={letterOpts} face={COLORS.slabTop} side={COLORS.slabSide} wave={WAVE} />
+      <Word text={LINE1} position={[L.x1, LINE_GAP, 0]} letters={L.opts1} face={COLORS.slabTop} side={COLORS.slabSide} wave={wave} />
       {/* a deeper green than the frog itself, so the frog peeking over it stands out */}
-      <Word text={LINE2} position={[L.x2, 0, 0]} letters={letterOpts} face="#46b83e" side="#2f8a29" wave={WAVE} phase={PHASE2} />
-      <PeekingFrog x={L.o.x} y={L.o.top - frogHeight * 0.6} letterIndex={L.o.index} />
+      <Word text={LINE2} position={[L.x2, 0, 0]} letters={L.opts2} face="#46b83e" side="#2f8a29" wave={wave} phase={PHASE2} />
+      <PeekingFrog x={L.o.x} y={L.o.top - frogHeight * 0.6} letterIndex={L.o.index} wave={wave} />
     </group>
   );
 }
@@ -144,22 +167,30 @@ function TitleScene({ align }: { align: TitleAlign }) {
  * nothing around it shifts; the lettering is fitted inside it. Measured from
  * layout() with the current sizes and spacing; update it if those change.
  */
-const TITLE_ASPECT = 1.89;
+const TITLE_ASPECT = 1.95;
 
 type TitleAlign = 'left' | 'center';
 
-/** The 3D title block; `width` replaces its usual width classes. */
-export function Title3D({ width = 'w-full max-w-125 narrow:mx-auto narrow:max-w-85', align = 'left' }: { width?: string; align?: TitleAlign }) {
+/** The 3D title block; `width` replaces its usual width classes, and `still` stops the wave so the letters stand straight. */
+export function Title3D({
+  width = 'w-full max-w-125 narrow:mx-auto narrow:max-w-85',
+  align = 'left',
+  still = false,
+}: {
+  width?: string;
+  align?: TitleAlign;
+  still?: boolean;
+}) {
   return (
     // the title rises into place rather than popping in
     <div className={`${width} [&_canvas]:animate-[title-in_0.7s_ease-out_both]`} style={{ aspectRatio: TITLE_ASPECT }}>
-      <Canvas flat dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: 18, near: 0.1, far: 200 }}>
+      <Canvas flat dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: FOV, near: 0.1, far: 200 }}>
         <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
         <directionalLight position={[4, 10, 6]} intensity={1.6} color="#ffffff" />
         <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
         {/* the letters face the viewer, so light them from the front too */}
         <directionalLight position={[1, 2, 10]} intensity={1.1} color="#ffffff" />
-        <TitleScene align={align} />
+        <TitleScene align={align} wave={still ? 0 : WAVE} />
       </Canvas>
     </div>
   );
