@@ -48,11 +48,13 @@ behind many small decisions; keep them when changing or adding UI.
   in the tutorial, or a what-if after a yes/no: the result is held back, each
   rule checked is shown in turn in the scene, and only then does the caption
   say what happened.
-- **One rule at a time, with a visible seam.** Its light spins while its
-  picture plays (Initialization: every egg ringed, one after another out from
+- **One rule at a time, with a visible seam.** A banner at the top of the
+  scene names the rule and its sentence, spinning, and its light spins too,
+  while its picture plays (Initialization: every egg ringed, one after another out from
   the middle, each with a soft rising tick; Maintenance: ghost frogs showing
   their hops; Termination: every stop on the area ringed, ticking the same); then the light turns and chimes, the picture clears, and a
-  short pause separates it from the next rule.
+  short pause separates it from the next rule. The banner turns green or red
+  with the light, and lingers a moment after the last rule.
 - **A failure is reached, not cut to.** If the failing case is off screen
   the camera glides to it and the frog sets off as it arrives; if it is on
   screen the camera stays put; the light turns red as the

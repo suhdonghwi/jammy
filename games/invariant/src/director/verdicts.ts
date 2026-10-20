@@ -9,7 +9,7 @@ import { hop, inputsOf, planeKey, showState, toBig } from '../levels/level';
 import { tilesNear } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
-import { sceneNow, sleep } from '../scene/sceneTime';
+import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { hatch } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
 import { dismissGhosts, GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
@@ -83,10 +83,17 @@ export function revealAll(res: CheckResult) {
   useGame.setState((g) => ({ verdicts: { ...g.verdicts, ...res.verdicts }, pending: [] }));
 }
 
+const BANNER_LINGER_MS = 1200;
+
+function lowerBanner() {
+  const shown = useGame.getState().ruleBanner;
+  after(BANNER_LINGER_MS, () => useGame.getState().ruleBanner === shown && useGame.setState({ ruleBanner: null }));
+}
+
 function reveal(rule: Rule, res: CheckResult, chime: number) {
   const v = res.verdicts[rule];
   if (!v) return;
-  useGame.setState((g) => ({ verdicts: { ...g.verdicts, [rule]: v }, pending: g.pending.filter((r) => r !== rule) }));
+  useGame.setState((g) => ({ verdicts: { ...g.verdicts, [rule]: v }, pending: g.pending.filter((r) => r !== rule), ruleBanner: { rule, status: v.status } }));
   if (v.status === 'pass') sfx.pass(chime);
 }
 
@@ -172,15 +179,19 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
     for (const [i, rule] of order.entries()) {
       const v = res.verdicts[rule];
       if (!v) continue;
+      useGame.setState({ ruleBanner: { rule, status: 'checking' } });
       if (v.status === 'fail') {
         await counterexample(tok, v.cex, onFail(rule));
         if (!tok.alive) return null;
         reveal(rule, res, i);
+        lowerBanner();
         return { failing: rule, undecided };
       }
       if (v.status === 'undecided') {
         reveal(rule, res, i);
         undecided = true;
+        await sleep(HOLD_MS);
+        if (!tok.alive) return null;
         continue;
       }
       await showHolds(rule);
@@ -189,12 +200,13 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
       if (i < order.length - 1) {
         await sleep(HOLD_MS);
         if (!tok.alive) return null;
-        useGame.setState({ region: null });
+        useGame.setState({ region: null, ruleBanner: null });
         dismissGhosts();
         await sleep(BETWEEN_MS);
         if (!tok.alive) return null;
       }
     }
+    lowerBanner();
     return { undecided };
   } finally {
     if (tok.alive) useGame.setState({ busy: false, pending: [] });

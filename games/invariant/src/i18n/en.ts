@@ -236,9 +236,9 @@ export const en = {
       '**Rule 3 · Termination:** every striped tile on your area must be a goal.\n\nChange your area so **every striped tile on it is a goal**, then press **Check**. It now tests all three rules.',
     nudgeTermination: 'A real frog never passes `n`, so `i` is never greater than `n`.',
     objection:
-      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But your area claims “a frog could be here too”. The area is too large.',
+      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile.\n\nBut your area claims “a frog could be here too”. The area is too large.',
     objectionDemo:
-      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But the area `i >= 0` claims “a frog could be on any tile where `i >= 0`”, so checking that claim covers impossible tiles where `i` is greater than `n` as well.',
+      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile.\n\nBut the area `i >= 0` claims “a frog could be on any tile where `i >= 0`”.\n\nSo checking that claim covers impossible tiles too, where `i` is greater than `n`.',
     passedTermination: 'Correct! Every striped tile on your area is a goal: **Termination** holds.',
     questionTermination: 'Would it pass all three rules?',
     afterDemoTermination: (mine: string) =>
