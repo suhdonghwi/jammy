@@ -195,7 +195,7 @@ export const en = {
     detour: 'There is a way to be sure about every egg without hatching infinitely many of them. Let’s leave our loop for a moment.',
     exWorld: 'Here is another loop. Its frogs hatch on the left and zigzag up and down, one column after another, until the loop stops in the stripes on the right.',
     exArea:
-      'These blue slabs are an **invariant area**. Drawing an area is claiming that **“while the loop runs, every frog is always on this area.”**\n\nWritten as a condition, it is `0 <= x <= 4 && 0 <= y <= 4`.',
+      'These blue slabs are an **invariant area**. Drawing an area is claiming that **“while the loop runs, every frog is always on this area.”**',
     exBadTag: 'stops, but not a goal',
     exWhy:
       'Why does that help? A frog that stopped on one of these striped tiles would stop off a goal, and the program would be wrong.\n\nBut these tiles are off the area. If every frog is always on the area, as it claims, no frog can ever get there.',
