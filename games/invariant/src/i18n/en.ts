@@ -246,7 +246,7 @@ export const en = {
     passedTermination: 'Correct! Every striped tile on your area is a goal: **Termination** holds.',
     questionTermination: 'Would it pass all three rules?',
     afterDemoTermination: (mine: string) =>
-      `\`i >= 0\` is a true claim: every real frog keeps \`i >= 0\`. But it leaves room to stop off a goal, so it is too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
+      `\`i >= 0\` isn’t a false claim in itself: every real frog keeps \`i >= 0\`. But it leaves room for a frog to stop off a goal, so it is too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
     afterOwnTermination: (weak: string, mine: string) =>
       `Your earlier area ${weak} was a true claim too, but it left room to stop off a goal, so it was too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
     twoWays:
