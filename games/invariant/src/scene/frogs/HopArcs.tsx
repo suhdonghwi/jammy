@@ -8,27 +8,26 @@ import { clamp01 } from '../easing';
 import { COLORS, SLAB_H } from '../constants';
 import { ringGeometry, TONE_COLORS } from '../labels/TileTag';
 import { sceneNow } from '../sceneTime';
+import { frogWorld } from './frogWorld';
 import { hopHeight } from './motion';
 
 const DOTS = 16;
-const DRAW = 0.4;
-const OUT = 0.35;
-const RING_HOLD = 1.6;
+const DRAW = 0.45;
 const MAX = 80;
 const LIFT = 0.22;
 
 interface Arc {
+  frog: number;
   fx: number;
   fy: number;
   tx: number;
   ty: number;
   plane: string;
   t0: number;
-  land: number;
   fade: number;
 }
 
-const arcs: Arc[] = [];
+let arcs: Arc[] = [];
 
 export const hopArcs = {
   add(a: Arc) {
@@ -36,7 +35,7 @@ export const hopArcs = {
     if (arcs.length > MAX) arcs.shift();
   },
   clear() {
-    arcs.length = 0;
+    arcs = [];
   },
 };
 
@@ -91,7 +90,8 @@ export function HopArcs() {
     const r = rings.current;
     if (!d || !r) return;
     const t = sceneNow();
-    while (arcs.length && t > arcs[0].land + RING_HOLD + OUT) arcs.shift();
+    const ghosts = new Set(frogWorld.frogs.map((f) => f.id));
+    if (arcs.some((a) => !ghosts.has(a.frog))) arcs = arcs.filter((a) => ghosts.has(a.frog));
     let nd = 0;
     let nr = 0;
     for (const a of arcs) {
@@ -99,10 +99,9 @@ export function HopArcs() {
       const h0 = field.heightAt(a.fx, a.fy) * SLAB_H;
       const h1 = field.heightAt(a.tx, a.ty) * SLAB_H;
       const H = hopHeight(Math.hypot(a.tx - a.fx, a.ty - a.fy));
-      const gone = 1 - clamp01((t - a.land - 0.15) / OUT);
       for (let k = 0; k < DOTS; k++) {
         const f = (k + 0.5) / DOTS;
-        const shown = clamp01((t - a.t0 - f * DRAW) / 0.08) * gone;
+        const shown = clamp01((t - a.t0 - f * DRAW) / 0.08);
         if (shown <= 0) continue;
         pos.set(a.fx + (a.tx - a.fx) * f, h0 + (h1 - h0) * f + 4 * H * f * (1 - f) + LIFT, -(a.fy + (a.ty - a.fy) * f));
         m.compose(pos, q, scl.setScalar(0.6 + 0.4 * shown));
@@ -111,7 +110,7 @@ export function HopArcs() {
         parts.dot.alpha.setX(nd, 0.9 * shown * a.fade);
         nd++;
       }
-      const ring = clamp01((t - a.land) / 0.25) * (1 - clamp01((t - a.land - RING_HOLD) / OUT));
+      const ring = clamp01((t - a.t0 - DRAW) / 0.25);
       if (ring > 0) {
         m.compose(pos.set(a.tx, h1 + 0.014, -a.ty), q, scl.setScalar(0.9 + 0.1 * ring));
         r.setMatrixAt(nr, m);

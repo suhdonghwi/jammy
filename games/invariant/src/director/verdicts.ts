@@ -17,7 +17,6 @@ import { GHOST_RISE, raiseGhost, realRunTo } from './ghosts';
 import { begin, caption, currentLevel } from './sequence';
 
 const ABOVE_CAPTION = 0.05;
-const HOP_DUR = 0.5;
 
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
 
@@ -195,26 +194,19 @@ export async function playProof({ zoomOut = true }: { zoomOut?: boolean } = {}) 
       return { ...h, delay, f: raiseGhost(h.from, delay, fadeAt(h.d)) };
     });
     const now = sceneNow();
-    const drawAt = (delay: number) => now + delay + GHOST_RISE + 0.1;
-    const hopAt = (delay: number) => drawAt(delay) + 0.9;
     for (const h of risen) {
       hopArcs.add({
+        frog: h.f.id,
         fx: h.f.x,
         fy: h.f.y,
         tx: Number(h.to[L.view.x]),
         ty: Number(h.to[L.view.y]),
         plane: h.f.plane,
-        t0: drawAt(h.delay),
-        land: hopAt(h.delay) + HOP_DUR,
+        t0: now + h.delay + GHOST_RISE + 0.1,
         fade: h.f.fade ?? 1,
       });
     }
-    await Promise.all(
-      risen.map(async (h) => {
-        await sleep((hopAt(h.delay) - sceneNow()) * 1000);
-        if (tok.alive) await frogWorld.hopTo(L, h.f, h.to, HOP_DUR, h !== risen[0]);
-      }),
-    );
+    await sleep((0.6 + GHOST_RISE + 0.9) * 1000);
   } finally {
     if (tok.alive) useGame.setState({ busy: false });
   }

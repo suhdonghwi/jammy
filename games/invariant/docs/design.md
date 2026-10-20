@@ -143,8 +143,9 @@ has room for arrays.)
   counterexample is far away, the camera flies to it: "everything you could see
   looked fine" is not a proof.
 - **Verdicts:** proved (ghost frogs rise on tiles of the area spread apart
-  enough not to tangle, fading with distance; each draws its hop as a dotted
-  path, then takes it, and its landing tile ticks green; level cleared); counterexample (a real frog acts it
+  enough not to tangle, fading with distance; each shows where it would hop
+  (a dotted path to its landing tile, which ticks green) without hopping:
+  Check asks the question, it doesn't run the frog; level cleared); counterexample (a real frog acts it
   out if one can reach it, otherwise a ghost frog); **undecided** (said in the
   caption, the lights turn amber, the level is *not* cleared). Before giving up, the checker
   tries proving the formula equivalent to a known solution.
