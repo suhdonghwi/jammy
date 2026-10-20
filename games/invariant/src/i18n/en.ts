@@ -243,7 +243,7 @@ export const en = {
     objection:
       '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But your area claims “a frog could be here too”. The area is too large.',
     objectionDemo:
-      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile.\n\nBut the area `i >= 0` claims “a frog could be on any tile where `i >= 0`”. So checking that claim covers impossible tiles too, where `i` is greater than `n`.',
+      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile.\n\nBut the area `i >= 0` claims “a frog could be on any tile where `i >= 0`”. Checking that claim covers tiles where `i` is greater than `n` too.',
     passedTermination: 'Correct! Every striped tile on your area is a goal: **Termination** holds.',
     questionTermination: 'Would it pass all three rules?',
     afterDemoTermination: (mine: string) =>
