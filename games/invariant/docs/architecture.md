@@ -95,6 +95,11 @@ agree. `pnpm validate` and the tests are the safety net.
   waits. Scene time stops while the page is hidden, so the scene pauses instead
   of jumping ahead. Don't use `performance.now()` or `setTimeout` for anything
   that animates in the scene.
+- **The page's entrance starts once, together**: scene time holds, and
+  `styles.css` pauses every CSS animation, until the world's first frame is
+  drawn and the fonts are in (`startScene`). Entrances then play in order:
+  the world fades in, then the home copy from the top down (staggered with
+  `animation-delay`). Time new entrances from that moment, not from mounting.
 - **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`).
 
 ## Sequences

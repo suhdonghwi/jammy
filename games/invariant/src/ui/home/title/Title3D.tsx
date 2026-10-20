@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { COLORS } from '../../../scene/constants';
 import { frogGeometry, frogMaterial, outlineMaterial } from '../../../scene/models';
-import { sceneNow } from '../../../scene/sceneTime';
+import { sceneNow, sceneStarted } from '../../../scene/sceneTime';
 import { LINE1, LINE2 } from './glyphs';
 import { letterGeometries, type LetterOptions } from './text3d';
 import { entrance, OUTLINE, STAGGER, waveAt, Word } from './Word';
@@ -144,14 +144,14 @@ function PeekingFrog({ x, y, letterIndex, wave, clock }: { x: number; y: number;
 function TitleScene({ align, wave }: { align: TitleAlign; wave: number }) {
   const L = useMemo(() => layout(align), [align]);
   const { camera, size } = useThree();
-  // The entrance runs on its own clock, from the first frame drawn (building
-  // the letters takes a moment), and a slow frame slows it rather than skipping ahead.
-  const clock = useMemo(() => ({ t: 0 }), []);
+  // The entrance runs on its own clock: from a moment after the page starts
+  // (see sceneTime), and a slow frame slows it rather than skipping ahead.
+  const clock = useMemo(() => ({ t: -0.15 }), []);
 
   // A gentle perspective lens straight in front of the title: the letters face
   // the viewer and their sides show just a little toward the edges.
   useFrame((_, dt) => {
-    clock.t += Math.min(dt, 1 / 30);
+    if (sceneStarted()) clock.t += Math.min(dt, 1 / 30);
     const cam = camera as THREE.PerspectiveCamera;
     cam.position.copy(cameraFor(L, cam.fov, size.width / size.height));
     cam.lookAt(cam.position.x, cam.position.y, 0);

@@ -117,6 +117,15 @@
   }
 }
 
+/* Until the page starts (scene/sceneTime.ts: the world's first frame is drawn
+   and the fonts are in), entrance animations wait on their first frame, so
+   they play in order once there is something to see. */
+html:not([data-started]) *,
+html:not([data-started]) *::before,
+html:not([data-started]) *::after {
+  animation-play-state: paused;
+}
+
 /* RoundWind has one weight, and already a heavy one: a label of any weight
    uses it as it is, never thickened further (Fredoka has real weights, so it
    is unaffected) */

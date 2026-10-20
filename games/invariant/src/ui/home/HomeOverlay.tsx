@@ -38,7 +38,7 @@ export function HomeOverlay() {
       </div>
       {/* the corner controls too: behind the level list (it comes later in the DOM), faded back like the title */}
       <div
-        className={`fixed top-4 right-4 flex max-sm:top-2.5 max-sm:right-2.5 animate-[fade_0.4s_ease-out_both] items-center gap-2 transition-opacity duration-180 ${
+        className={`fixed top-4 right-4 flex max-sm:top-2.5 max-sm:right-2.5 animate-[fade_0.4s_ease-out_0.6s_both] items-center gap-2 transition-opacity duration-180 ${
           view === 'levels' ? 'opacity-35' : ''
         }`}
       >
@@ -64,7 +64,7 @@ const WASH =
 function HomeButtons() {
   const tr = useT();
   return (
-    <div className="flex gap-3.5 narrow:justify-center max-sm:gap-2.5">
+    <div className="flex animate-[rise_0.5s_ease-out_0.45s_both] gap-3.5 narrow:justify-center max-sm:gap-2.5">
       <button className={button('primary', 'lg')} onClick={openTutorial}>
         <GraduationCap size={22} strokeWidth={2.2} /> {tr.home.tutorial}
       </button>
@@ -75,19 +75,19 @@ function HomeButtons() {
   );
 }
 
-/** The title, a line about the game, and the way in. */
+/** The title, a line about the game, and the way in: each comes in a moment after the one above it (the title pops in on its own, see Title3D). */
 function HeroCopy({ behind }: { behind: boolean }) {
   const tr = useT();
   const narrow = useMedia(NARROW_HOME);
   return (
-    <div className={`max-w-118 animate-[rise_0.6s_ease-out_both] narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
-      <p className="mb-3 font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
+    <div className={`max-w-118 narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
+      <p className="mb-3 animate-[rise_0.5s_ease-out_0.1s_both] font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
       <h1 className="mb-3.5">
         <span className="sr-only">Invariant Frog</span>
         {/* centred with the copy when stacked, "Frog" under the middle of "Invariant" */}
         <Title3D align={narrow ? 'center' : 'left'} />
       </h1>
-      <p className="mb-6.5 text-lg leading-[1.55] text-muted max-sm:text-base">{tr.home.pitch}</p>
+      <p className="mb-6.5 animate-[rise_0.5s_ease-out_0.35s_both] text-lg leading-[1.55] text-muted max-sm:text-base">{tr.home.pitch}</p>
       <HomeButtons />
     </div>
   );
