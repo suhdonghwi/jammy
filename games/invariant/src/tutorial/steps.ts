@@ -1,5 +1,7 @@
+import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
 import { hatch, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs } from '../director/frogs';
+import { previewHop } from '../director/ghosts';
 import { playProof } from '../director/verdicts';
 import { useGame, type Game, type Region, type RegionTile, type Reveal } from '../game/store';
 import { EXIT_MS } from '../hooks/presence';
@@ -288,9 +290,15 @@ export const STEPS: Step[] = [
         label: T().backToOurs,
         callouts: [
           { x: 0, y: 2, text: T().exRule1Tag, tone: 'info' },
-          { x: 2, y: 4, text: T().exRule2Tag, tone: 'info' },
           { x: 4, y: 3, text: T().exRule3Tag, tone: 'good' },
         ],
+        prepare: async () => {
+          await sleep(400);
+          guard(gen);
+          sfx.ghost();
+          const f = previewHop({ x: 1n, y: 0n });
+          useGame.setState((g) => ({ callouts: [...g.callouts, { x: f.x, y: f.y, frog: f.id, text: T().exRule2Tag, tone: 'info' }] }));
+        },
       }),
   },
 

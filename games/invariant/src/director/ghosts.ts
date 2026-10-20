@@ -3,6 +3,7 @@ import { hop, inputsOf, running, toBig } from '../levels/level';
 import { eggsNear, tileState } from '../levels/tiles';
 import { burstFx } from '../scene/frogs/Burst';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
+import { hopArcs } from '../scene/frogs/HopArcs';
 import { sceneNow } from '../scene/sceneTime';
 import { currentLevel } from './sequence';
 
@@ -13,6 +14,23 @@ export function raiseGhost(s: State, delay = 0, fade = 1): FrogSim {
   const t0 = sceneNow() + delay;
   const f = frogWorld.add(currentLevel(), 'test', s, { rise: { t0, dur: GHOST_RISE, turns: TURNS }, fade });
   burstFx.push(f.x, f.y, f.plane, t0 + GHOST_RISE * 0.18, fade);
+  return f;
+}
+
+export function previewHop(s: State, delay = 0, fade = 1): FrogSim {
+  const L = currentLevel();
+  const f = raiseGhost(s, delay, fade);
+  const to = hop(L, s);
+  hopArcs.add({
+    frog: f.id,
+    fx: f.x,
+    fy: f.y,
+    tx: Number(to[L.view.x]),
+    ty: Number(to[L.view.y]),
+    plane: f.plane,
+    t0: sceneNow() + delay + GHOST_RISE + 0.1,
+    fade,
+  });
   return f;
 }
 

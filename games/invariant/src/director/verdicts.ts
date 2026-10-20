@@ -12,8 +12,7 @@ import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { hatch } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
-import { hopArcs } from '../scene/frogs/HopArcs';
-import { GHOST_RISE, raiseGhost, realRunTo } from './ghosts';
+import { GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
 import { begin, caption, currentLevel } from './sequence';
 
 const ABOVE_CAPTION = 0.05;
@@ -189,23 +188,7 @@ export async function playProof({ zoomOut = true }: { zoomOut?: boolean } = {}) 
     const hops = spreadHops(candidates.sort((a, b) => a.d - b.d));
     const fadeAt = (d: number) => 1 - smoothstep(clamp01((d - PROOF_NEAR) / (PROOF_FAR - PROOF_NEAR)));
     sfx.ghost();
-    const risen = hops.map((h) => {
-      const delay = (h.d / PROOF_FAR) * 0.6;
-      return { ...h, delay, f: raiseGhost(h.from, delay, fadeAt(h.d)) };
-    });
-    const now = sceneNow();
-    for (const h of risen) {
-      hopArcs.add({
-        frog: h.f.id,
-        fx: h.f.x,
-        fy: h.f.y,
-        tx: Number(h.to[L.view.x]),
-        ty: Number(h.to[L.view.y]),
-        plane: h.f.plane,
-        t0: now + h.delay + GHOST_RISE + 0.1,
-        fade: h.f.fade ?? 1,
-      });
-    }
+    hops.forEach((h) => previewHop(h.from, (h.d / PROOF_FAR) * 0.6, fadeAt(h.d)));
     await sleep((0.6 + GHOST_RISE + 0.9) * 1000);
   } finally {
     if (tok.alive) useGame.setState({ busy: false });
