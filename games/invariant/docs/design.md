@@ -77,9 +77,9 @@ a picture before it is met as a rule:
    area, and a what-if shows the rule's typical failure. The tutorial stays
    with the picture: it does not translate the rules into code.
 5. **Induction, shown with one frog** — it starts on the area, every hop lands
-   on it again, so it never leaves; when it stops, is that a goal? The
-   learner answers, then Check answers with ghost frogs (with `i >= 0`, one
-   stops off a goal), and only then is Termination named and the area fixed.
+   on it again, so it never leaves; when it stops, is that a goal? That
+   question, asked over the outlined tiles a frog can stop on, opens
+   Termination, which then goes like the other two rules.
 
 ## Ghost frogs: why unreachable frogs matter
 

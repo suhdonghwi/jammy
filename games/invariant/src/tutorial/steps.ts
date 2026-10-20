@@ -11,7 +11,7 @@ import { eggsNear, tileState, tilesNear } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { allow, ask, beat, checkOnce, demo, guard, say, sayWaiting, showFailure, stage, waitEvent, waitStore } from './script';
+import { allow, ask, beat, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
 
 export const st = (i: number, n: number) => ({ i: BigInt(i), n: BigInt(n) });
 const realFrogsStopped = () => frogWorld.frogs.filter((f) => f.kind === 'real').every((f) => f.stopped);
@@ -33,13 +33,11 @@ interface Step {
 
 export let learnerFormula = '';
 const witnessed = new Set<Rule>();
-let predictedGoal: boolean | null = null;
 let weakArea = '';
 
 export function resetProgress() {
   learnerFormula = '';
   witnessed.clear();
-  predictedGoal = null;
   weakArea = '';
 }
 
@@ -387,38 +385,27 @@ export const STEPS: Step[] = [
     },
   },
   {
-    scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[3, 3]], camera: [1.5, 3, 12] },
+    scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', camera: CAM },
     run: async (gen) => {
-      predictedGoal = null;
-      predictedGoal = await ask(gen, T().neverLeaves(mine()));
-    },
-  },
-  {
-    scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', frogs: [[3, 3]], camera: [1.5, 3, 12] },
-    run: async (gen) => {
+      await beat(gen, T().leadTermination, {
+        region: endings(() => 'info'),
+        prepare: () => {
+          resetFrogs();
+          void cameraRig.lookAtTile(...CAM);
+        },
+      });
       useGame.getState().setReveal({ awake: RULES });
-      resetFrogs();
-      void cameraRig.lookAtTile(...CAM);
-      const { failing, cex } = await checkOnce(gen, T().checkToSee, RULES);
-      const verdict = (goal: boolean) => (predictedGoal === null ? '' : predictedGoal === goal ? T().predictedRight : T().guessedWrong);
-      const tone = (goal: boolean) => (predictedGoal === null ? undefined : predictedGoal === goal ? 'success' : 'fail');
-      if (!failing) {
-        await beat(gen, `${verdict(true)}${T().firstPassTermination}`, { tone: tone(true) ?? 'info', spot: 'lights', region: endings(() => 'good') });
-        await beat(gen, T().ruleTermination(T().endingsAllGoals), { region: endings(() => 'good') });
-        learnerFormula = useGame.getState().formulaText;
-        return;
-      }
-      witnessed.add(failing);
-      if (failing === 'termination') weakArea = `\`${useGame.getState().formulaText.trim()}\``;
-      if (failing === 'termination') await showFailure(gen, cex!, { prefix: verdict(false), tone: tone(false) });
-      else await showFailure(gen, cex!, { ghostExtra: failing === 'maintenance' ? T().ghostMaintenance : undefined });
-      await beat(gen, T().ruleTermination(T().endingsSomeNot), { region: endings((goal) => (goal ? 'good' : 'info')) });
+      weakArea = '';
       await stage(gen, {
         ask: T().askTermination,
         rules: RULES,
         nudge: T().nudgeTermination,
+        region: endings(() => 'info'),
         ghost: { maintenance: T().ghostMaintenance, termination: T().objection },
-        onFail: (r) => witnessed.add(r),
+        onFail: (r) => {
+          witnessed.add(r);
+          if (r === 'termination' && !weakArea) weakArea = mine();
+        },
       });
       learnerFormula = useGame.getState().formulaText;
       await passed(gen, 'termination');

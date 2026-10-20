@@ -167,7 +167,7 @@ export const en = {
     trying: (f: string) => `Trying \`${f}\`…`,
     guessedRight: 'Right, no. ',
     guessedWrong: 'Not quite. ',
-    predictedRight: 'Right! ',
+
     whatIf: (pitfall: string, question: string) => `Before we move on: what if we had tried \`${pitfall}\`? ${question}`,
 
     hello:
@@ -228,19 +228,15 @@ export const en = {
     together:
       'With rules 1 and 2 together, a frog never leaves your area: every frog starts on it, and no number of hops takes it off.\n\nThat’s why it’s called an **invariant**: with every hop the state changes, but “it is on the area” stays true.',
     stillOnTag: 'still on your area',
-    neverLeaves: (mine: string) =>
-      `When it reaches a striped tile and the loop stops, the frog is still on your area.\n\nSo here is a question: does a frog that stops on your area ${mine} always stop on a goal?`,
-    ruleTermination: (endings: string) =>
-      `This is **Rule 3 · Termination**: every striped tile on your area must be a goal.\n\nThe outlined tiles are where a frog can stop on this area. ${endings}`,
-    endingsAllGoals: 'They are all goals.',
-    endingsSomeNot: 'Some of them are not goals.',
-    checkToSee: 'Press **Check** to find out. It now tests all three rules.',
-    firstPassTermination: 'Every striped tile on your area is a goal, so a frog that stops on your area always stops on a goal.',
+
+    leadTermination:
+      'When it reaches a striped tile and the loop stops, the frog is still on your area. The outlined tiles are where a frog can stop on this area.\n\nSo does a frog that stops on the area always stop on a goal? Making sure of that is the third rule.',
+
     askTermination:
-      '“But `i` can never pass `n`!” Indeed, no real frog gets to tiles like these. But your area claims “a frog could be here too”. The area is too large.\n\n**Shrink** your area so every striped tile on it is a goal, then press **Check**.',
+      '**Rule 3 · Termination:** every striped tile on your area must be a goal.\n\nChange your area so **every striped tile on it is a goal**, then press **Check**. It now tests all three rules.',
     nudgeTermination: 'A real frog never passes `n`, so `i` is never greater than `n`.',
     objection:
-      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But your area claims “a frog could be here too”. **Shrink** your area so it doesn’t.',
+      '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But your area claims “a frog could be here too”. The area is too large.',
     objectionDemo:
       '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But the area `i >= 0` claims “a frog could be on any tile where `i >= 0`”, so checking that claim covers impossible tiles where `i` is greater than `n` as well.',
     passedTermination: 'Correct! Every striped tile on your area is a goal: **Termination** holds.',
