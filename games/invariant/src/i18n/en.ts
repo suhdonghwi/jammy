@@ -120,9 +120,13 @@ export const en = {
     startsOutsideTag: (area: string) => `starts outside ${area}`,
     startsOutside: (state: string, area: string) => `This frog starts at ${state} — outside ${area}.`,
     landsOutsideTag: (area: string) => `lands outside ${area}`,
-    landsOutside: (from: string, to: string, area: string) => `From ${from}, one hop lands at ${to} — outside ${area}.`,
+    landsOutside: (from: string, to: string, area: string) => `A ghost frog at ${from} hops to ${to}, outside ${area}.`,
+    eggLandsOutside: (from: string, to: string, area: string) => `The frog from the egg at ${from} hops to ${to}, outside ${area}.`,
+    realLandsOutside: (egg: string, from: string, to: string, area: string) =>
+      `The frog from the egg at ${egg} gets to ${from}, and its next hop lands at ${to}, outside ${area}.`,
     offGoalTag: 'stops, but not on a goal',
-    offGoal: (state: string) => `A frog that stops at ${state} doesn't meet the postcondition.`,
+    offGoal: (state: string) => `A ghost frog at ${state} stops there, but it isn't a goal: the postcondition doesn't hold.`,
+    realOffGoal: (egg: string, state: string) => `The frog from the egg at ${egg} stops at ${state}, but it isn't a goal: the postcondition doesn't hold.`,
   },
 
   langErrors: {

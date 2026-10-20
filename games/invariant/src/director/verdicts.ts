@@ -8,10 +8,10 @@ import type { State } from '../lang/ast';
 import { hop, inputsOf, planeKey, running, showState, toBig } from '../levels/level';
 import { tilesNear } from '../levels/tiles';
 import { cameraRig } from '../scene/cameraRig';
-import { frogWorld } from '../scene/frogs/frogWorld';
+import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { hatch } from './frogs';
-import { GHOST_RISE, raiseGhost } from './ghosts';
+import { GHOST_RISE, raiseGhost, realRunTo } from './ghosts';
 import { begin, caption, currentLevel } from './sequence';
 
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
@@ -69,6 +69,7 @@ interface CounterexampleOptions {
   area?: string;
   tone?: CaptionTone;
   extra?: string;
+  ghostExtra?: string;
   action?: () => Caption['action'];
 }
 
@@ -86,28 +87,40 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
     const prefix = opts.prefix ?? (cex.far ? say.far : '');
     const area = opts.area ?? say.yourArea;
     const broken = cex.broken ? (cex.rule === 'maintenance' ? say.noLongerHolds(cex.broken) : say.falseThere(cex.broken)) : '';
-    let text: string;
-    if (cex.rule === 'initialization') {
-      hatch(cex.state);
+    const run = cex.rule === 'initialization' ? [cex.state] : realRunTo(cex.state);
+    let f: FrogSim;
+    if (run) {
+      f = hatch(run[0]);
       await sleep(450);
-      if (!tok.alive) return;
-      markFailure(x, y, say.startsOutsideTag(area));
-      text = `${prefix}${say.startsOutside(fmt(cex.state), area)}${broken}`;
+      for (const s of run.slice(1)) {
+        if (!tok.alive) return;
+        await frogWorld.hopTo(L, f, s, 0.36);
+      }
     } else {
       sfx.ghost();
-      const f = raiseGhost(cex.state);
+      f = raiseGhost(cex.state);
       await sleep(GHOST_RISE * 1000 + 250);
-      if (!tok.alive) return;
-      if (cex.rule === 'maintenance' && cex.next) {
-        await frogWorld.hopTo(L, f, cex.next, 0.55);
-        if (!tok.alive) return;
-        markFailure(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]), say.landsOutsideTag(area));
-        text = `${prefix}${say.landsOutside(fmt(cex.state), fmt(cex.next), area)}${broken}`;
-      } else {
-        markFailure(x, y, say.offGoalTag);
-        text = `${prefix}${say.offGoal(fmt(cex.state))}`;
-      }
     }
+    if (!tok.alive) return;
+    const from = run ? run[0] : null;
+    let text: string;
+    if (cex.rule === 'initialization') {
+      markFailure(x, y, say.startsOutsideTag(area));
+      text = `${prefix}${say.startsOutside(fmt(cex.state), area)}${broken}`;
+    } else if (cex.rule === 'maintenance' && cex.next) {
+      await frogWorld.hopTo(L, f, cex.next, 0.55);
+      if (!tok.alive) return;
+      markFailure(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]), say.landsOutsideTag(area));
+      const lands =
+        !from ? say.landsOutside(fmt(cex.state), fmt(cex.next), area)
+        : run!.length === 1 ? say.eggLandsOutside(fmt(cex.state), fmt(cex.next), area)
+        : say.realLandsOutside(fmt(from), fmt(cex.state), fmt(cex.next), area);
+      text = `${prefix}${lands}${broken}`;
+    } else {
+      markFailure(x, y, say.offGoalTag);
+      text = `${prefix}${from ? say.realOffGoal(fmt(from), fmt(cex.state)) : say.offGoal(fmt(cex.state))}`;
+    }
+    if (!run && opts.ghostExtra) text += `\n\n${opts.ghostExtra}`;
     if (opts.extra) text += `\n\n${opts.extra}`;
     const replay = { label: messages().caption.replay, onClick: () => void playCounterexample(cex, opts) };
     const action = opts.action?.();

@@ -120,9 +120,12 @@ export const ko: Messages = {
     startsOutsideTag: (area) => `${area} 밖에서 출발`,
     startsOutside: (state, area) => `이 개구리는 ${state}에서 출발하는데, ${area} 밖입니다.`,
     landsOutsideTag: (area) => `${area} 밖에 착지`,
-    landsOutside: (from, to, area) => `${from}에서 한 번 뛰면 ${to}에 착지하는데, ${area} 밖입니다.`,
+    landsOutside: (from, to, area) => `${from}의 유령 개구리가 한 번 뛰면 ${to}에 착지하는데, ${area} 밖입니다.`,
+    eggLandsOutside: (from, to, area) => `${from}의 알에서 나온 개구리가 한 번 뛰면 ${to}에 착지하는데, ${area} 밖입니다.`,
+    realLandsOutside: (egg, from, to, area) => `${egg}의 알에서 나온 개구리가 ${from}까지 온 뒤, 다음 점프에서 ${to}에 착지하는데, ${area} 밖입니다.`,
     offGoalTag: '멈췄지만 목표가 아님',
-    offGoal: (state) => `${state}에서 멈춘 개구리는 사후 조건을 만족하지 못합니다.`,
+    offGoal: (state) => `${state}의 유령 개구리는 거기서 멈추지만, 목표가 아닙니다. 사후 조건이 성립하지 않습니다.`,
+    realOffGoal: (egg, state) => `${egg}의 알에서 나온 개구리가 ${state}에서 멈추지만, 목표가 아닙니다. 사후 조건이 성립하지 않습니다.`,
   },
 
   langErrors: {
