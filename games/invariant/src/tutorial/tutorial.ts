@@ -51,6 +51,7 @@ function crossTo(gen: number, scene: Scene): Promise<void> {
       restore(gen, scene);
       resolve();
     };
+    useGame.setState({ callouts: [], region: null, failMark: null, spotlight: null });
     if (!switchScene(go)) go();
   });
 }
