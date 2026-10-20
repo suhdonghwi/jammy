@@ -6,7 +6,17 @@ import { COLORS } from './constants';
 // `aPart` id so a single draw call can tint the body per frog while keeping
 // eyes, pupils, mouth and cheeks their own colors.
 
-const PART = { body: 0, belly: 1, sclera: 2, pupil: 3, shine: 4, mouth: 5, cheek: 6 } as const;
+const PART = { body: 0, torso: 1, sclera: 2, pupil: 3, shine: 4, mouth: 5, cheek: 6 } as const;
+
+/** The whole frog is scaled by this once its parts are put together. */
+const FROG_SCALE = 1.15;
+/**
+ * The pale belly, painted on the torso where it lies inside this ellipsoid
+ * (radii, centre, and the torso's lean). It used to be a second, flatter
+ * sphere poking out of the torso, but the two met at so shallow an angle that
+ * their facets took turns in front along the edge, in jagged pale slivers.
+ */
+const BELLY = { r: [0.1035, 0.1265, 0.0575], c: [0, 0.17, 0.06], lean: -0.42 };
 
 // Parts stay indexed: a vertex shared by its neighbouring triangles is shaded
 // once, not once per triangle, which matters with a few hundred frogs out.
@@ -31,8 +41,7 @@ export function frogGeometry({ fine = false }: { fine?: boolean } = {}): THREE.B
   const add = (g: THREE.BufferGeometry, p: number) => parts.push(tag(g, p));
 
   // A slim frog sitting up: leaning body, a wide head, eyes on top.
-  add(lp(0.15, 9, 7).scale(1.0, 1.3, 1.0).rotateX(-0.42).translate(0, 0.18, -0.03), PART.body);
-  add(lp(0.115, 8, 6).scale(0.9, 1.1, 0.5).rotateX(-0.42).translate(0, 0.17, 0.06), PART.belly);
+  add(lp(0.15, 9, 7).scale(1.0, 1.3, 1.0).rotateX(BELLY.lean).translate(0, 0.18, -0.03), PART.torso);
   add(lp(0.14, 10, 7).scale(1.2, 0.72, 1.0).translate(0, 0.32, 0.06), PART.body);
   for (const s of [-1, 1]) {
     add(lp(0.062, 8, 6).translate(s * 0.1, 0.39, 0.06), PART.body);
@@ -46,7 +55,7 @@ export function frogGeometry({ fine = false }: { fine?: boolean } = {}): THREE.B
     add(lp(0.034, 7, 4).scale(1.3, 0.4, 1.2).translate(s * 0.08, 0.012, 0.125), PART.body);
   }
   const merged = mergeGeometries(parts)!;
-  merged.scale(1.15, 1.15, 1.15);
+  merged.scale(FROG_SCALE, FROG_SCALE, FROG_SCALE);
   merged.computeBoundingSphere();
   return merged;
 }
@@ -74,8 +83,11 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
   });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uTint = { value: new THREE.Color(COLORS.frog) };
+    const [rx, ry, rz] = BELLY.r.map((r) => r.toFixed(4));
+    const [cx, cy, cz] = BELLY.c.map((c) => c.toFixed(4));
+    const lean = (-BELLY.lean).toFixed(4);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aPart;\nuniform vec3 uTint;')
+      .replace('#include <common>', '#include <common>\nattribute float aPart;\nuniform vec3 uTint;\nvarying vec3 vBelly;\nvarying float vTorso;')
       .replace(
         '#include <color_vertex>',
         /* glsl */ `
@@ -83,9 +95,13 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         #ifdef USE_INSTANCING_COLOR
           tint = instanceColor.xyz;
         #endif
+        // where this point is in the belly's ellipsoid (inside: length < 1), undoing its placement and lean
+        vec3 b = position / ${FROG_SCALE.toFixed(4)} - vec3(${cx}, ${cy}, ${cz});
+        float cl = cos(${lean}), sl = sin(${lean});
+        vBelly = vec3(b.x, b.y * cl - b.z * sl, b.y * sl + b.z * cl) / vec3(${rx}, ${ry}, ${rz});
+        vTorso = aPart > 0.5 && aPart < 1.5 ? 1.0 : 0.0;
         vec3 c;
-        if (aPart < 0.5) c = tint;
-        else if (aPart < 1.5) c = mix(tint, vec3(1.0, 1.0, 0.86), 0.55);
+        if (aPart < 1.5) c = tint;
         else if (aPart < 2.5) c = vec3(1.0);
         else if (aPart < 3.5) c = vec3(0.07, 0.08, 0.11);
         else if (aPart < 4.5) c = vec3(1.4);
@@ -93,6 +109,13 @@ export function frogMaterial(opts: { ghost?: boolean } = {}): THREE.MeshStandard
         else c = vec3(1.0, 0.5, 0.56);
         vColor = vec4(c, 1.0);
         `,
+      );
+    // the belly, painted per pixel with a soft edge
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBelly;\nvarying float vTorso;')
+      .replace(
+        '#include <color_fragment>',
+        '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 1.0, 0.86), 0.55 * vTorso * (1.0 - smoothstep(0.92, 1.0, length(vBelly))));',
       );
   };
   return m;
