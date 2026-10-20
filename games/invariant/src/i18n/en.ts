@@ -202,10 +202,10 @@ export const en = {
     exEndings: 'On the area, the loop can only stop in this one column, and every tile of it is a goal. So if the claim is true, **every frog stops on a goal**.',
     exEndingTag: 'a possible ending',
     exRules:
-      'So all it takes is three things:\n\n1. every egg is on the area,\n2. no hop leads off the area, and\n3. every striped tile on the area is a goal.\n\nThese are the three rules of a loop invariant: **Initialization**, **Maintenance** and **Termination**.',
-    exRule1Tag: '1 · every egg is on it',
-    exRule2Tag: '2 · no hop leads off it',
-    exRule3Tag: '3 · every stop on it is a goal',
+      'So all it takes is three things:\n\n- **Initialization:** every egg is on the area.\n- **Maintenance:** no hop leads off the area.\n- **Termination:** every striped tile on the area is a goal.\n\nThen every frog is proved to stop on a goal.',
+    exRule1Tag: 'Initialization · every egg is on it',
+    exRule2Tag: 'Maintenance · no hop leads off it',
+    exRule3Tag: 'Termination · every stop on it is a goal',
     backToOurs: 'Back to our loop',
 
     draw: 'Back to our loop, and this time you draw the area. Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**.\n\nTry something like `i == 2`, `i % 2 == 0` or `i < n`. **Syntax**, below the box, lists what you can write.',
