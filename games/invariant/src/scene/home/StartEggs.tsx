@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
+import { popIn } from '../easing';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 
@@ -31,10 +32,8 @@ export function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
     for (const e of eggs.current) {
       if (t < e.appear || t >= e.hatch || n >= MAX) continue;
       // pop in with a little overshoot
-      const u = Math.min(1, (t - e.appear) / 0.32);
-      const s = u >= 1 ? 1 : 1 + 2.7 * Math.pow(u - 1, 3) + 1.7 * Math.pow(u - 1, 2);
       dummy.position.set(e.x, field.heightAt(e.x, e.y) * SLAB_H, -e.y);
-      dummy.scale.setScalar(Math.max(0, s));
+      dummy.scale.setScalar(popIn((t - e.appear) / 0.32));
       dummy.updateMatrix();
       mesh.setMatrixAt(n++, dummy.matrix);
     }
