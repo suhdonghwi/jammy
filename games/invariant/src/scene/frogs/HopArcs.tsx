@@ -5,7 +5,7 @@ import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/level';
 import { field } from '../area/field';
 import { clamp01 } from '../easing';
-import { COLORS, SLAB_H } from '../constants';
+import { SLAB_H } from '../constants';
 import { ringGeometry, TONE_COLORS } from '../labels/TileTag';
 import { sceneNow } from '../sceneTime';
 import { frogWorld } from './frogWorld';
@@ -73,7 +73,7 @@ const m = new THREE.Matrix4();
 const q = new THREE.Quaternion();
 const pos = new THREE.Vector3();
 const scl = new THREE.Vector3();
-const DOT = new THREE.Color(COLORS.hover);
+const DOT = new THREE.Color('#ffffff');
 const RING = new THREE.Color(TONE_COLORS.good);
 
 export function HopArcs() {

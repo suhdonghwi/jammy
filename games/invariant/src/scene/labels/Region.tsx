@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { useGame, type Region } from '../../game/store';
+import { useGame, type Region, type RegionTile } from '../../game/store';
 import { EXIT_MS, useLingering } from '../../hooks/presence';
 import { useTileWindow } from '../area/AreaLayer';
 import { field } from '../area/field';
@@ -57,22 +57,27 @@ function regionMaterial(alpha: number) {
   });
 }
 
-const RIPPLE_STEP = 0.08;
-const RIPPLE_MAX = 0.9;
-const TICK_REACH = 10;
+const TICKS = 10;
+const TICK_STEP = 0.055;
+const TAIL_STEP = 0.025;
+const TAIL_MAX = 0.4;
 
-const rippleDelay = (d: number) => Math.min(RIPPLE_MAX, d * RIPPLE_STEP);
+function rippleDelays(tiles: RegionTile[], [cx, cy]: [number, number]): number[] {
+  const dist = tiles.map((t) => Math.hypot(t.x - cx, t.y - cy));
+  const order = tiles.map((_, i) => i).sort((a, b) => dist[a] - dist[b] || tiles[a].y - tiles[b].y || tiles[a].x - tiles[b].x);
+  const delays = new Array<number>(tiles.length);
+  const edge = dist[order[Math.min(TICKS, order.length) - 1]] ?? 0;
+  order.forEach((i, rank) => {
+    delays[i] = rank < TICKS ? rank * TICK_STEP : TICKS * TICK_STEP + Math.min(TAIL_MAX, (dist[i] - edge) * TAIL_STEP);
+  });
+  return delays;
+}
 
 function useTicks(region: Region | null, win: TileWindow) {
   useEffect(() => {
     if (!region?.tick) return;
-    const [cx, cy] = region.center;
-    const near = region
-      .tiles(win)
-      .map((t) => Math.hypot(t.x - cx, t.y - cy))
-      .filter((d) => d <= TICK_REACH)
-      .sort((a, b) => a - b);
-    const cancels = near.map((d, k) => after(rippleDelay(d) * 1000, () => sfx.tick(k)));
+    const count = Math.min(TICKS, region.tiles(win).length);
+    const cancels = Array.from({ length: count }, (_, k) => after(k * TICK_STEP * 1000, () => sfx.tick(k)));
     return () => cancels.forEach((c) => c());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region]);
@@ -101,14 +106,14 @@ export function OutlineRegion() {
     const anim = new Float32Array(n * 3);
     const color = new Float32Array(n * 3);
     const delay = new Float32Array(n);
-    const [cx, cy] = region.center;
+    const delays = region.tick ? rippleDelays(tiles, region.center) : null;
     tiles.forEach((t, i) => {
       tile.set([t.x, t.y], i * 2);
       const a = field.anims.get(`${t.x},${t.y}`);
       anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
       const c = COLOR[t.tone];
       color.set([c.r, c.g, c.b], i * 3);
-      delay[i] = region.tick ? rippleDelay(Math.hypot(t.x - cx, t.y - cy)) : 0;
+      delay[i] = delays?.[i] ?? 0;
     });
     const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aColor: [color, 3], aDelay: [delay, 1] } as const;
     return { ring: instanced(ringGeometry, n, attrs), wash: instanced(washGeometry, n, attrs) };

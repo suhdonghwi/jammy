@@ -166,11 +166,11 @@ export const sfx = {
 
   tick(step: number) {
     const c = live();
-    if (!c || !gap('tick', 30)) return;
+    if (!c) return;
     const at = c.currentTime;
     const osc = c.createOscillator();
     osc.type = 'sine';
-    osc.frequency.value = 1250 * semitones(PENTA[step % 5] + 12 * Math.min(1, Math.floor(step / 5)));
+    osc.frequency.value = 1000 * semitones(PENTA[step % 5] + 12 * Math.floor(step / 5));
     const g = c.createGain();
     g.gain.setValueAtTime(0, at);
     g.gain.linearRampToValueAtTime(TICK_GAIN, at + 0.004);
