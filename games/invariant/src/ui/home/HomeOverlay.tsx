@@ -3,11 +3,11 @@ import { openLevel, openTutorial } from '../../game/actions';
 import { useProgress } from '../../game/progress';
 import { useGame } from '../../game/store';
 import { COMPACT_HOME, NARROW_HOME, useMedia } from '../../hooks/media';
-import { usePresence } from '../../hooks/presence';
 import { useT } from '../../i18n/i18n';
 import { GROUPS, levelNumber, levels } from '../../levels/catalog';
 import { groupName, localizeLevel } from '../../levels/localize';
 import { button } from '../classes';
+import { Overlay } from '../Dialog';
 import { CornerControls } from './CornerControls';
 import { LangSwitch } from './LangSwitch';
 import { Title3D } from './title/Title3D';
@@ -18,7 +18,6 @@ import { Title3D } from './title/Title3D';
 export function HomeOverlay() {
   const view = useGame((s) => s.menuView);
   const compact = useMedia(COMPACT_HOME);
-  const picker = usePresence(view === 'levels');
   return (
     <>
       {/* the title and buttons stay, faded back behind the level list */}
@@ -38,7 +37,7 @@ export function HomeOverlay() {
         <CornerControls />
         <LangSwitch />
       </div>
-      {picker.mounted && <LevelPicker leaving={picker.leaving} />}
+      <LevelPicker open={view === 'levels'} />
     </>
   );
 }
@@ -86,68 +85,59 @@ function HeroCopy({ behind }: { behind: boolean }) {
   );
 }
 
-function LevelPicker({ leaving }: { leaving: boolean }) {
+function LevelPicker({ open }: { open: boolean }) {
   const tr = useT();
   const cleared = useProgress((s) => s.cleared);
   const done = levels.filter((l) => cleared.includes(l.id)).length;
+  const close = () => useGame.setState({ menuView: 'home' });
   return (
-    <div
-      className={`fixed inset-0 flex items-center justify-center bg-horizon/45 p-4 backdrop-blur-xs max-sm:p-2.5 ${
-        leaving ? 'pointer-events-none animate-fade-out' : 'animate-[fade_0.18s_ease-out]'
-      }`}
-    >
-      <div
-        className={`flex max-h-full w-full max-w-110 flex-col rounded-3xl border border-line bg-card shadow-float backdrop-blur-lg ${
-          leaving ? 'animate-pop-out' : 'animate-rise'
-        }`}
-      >
-        <div className="flex items-center px-4 pt-3.5 pb-1.5">
-          <button className={button('quiet')} onClick={() => useGame.setState({ menuView: 'home' })}>
-            <ArrowLeft size={16} strokeWidth={2.4} /> {tr.home.back}
-          </button>
-          <h2 className="flex-1 text-center font-display text-2xl font-semibold">{tr.home.levels}</h2>
-          {/* as wide as Back, so the title stays centred */}
-          <span className="w-20 pr-2 text-right font-mono text-sm text-muted" title={tr.home.clearedCount(done, levels.length)}>
-            {done}/{levels.length}
-          </span>
-        </div>
-        {/* one column in play order: each tier is a card, its levels rows */}
-        <div className="overflow-y-auto px-4 pt-1 pb-5">
-          {GROUPS.map((g) => (
-            <section key={g.name}>
-              <h3 className="mt-4 mb-2 flex items-baseline justify-between px-1 font-display text-md font-semibold">
-                {groupName(g.name)}
-                <span className="font-mono text-xs font-normal text-muted">
-                  {g.levels.filter((l) => cleared.includes(l.id)).length}/{g.levels.length}
-                </span>
-              </h3>
-              <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
-                {g.levels.map((l) => {
-                  const isCleared = cleared.includes(l.id);
-                  return (
-                    <button
-                      key={l.id}
-                      className="flex w-full cursor-pointer items-center gap-3 py-2 pr-4 pl-2.5 text-left transition-colors duration-150 hover:bg-sky"
-                      onClick={() => openLevel(l)}
-                    >
-                      {/* a cleared level's number turns green */}
-                      <span
-                        className={`grid size-7 shrink-0 place-items-center rounded-lg font-display text-sm font-semibold tabular-nums ${
-                          isCleared ? 'bg-pass-soft text-pass' : 'bg-brand-soft text-brand'
-                        }`}
-                      >
-                        {levelNumber(l.id)}
-                      </span>
-                      <span className="flex-1 font-display text-md font-semibold">{localizeLevel(l).title}</span>
-                      {isCleared && <Check size={16} strokeWidth={2.8} className="shrink-0 text-pass" aria-label={tr.home.cleared} />}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
+    <Overlay open={open} onClose={close} card="flex max-w-110 flex-col border border-line bg-card backdrop-blur-lg">
+      <div className="flex items-center px-4 pt-3.5 pb-1.5">
+        <button className={button('quiet')} onClick={close}>
+          <ArrowLeft size={16} strokeWidth={2.4} /> {tr.home.back}
+        </button>
+        <h2 className="flex-1 text-center font-display text-2xl font-semibold">{tr.home.levels}</h2>
+        {/* as wide as Back, so the title stays centred */}
+        <span className="w-20 pr-2 text-right font-mono text-sm text-muted" title={tr.home.clearedCount(done, levels.length)}>
+          {done}/{levels.length}
+        </span>
       </div>
-    </div>
+      {/* one column in play order: each tier is a card, its levels rows */}
+      <div className="overflow-y-auto px-4 pt-1 pb-5">
+        {GROUPS.map((g) => (
+          <section key={g.name}>
+            <h3 className="mt-4 mb-2 flex items-baseline justify-between px-1 font-display text-md font-semibold">
+              {groupName(g.name)}
+              <span className="font-mono text-xs font-normal text-muted">
+                {g.levels.filter((l) => cleared.includes(l.id)).length}/{g.levels.length}
+              </span>
+            </h3>
+            <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
+              {g.levels.map((l) => {
+                const isCleared = cleared.includes(l.id);
+                return (
+                  <button
+                    key={l.id}
+                    className="flex w-full cursor-pointer items-center gap-3 py-2 pr-4 pl-2.5 text-left transition-colors duration-150 hover:bg-sky"
+                    onClick={() => openLevel(l)}
+                  >
+                    {/* a cleared level's number turns green */}
+                    <span
+                      className={`grid size-7 shrink-0 place-items-center rounded-lg font-display text-sm font-semibold tabular-nums ${
+                        isCleared ? 'bg-pass-soft text-pass' : 'bg-brand-soft text-brand'
+                      }`}
+                    >
+                      {levelNumber(l.id)}
+                    </span>
+                    <span className="flex-1 font-display text-md font-semibold">{localizeLevel(l).title}</span>
+                    {isCleared && <Check size={16} strokeWidth={2.8} className="shrink-0 text-pass" aria-label={tr.home.cleared} />}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+    </Overlay>
   );
 }
