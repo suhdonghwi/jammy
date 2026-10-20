@@ -397,14 +397,14 @@ export const STEPS: Step[] = [
       const tone = (goal: boolean) => (predictedGoal === null ? undefined : predictedGoal === goal ? 'success' : 'fail');
       if (!failing) {
         await beat(gen, `${verdict(true)}${T().firstPassTermination}`, { tone: tone(true) ?? 'info', spot: 'lights', region: endings(() => 'good') });
-        await beat(gen, T().ruleTermination, { region: endings(() => 'good') });
+        await beat(gen, T().ruleTermination(T().endingsAllGoals), { region: endings(() => 'good') });
         learnerFormula = useGame.getState().formulaText;
         return;
       }
       witnessed.add(failing);
-      if (failing === 'termination') await showFailure(gen, cex!, { prefix: verdict(false), tone: tone(false), ghostExtra: T().objectionMine });
+      if (failing === 'termination') await showFailure(gen, cex!, { prefix: verdict(false), tone: tone(false) });
       else await showFailure(gen, cex!, { ghostExtra: failing === 'maintenance' ? T().ghostMaintenance : undefined });
-      await beat(gen, T().ruleTermination, { region: endings((goal) => (goal ? 'good' : 'info')) });
+      await beat(gen, T().ruleTermination(T().endingsSomeNot), { region: endings((goal) => (goal ? 'good' : 'info')) });
       await stage(gen, {
         ask: T().askTermination,
         rules: RULES,
