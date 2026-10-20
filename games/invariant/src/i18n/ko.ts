@@ -83,10 +83,14 @@ export const ko: Messages = {
   rulesCard: {
     title: '세 가지 규칙',
     intro:
-      '세 규칙을 모두 통과한 영역은 사후 조건을 증명할 수 있는 루프 불변식입니다. 어떤 입력이든, 멈추는 개구리는 반드시 목표에서 멈춘다는 뜻입니다.',
+      '영역은 모든 개구리가 언제나 그 위에 있다고 주장합니다. 초기화와 유지는 이 주장을 참으로 만들고, 종료는 이 주장이 사후 조건을 증명할 만큼 강하게 만듭니다. 어떤 입력이든 말이죠.',
     initialization: '모든 알이 영역 위에 있습니다.',
-    maintenance: '영역 위의 개구리는 뛰어도 다시 영역 위에 착지합니다.',
-    termination: '영역 위에서 멈춘 개구리는 목표 위에 있습니다.',
+    maintenance: '어떤 점프도 영역 밖으로 나가지 않습니다.',
+    termination: '영역 위의 빗금 친 칸은 모두 목표입니다.',
+    inCode: '코드로는',
+    initializationCode: '`requires`와 루프 앞의 코드 다음에 `assert`가 성립합니다.',
+    maintenanceCode: '`assert`와 루프 조건이 성립하면, 본문 다음에도 `assert`가 성립합니다.',
+    terminationCode: '`assert`가 성립하고 루프 조건이 거짓이면, `ensures`가 성립합니다.',
   },
 
   syntax: {

@@ -83,10 +83,14 @@ export const en = {
   rulesCard: {
     title: 'The three rules',
     intro:
-      'An area that passes all three is a loop invariant strong enough to prove the postcondition: every frog that stops, stops on a goal — for every input.',
-    initialization: 'Every egg sits on your area.',
-    maintenance: 'A frog on your area that hops lands on your area.',
-    termination: 'A frog that stops on your area is on a goal.',
+      'Your area claims that every frog is always on it. Initialization and Maintenance make the claim true; Termination makes it strong enough to prove the postcondition, for every input.',
+    initialization: 'Every egg is on your area.',
+    maintenance: 'No hop leads off your area.',
+    termination: 'Every striped tile on your area is a goal.',
+    inCode: 'In the code',
+    initializationCode: 'After `requires` and the code before the loop, the `assert` holds.',
+    maintenanceCode: 'If the `assert` and the loop condition hold, the `assert` holds again after the body.',
+    terminationCode: 'If the `assert` holds and the loop condition is false, the `ensures` holds.',
   },
 
   syntax: {
