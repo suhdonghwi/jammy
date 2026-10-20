@@ -107,7 +107,7 @@ async function passed(gen: number, rule: Rule) {
   }
 }
 
-async function witness(gen: number, rule: Rule, pitfall: string, o: { question: string; afterDemo: string; afterOwn: string; ghost?: string }) {
+async function witness(gen: number, rule: Rule, pitfall: string, o: { question: string; afterDemo?: string; afterOwn?: string; ghost?: string }) {
   if (!witnessed.has(rule)) {
     const mine = useGame.getState().formulaText;
     useGame.getState().setFormula(pitfall);
@@ -115,8 +115,8 @@ async function witness(gen: number, rule: Rule, pitfall: string, o: { question: 
     guard(gen);
     await demo(gen, pitfall, upTo(rule), { ghostExtra: o.ghost, restore: mine, guessedRight: !yes });
     guard(gen);
-    await beat(gen, o.afterDemo, { spot: 'lights' });
-  } else {
+    if (o.afterDemo) await beat(gen, o.afterDemo, { spot: 'lights' });
+  } else if (o.afterOwn) {
     await beat(gen, o.afterOwn, { spot: 'lights' });
   }
 }
@@ -354,8 +354,6 @@ export const STEPS: Step[] = [
     run: (gen) =>
       witness(gen, 'maintenance', 'i == 0 || i == n', {
         question: T().questionMaintenance,
-        afterDemo: T().afterDemoMaintenance,
-        afterOwn: T().afterOwnMaintenance,
       }),
   },
   {
@@ -379,7 +377,7 @@ export const STEPS: Step[] = [
         },
         settle: 200,
       });
-      predictedGoal = await ask(gen, T().neverLeaves);
+      predictedGoal = await ask(gen, T().neverLeaves(mine()));
     },
   },
   {
