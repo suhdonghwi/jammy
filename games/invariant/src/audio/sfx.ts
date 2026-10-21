@@ -1,28 +1,14 @@
 import { create } from 'zustand';
+import { storage } from '../storage';
 import { playSiren } from './sirens';
 
 const MUTE_KEY = 'invariant-frog:muted';
 
-function loadMuted(): boolean {
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-export const useSound = create<{ muted: boolean }>(() => ({
-  muted: typeof window === 'undefined' ? false : loadMuted(),
-}));
+export const useSound = create<{ muted: boolean }>(() => ({ muted: storage.get(MUTE_KEY) === '1' }));
 
 export function setMuted(muted: boolean) {
   useSound.setState({ muted });
-  try {
-    if (muted) localStorage.setItem(MUTE_KEY, '1');
-    else localStorage.removeItem(MUTE_KEY);
-  } catch {
-    // remembered for this visit only
-  }
+  storage.set(MUTE_KEY, muted ? '1' : null);
   if (master && ctx) master.gain.setTargetAtTime(muted ? 0 : VOLUME, ctx.currentTime, 0.02);
 }
 

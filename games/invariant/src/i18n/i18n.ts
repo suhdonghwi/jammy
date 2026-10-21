@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { storage } from '../storage';
 import { en, type Messages } from './en';
 import { ko } from './ko';
 
@@ -10,12 +11,8 @@ const inBrowser = typeof window !== 'undefined';
 
 function initialLang(): Lang {
   if (!inBrowser) return 'en';
-  try {
-    const saved = localStorage.getItem(KEY);
-    if (saved === 'en' || saved === 'ko') return saved;
-  } catch {
-    // storage blocked: fall back to the browser's language
-  }
+  const saved = storage.get(KEY);
+  if (saved === 'en' || saved === 'ko') return saved;
   return navigator.language.toLowerCase().startsWith('ko') ? 'ko' : 'en';
 }
 
@@ -32,11 +29,7 @@ applyToDocument(useLang.getState().lang);
 export function setLang(lang: Lang) {
   useLang.setState({ lang });
   applyToDocument(lang);
-  try {
-    localStorage.setItem(KEY, lang);
-  } catch {
-    // not remembered, but still switched
-  }
+  storage.set(KEY, lang);
 }
 
 export const t = (): Messages => MESSAGES[useLang.getState().lang];
