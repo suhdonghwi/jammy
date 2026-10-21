@@ -1,7 +1,7 @@
 import { sfx } from '../audio/sfx';
 import { useGame } from '../game/store';
 import type { State } from '../lang/ast';
-import { hop, inputsOf, planeKey, running, startView, toBig } from '../levels/level';
+import { hop, inputsOf, planeKey, running, toBig, type CompiledLevel } from '../levels/level';
 import { eggsNear, tileState } from '../levels/tiles';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
@@ -19,14 +19,23 @@ const RUN_EGGS = 10;
 function eggStatesNear(maxCount: number, radius: number): State[] {
   const L = currentLevel();
   const { inputs } = useGame.getState();
-  const t = cameraRig.target();
-  const tx = t.x;
-  const ty = -t.z;
+  const { x: tx, y: ty } = cameraRig.viewCenter();
   return eggsNear(L, inputs, Math.round(tx), Math.round(ty), Math.ceil(radius))
     .filter(([x, y]) => !frogWorld.hatched.has(`${x},${y}`) && Math.hypot(x - tx, y - ty) <= radius)
     .sort((a, b) => Math.hypot(a[0] - tx, a[1] - ty) - Math.hypot(b[0] - tx, b[1] - ty))
     .slice(0, maxCount)
     .map(([x, y]) => toBig(tileState(L, x, y, inputs)));
+}
+
+const MAX_HOPS = 40;
+const RUN_REACH = 12;
+
+function runTiles(L: CompiledLevel, egg: State): (readonly [number, number])[] {
+  const at = (s: State) => [Number(s[L.view.x]), Number(s[L.view.y])] as const;
+  let s = egg;
+  for (let k = 0; k < MAX_HOPS && running(L, s); k++) s = hop(L, s);
+  const [from, to] = [at(egg), at(s)];
+  return Math.hypot(to[0] - from[0], to[1] - from[1]) <= RUN_REACH ? [from, to] : [from];
 }
 
 function firstEggs(count: number): State[] {
@@ -136,10 +145,8 @@ export async function runFrogs() {
     if (!tok.alive) return;
     const L = currentLevel();
     const eggs = firstEggs(RUN_EGGS);
-    if (eggs.length && !cameraRig.inView(Number(eggs[0][L.view.x]), Number(eggs[0][L.view.y]), 1.4)) {
-      const v = startView(L);
-      void cameraRig.resetAngle();
-      await cameraRig.lookAtTile(v.x, v.y, v.distance);
+    if (eggs.length) {
+      await cameraRig.frame({ focus: eggs.flatMap((s) => runTiles(L, s)) });
       if (!tok.alive) return;
     }
     eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatch(s)));

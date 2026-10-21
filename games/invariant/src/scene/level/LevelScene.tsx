@@ -23,9 +23,10 @@ export function LevelScene() {
   const valid = useGame((s) => s.valid);
   const formula = useGame((s) => s.formula);
   useEffect(() => {
-    const v = startView(level);
     void cameraRig.resetAngle(false);
-    void cameraRig.lookAtTile(v.x, v.y, v.distance, false);
+    if (useGame.getState().mode === 'tutorial') return;
+    const v = startView(level);
+    void cameraRig.frame({ at: [v.x, v.y, v.distance], focus: [[v.x, v.y]] }, false);
   }, [level]);
 
   return (

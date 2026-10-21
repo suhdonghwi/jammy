@@ -16,7 +16,7 @@ let onFinish: () => void = () => {};
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
 const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? TUTORIAL_CAMERA, focus: scene.focus });
 
-function restore(gen: number, scene: Scene) {
+function restore(gen: number, scene: Scene, smooth = true) {
   const level = levelOf(scene);
   const switched = useGame.getState().level?.id !== level.id;
   if (switched) {
@@ -40,7 +40,7 @@ function restore(gen: number, scene: Scene) {
   if (level === tutorialLevel) for (const [i, n] of scene.frogs ?? []) placeFrog(st(i, n));
   if (scene.loop) loopExampleFrogs();
   if (switched) after(80, () => gen === currentGeneration() && void cameraRig.frame(shotOf(scene), false));
-  else void cameraRig.frame(shotOf(scene));
+  else void cameraRig.frame(shotOf(scene), smooth);
   guard(gen);
 }
 
@@ -59,8 +59,9 @@ function crossTo(gen: number, scene: Scene): Promise<void> {
 function play(from: number, rewound = false) {
   const gen = newGeneration();
   void (async () => {
-    if (from > 0) restore(gen, STEPS[from].scene);
+    if (from > 0) restore(gen, STEPS[from].scene, false);
     else if (!rewound) {
+      void cameraRig.frame(shotOf(STEPS[0].scene), false);
       allow({});
       await sleep(500);
       guard(gen);

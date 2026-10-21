@@ -200,17 +200,6 @@ export const cameraRig = {
   userMoved() {
     userMoved = true;
   },
-  inView(x: number, y: number, reach = 1, floor = -0.5 * reach): boolean {
-    if (!controls) return true;
-    const p = point.set(x, 0, -y).project(controls.camera);
-    return Math.abs(p.x) < 0.65 * reach && p.y < 0.5 * reach && p.y > floor;
-  },
-  async lookAtTile(x: number, y: number, distance?: number, smooth = true) {
-    if (!controls) return;
-    const moves: Promise<void>[] = [controls.moveTo(x, 0, -y, smooth)];
-    if (distance !== undefined) moves.push(controls.dollyTo(distance, smooth));
-    await Promise.all(moves);
-  },
   async zoomTo(distance: number) {
     if (!controls) return;
     await controls.dollyTo(distance, true);

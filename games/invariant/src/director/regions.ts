@@ -5,8 +5,8 @@ import { cameraRig } from '../scene/cameraRig';
 type Center = readonly [number, number, ...number[]];
 
 const viewCenter = (): [number, number] => {
-  const t = cameraRig.target();
-  return [t.x, -t.z];
+  const c = cameraRig.viewCenter();
+  return [c.x, c.y];
 };
 
 export function eggRegion(tone: RegionTile['tone'], center: Center = viewCenter()): Region {

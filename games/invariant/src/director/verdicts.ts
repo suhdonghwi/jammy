@@ -16,7 +16,6 @@ import { GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
 import { begin, caption, currentLevel, type Token } from './sequence';
 
-const ABOVE_CAPTION = 0.05;
 const GLIDE_MS = 450;
 
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
@@ -26,25 +25,16 @@ function markFailure(x: number, y: number, label: string) {
   sfx.fail();
 }
 
-async function focusState(s: State, far = false): Promise<boolean> {
+async function focusOn(cex: Counterexample) {
   const L = currentLevel();
-  const x = Number(s[L.view.x]);
-  const y = Number(s[L.view.y]);
-  const inputs = inputsOf(L, s);
+  const inputs = inputsOf(L, cex.state);
   if (planeKey(inputs) !== planeKey(useGame.getState().inputs)) {
     useGame.setState({ inputs });
     await sleep(250);
   }
-  if (far) {
-    await cameraRig.zoomTo(45);
-    await cameraRig.lookAtTile(x, y - 1.5);
-    await cameraRig.zoomTo(13);
-    return true;
-  }
-  if (cameraRig.distance() <= 22 && cameraRig.inView(x, y, 1, ABOVE_CAPTION)) return false;
-  void cameraRig.lookAtTile(x, y - 1.5, Math.min(cameraRig.distance(), 16));
-  await sleep(GLIDE_MS);
-  return true;
+  const focus = [cex.state, cex.next].flatMap((s) => (s ? [[Number(s[L.view.x]), Number(s[L.view.y])] as const] : []));
+  const glide = cameraRig.frame({ focus });
+  await (cex.far ? glide : Promise.race([glide, sleep(GLIDE_MS)]));
 }
 
 export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
@@ -102,7 +92,6 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
 
 const HOLD_MS = 1300;
 const REGION_MS = 1300;
-const TAG_ABOVE = 2;
 const BETWEEN_MS = 300;
 
 async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
@@ -112,7 +101,7 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
   if (!tok.alive) return;
   const x = Number(cex.state[L.view.x]);
   const y = Number(cex.state[L.view.y]);
-  await focusState(cex.state, cex.far);
+  await focusOn(cex);
   if (!tok.alive) return;
   const say = messages().verdicts;
   const prefix = opts.prefix ?? (cex.far ? say.far : '');
@@ -222,8 +211,7 @@ async function showHolds(rule: Rule): Promise<Callout | null> {
 }
 
 function nearestTile(region: Region): { x: number; y: number } | null {
-  const t = cameraRig.target();
-  const [cx, cy] = [t.x, -t.z + TAG_ABOVE];
+  const { x: cx, y: cy } = cameraRig.viewCenter();
   const tiles = region.tiles({ cx: Math.round(cx), cy: Math.round(cy), R: 8 });
   let best: { x: number; y: number } | null = null;
   let bestD = Infinity;
@@ -241,7 +229,6 @@ export function showUndecided(text: string) {
 const PROOF_NEAR = 6;
 const PROOF_FAR = 13;
 const PROOF_MAX = 40;
-const PROOF_ABOVE = 2.5;
 
 interface ProofHop {
   from: State;
@@ -282,9 +269,7 @@ async function proofWave(): Promise<FrogSim | null> {
   const L = currentLevel();
   const { valid: inv, inputs } = useGame.getState();
   if (!inv) return null;
-  const t = cameraRig.target();
-  const tx = t.x;
-  const ty = -t.z + PROOF_ABOVE;
+  const { x: tx, y: ty } = cameraRig.viewCenter();
   const near = (x: number, y: number) => Math.hypot(x - tx, y - ty);
   const candidates = tilesNear(L, inputs, { cx: Math.round(tx), cy: Math.round(ty), R: PROOF_FAR }, (s, x, y) => {
     if (!L.fast.planeReq(s) || inv.fast(s) !== true || L.fast.guard(s) !== true || near(x, y) > PROOF_FAR) return undefined;
