@@ -15,8 +15,37 @@ const TILE_TAG_Y = 0.62;
 const GAP = 0.07;
 const EDGE = 8;
 const POINTER_INSET = 18;
+const POINTER_ROOM = 6;
+const APART = 4;
 const v = new THREE.Vector3();
 const onScreen = new THREE.Vector3();
+
+interface Box {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+const taken = { frame: -1, boxes: [] as Box[] };
+
+function liftClear(box: Box, frame: number): number {
+  if (taken.frame !== frame) Object.assign(taken, { frame, boxes: [] });
+  let lift = 0;
+  for (let moved = true, n = 0; moved && n < 8; n++) {
+    moved = false;
+    for (const o of taken.boxes) {
+      const top = box.top - lift;
+      const bottom = box.bottom - lift;
+      if (box.left < o.right + APART && box.right > o.left - APART && top < o.bottom + APART && bottom > o.top - APART) {
+        lift += bottom - o.top + APART;
+        moved = true;
+      }
+    }
+  }
+  taken.boxes.push({ ...box, top: box.top - lift, bottom: box.bottom - lift });
+  return lift;
+}
 
 function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
   if ('tile' in a) {
@@ -53,10 +82,15 @@ export function SceneTag({
   const holder = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const width = useRef(0);
+  const height = useRef(0);
+  const lift = useRef(0);
   const measure = useCallback((el: HTMLDivElement | null) => {
     box.current = el;
     if (!el) return;
-    const watch = new ResizeObserver(() => void (width.current = el.offsetWidth));
+    const watch = new ResizeObserver(() => {
+      width.current = el.offsetWidth;
+      height.current = el.offsetHeight;
+    });
     watch.observe(el);
     return () => {
       watch.disconnect();
@@ -65,7 +99,7 @@ export function SceneTag({
   }, []);
   const [start] = useState(() => anchorPoint(anchor)?.toArray());
   const placed = useRef(start ? 1 : 0);
-  useFrame(({ camera, size }) => {
+  useFrame(({ camera, size, clock }, dt) => {
     const p = anchorPoint(anchor);
     if (group.current && p) {
       group.current.position.copy(p);
@@ -73,11 +107,17 @@ export function SceneTag({
     }
     if (holder.current && box.current && p) {
       const k = THREE.MathUtils.clamp(14 / camera.position.distanceTo(p), 0.7, 1);
-      const x = ((onScreen.copy(p).project(camera).x + 1) / 2) * size.width;
+      onScreen.copy(p).project(camera);
+      const x = ((onScreen.x + 1) / 2) * size.width;
+      const y = ((1 - onScreen.y) / 2) * size.height;
       const half = (width.current * k) / 2;
       const reach = Math.max(0, half - POINTER_INSET * k);
       const dx = THREE.MathUtils.clamp(Math.max(EDGE + half - x, Math.min(0, size.width - EDGE - half - x)), -reach, reach);
-      holder.current.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), -100%) scale(${k.toFixed(3)})`;
+      const bottom = y - POINTER_ROOM * k;
+      const shown = !leaving && !hidden?.();
+      const goal = shown ? liftClear({ left: x + dx - half, right: x + dx + half, top: bottom - height.current * k, bottom }, clock.elapsedTime) : lift.current;
+      lift.current = placed.current > 1 ? THREE.MathUtils.damp(lift.current, goal, 12, dt) : goal;
+      holder.current.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-100% - ${lift.current.toFixed(1)}px)) scale(${k.toFixed(3)})`;
       box.current.style.setProperty('--tag-dx', `${(-dx / k).toFixed(1)}px`);
       if (placed.current > 1) holder.current.style.visibility = '';
     }
