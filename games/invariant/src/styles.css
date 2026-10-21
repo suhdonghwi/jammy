@@ -1,7 +1,10 @@
 @import 'tailwindcss';
 
 @custom-variant narrow {
-  @media (max-width: 768px) {
+  @media (max-width: 768px) and (min-height: 500.02px) {
+    @slot;
+  }
+  @media (max-width: 768px) and (max-aspect-ratio: 3/2) {
     @slot;
   }
   @media (max-aspect-ratio: 11/10) {

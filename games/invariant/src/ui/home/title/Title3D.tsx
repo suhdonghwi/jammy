@@ -136,7 +136,7 @@ const TITLE_ASPECT = 1.95;
 type TitleAlign = 'left' | 'center';
 
 export function Title3D({
-  width = 'w-full max-w-125 narrow:mx-auto narrow:max-w-85',
+  width = 'w-full max-w-125 narrow:mx-auto narrow:max-w-85 short:max-w-[min(31.25rem,45vw,calc((100dvh-12.5rem)*1.95))]',
   align = 'left',
   still = false,
 }: {

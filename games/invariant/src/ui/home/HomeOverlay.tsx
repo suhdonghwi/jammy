@@ -61,12 +61,12 @@ function HeroCopy({ behind }: { behind: boolean }) {
   const narrow = useMedia(NARROW_HOME);
   return (
     <div className={`max-w-118 narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
-      <p className="mb-3 animate-[rise_0.5s_ease-out_0.1s_both] font-display text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
-      <h1 className="mb-3.5">
+      <p className="mb-3 animate-[rise_0.5s_ease-out_0.1s_both] font-display short:mb-2 text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
+      <h1 className="mb-3.5 short:mb-2">
         <span className="sr-only">Invariant Frog</span>
         <Title3D align={narrow ? 'center' : 'left'} />
       </h1>
-      <p className="mb-6.5 animate-[rise_0.5s_ease-out_0.35s_both] text-lg leading-[1.55] text-muted max-sm:text-base">{tr.home.pitch}</p>
+      <p className="mb-6.5 animate-[rise_0.5s_ease-out_0.35s_both] text-lg leading-[1.55] text-muted max-sm:text-base short:mb-4 short:max-w-[min(29.5rem,48vw)] short:text-base">{tr.home.pitch}</p>
       <HomeButtons />
     </div>
   );

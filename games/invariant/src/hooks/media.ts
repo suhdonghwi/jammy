@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 export const COMPACT = '(max-width: 639.98px), (max-height: 500px) and (min-aspect-ratio: 3/2)';
 
-export const NARROW_HOME = '(max-width: 768px), (max-aspect-ratio: 11/10)';
+export const NARROW_HOME = '(max-width: 768px) and (min-height: 500.02px), (max-width: 768px) and (max-aspect-ratio: 3/2), (max-aspect-ratio: 11/10)';
 
 export const COMPACT_HOME = '(max-aspect-ratio: 11/10) and (max-height: 720px)';
 
