@@ -113,8 +113,17 @@ agree. `pnpm validate` and the tests are the safety net.
   `director/` function. Each starts with `begin()`, which
   cancels whatever was playing; after every `await` it checks `tok.alive` and
   stops if it was superseded. `busy` locks the learner's input while one plays.
+- **The camera moves through one call.** `cameraRig.frame({ at, focus })`
+  takes the tiles a moment is about (`focus`) and, optionally, a preferred
+  view (`at`). It measures the screen left free by every element marked
+  `data-frame` (top bar, code panel, caption column), and moves only when
+  the focus doesn't fit there, with room for tags. Tutorial steps, callouts,
+  counterexamples, Run and a level's start all frame this way; don't call
+  `moveTo`/`dollyTo` for them directly. `Framing` re-checks the last shot when
+  the panels settle at a new size, unless the learner has moved the camera
+  since; the next `frame()` call takes over again.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
-  formula, camera), so Back and skip-ahead can rebuild any step instantly. A
+  formula, camera, focus), so Back and skip-ahead can rebuild any step instantly. A
   step runs under a generation number and calls `guard(gen)` after every
   `await`, inside a beat's `prepare` too (a fast Next skips ahead while a
   camera glide is still playing, and whatever the old step does after that

@@ -61,14 +61,18 @@ behind many small decisions; keep them when changing or adding UI.
 - **A failure is reached, not cut to.** If the failing case is off screen
   the camera glides to it and the frog sets off as it arrives; if it is on
   screen the camera stays put; the light turns red as the
-  caption arrives. The last picture stays under the result caption.
+  caption arrives. The last picture stays under the result caption, and
+  clear of it: a taller caption nudges the camera.
+- **The camera leaves the learner alone until it must move.** A learner who
+  drags the view keeps it; the camera only glides back when the next step,
+  callout or failure is not on the free part of the screen.
 
 ## Clarity
 
 - **One component per idea.** Every label in the scene (tutorial callouts,
   failure labels, a frog's values) is the same tag: it rides with its frog,
-  scales with distance, and steps aside when another label covers the same
-  spot. Don't invent a second kind.
+  scales with distance, stays clear of the panels, and lifts above another
+  label it would cover. Don't invent a second kind.
 - **Hierarchy you can read at a glance.** Primary actions are blue "toy"
   buttons; ordinary ones are white; secondary ones are quiet (a faint pill on
   panels, a grey glass pill over the scene). A secondary button must look
@@ -119,6 +123,8 @@ behind many small decisions; keep them when changing or adding UI.
 - Desktop first; the 3D scene is full-screen and panels float over it.
 - Narrow or tall windows stack the home copy under the scene; on very small
   screens the copy fills the screen over a faint backdrop of the scene. Level panels shrink on narrow screens.
+- On short landscape screens (a phone held sideways) the caption, area box
+  and controls form a column on the right, so the scene keeps its height.
 - Spacing, type and radii come from Tailwind's scales (plus a 15 px text size
   for the UI's base). Small deviations from a mock-up are fine for the sake of
   consistency.
