@@ -21,7 +21,6 @@ interface Beat {
   hopDur: number;
   landTick: number;
   landGuard: 'true' | 'false' | 'mixed';
-  assert: boolean;
   spotLines: number[];
   inputHover: string | null;
   impossible: boolean;
@@ -65,17 +64,6 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
       </div>
     );
   });
-  if (beat.assert && headerLine >= 0) {
-    const indent = stmts.length ? src.slice(lines[bodyFirst].from).match(/^\s*/)?.[0] ?? '  ' : '  ';
-    rows.splice(headerLine + 1, 0, (
-      <div key="assert" className={`${ROW} text-faint`}>
-        <span>
-          {indent}
-          <span className="font-semibold">assert</span>(?);
-        </span>
-      </div>
-    ));
-  }
   return rows;
 }
 
@@ -87,12 +75,11 @@ export function CodePanel() {
   const landGuard = useGame((s) => s.landGuard);
   const shown = useGame((s) => s.reveal.code);
   const spotLines = useGame((s) => s.spotLines);
-  const assert = useGame((s) => s.reveal.assert);
   const inputHover = useGame((s) => s.inputHover);
   const impossible = useGame((s) => !planeExists(level, s.inputs));
   const nodes = useMemo(
-    () => highlightSource(level, { hopTick, hopDur, landTick, landGuard, assert, spotLines, inputHover, impossible }),
-    [level, hopTick, hopDur, landTick, landGuard, assert, spotLines, inputHover, impossible],
+    () => highlightSource(level, { hopTick, hopDur, landTick, landGuard, spotLines, inputHover, impossible }),
+    [level, hopTick, hopDur, landTick, landGuard, spotLines, inputHover, impossible],
   );
   const spot = useGame((s) => s.spotlight);
   const tutorial = useGame((s) => s.mode === 'tutorial');

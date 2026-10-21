@@ -15,7 +15,6 @@ export interface Reveal {
   step: boolean;
   formula: boolean;
   area: boolean;
-  assert: boolean;
   lights: Rule[];
   awake: Rule[];
 }
@@ -31,7 +30,6 @@ const FULL_REVEAL: Reveal = {
   step: true,
   formula: true,
   area: true,
-  assert: true,
   lights: RULES,
   awake: RULES,
 };
@@ -47,7 +45,6 @@ export const EMPTY_REVEAL: Reveal = {
   step: false,
   formula: false,
   area: false,
-  assert: false,
   lights: [],
   awake: [],
 };
