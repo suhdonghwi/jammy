@@ -69,7 +69,7 @@ export const ko: Messages = {
     decrease: (name) => `${name} 하나 줄이기`,
     increase: (name) => `${name} 하나 늘리기`,
     random: (name) => `${name} 무작위로 뽑기`,
-    impossible: '있을 수 없는 입력',
+    impossible: '불가능한 입력',
   },
 
   hover: {
