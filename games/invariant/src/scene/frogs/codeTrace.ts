@@ -12,15 +12,12 @@ export function traceHop(level: CompiledLevel, from: State, to: State, dur: numb
   const id = ++run;
   const live = () => id === run;
   const lines = trace(level.program.loop.body, from);
-  const each = (dur * 1000) / Math.max(1, lines.length);
+  const each = (dur * 1000) / (lines.length + 1);
   lines.forEach((span, k) => after(k * each, () => live() && useGame.setState({ codeCursor: { at: span.from, loops: null } })));
-  after(dur * 1000, () => {
-    if (!live()) return;
-    const loops = holds(level.guard, to);
-    useGame.setState({ codeCursor: { at: level.program.loop.headerSpan.from, loops } });
-    const ensures = level.program.ensures[0];
-    if (!loops && ensures) after(EXIT_PAUSE_MS, () => live() && useGame.setState({ codeCursor: { at: ensures.span.from, loops: null } }));
-  });
+  const loops = holds(level.guard, to);
+  after(lines.length * each, () => live() && useGame.setState({ codeCursor: { at: level.program.loop.headerSpan.from, loops } }));
+  const ensures = level.program.ensures[0];
+  if (!loops && ensures) after(dur * 1000 + EXIT_PAUSE_MS, () => live() && useGame.setState({ codeCursor: { at: ensures.span.from, loops: null } }));
 }
 
 export function clearTrace() {
