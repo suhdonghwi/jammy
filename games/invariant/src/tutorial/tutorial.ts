@@ -1,20 +1,18 @@
 import { interrupt, placeFrog, resetLevel } from '../director/frogs';
 import { ALLOW_NONE, EMPTY_REVEAL, useGame } from '../game/store';
 import { exampleLevel, tutorialLevel } from '../levels/catalog';
-import { cameraRig, type Shot, type View } from '../scene/cameraRig';
+import { cameraRig, type Shot } from '../scene/cameraRig';
 import { sleep, switchScene } from '../scene/sceneTime';
 import { Aborted, allow, currentGeneration, guard, newGeneration } from './script';
-import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, type Scene } from './steps';
+import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
 
 export { tutorialCheck } from './script';
-
-const TUTORIAL_CAMERA: View = [2, 2, 13];
 
 let stepIndex = 0;
 let onFinish: () => void = () => {};
 
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
-const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? TUTORIAL_CAMERA, focus: scene.focus, labels: scene.labels });
+const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? VIEW, focus: scene.focus, labels: scene.labels });
 
 function restore(gen: number, scene: Scene) {
   const level = levelOf(scene);

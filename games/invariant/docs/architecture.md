@@ -127,7 +127,10 @@ agree. `pnpm validate` and the tests are the safety net.
   start as the camera gets there (a hatch, a counterexample's frog) rather
   than after it comes to rest.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
-  formula, camera, focus), so Back and skip-ahead can rebuild any step instantly. A
+  formula) and the view they show (`camera`, `focus`, `labels`; the default
+  view is `VIEW`), so Back and skip-ahead can rebuild any step instantly, and
+  every step start, forward or back, frames that view. Steps don't move the
+  camera themselves. A
   step runs under a generation number and calls `guard(gen)` after every
   `await`, inside a beat's `prepare` too (a fast Next skips ahead while a
   camera glide is still playing, and whatever the old step does after that
