@@ -17,7 +17,7 @@ export function Hud() {
         <div className="pointer-events-none! flex max-h-full min-h-0 min-w-0 flex-col *:pointer-events-auto">
           <CodePanel key={levelId} />
         </div>
-        <div className="pointer-events-none! absolute inset-x-0 top-0 flex flex-col items-center gap-2 *:pointer-events-none">
+        <div className="pointer-events-none! absolute inset-x-0 top-0 flex flex-col items-center gap-2 *:pointer-events-none compact:top-auto compact:bottom-0">
           <HoverReadout />
         </div>
       </div>

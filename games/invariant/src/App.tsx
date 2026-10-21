@@ -37,7 +37,7 @@ function Game() {
   return (
     <div className="fixed inset-0">
       <div className="screen">
-        <div className="world fixed inset-0">
+        <div className="world fixed inset-x-0 top-0 h-lvh">
           <World />
         </div>
         {Poster ? (

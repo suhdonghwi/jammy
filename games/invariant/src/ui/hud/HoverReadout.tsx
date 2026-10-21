@@ -7,8 +7,22 @@ import { useHover } from '../../scene/hover';
 import { tileState } from '../../levels/tiles';
 
 const READOUT =
-  'flex animate-[fade_0.15s_var(--ease-entrance)] items-center gap-2 rounded-full bg-ink/86 px-3.5 py-1.75 text-sm text-white shadow-card has-[>span+span]:pr-2 compact:mx-4 compact:flex-wrap compact:justify-center compact:gap-y-1 compact:rounded-2xl';
-const TAG = 'rounded-full px-2.5 py-0.75 font-display text-sm font-medium';
+  'flex animate-[fade_0.15s_var(--ease-entrance)] items-center gap-2 rounded-full bg-ink/86 p-1.25 text-sm text-white shadow-card has-[>span+span]:pr-2 compact:mx-4 compact:flex-wrap compact:justify-center compact:pr-1.25!';
+const TAG = 'rounded-full px-2.5 py-0.75 font-display text-sm font-medium compact:hidden';
+const VAR = 'flex items-baseline gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 font-mono';
+
+function Values({ names, state }: { names: string[]; state: Record<string, unknown> }) {
+  return (
+    <span className="flex flex-wrap justify-center gap-1">
+      {names.map((n) => (
+        <span key={n} className={VAR}>
+          <span className="text-white/55">{n}</span>
+          <span className="font-semibold tabular-nums">{String(state[n])}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 const READOUT_ROOM = 440;
 
@@ -42,11 +56,11 @@ export function HoverReadout() {
   useTopRowPlacement(ref);
   if (!tile || !reveal.axes) return null;
   const s = tileState(level, tile[0], tile[1], inputs);
-  const vals = scalarNames(level).filter((n) => n in s).map((n) => `${n} = ${s[n]}`).join(', ');
+  const names = scalarNames(level).filter((n) => n in s);
   if (!level.fast.planeReq(s)) {
     return (
       <div className={READOUT} ref={ref}>
-        <span className="font-mono font-semibold">{vals}</span>
+        <Values names={names} state={s} />
         <span className={`${TAG} bg-white/6 text-[#9aa3b5]`}>{tr.hover.impossible}</span>
       </div>
     );
@@ -62,7 +76,7 @@ export function HoverReadout() {
   const goal = !cont && level.fast.post(s) === true;
   return (
     <div className={READOUT} ref={ref}>
-      <span className="font-mono font-semibold">{vals}</span>
+      <Values names={names} state={s} />
       {reveal.stop && (
         <span className={`${TAG} ${cont ? 'bg-white/12' : 'bg-[#efa52b]/25 text-[#ffd48a]'}`}>{cont ? tr.hover.hopsTo(next!) : goal && reveal.goals ? tr.hover.stopsOnGoal : tr.hover.stops}</span>
       )}
