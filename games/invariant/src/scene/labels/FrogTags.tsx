@@ -34,9 +34,10 @@ function FrogTag({ frog, level, leaving }: { frog: FrogSim; level: CompiledLevel
     if (!frog.hop && frog.state !== shown) setShown(frog.state);
   });
   const covered = () => {
-    const { callouts, failMark } = useGame.getState();
+    const { callouts, failMark, frogTags } = useGame.getState();
     const onTile = (x: number, y: number) => !frog.hop && x === frog.x && y === frog.y;
     return (
+      !frogTags ||
       callouts.some((c) => c.frog === frog.id || (c.frog === undefined && onTile(c.x, c.y))) ||
       (!!failMark && onTile(failMark.x, failMark.y))
     );

@@ -85,6 +85,7 @@ export function SceneTag({
   const height = useRef(0);
   const lift = useRef(0);
   const shift = useRef(0);
+  const covered = useRef(false);
   const measure = useCallback((el: HTMLDivElement | null) => {
     box.current = el;
     if (!el) return;
@@ -116,14 +117,15 @@ export function SceneTag({
       const aside = THREE.MathUtils.clamp(Math.max(EDGE + half - x, Math.min(0, size.width - EDGE - half - x)), -reach, reach);
       const dx = (shift.current = placed.current > 1 ? THREE.MathUtils.damp(shift.current, aside, 12, dt) : aside);
       const bottom = y - POINTER_ROOM * k;
-      const shown = !leaving && !hidden?.();
+      if (!leaving) covered.current = !!hidden?.();
+      const shown = !leaving && !covered.current;
       const goal = shown ? liftClear({ left: x + dx - half, right: x + dx + half, top: bottom - height.current * k, bottom }, clock.elapsedTime) : lift.current;
       lift.current = placed.current > 1 ? THREE.MathUtils.damp(lift.current, goal, 12, dt) : goal;
       holder.current.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-100% - ${lift.current.toFixed(1)}px)) scale(${k.toFixed(3)})`;
       box.current.style.setProperty('--tag-dx', `${(-dx / k).toFixed(1)}px`);
       if (placed.current > 1) holder.current.style.visibility = '';
     }
-    box.current?.toggleAttribute('data-covered', !!hidden?.());
+    box.current?.toggleAttribute('data-covered', covered.current);
   });
   return (
     <group ref={group} position={start}>
