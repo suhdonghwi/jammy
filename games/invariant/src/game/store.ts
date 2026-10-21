@@ -109,7 +109,7 @@ export interface Game {
 
 export interface CodeCursor {
   at: number;
-  guard: { text: string; holds: boolean } | null;
+  loops: boolean | null;
 }
 
 export interface RegionTile {

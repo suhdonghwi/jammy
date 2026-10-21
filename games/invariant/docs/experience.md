@@ -35,9 +35,9 @@ behind many small decisions; keep them when changing or adding UI.
 - **Every movement means something.** A frog turns (with a tiny hop) only when
   its next hop goes another way; it cheers only when it lands on a goal; the
   code panel's cursor walks through the lines one frog's hop runs (the first
-  frog that moves), then sits on the `while` line with the condition worked
-  out for it (`3 < 3`, true or false), and drops to `ensures` when the loop
-  ends.
+  frog that moves), then sits on the `while` line, green with a tick if the
+  loop goes on and amber with a cross if it stops (the frog's tag has the
+  values), and drops to `ensures` when the loop ends.
 - **Visible, not loud.** A goal landing should be noticed (a ripple, a flash, the
   pool's light column brightening) without becoming a splash.
 - **Things come from somewhere.** Frogs climb out of their egg, from where the
