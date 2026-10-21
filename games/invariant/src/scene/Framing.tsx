@@ -24,7 +24,7 @@ export function Framing() {
     }
     cameraRig.resize(size.width, size.height);
     if (mode === 'menu') return;
-    const key = cameraRig.safeKey();
+    const key = cameraRig.measure();
     const s = seen.current;
     const now = performance.now();
     if (key !== s.key) Object.assign(s, { key, at: now, settled: false });

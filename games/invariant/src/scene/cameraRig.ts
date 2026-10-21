@@ -21,6 +21,7 @@ let size = { width: 1, height: 1 };
 let current: Shot | null = null;
 let userMoved = false;
 let reach = 60;
+let free: Rect = { left: 0, top: 0, right: 1, bottom: 1 };
 
 const tmp = new THREE.Vector3();
 const point = new THREE.Vector3();
@@ -33,6 +34,7 @@ const ndc = new THREE.Vector2();
 const VIEW = { polar: 0.8, azimuth: 0.26 };
 const MARGIN = 14;
 const TAG_ROOM = 46;
+const TAG_HALF = 64;
 const TILE_RADIUS = 0.5;
 const MAX_DISTANCE = 60;
 const TOO_FAR = 1.4;
@@ -97,6 +99,8 @@ function bounds(focus: readonly Tile[]): Rect | null {
     const c = toScreen(x, y);
     if (!c) return null;
     b.top = Math.min(b.top, c[1] - TAG_ROOM);
+    b.left = Math.min(b.left, c[0] - TAG_HALF);
+    b.right = Math.max(b.right, c[0] + TAG_HALF);
   }
   return b;
 }
@@ -166,9 +170,12 @@ export const cameraRig = {
   distance(): number {
     return controls ? controls.distance : 14;
   },
-  safeKey(): string {
-    const r = safeRect();
+  measure(): string {
+    const r = (free = safeRect());
     return `${Math.round(r.left / 8)},${Math.round(r.top / 8)},${Math.round(r.right / 8)},${Math.round(r.bottom / 8)}`;
+  },
+  get free(): Readonly<Rect> {
+    return free;
   },
   viewCenter(): { x: number; y: number } {
     const v = endView();
