@@ -109,6 +109,7 @@ export interface Game {
 
 export interface CodeCursor {
   at: number;
+  until?: number;
   loops: boolean | null;
 }
 

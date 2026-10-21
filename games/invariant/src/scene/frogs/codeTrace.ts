@@ -16,8 +16,11 @@ export function traceHop(level: CompiledLevel, from: State, to: State, dur: numb
   lines.forEach((span, k) => after(k * each, () => live() && useGame.setState({ codeCursor: { at: span.from, loops: null } })));
   const loops = holds(level.guard, to);
   after(lines.length * each, () => live() && useGame.setState({ codeCursor: { at: level.program.loop.headerSpan.from, loops } }));
-  const ensures = level.program.ensures[0];
-  if (!loops && ensures) after(dur * 1000 + EXIT_PAUSE_MS, () => live() && useGame.setState({ codeCursor: { at: ensures.span.from, loops: null } }));
+  const { ensures } = level.program;
+  if (!loops && ensures.length) {
+    const block = { at: ensures[0].span.from, until: ensures[ensures.length - 1].span.to, loops: null };
+    after(dur * 1000 + EXIT_PAUSE_MS, () => live() && useGame.setState({ codeCursor: block }));
+  }
 }
 
 export function clearTrace() {

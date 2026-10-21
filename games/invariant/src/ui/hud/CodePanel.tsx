@@ -41,7 +41,9 @@ function highlightSource(level: CompiledLevel, marks: Marks) {
       </div>
     );
   });
-  return { rows, cursorLine: marks.cursor ? lineOf(marks.cursor.at) : -1 };
+  const cursorLine = marks.cursor ? lineOf(marks.cursor.at) : -1;
+  const cursorLines = marks.cursor?.until === undefined ? 1 : lineOf(marks.cursor.until) - cursorLine + 1;
+  return { rows, cursorLine, cursorLines };
 }
 
 export function CodePanel() {
@@ -52,7 +54,7 @@ export function CodePanel() {
   const inputHover = useGame((s) => s.inputHover);
   const impossible = useGame((s) => !planeExists(level, s.inputs));
   const stops = cursor?.loops === false;
-  const { rows, cursorLine } = useMemo(
+  const { rows, cursorLine, cursorLines } = useMemo(
     () => highlightSource(level, { spotLines, inputHover, impossible, cursor }),
     [level, spotLines, inputHover, impossible, cursor],
   );
@@ -85,10 +87,10 @@ export function CodePanel() {
           <div className="relative w-max min-w-full">
             <div
               aria-hidden
-              className={`pointer-events-none absolute inset-x-0 top-0 -mx-4 h-lh transition-[translate,opacity,background-color] duration-150 ease-out max-md:-mx-2.5 ${cursorLine < 0 ? 'opacity-0' : ''} ${stops ? 'bg-warn/15 text-warn' : 'bg-pass/15 text-pass'}`}
-              style={{ translate: `0 calc(${Math.max(0, cursorLine)} * 1lh)` }}
+              className={`pointer-events-none absolute inset-x-0 top-0 -mx-4 transition-[translate,height,opacity,background-color] duration-150 ease-out max-md:-mx-2.5 ${cursorLine < 0 ? 'opacity-0' : ''} ${stops ? 'bg-warn/15 text-warn' : 'bg-pass/15 text-pass'}`}
+              style={{ translate: `0 calc(${Math.max(0, cursorLine)} * 1lh)`, height: `calc(${cursorLines} * 1lh)` }}
             >
-              <span className="absolute top-1/2 left-0.5 -translate-y-1/2 leading-none max-md:left-0">
+              <span className="absolute top-[0.5lh] left-0.5 -translate-y-1/2 leading-none max-md:left-0">
                 {cursor?.loops === true ? <Check size={11} strokeWidth={3.2} /> : cursor?.loops === false ? <X size={11} strokeWidth={3.2} /> : <Play size={8} fill="currentColor" strokeWidth={0} />}
               </span>
             </div>

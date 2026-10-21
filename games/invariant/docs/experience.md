@@ -37,7 +37,7 @@ behind many small decisions; keep them when changing or adding UI.
   code panel's cursor walks through the lines one frog's hop runs (the last
   of the frogs hopping together, so after Run it follows the longest run), then sits on the `while` line, green with a tick if the
   loop goes on and amber with a cross if it stops (the frog's tag has the
-  values), and drops to `ensures` when the loop ends.
+  values), and drops to cover every `ensures` line when the loop ends.
 - **Visible, not loud.** A goal landing should be noticed (a ripple, a flash, the
   pool's light column brightening) without becoming a splash.
 - **Things come from somewhere.** Frogs climb out of their egg, from where the
