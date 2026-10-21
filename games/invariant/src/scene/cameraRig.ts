@@ -23,7 +23,6 @@ let controls: CameraControls | null = null;
 let size = { width: 1, height: 1 };
 let current: Shot | null = null;
 let reach = 60;
-let free: Rect = { left: 0, top: 0, right: 1, bottom: 1 };
 let layout = { key: '', changed: 0, settled: true };
 let pending: { shot: Shot; since: number; done: () => void } | null = null;
 
@@ -182,9 +181,6 @@ export const cameraRig = {
   distance(): number {
     return controls ? controls.distance : 14;
   },
-  get free(): Readonly<Rect> {
-    return free;
-  },
   viewCenter(): { x: number; y: number } {
     const v = endView();
     if (!controls) return v;
@@ -210,9 +206,8 @@ export const cameraRig = {
   tick(width: number, height: number, framing: boolean) {
     size = { width, height };
     if (!controls || !framing) return;
-    free = safeRect();
     const now = performance.now();
-    const key = keyOf(free);
+    const key = keyOf(safeRect());
     if (key !== layout.key) {
       const shown = sceneStarted();
       layout = { key, changed: now, settled: !shown };

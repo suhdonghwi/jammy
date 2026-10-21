@@ -72,8 +72,9 @@ behind many small decisions; keep them when changing or adding UI.
 
 - **One component per idea.** Every label in the scene (tutorial callouts,
   failure labels, a frog's values) is the same tag: it rides with its frog,
-  scales with distance, stays clear of the panels, and lifts above another
-  label it would cover. Don't invent a second kind.
+  scales with distance, stays inside the window (the camera, not the tag,
+  keeps it clear of the panels), and lifts above another label it would
+  cover. Don't invent a second kind.
 - **Hierarchy you can read at a glance.** Primary actions are blue "toy"
   buttons; ordinary ones are white; secondary ones are quiet (a faint pill on
   panels, a grey glass pill over the scene). A secondary button must look

@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
-import { cameraRig } from '../cameraRig';
 import { SLAB_H } from '../constants';
 import type { FrogSim } from '../frogs/frogWorld';
 
@@ -114,9 +113,7 @@ export function SceneTag({
       const y = ((1 - onScreen.y) / 2) * size.height;
       const half = (width.current * k) / 2;
       const reach = Math.max(0, half - POINTER_INSET * k);
-      const { left, right } = cameraRig.free;
-      const [from, to] = right - left > 2 * half ? [left, right] : [EDGE, size.width - EDGE];
-      const aside = THREE.MathUtils.clamp(Math.max(from + half - x, Math.min(0, to - half - x)), -reach, reach);
+      const aside = THREE.MathUtils.clamp(Math.max(EDGE + half - x, Math.min(0, size.width - EDGE - half - x)), -reach, reach);
       const dx = (shift.current = placed.current > 1 ? THREE.MathUtils.damp(shift.current, aside, 12, dt) : aside);
       const bottom = y - POINTER_ROOM * k;
       const shown = !leaving && !hidden?.();
