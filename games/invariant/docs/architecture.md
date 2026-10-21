@@ -121,7 +121,10 @@ agree. `pnpm validate` and the tests are the safety net.
   counterexamples, Run and a level's start all frame this way; don't call
   `moveTo`/`dollyTo` for them directly. `Framing` re-checks the last shot when
   the panels settle at a new size, unless the learner has moved the camera
-  since; the next `frame()` call takes over again.
+  since; the next `frame()` call takes over again. Before a screen shows,
+  placements snap; after, they glide. Use `arrive()` when something should
+  start as the camera gets there (a hatch, a counterexample's frog) rather
+  than after it comes to rest.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
   formula, camera, focus), so Back and skip-ahead can rebuild any step instantly. A
   step runs under a generation number and calls `guard(gen)` after every
