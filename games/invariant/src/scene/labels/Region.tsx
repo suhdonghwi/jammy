@@ -13,11 +13,11 @@ import { sfx } from '../../audio/sfx';
 import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/common';
 import { ringGeometry, TONE_COLORS, washGeometry } from './TileTag';
 
-export const APPEAR = 0.12;
+export const APPEAR = 0.18;
 
 export function ringPop(a: number): { scale: number; alpha: number } {
   const s = a <= 0 ? 0.6 : 1 + 2.2 * (a - 1) ** 3 + 1.2 * (a - 1) ** 2;
-  return { scale: 0.6 + 0.4 * s, alpha: Math.min(1, a * 3) };
+  return { scale: 0.6 + 0.4 * s, alpha: a * (2 - a) };
 }
 
 const vertex = /* glsl */ `
@@ -35,7 +35,7 @@ void main() {
   vec4 w = modelMatrix * vec4(position * vec3(s, 1.0, s) + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.012, -aTile.y), 1.0);
   vWorld = w.xyz;
   vColor = aColor;
-  vA = min(1.0, a * 3.0);
+  vA = a * (2.0 - a);
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;
@@ -67,7 +67,7 @@ function regionMaterial(alpha: number) {
 const TICKS = 10;
 const TICK_STEP = 0.06;
 const MAX_SPAN = 0.8;
-const POP = 0.07;
+const POP = 0.11;
 const onScreen = new THREE.Vector3();
 
 interface Sweep {
