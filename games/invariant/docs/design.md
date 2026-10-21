@@ -273,9 +273,11 @@ step N, for playtesting.
   first level.
 
 Besides the list under *The idea*, a learner should leave having chosen a
-formula themselves three times, and knowing the shape of the search: too
-small fails Initialization or Maintenance, too large fails Termination, and
-the invariant sits between.
+formula themselves three times, and knowing the shape of the search:
+failing Initialization or Maintenance leaves the area's claim unproved
+(an egg is off it, or a hop leads off it, even from a tile no frog
+reaches); failing Termination means the claim, true or not, is too weak to
+prove the postcondition. The area that proves the program passes all three.
 
 ### Vocabulary
 

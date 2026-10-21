@@ -378,8 +378,8 @@ export const STEPS: Step[] = [
       beat(gen, T().twoWays, {
         spot: 'lights',
         callouts: [
-          { x: 0, y: 2, text: T().tooSmallTag, tone: 'info' },
-          { x: 3, y: 2, text: T().tooLargeTag, tone: 'info' },
+          { x: 0, y: 2, text: T().notProvedTag, tone: 'info' },
+          { x: 3, y: 2, text: T().tooWeakTag, tone: 'info' },
         ],
       }),
   },

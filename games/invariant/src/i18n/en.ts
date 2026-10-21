@@ -251,9 +251,9 @@ export const en = {
     afterOwnTermination: (weak: string, mine: string) =>
       `Your earlier area ${weak} was a true claim too, but it left room to stop off a goal, so it was too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
     twoWays:
-      'So for an area to prove the program, it has to avoid two things:\n\n- Too **small**: an egg is off it, or a hop can lead off it.\n- Too **large**: it leaves room to stop off a goal.\n\nThe right invariant sits somewhere in between.',
-    tooSmallTag: 'too small: egg off it',
-    tooLargeTag: 'too large: stops off a goal',
+      'So two things can keep an area from proving the program:\n\n- It fails **rules 1 and 2**, so its claim isn’t proved: an egg is off it, or a hop leads off it, even from a tile no real frog reaches.\n- It fails **rule 3**: its claim may be true, but it is too **weak**, leaving room to stop off a goal.\n\nThe area that proves the program passes all three.',
+    notProvedTag: 'not proved: egg off it',
+    tooWeakTag: 'too weak: stops off a goal',
 
     wrapUp: (mine: string) =>
       `Your area ${mine} passes all three rules:\n\n- **Initialization:** every egg is on it.\n- **Maintenance:** no hop leads off it.\n- **Termination:** every striped tile on it is a goal.\n\nSo every frog stops on a goal. You’ve proved our loop correct for infinitely many inputs! 🎉`,
