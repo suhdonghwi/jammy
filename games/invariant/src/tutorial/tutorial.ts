@@ -1,5 +1,5 @@
 import { interrupt, placeFrog, resetLevel } from '../director/frogs';
-import { ALLOW_NONE, EMPTY_REVEAL, useGame } from '../game/store';
+import { ALLOW_NONE, EMPTY_REVEAL, useGame, type Game } from '../game/store';
 import { exampleLevel, tutorialLevel } from '../levels/catalog';
 import { cameraRig, type Shot } from '../scene/cameraRig';
 import { sleep, switchScene } from '../scene/sceneTime';
@@ -9,6 +9,8 @@ import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, VIEW, type 
 export { tutorialCheck } from './script';
 
 let stepIndex = 0;
+let stepCaption: Game['caption'] = null;
+const shown = new Set<number>();
 let onFinish: () => void = () => {};
 
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
@@ -67,9 +69,11 @@ function play(from: number, rewound = false) {
       if (i > from && levelOf(STEPS[i].scene).id !== useGame.getState().level?.id) await crossTo(gen, STEPS[i].scene);
       else if (i > from) void cameraRig.frame(shotOf(STEPS[i].scene));
       stepIndex = i;
+      stepCaption = useGame.getState().caption;
       useGame.setState({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
       await STEPS[i].run(gen);
       guard(gen);
+      noteShown();
     }
     onFinish();
   })().catch((e) => {
@@ -80,6 +84,7 @@ function play(from: number, rewound = false) {
 export function startTutorial(finish: () => void, from = 0) {
   onFinish = finish;
   resetProgress();
+  shown.clear();
   play(Math.min(Math.max(0, from), STEPS.length - 1));
 }
 
@@ -98,7 +103,12 @@ export function stopTutorial() {
   });
 }
 
+function noteShown() {
+  if (useGame.getState().caption !== stepCaption) shown.add(stepIndex);
+}
+
 function skipAhead() {
+  noteShown();
   const target = stepIndex + 1;
   if (target >= STEPS.length) return;
   stopTutorial();
@@ -106,7 +116,9 @@ function skipAhead() {
 }
 
 function goBack() {
-  const target = Math.max(0, stepIndex - 1);
+  noteShown();
+  const earlier = [...shown].filter((i) => i < stepIndex);
+  const target = earlier.length ? Math.max(...earlier) : Math.max(0, stepIndex - 1);
   stopTutorial();
   if (target === 0) {
     restore(currentGeneration(), STEPS[0].scene);
