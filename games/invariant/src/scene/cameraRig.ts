@@ -20,6 +20,7 @@ let controls: CameraControls | null = null;
 let size = { width: 1, height: 1 };
 let current: Shot | null = null;
 let userMoved = false;
+let reach = 60;
 
 const tmp = new THREE.Vector3();
 const point = new THREE.Vector3();
@@ -35,6 +36,8 @@ const TAG_ROOM = 46;
 const TILE_RADIUS = 0.5;
 const MAX_DISTANCE = 60;
 const TOO_FAR = 1.4;
+const ZOOM_OUT = 1.6;
+const MIN_FREE = 150;
 const FAR_TRAVEL = 2.2;
 
 const area = (r: Rect) => Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
@@ -52,7 +55,10 @@ function safeRect(): Rect {
     ];
     r = cuts.reduce((best, c) => (area(c) > area(best) ? c : best));
   }
-  return { left: r.left + MARGIN, top: r.top + MARGIN, right: r.right - MARGIN, bottom: r.bottom - MARGIN };
+  const free = { left: r.left + MARGIN, top: r.top + MARGIN, right: r.right - MARGIN, bottom: r.bottom - MARGIN };
+  free.bottom = Math.max(free.bottom, Math.min(size.height, free.top + MIN_FREE));
+  free.right = Math.max(free.right, Math.min(size.width, free.left + MIN_FREE));
+  return free;
 }
 
 function endView(): { x: number; y: number; d: number } {
@@ -110,13 +116,14 @@ function fits(x: number, y: number, d: number, focus: readonly Tile[], r: Rect):
 }
 
 function solve(x: number, y: number, d: number, focus: readonly Tile[], r: Rect): { x: number; y: number; d: number } {
+  const far = Math.max(d, reach);
   for (let i = 0; i < 8; i++) {
     place(x, y, d);
     let b = bounds(focus);
     if (inside(b, r)) break;
     const grow = b ? Math.max((b.right - b.left) / (r.right - r.left), (b.bottom - b.top) / (r.bottom - r.top)) : 1.5;
-    if (grow > 1 && d < MAX_DISTANCE) {
-      d = Math.min(MAX_DISTANCE, d * grow * 1.04);
+    if (grow > 1 && d < far) {
+      d = Math.min(far, d * grow * 1.04);
       place(x, y, d);
       b = bounds(focus);
     }
@@ -178,6 +185,7 @@ export const cameraRig = {
     const r = safeRect();
     const now = endView();
     const at = shot.at ? { x: shot.at[0], y: shot.at[1], d: shot.at[2] } : null;
+    reach = Math.min(MAX_DISTANCE, (at ?? now).d * ZOOM_OUT);
     const stay = focus.length > 0 && (!at || now.d <= at.d * TOO_FAR) && fits(now.x, now.y, now.d, focus, r);
     if (smooth && stay) return;
     if (at && (!focus.length || fits(at.x, at.y, at.d, focus, r))) return glide(at.x, at.y, at.d, smooth);
