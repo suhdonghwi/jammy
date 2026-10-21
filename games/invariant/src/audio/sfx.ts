@@ -80,8 +80,6 @@ export function prepareSound() {
 
 function start() {
   prepareSound();
-  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
-  if (session) session.type = 'playback';
   if (ctx!.state !== 'running') void ctx!.resume();
 }
 
