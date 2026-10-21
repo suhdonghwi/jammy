@@ -37,19 +37,17 @@ function ranges(level: CompiledLevel, box: Box): Ranges {
   return out;
 }
 
-function* product(dims: string[], rs: Ranges): Generator<FastState> {
+function product(dims: string[], rs: Ranges, visit: (s: FastState) => boolean | void): boolean {
   const s: FastState = {};
-  function* go(k: number): Generator<FastState> {
-    if (k === dims.length) {
-      yield s;
-      return;
-    }
+  const go = (k: number): boolean => {
+    if (k === dims.length) return visit(s) !== false;
     for (const v of rs[dims[k]]) {
       s[dims[k]] = v;
-      yield* go(k + 1);
+      if (!go(k + 1)) return false;
     }
-  }
-  yield* go(0);
+    return true;
+  };
+  return go(0);
 }
 
 export function boxSearch(
@@ -78,27 +76,27 @@ export function boxSearch(
   };
 
   if (rules.includes('initialization')) {
-    for (const free of product(level.freeDims, rs)) {
-      if (!f.planeReq(free)) continue;
+    product(level.freeDims, rs, (free) => {
+      if (!f.planeReq(free)) return;
       const start: FastState = { ...free };
       for (const v in f.init) start[v] = f.init[v](free) as number;
-      if (!f.eggReq(start)) continue;
+      if (!f.eggReq(start)) return;
       if (!inv.fast(start)) offer('initialization', start);
-    }
+    });
   }
   if (rules.includes('maintenance') || rules.includes('termination')) {
-    for (const s of product(level.names, rs)) {
-      if (!f.planeReq(s)) continue;
-      if (!inv.fast(s)) continue;
+    product(level.names, rs, (s) => {
+      if (!f.planeReq(s)) return;
+      if (!inv.fast(s)) return;
       if (f.guard(s)) {
-        if (!rules.includes('maintenance')) continue;
+        if (!rules.includes('maintenance')) return;
         const n: FastState = { ...s };
         for (const v in f.next) n[v] = f.next[v](s) as number;
         if (!inv.fast(n)) offer('maintenance', s);
       } else if (rules.includes('termination') && !f.post(s)) {
         offer('termination', s);
       }
-    }
+    });
   }
 
   const out: Partial<Record<Rule, Counterexample>> = {};
@@ -113,9 +111,5 @@ export function boxSearch(
 export function sameOnBox(level: CompiledLevel, a: FastFn, b: Expr, box: Box): boolean {
   const fb = compileFast(b);
   const rs = ranges(level, { ...box, r: Math.min(box.r, 8), planeR: Math.min(box.planeR, 6) });
-  for (const s of product(level.names, rs)) {
-    if (!level.fast.planeReq(s)) continue;
-    if (a(s) !== fb(s)) return false;
-  }
-  return true;
+  return product(level.names, rs, (s) => !level.fast.planeReq(s) || a(s) === fb(s));
 }

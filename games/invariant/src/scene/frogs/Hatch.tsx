@@ -1,10 +1,11 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/level';
 import { field } from '../area/field';
 import { SLAB_H } from '../constants';
+import { uploadInstances } from '../instances';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 import { colorUniform, GLSL_COMMON } from '../shaders/common';
@@ -85,6 +86,7 @@ export function HatchShells() {
   const cup = useRef<THREE.InstancedMesh>(null);
   const cap = useRef<THREE.InstancedMesh>(null);
   const geom = useMemo(() => eggGeometry(), []);
+  useEffect(() => () => geom.dispose(), [geom]);
   const [cupMat, capMat] = useMemo(
     () =>
       [0, 1].map(
@@ -146,8 +148,8 @@ export function HatchShells() {
     }
     a.count = na;
     b.count = nb;
-    a.instanceMatrix.needsUpdate = true;
-    b.instanceMatrix.needsUpdate = true;
+    uploadInstances(na, a.instanceMatrix);
+    uploadInstances(nb, b.instanceMatrix);
   });
 
   return (

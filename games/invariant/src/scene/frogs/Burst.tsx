@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { useGame } from '../../game/store';
@@ -7,6 +7,7 @@ import { planeKey } from '../../levels/level';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { clamp01, smoothstep } from '../easing';
+import { uploadInstances } from '../instances';
 import { sceneNow } from '../sceneTime';
 
 const CHIPS = 9;
@@ -59,6 +60,7 @@ export function GroundBursts() {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const geom = useMemo(() => new RoundedBoxGeometry(0.11, 0.06, 0.09, 2, 0.02), []);
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: COLORS.slabTop, roughness: 0.6 }), []);
+  useEffect(() => () => geom.dispose(), [geom]);
   const plane = useGame((s) => planeKey(s.inputs));
 
   useFrame(() => {
@@ -83,7 +85,7 @@ export function GroundBursts() {
       }
     }
     g.count = n;
-    g.instanceMatrix.needsUpdate = true;
+    uploadInstances(n, g.instanceMatrix);
   });
 
   return <instancedMesh ref={mesh} args={[geom, mat, MAX * CHIPS]} frustumCulled={false} count={0} />;

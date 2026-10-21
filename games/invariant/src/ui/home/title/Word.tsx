@@ -1,12 +1,13 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import titleGlyphs from 'virtual:title-glyphs';
 import { popIn } from '../../../scene/easing';
 import { outlineGeometry, outlineMaterial } from '../../../scene/models';
 import { sceneNow } from '../../../scene/sceneTime';
-import { letterGeometries, type LetterOptions } from './text3d';
+import { letterOpts, OUTLINE } from './layout';
+import { extrudeLetters } from './text3d';
 
-export const OUTLINE = 0.02;
 const outline = outlineMaterial(OUTLINE, undefined, 0.08);
 
 export const STAGGER = 0.03;
@@ -16,7 +17,7 @@ export const waveAt = (t: number, i: number, phase: number) => Math.max(0, Math.
 
 interface WordProps {
   text: string;
-  letters: LetterOptions;
+  xs: number[];
   position: [number, number, number];
   face: string;
   side: string;
@@ -26,20 +27,18 @@ interface WordProps {
   first?: number;
 }
 
-const built = new WeakMap<LetterOptions, Map<string, ReturnType<typeof build>>>();
+const built = new Map<string, ReturnType<typeof build>>();
 
-function build(text: string, opts: LetterOptions) {
-  return letterGeometries(text, opts).map((l) => {
-    l.geom.computeBoundingBox();
-    return { ...l, line: outlineGeometry(l.geom), mid: l.geom.boundingBox!.getCenter(new THREE.Vector3()) };
+function build(text: string) {
+  return extrudeLetters(titleGlyphs, text, letterOpts).flatMap(({ geom }) => {
+    if (!geom) return [];
+    geom.computeBoundingBox();
+    return [{ geom, line: outlineGeometry(geom), mid: geom.boundingBox!.getCenter(new THREE.Vector3()) }];
   });
 }
 
-export function Word({ text, letters: opts, position, face, side, wave, phase = 0, clock, first = 0 }: WordProps) {
-  const letters = useMemo(() => {
-    const byText = built.get(opts) ?? built.set(opts, new Map()).get(opts)!;
-    return byText.get(text) ?? byText.set(text, build(text, opts)).get(text)!;
-  }, [text, opts]);
+export function Word({ text, xs, position, face, side, wave, phase = 0, clock, first = 0 }: WordProps) {
+  const letters = useMemo(() => built.get(text) ?? built.set(text, build(text)).get(text)!, [text]);
   const mats = useMemo(
     () => [new THREE.MeshStandardMaterial({ color: face, roughness: 0.45 }), new THREE.MeshStandardMaterial({ color: side, roughness: 0.6 })],
     [face, side],
@@ -59,7 +58,7 @@ export function Word({ text, letters: opts, position, face, side, wave, phase = 
   return (
     <group position={position}>
       {letters.map((l, i) => (
-        <group key={i} position={[l.x, 0, 0]}>
+        <group key={i} position={[xs[i], 0, 0]}>
           <group ref={(el) => void (refs.current[i] = el)}>
             <mesh geometry={l.line} material={outline} />
             <mesh geometry={l.geom} material={mats} />

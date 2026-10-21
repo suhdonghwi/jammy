@@ -10,6 +10,7 @@ export function setMuted(muted: boolean) {
   useSound.setState({ muted });
   storage.set(MUTE_KEY, muted ? '1' : null);
   if (master && ctx) master.gain.setTargetAtTime(muted ? 0 : VOLUME, ctx.currentTime, 0.02);
+  syncRunning();
 }
 
 const VOLUME = 0.6;
@@ -65,9 +66,20 @@ export function prepareSound() {
   }
 }
 
+let suspendTimer = 0;
+function syncRunning() {
+  if (!ctx) return;
+  clearTimeout(suspendTimer);
+  if (!useSound.getState().muted && !document.hidden) {
+    if (ctx.state !== 'running') void ctx.resume();
+  } else {
+    suspendTimer = window.setTimeout(() => void ctx?.suspend(), 300);
+  }
+}
+
 function start() {
   prepareSound();
-  if (ctx!.state !== 'running') void ctx!.resume();
+  syncRunning();
 }
 
 function live(): AudioContext | null {
@@ -211,4 +223,5 @@ if (typeof window !== 'undefined') {
     },
     { capture: true },
   );
+  document.addEventListener('visibilitychange', syncRunning);
 }

@@ -7,7 +7,8 @@ game is, see [design.md](design.md); for how it should feel, see
 Stack: Vite, React (with React Compiler), TypeScript, react-three-fiber (three.js) with drei,
 zustand, Tailwind CSS v4, z3-solver (WebAssembly). The area box is a
 plain textarea over a coloured copy of its text; the 3D title's letter
-outlines are read from the font at build time (`scripts/title-glyphs.ts`); the
+outlines are read from the font, and the letters spaced, at build time
+(`scripts/title-glyphs.ts`, `ui/home/title/layout.ts`); the
 Korean fonts are subsets made by `pnpm fonts`.
 
 ## Layout
@@ -183,7 +184,8 @@ agree. `pnpm validate` and the tests are the safety net.
 Z3 runs as WebAssembly with threads, so the page must be **cross-origin
 isolated**: every host must send `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp`. Its browser build is copied into
-`public/z3/` by `pnpm dev` and `pnpm build`, and loaded lazily: it is warmed up once the player
+`public/z3/<version>/` by `pnpm dev` and `pnpm build` (versioned, so hosts can
+cache it forever), and loaded lazily: it is warmed up once the player
 opens the level list or a level, never on the home screen alone.
 
 ## Conventions
