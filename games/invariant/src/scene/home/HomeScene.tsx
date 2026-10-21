@@ -83,7 +83,7 @@ export function HomeScene() {
     return () => {
       timers.forEach((cancel) => cancel());
       hatchFx.clear();
-      frogWorld.clear();
+      frogs.forEach((f) => frogWorld.remove(f));
       goalEvents.clear();
     };
   }, []);
