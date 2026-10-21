@@ -37,19 +37,19 @@ function highlightSource(level: CompiledLevel, marks: Marks) {
     if (marks.spotLines.includes(i + 1) || i === hoverLine) cls += ' bg-brand-soft';
     if (requiresLines.includes(i)) cls += ' bg-warn-soft';
     return (
-      <div key={i} className={cls}>
+      <div key={i} className={`${cls} relative`}>
         <span>
           <HighlightedCode src={src.slice(l.from, l.to)} />
-          {i === headerLine && guard && (
-            <span
-              key={guard.text}
-              className={`ml-2 inline-flex animate-[fade_0.2s_ease-out] items-center gap-1 rounded-md px-1.5 align-baseline leading-normal ${guard.holds ? 'bg-pass/15 text-pass' : 'bg-warn-soft text-warn'}`}
-            >
-              {guard.text}
-              {guard.holds ? <Check size={12} strokeWidth={3} /> : <X size={12} strokeWidth={3} />}
-            </span>
-          )}
         </span>
+        {i === headerLine && guard && (
+          <span
+            key={guard.text}
+            className={`absolute top-1/2 right-2 inline-flex -translate-y-1/2 animate-[fade_0.2s_ease-out] items-center gap-1 rounded-md px-1.5 leading-normal max-md:right-1 ${guard.holds ? 'bg-pass-soft text-pass' : 'bg-warn-soft text-warn'}`}
+          >
+            {guard.text}
+            {guard.holds ? <Check size={12} strokeWidth={3} /> : <X size={12} strokeWidth={3} />}
+          </span>
+        )}
       </div>
     );
   });
