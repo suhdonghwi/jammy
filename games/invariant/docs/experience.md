@@ -52,10 +52,11 @@ behind many small decisions; keep them when changing or adding UI.
   say what happened. It starts from a clean scene: frogs out on the board go
   home and their eggs grow back before the first rule is shown.
 - **One rule at a time, with a visible seam.** Its light spins while its
-  picture plays (Initialization: the eggs in view ringed one after another in
-  a sweep along their line, each ring popping on its own rising tick, the
-  rest joining the last one; Maintenance: ghost frogs showing their hops;
-  Termination: every stop on the area ringed the same way); then the light
+  picture plays (Initialization: the eggs in view ringed in one sweep along
+  their line, end to end, with rising ticks spread along it and the last
+  tick on the last ring; Maintenance: ghost frogs showing their hops, each
+  landing tile ringed the same way; Termination: every stop on the area
+  swept the same way); then the light
   turns and chimes, the picture clears, and a
   short pause separates it from the next rule. A rule that holds says so in
   the scene too: a green tag on one egg, one ghost frog or one stop tile near

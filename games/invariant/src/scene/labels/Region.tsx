@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { useGame, type Region, type RegionTile } from '../../game/store';
@@ -10,11 +10,15 @@ import { GLSL_HEIGHT, instanced } from '../area/glsl';
 import { SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';
 import { sfx } from '../../audio/sfx';
-import type { TileWindow } from '../../levels/tiles';
 import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/common';
 import { ringGeometry, TONE_COLORS, washGeometry } from './TileTag';
 
-const APPEAR = 0.12;
+export const APPEAR = 0.12;
+
+export function ringPop(a: number): { scale: number; alpha: number } {
+  const s = a <= 0 ? 0.6 : 1 + 2.2 * (a - 1) ** 3 + 1.2 * (a - 1) ** 2;
+  return { scale: 0.6 + 0.4 * s, alpha: Math.min(1, a * 3) };
+}
 
 const vertex = /* glsl */ `
 ${GLSL_HEIGHT}
@@ -62,20 +66,28 @@ function regionMaterial(alpha: number) {
 
 const TICKS = 10;
 const TICK_STEP = 0.06;
+const MAX_SPAN = 0.8;
 const POP = 0.07;
+const onScreen = new THREE.Vector3();
 
-function sweep(tiles: RegionTile[], [cx, cy]: [number, number]): { delays: number[]; ticks: number[] } {
-  const near = tiles
-    .map((t, i) => ({ i, d: Math.hypot(t.x - cx, t.y - cy) }))
-    .sort((a, b) => a.d - b.d)
-    .slice(0, TICKS)
-    .map(({ i }) => i);
-  const mx = near.reduce((s, i) => s + tiles[i].x, 0) / near.length;
-  const my = near.reduce((s, i) => s + tiles[i].y, 0) / near.length;
+interface Sweep {
+  delays: number[];
+  ticks: number[];
+}
+
+function sweep(tiles: RegionTile[], camera: THREE.Camera): Sweep {
+  const all = tiles.map((_, i) => i);
+  const seen = all.filter((i) => {
+    const p = onScreen.set(tiles[i].x, 0, -tiles[i].y).project(camera);
+    return p.z < 1 && Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1;
+  });
+  const pick = seen.length ? seen : all;
+  const mx = pick.reduce((s, i) => s + tiles[i].x, 0) / pick.length;
+  const my = pick.reduce((s, i) => s + tiles[i].y, 0) / pick.length;
   let sxx = 0;
   let sxy = 0;
   let syy = 0;
-  for (const i of near) {
+  for (const i of pick) {
     const dx = tiles[i].x - mx;
     const dy = tiles[i].y - my;
     sxx += dx * dx;
@@ -86,20 +98,23 @@ function sweep(tiles: RegionTile[], [cx, cy]: [number, number]): { delays: numbe
   let [ux, uy] = [Math.cos(angle), Math.sin(angle)];
   if (uy < 0 || (uy === 0 && ux < 0)) [ux, uy] = [-ux, -uy];
   const along = (i: number) => (tiles[i].x - mx) * ux + (tiles[i].y - my) * uy;
-  near.sort((a, b) => along(a) - along(b));
-  const last = Math.max(0, near.length - 1) * TICK_STEP;
-  const delays = tiles.map(() => last);
-  near.forEach((i, rank) => (delays[i] = rank * TICK_STEP));
-  return { delays, ticks: near.map((_, rank) => rank * TICK_STEP + POP) };
+  pick.sort((a, b) => along(a) - along(b));
+  const n = pick.length;
+  const span = Math.min((n - 1) * TICK_STEP, MAX_SPAN);
+  const at = (rank: number) => (n > 1 ? (span * rank) / (n - 1) : 0);
+  const [lo, hi] = [along(pick[0]), along(pick[n - 1])];
+  const delays = all.map((i) => (hi > lo ? span * THREE.MathUtils.clamp((along(i) - lo) / (hi - lo), 0, 1) : 0));
+  pick.forEach((i, rank) => (delays[i] = at(rank)));
+  const count = Math.min(TICKS, n);
+  const ticks = Array.from({ length: count }, (_, k) => at(count > 1 ? Math.round((k * (n - 1)) / (count - 1)) : 0) + POP);
+  return { delays, ticks };
 }
 
-function useTicks(region: Region | null, win: TileWindow, t0: number) {
+function useTicks(region: Region | null, plan: Sweep | null, t0: number) {
   useEffect(() => {
-    if (!region?.tick) return;
-    const tiles = region.tiles(win);
-    if (!tiles.length) return;
+    if (!region?.tick || !plan) return;
     const late = sceneNow() - t0;
-    sfx.ticks(sweep(tiles, region.center).ticks.map((at) => at - late));
+    sfx.ticks(plan.ticks.map((at) => at - late));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region]);
 }
@@ -117,16 +132,23 @@ export function OutlineRegion() {
   if (region && region.id !== shown?.id) setShown({ id: region.id, t0: sceneNow() });
   if (!region && shown) setShown(null);
   const t0 = shown?.t0 ?? 0;
-  useTicks(region, win, t0);
-  const geoms = useMemo(() => {
+  const camera = useThree((s) => s.camera);
+  const plan = useMemo(() => {
     if (!region) return null;
     const tiles = region.tiles(win);
+    return { tiles, sweep: region.tick && tiles.length ? sweep(tiles, camera) : null };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [region, win, valid]);
+  useTicks(region, plan?.sweep ?? null, t0);
+  const geoms = useMemo(() => {
+    if (!plan) return null;
+    const { tiles } = plan;
     const n = tiles.length;
     const tile = new Float32Array(n * 2);
     const anim = new Float32Array(n * 3);
     const color = new Float32Array(n * 3);
     const delay = new Float32Array(n);
-    const delays = region.tick && n ? sweep(tiles, region.center).delays : null;
+    const delays = plan.sweep?.delays;
     tiles.forEach((t, i) => {
       tile.set([t.x, t.y], i * 2);
       const a = field.anims.get(`${t.x},${t.y}`);
@@ -137,8 +159,7 @@ export function OutlineRegion() {
     });
     const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aColor: [color, 3], aDelay: [delay, 1] } as const;
     return { ring: instanced(ringGeometry, n, attrs), wash: instanced(washGeometry, n, attrs) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [region, win, valid]);
+  }, [plan]);
   useEffect(() => () => (geoms?.ring.dispose(), geoms?.wash.dispose()), [geoms]);
 
   useFrame(() => {
