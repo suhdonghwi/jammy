@@ -107,7 +107,8 @@ agree. `pnpm validate` and the tests are the safety net.
   starts over the same way; nothing, the camera included, carries over from
   one screen to the next. Slow one-off work belongs in that wait, on a still
   page (the title's geometry is built once and kept; the audio context is made
-  before the first press).
+  before the first press). Until the first screen starts, `index.html` shows a
+  small loader (only after a second), which `startScene` removes.
 - **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`).
 
 ## Sequences
