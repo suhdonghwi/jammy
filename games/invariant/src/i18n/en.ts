@@ -208,9 +208,9 @@ export const en = {
     exEndingTag: 'a possible ending',
     exRules:
       'So all it takes is three things:\n\n- **Initialization:** every egg is on the area.\n- **Maintenance:** no hop leads off the area.\n- **Termination:** every striped tile on the area is a goal.\n\nThen every frog is proved to stop on a goal.',
-    exRule1Tag: 'Initialization · every egg is on it',
-    exRule2Tag: 'Maintenance · no hop leads off it',
-    exRule3Tag: 'Termination · every stop on it is a goal',
+    exRule1Tag: 'every egg is on it',
+    exRule2Tag: 'no hop leads off it',
+    exRule3Tag: 'every stop on it is a goal',
     backToOurs: 'Back to our loop',
 
     draw: 'Back to our loop, and this time you draw the area. Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**.\n\nTry something like `i == 2`, `i % 2 == 0` or `i < n`.',
