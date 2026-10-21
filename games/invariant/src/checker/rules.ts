@@ -1,9 +1,18 @@
 import { conjuncts, type Expr, type State } from '../lang/ast';
-import { holds } from '../lang/eval';
+import { holds, OverBudget } from '../lang/eval';
 import { hop, startState, type CompiledLevel, type Formula } from '../levels/level';
 import type { Counterexample, Rule } from './types';
 
 export function breaksRule(level: CompiledLevel, inv: Expr, rule: Rule, s: State): boolean {
+  try {
+    return breaks(level, inv, rule, s);
+  } catch (e) {
+    if (e instanceof OverBudget) return false;
+    throw e;
+  }
+}
+
+function breaks(level: CompiledLevel, inv: Expr, rule: Rule, s: State): boolean {
   if (rule === 'initialization') {
     const start = startState(level, s);
     return holds(level.planeReq, start) && holds(level.eggReq, start) && !holds(inv, start);
@@ -28,6 +37,13 @@ export function counterexample(level: CompiledLevel, inv: Formula, rule: Rule, s
 function brokenConjunct(inv: Formula, s: State): string | undefined {
   const cs = conjuncts(inv.expr);
   if (cs.length < 2) return undefined;
-  const bad = cs.find((c) => !holds(c, s));
+  const bad = cs.find((c) => {
+    try {
+      return !holds(c, s);
+    } catch (e) {
+      if (e instanceof OverBudget) return false;
+      throw e;
+    }
+  });
   return bad ? inv.text.slice(bad.span.from, bad.span.to) : undefined;
 }

@@ -70,6 +70,12 @@ feeds:
   stops after MAX_LEN + 1 steps. The inputs' part of the precondition is the
   same for every tile, so it is one uniform set from the CPU.
 
+The interpreter and the float functions share one iteration budget per
+evaluation across all of a formula's quantifiers (`EVAL_BUDGET`): past it the
+exact interpreter throws `OverBudget`, which the checker treats as "can't
+confirm", and a float function returns `NaN`, which reads as false. They never
+throw while rendering.
+
 Change semantics (operators, division, types) in `lang/` and make every backend
 agree. `pnpm validate` and the tests are the safety net.
 
@@ -118,6 +124,13 @@ agree. `pnpm validate` and the tests are the safety net.
   `director/` function. Each starts with `begin()`, which
   cancels whatever was playing; after every `await` it checks `tok.alive` and
   stops if it was superseded. `busy` locks the learner's input while one plays.
+- **A check can't be stopped, only abandoned.** `runChecker` takes its own
+  token (`beginCheck()`); `interrupt()` (a new level, the menu, a tutorial
+  rewind) abandons it, and a result for another level, mode or formula is
+  dropped. `checking` stays set until every solver call has settled, so Check
+  stays disabled across screens, and Z3's queued `dec_ref`s are only flushed
+  once no check is solving (`z3-guard.ts`). The area box is read-only while
+  `busy` or `checking`, so what gets cleared is what was checked.
 - **The camera moves through one call.** `cameraRig.frame({ at, focus })`
   takes the tiles a moment is about (`focus`, plus `labels` for tiles that
   carry a tag) and, optionally, a preferred view (`at`). It measures the
@@ -167,6 +180,10 @@ agree. `pnpm validate` and the tests are the safety net.
   postcondition are evaluated per pixel, so the plane is truly infinite.
 - Slabs, eggs, goal columns, frogs and hatching shells are **instanced**; only
   the tiles near the camera are built, in a window that moves in steps.
+- Without WebGL 2 (three.js needs it) the page shows a short message instead
+  of the game (`scene/webgl.ts`, `ui/Trouble.tsx`); the same message, or a
+  generic one, is what `App`'s error boundary shows if rendering throws. The
+  3D title has its own boundary and falls back to plain text.
 - Shadows are soft blobs, not shadow maps. Models are procedural (the only assets
   are the bundled fonts and sound clips).
 

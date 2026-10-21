@@ -15,7 +15,7 @@ import { dismissFrogs, hatch } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
 import { GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
-import { begin, caption, currentLevel, type Token } from './sequence';
+import { begin, beginCheck, caption, currentLevel, type Token } from './sequence';
 
 
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
@@ -36,6 +36,8 @@ async function focusOn(cex: Counterexample) {
   await cameraRig.arrive({ labels });
 }
 
+let inFlight = 0;
+
 export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
   const g = useGame.getState();
   const inv = g.valid;
@@ -44,19 +46,30 @@ export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
   const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, planeR: 20, inputs: g.inputs };
   const keep = { ...g.verdicts };
   for (const r of rules) delete keep[r];
+  const run = beginCheck();
+  const current = () => {
+    const now = useGame.getState();
+    return run.alive && now.level === g.level && now.mode === g.mode && now.valid === inv;
+  };
+  inFlight++;
   useGame.setState({ checking: true, verdicts: keep, pending: rules, failMark: null, region: null });
+  let res: CheckResult | null = null;
   try {
     const ctx = await browserZ3();
-    const res = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
-    useGame.setState({ pitfallMessage: res.pitfall?.message ?? null });
-    return res;
+    const checked = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
+    if (current()) res = checked;
   } catch (e) {
-    useGame.setState({ pending: [] });
-    caption(messages().verdicts.solverFailed((e as Error).message), 'fail');
-    return null;
+    if (current()) caption(messages().verdicts.solverFailed((e as Error).message), 'fail');
   } finally {
-    useGame.setState({ checking: false });
+    inFlight--;
+    const dropPending = !res && run.alive;
+    useGame.setState((now) => ({
+      checking: inFlight > 0,
+      pending: dropPending ? now.pending.filter((r) => !rules.includes(r)) : now.pending,
+      ...(res ? { pitfallMessage: res.pitfall?.message ?? null } : {}),
+    }));
   }
+  return res;
 }
 
 interface CounterexampleOptions {
@@ -72,11 +85,10 @@ export function revealAll(res: CheckResult) {
   useGame.setState((g) => ({ verdicts: { ...g.verdicts, ...res.verdicts }, pending: [] }));
 }
 
-function reveal(rule: Rule, res: CheckResult, chime: number) {
+function reveal(rule: Rule, res: CheckResult) {
   const v = res.verdicts[rule];
   if (!v) return;
   useGame.setState((g) => ({ verdicts: { ...g.verdicts, [rule]: v }, pending: g.pending.filter((r) => r !== rule) }));
-  if (v.status === 'pass') sfx.pass(chime);
 }
 
 export async function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
@@ -169,11 +181,11 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
       if (v.status === 'fail') {
         await counterexample(tok, v.cex, onFail(rule));
         if (!tok.alive) return null;
-        reveal(rule, res, i);
+        reveal(rule, res);
         return { failing: rule, undecided };
       }
       if (v.status === 'undecided') {
-        reveal(rule, res, i);
+        reveal(rule, res);
         undecided = true;
         await sleep(HOLD_MS);
         if (!tok.alive) return null;
@@ -181,7 +193,7 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
       }
       const tag = await showHolds(rule);
       if (!tok.alive) return null;
-      reveal(rule, res, i);
+      reveal(rule, res);
       if (tag) useGame.setState({ callouts: [tag] });
       if (i < order.length - 1) {
         await sleep(HOLD_MS);
@@ -194,7 +206,7 @@ export async function playVerification(res: CheckResult, rules: Rule[], onFail: 
     }
     return { undecided };
   } finally {
-    if (tok.alive) useGame.setState({ busy: false, pending: [] });
+    useGame.setState((g) => ({ ...(tok.alive ? { busy: false } : {}), pending: g.pending.filter((r) => !rules.includes(r)) }));
   }
 }
 

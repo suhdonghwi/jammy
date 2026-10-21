@@ -94,7 +94,7 @@ export function FormulaBox() {
             value={formulaText}
             placeholder={placeholder}
             aria-label={tr.formula.area}
-            readOnly={locked}
+            readOnly={locked || busy || checking}
             tabIndex={locked ? -1 : 0}
             spellCheck={false}
             autoCapitalize="off"

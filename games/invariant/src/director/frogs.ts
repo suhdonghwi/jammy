@@ -12,7 +12,7 @@ import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { occupancy } from '../scene/frogs/occupancy';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
-import { begin, currentLevel, events } from './sequence';
+import { abandonCheck, begin, currentLevel, events } from './sequence';
 
 const RUN_EGGS = 10;
 
@@ -84,13 +84,14 @@ async function hopAllOnce(dur = 0.42): Promise<number> {
 
 export function interrupt() {
   begin();
+  abandonCheck();
   clearTrace();
   frogWorld.clear();
   occupancy.eggs = new Set();
   hatchFx.clear();
   burstFx.clear();
   hopArcs.clear();
-  useGame.setState({ busy: false, running: false, stepping: false, checking: false, failMark: null, pending: [] });
+  useGame.setState({ busy: false, running: false, stepping: false, failMark: null, pending: [] });
 }
 
 export function resetLevel() {

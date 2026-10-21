@@ -219,20 +219,15 @@ interface StageOptions {
 export async function stage(gen: number, o: StageOptions): Promise<void> {
   useGame.setState({ callouts: [], region: o.region ?? null });
   setTutorial({ hint: { ask: o.ask, nudge: o.nudge, shown: false } });
-  let askNow = true;
+  say(o.ask, 'check');
   for (;;) {
-    if (askNow) say(o.ask, 'check');
     await waitCheck(gen);
-    askNow = false;
     useGame.setState({ region: null });
     setTutorial({ spotlight: null });
     void dismissFrogs('test');
     const res = await runChecker(o.rules);
     guard(gen);
-    if (!res) {
-      askNow = true;
-      continue;
-    }
+    if (!res) continue;
     const stageRule = o.rules[o.rules.length - 1];
     useGame.setState({ pitfallMessage: null });
     const out = await playVerification(res, o.rules, (failing) => ({

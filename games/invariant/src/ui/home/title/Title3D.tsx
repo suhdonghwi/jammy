@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { layouts } from 'virtual:title-glyphs';
 import { COLORS, MAX_DPR } from '../../../scene/constants';
+import { ErrorBoundary } from '../../ErrorBoundary';
 import { frogGeometry, frogMaterial, outlineMaterial } from '../../../scene/models';
 import { sceneNow, sceneStarted } from '../../../scene/sceneTime';
 import { LINE1, LINE2 } from './glyphs';
@@ -82,13 +83,24 @@ export function Title3D({
 }) {
   return (
     <div className={width} style={{ aspectRatio: TITLE_ASPECT }}>
-      <Canvas flat dpr={[1, MAX_DPR]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: FOV, near: 0.1, far: 200 }}>
-        <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
-        <directionalLight position={[4, 10, 6]} intensity={1.6} color="#ffffff" />
-        <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
-        <directionalLight position={[1, 2, 10]} intensity={1.1} color="#ffffff" />
-        <TitleScene align={align} wave={still ? 0 : WAVE} />
-      </Canvas>
+      <ErrorBoundary fallback={() => <PlainTitle align={align} />}>
+        <Canvas flat dpr={[1, MAX_DPR]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: FOV, near: 0.1, far: 200 }}>
+          <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
+          <directionalLight position={[4, 10, 6]} intensity={1.6} color="#ffffff" />
+          <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
+          <directionalLight position={[1, 2, 10]} intensity={1.1} color="#ffffff" />
+          <TitleScene align={align} wave={still ? 0 : WAVE} />
+        </Canvas>
+      </ErrorBoundary>
     </div>
+  );
+}
+
+function PlainTitle({ align }: { align: TitleAlign }) {
+  return (
+    <span aria-hidden className={`flex h-full flex-col justify-center font-display text-6xl leading-none font-semibold max-sm:text-5xl ${align === 'center' ? 'items-center' : 'items-start'}`}>
+      <span className="text-slab">{LINE1}</span>
+      <span className="text-[#46b83e]">{LINE2}</span>
+    </span>
   );
 }

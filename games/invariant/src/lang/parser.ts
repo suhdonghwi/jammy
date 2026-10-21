@@ -24,15 +24,18 @@ const OPS = [
 export const KEYWORDS: ReadonlySet<string> = new Set(['input', 'var', 'requires', 'ensures', 'while', 'if', 'else', 'true', 'false', 'forall', 'exists']);
 export const BUILTINS: ReadonlySet<string> = new Set<BuiltinFn>(['abs', 'min', 'max']);
 
-export function tokenize(src: string, { lenient = false } = {}): Token[] {
+export function tokenize(src: string, { lenient = false, comments = false } = {}): Token[] {
   const toks: Token[] = [];
   let i = 0;
   while (i < src.length) {
     const c = src[i];
     if (/\s/.test(c)) { i++; continue; }
     if (c === '/' && src[i + 1] === '/') {
-      while (i < src.length && src[i] !== '\n') i++;
-      continue;
+      if (comments) {
+        while (i < src.length && src[i] !== '\n') i++;
+        continue;
+      }
+      if (!lenient) throw new LangError(tr().doubleSlash, { from: i, to: i + 2 });
     }
     if (/[0-9]/.test(c)) {
       const s = i;
@@ -63,8 +66,8 @@ export function tokenize(src: string, { lenient = false } = {}): Token[] {
 class Parser {
   toks: Token[];
   pos = 0;
-  constructor(public src: string) {
-    this.toks = tokenize(src);
+  constructor(public src: string, { comments = false } = {}) {
+    this.toks = tokenize(src, { comments });
   }
 
   peek(): Token {
@@ -129,6 +132,8 @@ class Parser {
       operands.push(this.add());
     }
     if (ops.length === 0) return first;
+    const eq = ops.find((op) => op === '==' || op === '!=');
+    if (eq && ops.length > 1) throw new LangError(tr().chainedEquality(eq), spanOf(first, operands[operands.length - 1]));
     let result: Expr | null = null;
     for (let k = 0; k < ops.length; k++) {
       const l = operands[k];
@@ -360,5 +365,5 @@ export function parseFormula(src: string): Expr {
 }
 
 export function parseProgram(src: string): Program {
-  return new Parser(src).program();
+  return new Parser(src, { comments: true }).program();
 }

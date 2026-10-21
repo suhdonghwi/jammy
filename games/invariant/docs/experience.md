@@ -60,7 +60,7 @@ behind many small decisions; keep them when changing or adding UI.
   tick on the last ring; Maintenance: ghost frogs showing their hops, each
   landing tile ringed the same way; Termination: every stop on the area
   swept the same way); then the light
-  turns and chimes, the picture clears, and a
+  turns, the picture clears, and a
   short pause separates it from the next rule. A rule that holds says so in
   the scene too: a green tag on one egg, one ghost frog or one stop tile near
   the middle of the view, as a failure gets its red one.

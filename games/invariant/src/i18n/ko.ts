@@ -25,6 +25,14 @@ export const ko: Messages = {
     source: 'GitHub에서 소스 보기',
   },
 
+  trouble: {
+    webglTitle: '이 게임은 3D 그래픽이 필요합니다',
+    webgl: '브라우저에서 WebGL 2를 시작하지 못했습니다. 브라우저 설정에서 하드웨어 가속을 켜거나 다른 브라우저를 쓴 뒤, 페이지를 새로 고치세요.',
+    crashTitle: '문제가 생겼습니다',
+    crash: '게임이 복구할 수 없는 문제를 만났습니다.',
+    reload: '새로 고침',
+  },
+
   topBar: {
     home: '홈',
     allLevels: '레벨 목록',
@@ -146,6 +154,7 @@ export const ko: Messages = {
     notArray: (name) => `${name}은(는) 배열이 아니라 숫자입니다`,
     nameTaken: (name) => `'${name}'은(는) 이미 있는 이름입니다. 범위 변수에는 다른 이름을 쓰세요`,
     quantRange: (q) => `${q}에는 범위가 필요합니다. 예: \`${q} 0 <= k < n: …\``,
+    rangeTooWide: (max) => `범위가 너무 넓어서 확인할 수 없습니다. 값이 ${max}개 이하가 되도록 줄이세요`,
     quantName: '범위 가운데에 오는 이름이 범위 변수입니다. 예: `0 <= k < n`의 `k`',
     needsNumber: (text, ctx) => `${ctx}에는 숫자가 필요한데, \`${text}\` 부분은 참/거짓입니다`,
     needsCondition: (text, ctx) => `${ctx}에는 참/거짓 조건이 필요한데, \`${text}\` 부분은 숫자입니다`,
@@ -154,6 +163,8 @@ export const ko: Messages = {
     arity: (fn, n) => `${fn}에는 인자가 ${n}개 필요합니다`,
     positiveDivisor: (op) => `'${op}' 오른쪽에는 양수만 쓸 수 있습니다. 예: \`x ${op} 2\``,
     unexpectedChar: (c) => `쓸 수 없는 문자입니다: '${c}'`,
+    doubleSlash: '`/`를 쓰세요. `/`가 이미 내림 나눗셈입니다',
+    chainedEquality: (op) => `'${op}'는 다른 비교와 이어 쓸 수 없습니다. \`(x >= 0) ${op} (y >= 0)\`처럼 괄호로 묶으세요`,
     expectedEnded: (text) => `'${text}' 없이 식이 끝났습니다`,
     expectedFound: (text, found) => `'${found}' 대신 '${text}' 기호가 와야 합니다`,
     expected: (text) => `'${text}' 기호가 필요합니다`,

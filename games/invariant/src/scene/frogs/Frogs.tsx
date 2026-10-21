@@ -87,7 +87,7 @@ export function Frogs() {
       const p = pose(f, t);
       if (p.landed) {
         const s = toNum(f.state);
-        if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f, true);
+        if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f);
       }
       const key = tileOf(f);
       const g = groups.get(key)!;
