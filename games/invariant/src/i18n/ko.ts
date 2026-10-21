@@ -1,7 +1,6 @@
 import type { Messages } from './en';
 
 export const ko: Messages = {
-  and: ', ',
   gotIt: '확인',
 
   rules: {
@@ -108,7 +107,7 @@ export const ko: Messages = {
     proved: '증명 성공! 영역 위 어느 개구리든, 어떤 입력이든 문제없습니다.',
     next: (title) => `다음: ${title}`,
     backToLevels: '레벨 목록으로',
-    otherAnswers: (list) => `가능한 답으로는 ${list}도 있습니다.`,
+    otherAnswers: () => '이런 답도 정답입니다.',
   },
 
   verdicts: {

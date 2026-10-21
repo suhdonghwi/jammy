@@ -1,7 +1,6 @@
 import type { Rule } from '../checker/types';
 
 export const en = {
-  and: ' and ',
   gotIt: 'Got it',
 
   rules: {
@@ -108,7 +107,7 @@ export const en = {
     proved: 'Proved. Every frog, everywhere you claimed — for every input.',
     next: (title: string) => `Next: ${title}`,
     backToLevels: 'Back to levels',
-    otherAnswers: (list: string) => `Other answers that work: ${list}.`,
+    otherAnswers: (count: number): string => (count > 1 ? 'Other answers that work:' : 'Another answer that works:'),
   },
 
   verdicts: {

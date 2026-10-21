@@ -46,11 +46,6 @@ export function useT(): Messages {
   return MESSAGES[useLang((s) => s.lang)];
 }
 
-export function listNames(names: string[]): string {
-  const and = t().and;
-  return names.length > 1 ? `${names.slice(0, -1).join(', ')}${and}${names[names.length - 1]}` : (names[0] ?? '');
-}
-
 if (import.meta.hot) {
   import.meta.hot.accept(['./en', './ko'], ([newEn, newKo]) => {
     if (newEn) MESSAGES.en = newEn.en;

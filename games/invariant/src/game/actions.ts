@@ -2,7 +2,7 @@ import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
 import { dismissFrogs, resetLevel } from '../director/frogs';
 import { playVerification, runChecker, showUndecided } from '../director/verdicts';
-import { listNames, t } from '../i18n/i18n';
+import { t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
 import type { LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
@@ -94,5 +94,5 @@ export async function check(): Promise<'refused' | void> {
 function otherAnswers(solutions: string[], typed: string): string | null {
   const squash = (s: string) => s.replace(/\s+/g, '');
   const rest = solutions.filter((s) => squash(s) !== squash(typed));
-  return rest.length ? t().level.otherAnswers(listNames(rest.map((s) => `\`${s}\``))) : null;
+  return rest.length ? `${t().level.otherAnswers(rest.length)}\n\n${rest.map((s) => `- \`${s}\``).join('\n')}` : null;
 }
