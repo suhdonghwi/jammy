@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { chosenSiren, SIRENS } from './sirens';
+import { playSiren } from './sirens';
 
 const MUTE_KEY = 'invariant-frog:muted';
 
@@ -204,13 +204,13 @@ export const sfx = {
     }
   },
 
-  ghost(siren = chosenSiren()) {
+  ghost() {
     const c = live();
     if (!c || !gap('ghost', 700)) return;
     const g = c.createGain();
     g.gain.value = SIREN_GAIN;
     g.connect(master!);
-    SIRENS[siren].play(c, g, c.currentTime + 0.02);
+    playSiren(c, g, c.currentTime + 0.02);
   },
 };
 

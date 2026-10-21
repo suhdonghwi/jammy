@@ -5,7 +5,7 @@ game is, see [design.md](design.md); for how it should feel, see
 [experience.md](experience.md).
 
 Stack: Vite, React (with React Compiler), TypeScript, react-three-fiber (three.js) with drei,
-zustand, GSAP, Tailwind CSS v4, z3-solver (WebAssembly). The area box is a
+zustand, Tailwind CSS v4, z3-solver (WebAssembly). The area box is a
 plain textarea over a coloured copy of its text; the 3D title's letter
 outlines are read from the font at build time (`scripts/title-glyphs.ts`); the
 Korean fonts are subsets made by `pnpm fonts`.
@@ -194,6 +194,5 @@ opens the level list or a level, never on the home screen alone.
 - Remove dead code rather than leaving it behind.
 - Before committing: `pnpm typecheck`, `pnpm test`, `pnpm validate` (when
   levels, the language or the checker changed), `pnpm build`.
-- In development, `window.__game`, `__open(id)`, `__check()`, `__frogs`,
-  `__rig` and `__siren(n)` (plays ghost siren candidate n; `?siren=n` picks
-  the one the game uses) are available in the console.
+- In development, `window.__game`, `__open(id)`, `__check()`, `__frogs` and
+  `__rig` are available in the console.
