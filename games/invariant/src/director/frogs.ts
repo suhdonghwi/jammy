@@ -7,6 +7,7 @@ import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
 import { burstFx } from '../scene/frogs/Burst';
+import { clearTrace } from '../scene/frogs/codeTrace';
 import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { occupancy } from '../scene/frogs/occupancy';
@@ -84,6 +85,7 @@ async function hopAllOnce(dur = 0.42): Promise<number> {
 
 export function interrupt() {
   begin();
+  clearTrace();
   frogWorld.clear();
   occupancy.eggs = new Set();
   hatchFx.clear();
@@ -99,6 +101,7 @@ export function resetLevel() {
 
 export function resetFrogs() {
   begin();
+  clearTrace();
   void dismissFrogs();
   useGame.setState({ running: false, failMark: null });
 }

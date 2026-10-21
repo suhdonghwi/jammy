@@ -1,6 +1,6 @@
-import { ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useGame } from '../../game/store';
+import { useGame, type CodeCursor } from '../../game/store';
 import { COMPACT, useMedia } from '../../hooks/media';
 import { useT } from '../../i18n/i18n';
 import { planeExists, type CompiledLevel } from '../../levels/level';
@@ -10,26 +10,16 @@ import { inputRows, InputsSection } from './Inputs';
 
 const ROW = '-mx-4 flex px-4 max-md:-mx-2.5 max-md:px-2.5';
 
-const LANDED = {
-  true: 'animate-[check-true_0.9s_ease-out]',
-  false: 'animate-[check-false_1.4s_ease-out_forwards]',
-  mixed: 'animate-[check-mixed_0.9s_ease-out]',
-};
-
-interface Beat {
-  hopTick: number;
-  hopDur: number;
-  landTick: number;
-  landGuard: 'true' | 'false' | 'mixed';
+interface Marks {
   spotLines: number[];
   inputHover: string | null;
   impossible: boolean;
+  cursor: CodeCursor | null;
 }
 
-function highlightSource(level: CompiledLevel, beat: Beat) {
+function highlightSource(level: CompiledLevel, marks: Marks) {
   const src = level.program.source;
   const header = level.program.loop.headerSpan;
-  const stmts = level.program.loop.body;
   const lines: { from: number; to: number }[] = [];
   for (let from = 0; ; ) {
     const k = src.indexOf('\n', from);
@@ -39,47 +29,43 @@ function highlightSource(level: CompiledLevel, beat: Beat) {
   }
   const lineOf = (pos: number) => lines.findIndex((l) => pos >= l.from && pos <= l.to);
   const headerLine = lineOf(header.from);
-  const hoverLine = beat.inputHover ? lineOf(level.program.inputDecls.find((d) => d.name === beat.inputHover)?.span.from ?? -1) : -1;
-  const requiresLines = beat.impossible ? level.program.requires.map((r) => lineOf(r.span.from)) : [];
-  const bodyFirst = stmts.length ? lineOf(stmts[0].span.from) : -1;
-  const bodyLast = stmts.length ? lineOf(stmts[stmts.length - 1].span.to) : -2;
+  const hoverLine = marks.inputHover ? lineOf(level.program.inputDecls.find((d) => d.name === marks.inputHover)?.span.from ?? -1) : -1;
+  const requiresLines = marks.impossible ? level.program.requires.map((r) => lineOf(r.span.from)) : [];
+  const guard = marks.cursor?.guard;
   const rows = lines.map((l, i) => {
     let cls = `${ROW} min-h-lh`;
-    let key = `l${i}`;
-    let style: React.CSSProperties | undefined;
-    if (i === headerLine) {
-      cls += ` ${beat.landTick > 0 ? LANDED[beat.landGuard] : ''}`;
-      key += `h${beat.landTick}`;
-    } else if (i >= bodyFirst && i <= bodyLast) {
-      key += `b${beat.hopTick}`;
-      if (beat.hopTick > 0) style = { animation: `body-run ${Math.max(0.3, beat.hopDur + 0.15)}s ease-out` };
-    }
-    if (beat.spotLines.includes(i + 1) || i === hoverLine) cls += ' bg-brand-soft';
+    if (marks.spotLines.includes(i + 1) || i === hoverLine) cls += ' bg-brand-soft';
     if (requiresLines.includes(i)) cls += ' bg-warn-soft';
     return (
-      <div key={key} className={cls} style={style}>
+      <div key={i} className={cls}>
         <span>
           <HighlightedCode src={src.slice(l.from, l.to)} />
+          {i === headerLine && guard && (
+            <span
+              key={guard.text}
+              className={`ml-2 inline-flex animate-[fade_0.2s_ease-out] items-center gap-1 rounded-md px-1.5 align-baseline leading-normal ${guard.holds ? 'bg-pass/15 text-pass' : 'bg-warn-soft text-warn'}`}
+            >
+              {guard.text}
+              {guard.holds ? <Check size={12} strokeWidth={3} /> : <X size={12} strokeWidth={3} />}
+            </span>
+          )}
         </span>
       </div>
     );
   });
-  return rows;
+  return { rows, cursorLine: marks.cursor ? lineOf(marks.cursor.at) : -1 };
 }
 
 export function CodePanel() {
   const level = useGame((s) => s.level)!;
-  const hopTick = useGame((s) => s.hopTick);
-  const hopDur = useGame((s) => s.hopDur);
-  const landTick = useGame((s) => s.landTick);
-  const landGuard = useGame((s) => s.landGuard);
+  const cursor = useGame((s) => s.codeCursor);
   const shown = useGame((s) => s.reveal.code);
   const spotLines = useGame((s) => s.spotLines);
   const inputHover = useGame((s) => s.inputHover);
   const impossible = useGame((s) => !planeExists(level, s.inputs));
-  const nodes = useMemo(
-    () => highlightSource(level, { hopTick, hopDur, landTick, landGuard, spotLines, inputHover, impossible }),
-    [level, hopTick, hopDur, landTick, landGuard, spotLines, inputHover, impossible],
+  const { rows, cursorLine } = useMemo(
+    () => highlightSource(level, { spotLines, inputHover, impossible, cursor }),
+    [level, spotLines, inputHover, impossible, cursor],
   );
   const spot = useGame((s) => s.spotlight);
   const tutorial = useGame((s) => s.mode === 'tutorial');
@@ -107,7 +93,16 @@ export function CodePanel() {
         <pre
           className={`m-0 -mx-4 min-h-0 overflow-auto px-4 max-md:-mx-2.5 max-md:px-2.5 ${hasInputs ? 'pb-2.5 max-md:pb-2' : '-mb-3 rounded-b-2xl pb-3 max-md:-mb-2.5 max-md:pb-2.5'} font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]`}
         >
-          <div className="w-max min-w-full">{nodes}</div>
+          <div className="relative w-max min-w-full">
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute inset-x-0 top-0 -mx-4 h-lh bg-pass/15 transition-[translate,opacity] duration-150 ease-out max-md:-mx-2.5 ${cursorLine < 0 ? 'opacity-0' : ''}`}
+              style={{ translate: `0 calc(${Math.max(0, cursorLine)} * 1lh)` }}
+            >
+              <span className="absolute top-1/2 left-1 -translate-y-1/2 text-[8px] leading-none text-pass max-md:left-0.5">▶</span>
+            </div>
+            {rows}
+          </div>
         </pre>
       )}
       <InputsSection key={level.id} inline={!open} />

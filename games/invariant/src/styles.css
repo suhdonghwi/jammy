@@ -205,42 +205,6 @@ html[data-leaving] .screen {
   }
 }
 
-@keyframes body-run {
-  0% {
-    background: rgb(82 194 74 / 0.38);
-  }
-  70% {
-    background: rgb(82 194 74 / 0.28);
-  }
-  100% {
-    background: transparent;
-  }
-}
-@keyframes check-true {
-  0% {
-    background: rgb(82 194 74 / 0.4);
-  }
-  100% {
-    background: transparent;
-  }
-}
-@keyframes check-false {
-  0% {
-    background: rgb(239 165 43 / 0.55);
-  }
-  100% {
-    background: rgb(239 165 43 / 0.18);
-  }
-}
-@keyframes check-mixed {
-  0% {
-    background: rgb(59 130 246 / 0.3);
-  }
-  100% {
-    background: transparent;
-  }
-}
-
 @keyframes tag-in {
   from {
     opacity: 0;

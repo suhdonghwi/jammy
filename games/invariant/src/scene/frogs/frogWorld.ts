@@ -4,6 +4,7 @@ import { holds, step } from '../../lang/eval';
 import { inputsOf, planeKey, type CompiledLevel } from '../../levels/level';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
+import { traceHop } from './codeTrace';
 import { joinHopBatch, landInBatch } from './hopBatch';
 
 export type FrogKind = 'real' | 'test';
@@ -100,12 +101,14 @@ class FrogWorld {
   }
 
   hopTo(level: CompiledLevel, f: FrogSim, next: State, dur = 0.42, quiet = false): Promise<void> {
+    const from = f.state;
     f.state = next;
     const tx = Number(next[level.view.x]);
     const ty = Number(next[level.view.y]);
     if (tx !== f.x || ty !== f.y) f.face = yawToward(f.x, f.y, tx, ty);
     f.hop = { fx: f.x, fy: f.y, tx, ty, t0: sceneNow(), dur };
-    const batch = quiet ? null : joinHopBatch(dur);
+    const batch = quiet ? null : joinHopBatch();
+    if (batch?.pending === 1) traceHop(level, from, next, dur);
     return new Promise((res) =>
       after(dur * 1000, () => {
         f.x = tx;

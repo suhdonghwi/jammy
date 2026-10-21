@@ -1,4 +1,4 @@
-import { mk, NO_SPAN, subst, type Expr, type State, type Stmt } from './ast';
+import { mk, NO_SPAN, subst, type Expr, type Span, type State, type Stmt } from './ast';
 
 export function floorDiv(a: bigint, k: bigint): bigint {
   const q = a / k;
@@ -102,6 +102,20 @@ export function step(body: Stmt[], s: State): State {
   };
   run(body);
   return out;
+}
+
+export function trace(body: Stmt[], s: State): Span[] {
+  const out: State = { ...s };
+  const ran: Span[] = [];
+  const run = (stmts: Stmt[]) => {
+    for (const st of stmts) {
+      ran.push(st.span);
+      if (st.kind === 'assign') out[st.name] = evaluate(st.value, out) as bigint;
+      else run(evaluate(st.cond, out) ? st.then : st.else);
+    }
+  };
+  run(body);
+  return ran;
 }
 
 export function symbolicStep(body: Stmt[], vars: string[]): Record<string, Expr> {

@@ -81,10 +81,7 @@ export interface Game {
   running: boolean;
   caption: Caption | null;
   reveal: Reveal;
-  hopTick: number;
-  hopDur: number;
-  landTick: number;
-  landGuard: 'true' | 'false' | 'mixed';
+  codeCursor: CodeCursor | null;
   hint: Hint | null;
   hintsShown: number;
   showRules: boolean;
@@ -108,6 +105,11 @@ export interface Game {
   backToMenu(view?: 'home' | 'levels'): void;
   setFormula(text: string): void;
   setReveal(r: Partial<Reveal>): void;
+}
+
+export interface CodeCursor {
+  at: number;
+  guard: { text: string; holds: boolean } | null;
 }
 
 export interface RegionTile {
@@ -160,10 +162,7 @@ export const useGame = create<Game>((set, get) => ({
   inputs: {},
   caption: null,
   reveal: FULL_REVEAL,
-  hopTick: 0,
-  hopDur: 0.42,
-  landTick: 0,
-  landGuard: 'true',
+  codeCursor: null,
   showRules: false,
   showSyntax: false,
 
