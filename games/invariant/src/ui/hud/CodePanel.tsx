@@ -8,7 +8,7 @@ import { CARD, CARD_LABEL } from '../classes';
 import { HighlightedCode } from '../codeColors';
 import { inputRows, InputsSection } from './Inputs';
 
-const ROW = '-mx-4 flex px-4 max-md:-mx-2.5 max-md:px-2.5';
+const ROW = '-mx-4 flex px-4 max-md:-mx-2.5 max-md:pr-2.5 max-md:pl-3.5';
 const LEADING = 1.62;
 const inLines = (n: number) => `${n * LEADING}em`;
 
@@ -94,7 +94,7 @@ export function CodePanel() {
               style={{ translate: `0 ${inLines(Math.max(0, cursorLine))}`, height: inLines(cursorLines) }}
             >
               <span className="absolute left-0.5 -translate-y-1/2 leading-none max-md:left-0" style={{ top: inLines(0.5) }}>
-                {cursor?.loops === true ? <Check size={11} strokeWidth={3.2} /> : cursor?.loops === false ? <X size={11} strokeWidth={3.2} /> : <Play size={8} fill="currentColor" strokeWidth={0} />}
+                {cursor?.loops === true ? <Check className="size-2.75 max-md:size-2.25" strokeWidth={3.2} /> : cursor?.loops === false ? <X className="size-2.75 max-md:size-2.25" strokeWidth={3.2} /> : <Play className="size-2 max-md:size-1.75" fill="currentColor" strokeWidth={0} />}
               </span>
             </div>
             {rows}
