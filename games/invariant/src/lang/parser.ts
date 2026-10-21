@@ -9,7 +9,7 @@ export class LangError extends Error {
   }
 }
 
-type TokKind = 'num' | 'ident' | 'op' | 'eof';
+type TokKind = 'num' | 'ident' | 'op' | 'bad' | 'eof';
 interface Token {
   kind: TokKind;
   text: string;
@@ -24,7 +24,7 @@ const OPS = [
 export const KEYWORDS: ReadonlySet<string> = new Set(['input', 'var', 'requires', 'ensures', 'while', 'if', 'else', 'true', 'false', 'forall', 'exists']);
 export const BUILTINS: ReadonlySet<string> = new Set<BuiltinFn>(['abs', 'min', 'max']);
 
-export function tokenize(src: string): Token[] {
+export function tokenize(src: string, { lenient = false } = {}): Token[] {
   const toks: Token[] = [];
   let i = 0;
   while (i < src.length) {
@@ -48,7 +48,10 @@ export function tokenize(src: string): Token[] {
     }
     const op = OPS.find((o) => src.startsWith(o, i));
     if (!op) {
-      throw new LangError(tr().unexpectedChar(c), { from: i, to: i + 1 });
+      if (!lenient) throw new LangError(tr().unexpectedChar(c), { from: i, to: i + 1 });
+      toks.push({ kind: 'bad', text: c, span: { from: i, to: i + 1 } });
+      i++;
+      continue;
     }
     toks.push({ kind: 'op', text: op, span: { from: i, to: i + op.length } });
     i += op.length;
