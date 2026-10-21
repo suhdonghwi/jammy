@@ -5,8 +5,9 @@
   "outputDirectory": "dist",
   "redirects": [
     { "source": "/invariant", "destination": "/invariant/", "permanent": true },
-    { "source": "/((?!invariant(?:/|$)).+)", "destination": "/", "permanent": false }
+    { "source": "/((?!invariant(?:/|$)|ribbit/).+)", "destination": "/", "permanent": false }
   ],
+  "rewrites": [{ "source": "/ribbit/:path*", "destination": "/_vercel/insights/:path*" }],
   "headers": [
     {
       "source": "/invariant(/.*)?",

@@ -38,7 +38,7 @@ export function App() {
         <RulesCard />
         <SyntaxCard />
       </div>
-      <Analytics />
+      <Analytics scriptSrc="/ribbit/script.js" endpoint="/ribbit" />
     </div>
   );
 }
