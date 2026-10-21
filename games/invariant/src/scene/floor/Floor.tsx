@@ -28,7 +28,7 @@ function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
 }
 
 interface FloorProps {
-  level: CompiledLevel | null;
+  level: CompiledLevel;
   inputs: Inputs;
   fadeIn?: number;
   interactive?: boolean;
@@ -79,7 +79,7 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
 
   const u = material.uniforms;
   const key = planeKey(inputs);
-  useMemo(() => setInputUniforms(u, level, inputs, level ? planeExists(level, inputs) : true), [u, level, inputs, key]);
+  useMemo(() => setInputUniforms(u, level, inputs, planeExists(level, inputs)), [u, level, inputs, key]);
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 

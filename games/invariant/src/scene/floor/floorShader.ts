@@ -11,7 +11,7 @@ void main() {
 }
 `;
 
-export function floorFragment(level: CompiledLevel | null) {
+export function floorFragment(level: CompiledLevel) {
   return /* glsl */ `
 precision highp float;
 precision highp int;

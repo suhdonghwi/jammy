@@ -64,15 +64,7 @@ int fdiv(int a, int k) { return int(floor(float(a) / float(k))); }
 int emod(int a, int k) { return a - k * fdiv(a, k); }
 `;
 
-export function levelGlsl(level: CompiledLevel | null): string {
-  if (!level) {
-    return `
-uniform bool uExists;
-bool L_exists(ivec2 t) { return true; }
-bool L_stop(ivec2 t) { return false; }
-bool L_goal(ivec2 t) { return false; }
-`;
-  }
+export function levelGlsl(level: CompiledLevel): string {
   const c = new Compiler(level);
   const uniforms = level.offAxis
     .map((n) => (level.arrays[n] ? `uniform int ${arrayUniform(n)}[${MAX_LEN}];` : `uniform int ${inputUniform(n)};`))
@@ -95,16 +87,14 @@ bool L_goal(ivec2 t) { ${decls} return ${goal}; }
 `;
 }
 
-export function inputUniforms(level: CompiledLevel | null): Record<string, THREE.IUniform> {
+export function inputUniforms(level: CompiledLevel): Record<string, THREE.IUniform> {
   const out: Record<string, THREE.IUniform> = { uExists: { value: true } };
-  if (!level) return out;
   for (const n of level.offAxis) out[level.arrays[n] ? arrayUniform(n) : inputUniform(n)] = { value: level.arrays[n] ? new Array(MAX_LEN).fill(0) : 0 };
   return out;
 }
 
-export function setInputUniforms(u: Record<string, THREE.IUniform>, level: CompiledLevel | null, inputs: Inputs, exists: boolean): void {
+export function setInputUniforms(u: Record<string, THREE.IUniform>, level: CompiledLevel, inputs: Inputs, exists: boolean): void {
   u.uExists.value = exists;
-  if (!level) return;
   for (const n of level.offAxis) {
     const v = inputs[n];
     if (level.arrays[n]) {

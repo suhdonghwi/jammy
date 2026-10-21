@@ -66,7 +66,7 @@ export function AreaLayer({ level, inputs, inv, dim, showStop, showGoal, showEgg
 
   return (
     <group>
-      <Slabs version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
+      <Slabs level={level} version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
       {showEggs && <Eggs level={level} inputs={inputs} win={win} version={version} />}
       {showGoal && <GoalColumns level={level} inputs={inputs} win={win} version={version} />}
     </group>

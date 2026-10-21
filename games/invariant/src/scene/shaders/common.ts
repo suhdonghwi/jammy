@@ -93,11 +93,11 @@ interface NameLayout {
 const NO_NAME: NameLayout = { glyphs: [0, 0, 0], len: 0, mid: [0, 0, 0, 0], width: 0 };
 const layouts = new Map<string, NameLayout>();
 
-function nameLayout(name: string | undefined): NameLayout {
+function nameLayout(name: string): NameLayout {
   const key = `${name}|${atlasVersion}`;
   const known = layouts.get(key);
   if (known) return known;
-  const glyphs = [...(name ?? '')].map((c) => GLYPHS.indexOf(c));
+  const glyphs = [...name].map((c) => GLYPHS.indexOf(c));
   let out = NO_NAME;
   if (glyphs.length && glyphs.length <= 3 && !glyphs.includes(-1)) {
     const mid: number[] = [];
@@ -112,9 +112,9 @@ function nameLayout(name: string | undefined): NameLayout {
   return out;
 }
 
-export function setAxisNames(u: Record<string, THREE.IUniform>, level: CompiledLevel | null) {
-  const x = nameLayout(level?.view.x);
-  const y = nameLayout(level?.view.y);
+export function setAxisNames(u: Record<string, THREE.IUniform>, level: CompiledLevel) {
+  const x = nameLayout(level.view.x);
+  const y = nameLayout(level.view.y);
   u.uNameX.value = x.glyphs;
   u.uNameXLen.value = x.len;
   u.uNameXMid.value = x.mid;

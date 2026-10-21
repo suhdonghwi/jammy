@@ -147,7 +147,7 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
   useGame.setState({ caption: action ? { text, tone, action, secondary: replay } : { text, tone, action: replay } });
 }
 
-export interface Outcome {
+interface Outcome {
   failing?: Rule;
   undecided: boolean;
 }

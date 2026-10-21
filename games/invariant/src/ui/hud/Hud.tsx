@@ -21,7 +21,7 @@ export function Hud() {
           <HoverReadout />
         </div>
       </div>
-      <div className="pointer-events-none! flex flex-col items-center *:w-full *:max-w-200 *:pointer-events-auto short:col-start-2 short:row-span-2 short:row-start-1 short:min-h-0 short:justify-end" data-frame="bottom">
+      <div className="pointer-events-none! flex flex-col items-center *:w-full *:max-w-200 *:pointer-events-auto short:col-start-2 short:row-span-2 short:row-start-1 short:min-h-0 short:justify-end" data-frame>
         <CaptionBar />
         <RevealSlot open={reveal.formula}>
           <FormulaBox />

@@ -71,7 +71,7 @@ export function CodePanel() {
   if (!shown) return null;
   return (
     <div
-      data-frame="top"
+      data-frame
       className={`${CARD} flex min-h-0 animate-slide-in px-4 [animation-delay:70ms] pt-3.25 pb-3 max-md:p-2.5 ${open ? 'flex-col' : 'flex-wrap items-center gap-x-3 gap-y-2'} ${spot === 'code' ? 'spotlight' : ''}`}
     >
       <button

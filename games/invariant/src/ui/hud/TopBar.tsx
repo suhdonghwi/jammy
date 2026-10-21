@@ -11,7 +11,7 @@ export function TopBar() {
   const tr = useT();
   if (!level) return null;
   return (
-    <div className="topbar pointer-events-none! flex animate-slide-in items-center" data-frame="top">
+    <div className="topbar pointer-events-none! flex animate-slide-in items-center" data-frame>
       <div className={PILLS}>
         <button
           className={button('quiet', 'icon')}

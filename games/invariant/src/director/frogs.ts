@@ -106,7 +106,7 @@ export function resetFrogs() {
   useGame.setState({ running: false, failMark: null });
 }
 
-export const FROG_LEAVE = 0.3;
+const FROG_LEAVE = 0.3;
 
 export async function dismissFrogs(kind?: FrogKind): Promise<void> {
   const going = frogWorld.frogs.filter((f) => !f.leave && (!kind || f.kind === kind));
