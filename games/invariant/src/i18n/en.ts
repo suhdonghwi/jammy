@@ -84,7 +84,7 @@ export const en = {
   rulesCard: {
     title: 'The three rules',
     intro:
-      'Initialization and Maintenance make your area’s claim true; Termination proves the postcondition from it.',
+      'With Initialization and Maintenance, every frog always stays on your area. Add Termination, and every frog stops on a goal.',
     initialization: 'Every egg is on the area.',
     maintenance: 'Every hop lands on the area.',
     termination: 'Every stop on the area is a goal.',
