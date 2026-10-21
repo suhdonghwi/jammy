@@ -11,7 +11,7 @@ export function Hud() {
   const reveal = useGame((s) => s.reveal);
   const levelId = useGame((s) => s.level?.id);
   return (
-    <div className="pointer-events-none fixed inset-0 flex flex-col gap-3 px-4 pt-3.5 pb-4 *:pointer-events-auto compact:gap-2 compact:p-2.5 short:grid short:grid-cols-[minmax(0,1fr)_minmax(0,min(23rem,46%))] short:grid-rows-[auto_minmax(0,1fr)]">
+    <div className="pointer-events-none fixed inset-0 flex flex-col gap-3 px-4 pt-3.5 pb-4 *:pointer-events-auto compact:gap-2 compact:p-2.5 short:grid short:grid-cols-[minmax(0,1fr)_min(23rem,max(20rem,46%))] short:grid-rows-[auto_minmax(0,1fr)]">
       <TopBar />
       <div className="pointer-events-none! relative flex min-h-0 flex-1 items-start gap-3 *:pointer-events-auto compact:gap-2 short:col-start-1 short:row-start-2">
         <div className="pointer-events-none! flex max-h-full min-h-0 max-w-105 flex-col *:pointer-events-auto max-md:max-w-64">

@@ -14,12 +14,12 @@ const VARIANTS: Record<Variant, string> = {
   glass: 'border border-transparent bg-glass/50 text-muted backdrop-blur-sm enabled:hover:bg-glass/70 enabled:hover:text-ink enabled:active:translate-y-px',
   toy: 'mb-1 bg-white text-ink shadow-toy enabled:hover:bg-sky enabled:active:translate-y-[3px] enabled:active:shadow-toy-pressed',
   primary: 'mb-1 bg-brand text-white shadow-toy-brand enabled:hover:bg-brand-light enabled:active:translate-y-[3px] enabled:active:shadow-toy-brand-pressed',
-  check: 'relative -top-[1.5px] bg-brand pl-4.5 pr-5 py-2 max-sm:pl-3.5 max-sm:pr-4 text-md font-semibold text-white shadow-[0_3px_0_var(--color-brand-deep)] enabled:hover:bg-brand-light enabled:active:translate-y-px',
+  check: 'relative -top-[1.5px] bg-brand pl-4.5 pr-5 py-2 compact:pl-3.5 compact:pr-4 text-md compact:text-sm font-semibold text-white shadow-[0_3px_0_var(--color-brand-deep)] enabled:hover:bg-brand-light enabled:active:translate-y-px',
 };
 
 const SIZES: Record<Size, string> = {
   sm: 'px-3.5 py-1.5 text-sm font-medium',
-  md: 'px-4 py-2 text-md font-medium max-sm:px-3 max-[22.5rem]:px-2.5',
+  md: 'px-4 py-2 text-md font-medium compact:px-3 compact:py-1.75 compact:text-sm max-[22.5rem]:px-2.5',
   lg: 'min-w-44 px-8 py-3.5 text-xl font-semibold max-sm:min-w-0 max-sm:flex-1 max-sm:px-4 max-sm:text-lg',
   icon: 'size-9',
   none: '',

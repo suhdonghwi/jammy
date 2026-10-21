@@ -5,7 +5,7 @@ export function Markdown({ text }: { text: string }) {
   return <>{blocks.map((b, i) => renderBlock(b, i))}</>;
 }
 
-const gap = (key: number) => (key > 0 ? 'mt-2.5 max-sm:mt-2' : '');
+const gap = (key: number) => (key > 0 ? 'mt-2.5 compact:mt-2' : '');
 
 function renderBlock(block: string, key: number): ReactNode {
   const lines = block.split('\n');
