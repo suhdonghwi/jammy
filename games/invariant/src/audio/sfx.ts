@@ -29,7 +29,7 @@ export function setMuted(muted: boolean) {
 const VOLUME = 0.6;
 const SIREN_GAIN = 0.06;
 const TICK_GAIN = 0.05;
-const TICK_BASE = 880;
+const TICK_BASE = 1000;
 const LANDING_GAIN = 0.05;
 
 const URLS = import.meta.glob('../assets/sfx/*.m4a', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
@@ -170,18 +170,16 @@ export const sfx = {
     if (!c) return;
     offsets.forEach((offset, step) => {
       const at = c.currentTime + Math.max(0, offset);
-      const f = TICK_BASE * semitones(PENTA[step % 5] + 12 * Math.floor(step / 5));
       const osc = c.createOscillator();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(f * 1.5, at);
-      osc.frequency.exponentialRampToValueAtTime(f, at + 0.025);
+      osc.type = 'sine';
+      osc.frequency.value = TICK_BASE * semitones(PENTA[step % 5] + 12 * Math.floor(step / 5));
       const g = c.createGain();
       g.gain.setValueAtTime(0, at);
-      g.gain.linearRampToValueAtTime(TICK_GAIN, at + 0.003);
-      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.09);
+      g.gain.linearRampToValueAtTime(TICK_GAIN, at + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.07);
       osc.connect(g).connect(master!);
       osc.start(at);
-      osc.stop(at + 0.1);
+      osc.stop(at + 0.08);
     });
   },
 
