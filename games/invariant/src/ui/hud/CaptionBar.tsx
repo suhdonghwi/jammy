@@ -33,7 +33,7 @@ export function CaptionBar() {
           </div>
         )}
       </div>
-      {(caption.secondary || caption.action || caption.choices || back) && (
+      {(caption.secondary || caption.action || caption.choices || caption.close || back) && (
         <div className="flex min-h-8.5 flex-wrap items-center justify-end gap-1.5">
           {back && (
             <button className={button('quiet', 'sm')} onClick={back}>
@@ -48,6 +48,12 @@ export function CaptionBar() {
               {c.label}
             </button>
           ))}
+          {caption.close && (
+            <button className={button('quiet', 'sm')} onClick={caption.close}>
+              <X size={15} strokeWidth={2.4} />
+              {tr.caption.close}
+            </button>
+          )}
           {caption.secondary && (
             <button className={button('quiet', 'sm')} onClick={caption.secondary.onClick}>
               <RotateCcw size={15} strokeWidth={2.4} />

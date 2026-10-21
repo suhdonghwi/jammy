@@ -35,6 +35,7 @@ export const en = {
     back: 'Back',
     next: 'Next',
     replay: 'Replay',
+    close: 'Close',
     yes: 'Yes',
     no: 'No',
   },

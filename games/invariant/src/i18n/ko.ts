@@ -35,6 +35,7 @@ export const ko: Messages = {
     back: '이전',
     next: '다음',
     replay: '다시 보기',
+    close: '닫기',
     yes: '예',
     no: '아니요',
   },

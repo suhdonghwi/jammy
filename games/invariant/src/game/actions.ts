@@ -54,6 +54,7 @@ function showHints(shown: number) {
       text,
       tone: 'info',
       action: shown < hints.length ? { label: t().level.anotherHint, onClick: () => showHints(shown + 1) } : undefined,
+      close: () => useGame.setState({ caption: null }),
     },
   });
 }
