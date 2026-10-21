@@ -33,9 +33,29 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        background: #f4f6fa;
         pointer-events: none;
+        transition: opacity 0.45s ease-out;
+      }
+      html[data-started] #boot {
+        opacity: 0;
+      }
+      #boot div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
         animation: boot-in 0.4s ease-out 1s both;
+      }
+      #boot span {
+        display: flex;
+        gap: 10px;
+      }
+      #boot p {
+        margin: 0;
+        font: 600 14px 'Nunito Variable', ui-rounded, system-ui, sans-serif;
+        letter-spacing: 0.02em;
+        color: #66708a;
       }
       #boot i {
         width: 14px;
@@ -75,7 +95,13 @@
   </head>
   <body>
     <div id="root"></div>
-    <div id="boot" role="status" aria-label="Loading"><i></i><i></i><i></i></div>
+    <div id="boot" role="status"><div><span><i></i><i></i><i></i></span><p>Loading…</p></div></div>
+    <script>
+      try {
+        const lang = localStorage.getItem('invariant-frog:lang') ?? (navigator.language.toLowerCase().startsWith('ko') ? 'ko' : 'en');
+        if (lang === 'ko') document.querySelector('#boot p').textContent = '불러오는 중…';
+      } catch {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -55,7 +55,8 @@ export const sceneStarted = () => started;
 export function startScene() {
   if (started) return;
   started = true;
-  document.getElementById('boot')?.remove();
+  const boot = document.getElementById('boot');
+  boot?.addEventListener('transitionend', () => boot.remove(), { once: true });
   const html = document.documentElement;
   html.dataset.started = '';
   delete html.dataset.leaving;
