@@ -7,7 +7,7 @@
     { "source": "/invariant", "destination": "/invariant/", "permanent": true },
     { "source": "/((?!invariant(?:/|$)|ribbit/).+)", "destination": "/", "permanent": false }
   ],
-  "rewrites": [{ "source": "/ribbit/:path*", "destination": "/_vercel/insights/:path*" }],
+  "rewrites": [{ "source": "/ribbit/:path*", "destination": "https://jammy.fun/_vercel/insights/:path*" }],
   "headers": [
     {
       "source": "/invariant(/.*)?",
