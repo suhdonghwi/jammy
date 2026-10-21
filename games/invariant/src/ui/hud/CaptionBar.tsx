@@ -15,7 +15,7 @@ const TONE: Record<CaptionTone, string> = {
 export function CaptionBar() {
   const { value: caption, leaving } = useLingering(useGame((s) => s.caption));
   const pitfall = useGame((s) => s.pitfallMessage);
-  const back = useGame((s) => (s.mode === 'tutorial' ? s.back : null));
+  const back = useGame((s) => (s.mode === 'tutorial' ? s.tutorial.back : null));
   const tr = useT();
   if (!caption) return null;
   const replay = caption.action?.label === tr.caption.replay;

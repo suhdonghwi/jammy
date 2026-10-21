@@ -125,7 +125,7 @@ export function placeFrog(s: State, opts: Partial<FrogSim> = {}): FrogSim {
 export async function stepFrogs(scripted = false) {
   const g = useGame.getState();
   if (g.busy || g.running || g.stepping) return;
-  if (!scripted && g.mode === 'tutorial' && !g.tutorialAllow.step) return;
+  if (!scripted && g.mode === 'tutorial' && !g.tutorial.allow.step) return;
   if (movingFrogs().length === 0 && !frogWorld.frogs.some((f) => f.kind === 'real')) {
     const eggs = eggStatesNear(1, 6);
     if (eggs.length) hatch(eggs[0]);
@@ -138,7 +138,7 @@ export async function stepFrogs(scripted = false) {
 export async function runFrogs() {
   const g = useGame.getState();
   if (g.busy || g.running || g.stepping) return;
-  if (g.mode === 'tutorial' && !g.tutorialAllow.run) return;
+  if (g.mode === 'tutorial' && !g.tutorial.allow.run) return;
   const tok = begin();
   useGame.setState({ failMark: null, running: true });
   void dismissFrogs('test');
@@ -190,7 +190,7 @@ async function runEgg(s: State) {
 export function tileClickable(x: number, y: number): boolean {
   const g = useGame.getState();
   if (g.busy || !g.reveal.eggs || !g.level) return false;
-  if (g.mode === 'tutorial' && !g.tutorialAllow.eggs) return false;
+  if (g.mode === 'tutorial' && !g.tutorial.allow.eggs) return false;
   if (frogWorld.hatched.has(`${x},${y}`)) return false;
   return eggsNear(g.level, g.inputs, x, y, 0).some(([ex, ey]) => ex === x && ey === y);
 }

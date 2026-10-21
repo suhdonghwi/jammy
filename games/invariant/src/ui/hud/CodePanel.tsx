@@ -52,7 +52,7 @@ export function CodePanel() {
   const level = useGame((s) => s.level)!;
   const cursor = useGame((s) => s.codeCursor);
   const shown = useGame((s) => s.reveal.code);
-  const spotLines = useGame((s) => s.spotLines);
+  const spotLines = useGame((s) => s.tutorial.spotLines);
   const inputHover = useGame((s) => s.inputHover);
   const impossible = useGame((s) => !planeExists(level, s.inputs));
   const stops = cursor?.loops === false;
@@ -60,7 +60,7 @@ export function CodePanel() {
     () => highlightSource(level, { spotLines, inputHover, impossible, cursor }),
     [level, spotLines, inputHover, impossible, cursor],
   );
-  const spot = useGame((s) => s.spotlight);
+  const spot = useGame((s) => s.tutorial.spotlight);
   const tutorial = useGame((s) => s.mode === 'tutorial');
   const compact = useMedia(COMPACT);
   const [folded, setFolded] = useState<boolean | null>(null);

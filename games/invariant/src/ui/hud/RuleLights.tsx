@@ -10,7 +10,7 @@ export function RuleLights() {
   const verdicts = useGame((s) => s.verdicts);
   const pending = useGame((s) => s.pending);
   const busy = useGame((s) => s.busy);
-  const spot = useGame((s) => s.spotlight);
+  const spot = useGame((s) => s.tutorial.spotlight);
   const tr = useT();
   if (!lights.length) return null;
   return (
