@@ -45,9 +45,12 @@ export function eggsNear(level: CompiledLevel, inputs: Inputs, cx: number, cy: n
 
 export function tilesNear<T>(level: CompiledLevel, inputs: Inputs, { cx, cy, R }: TileWindow, pick: (s: FastState, x: number, y: number) => T | undefined): T[] {
   const out: T[] = [];
+  const s = tileState(level, cx, cy, inputs);
   for (let y = cy - R; y <= cy + R; y++) {
+    s[level.view.y] = y;
     for (let x = cx - R; x <= cx + R; x++) {
-      const v = pick(tileState(level, x, y, inputs), x, y);
+      s[level.view.x] = x;
+      const v = pick(s, x, y);
       if (v !== undefined) out.push(v);
     }
   }
