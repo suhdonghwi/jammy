@@ -227,6 +227,16 @@ export const cameraRig = {
     }
   },
   async zoomTo(distance: number) {
+    if (pending) {
+      const p = pending;
+      await new Promise<void>((resolve) => {
+        const done = p.done;
+        p.done = () => {
+          done();
+          resolve();
+        };
+      });
+    }
     if (!controls) return;
     await controls.dollyTo(distance, true);
   },

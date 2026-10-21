@@ -47,6 +47,7 @@ export function resetProgress() {
 const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
 const DRAW = { ...WORLD, formula: true, area: true, lights: RULES };
 export const VIEW: View = [2, 2, 15.6];
+const PROOF_VIEW: View = [2, 2, 18];
 const BOARD: Tile[] = [[0, 0], [0, 4], [4, 4]];
 
 const EXAMPLE = { axes: true, stop: true, hover: true, eggs: true, goals: true } as const;
@@ -385,7 +386,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { reveal: DRAW, formula: 'learner', focus: BOARD },
+    scene: { reveal: DRAW, formula: 'learner', camera: PROOF_VIEW, focus: BOARD },
     run: async (gen) => {
       await beat(gen, T().wrapUp(mine()), { label: T().finish, prepare: () => playProof() });
       useGame.setState({ showRules: true });
