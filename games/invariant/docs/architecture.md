@@ -121,8 +121,11 @@ agree. `pnpm validate` and the tests are the safety net.
   shifted only as far as the tiles need; without it, it moves only when
   the tiles don't fit. Tutorial steps, callouts,
   counterexamples, Run and a level's start all frame this way; don't call
-  `moveTo`/`dollyTo` for them directly. `Framing` re-checks the last shot when
-  the panels settle at a new size. Before a screen shows,
+  `moveTo`/`dollyTo` for them directly. A move waits until the panels have
+  been still for a moment (`SETTLE_MS`, just past a caption's exit), so it
+  is measured against the new caption, and requests made meanwhile merge
+  into one; the last shot is also re-checked whenever the panels settle at
+  a new size. Before a screen shows,
   placements snap; after, they glide. Use `arrive()` when something should
   start as the camera gets there (a hatch, a counterexample's frog) rather
   than after it comes to rest.

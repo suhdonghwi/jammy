@@ -1,5 +1,6 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { EXIT_MS } from '../hooks/presence';
 import { sceneStarted, sleep } from './sceneTime';
 
 export type Tile = readonly [number, number];
@@ -23,6 +24,8 @@ let size = { width: 1, height: 1 };
 let current: Shot | null = null;
 let reach = 60;
 let free: Rect = { left: 0, top: 0, right: 1, bottom: 1 };
+let layout = { key: '', changed: 0, settled: true };
+let pending: { shot: Shot; since: number; done: () => void } | null = null;
 
 const tmp = new THREE.Vector3();
 const point = new THREE.Vector3();
@@ -41,6 +44,7 @@ const MAX_DISTANCE = 60;
 const ZOOM_OUT = 1.6;
 const MIN_FREE = 150;
 const ARRIVING_MS = 450;
+const SETTLE_MS = EXIT_MS + 100;
 
 const area = (r: Rect) => Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
 
@@ -148,8 +152,20 @@ function solve(x: number, y: number, d: number, shot: Shot, r: Rect): { x: numbe
 
 async function glide(x: number, y: number, d: number, smooth: boolean) {
   if (!controls) return;
-  smooth &&= sceneStarted();
   await Promise.all([controls.moveTo(x, 0, -y, smooth), controls.dollyTo(d, smooth)]);
+}
+
+function apply(shot: Shot, smooth: boolean): Promise<void> {
+  const r = safeRect();
+  const from = shot.at ? { x: shot.at[0], y: shot.at[1], d: shot.at[2] } : endView();
+  reach = Math.min(MAX_DISTANCE, from.d * ZOOM_OUT);
+  if (!shot.at && fits(from.x, from.y, from.d, shot, r)) return Promise.resolve();
+  const to = solve(from.x, from.y, from.d, shot, r);
+  return glide(to.x, to.y, to.d, smooth);
+}
+
+function keyOf(r: Rect): string {
+  return `${Math.round(r.left / 8)},${Math.round(r.top / 8)},${Math.round(r.right / 8)},${Math.round(r.bottom / 8)}`;
 }
 
 export const cameraRig = {
@@ -159,19 +175,12 @@ export const cameraRig = {
   get controls() {
     return controls;
   },
-  resize(width: number, height: number) {
-    size = { width, height };
-  },
   target(): THREE.Vector3 {
     if (!controls) return tmp.set(0, 0, 0);
     return controls.getTarget(tmp);
   },
   distance(): number {
     return controls ? controls.distance : 14;
-  },
-  measure(): string {
-    const r = (free = safeRect());
-    return `${Math.round(r.left / 8)},${Math.round(r.top / 8)},${Math.round(r.right / 8)},${Math.round(r.bottom / 8)}`;
   },
   get free(): Readonly<Rect> {
     return free;
@@ -183,15 +192,13 @@ export const cameraRig = {
     const r = safeRect();
     return ground((r.left + r.right) / 2, (r.top + r.bottom) / 2) ?? v;
   },
-  async frame(shot: Shot, smooth = true) {
+  frame(shot: Shot, smooth = true): Promise<void> {
     current = shot;
-    if (!controls) return;
-    const r = safeRect();
-    const from = shot.at ? { x: shot.at[0], y: shot.at[1], d: shot.at[2] } : endView();
-    reach = Math.min(MAX_DISTANCE, from.d * ZOOM_OUT);
-    if (!shot.at && fits(from.x, from.y, from.d, shot, r)) return;
-    const to = solve(from.x, from.y, from.d, shot, r);
-    return glide(to.x, to.y, to.d, smooth);
+    pending?.done();
+    pending = null;
+    if (!controls) return Promise.resolve();
+    if (!smooth || !sceneStarted()) return apply(shot, false);
+    return new Promise((done) => (pending = { shot, since: performance.now(), done }));
   },
   async arrive(shot: Shot) {
     await Promise.race([cameraRig.frame(shot), sleep(ARRIVING_MS)]);
@@ -200,13 +207,29 @@ export const cameraRig = {
     if (!labels.length) return;
     void cameraRig.frame({ ...current, labels: [...(current?.labels ?? []), ...labels] });
   },
-  reframe() {
-    if (!controls || !current || !tilesOf(current).length) return;
-    if (!sceneStarted()) return void cameraRig.frame(current);
-    const now = endView();
-    if (fits(now.x, now.y, now.d, current, safeRect())) return;
-    const to = solve(now.x, now.y, now.d, current, safeRect());
-    void glide(to.x, to.y, to.d, true);
+  tick(width: number, height: number, framing: boolean) {
+    size = { width, height };
+    if (!controls || !framing) return;
+    free = safeRect();
+    const now = performance.now();
+    const key = keyOf(free);
+    if (key !== layout.key) {
+      const shown = sceneStarted();
+      layout = { key, changed: now, settled: !shown };
+      if (!shown) {
+        if (current) void apply(current, false);
+        return;
+      }
+    }
+    if (pending && now - Math.max(pending.since, layout.changed) >= SETTLE_MS) {
+      const { shot, done } = pending;
+      pending = null;
+      layout.settled = true;
+      void apply(shot, true).then(done);
+    } else if (!pending && !layout.settled && now - layout.changed >= SETTLE_MS) {
+      layout.settled = true;
+      if (current && tilesOf(current).length) void apply({ ...current, at: undefined }, true);
+    }
   },
   async zoomTo(distance: number) {
     if (!controls) return;
