@@ -21,18 +21,13 @@ const LANDING_GAIN = 0.05;
 
 const URLS = import.meta.glob('../assets/sfx/*.m4a', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 
-type Role = 'click' | 'hop' | 'land' | 'settle' | 'goal' | 'crack' | 'rise' | 'sink' | 'chime' | 'fail' | 'cleared';
+type Role = 'hop' | 'land' | 'rise' | 'sink' | 'fail' | 'cleared';
 
 const GAIN: Record<Role, number> = {
-  click: 0.35,
   hop: 0.4,
   land: 0.55,
-  settle: 0.25,
-  goal: 0.5,
-  crack: 0.45,
   rise: 0.35,
   sink: 0.25,
-  chime: 0.35,
   fail: 0.4,
   cleared: 0.45,
 };
@@ -118,10 +113,6 @@ let hopStep = 0;
 let lastHop = -Infinity;
 
 export const sfx = {
-  click() {
-    play('click');
-  },
-
   hop(count: number) {
     const now = performance.now();
     hopStep = now - lastHop > 1300 ? 0 : Math.min(hopStep + 1, TOP_STEP);
@@ -130,29 +121,18 @@ export const sfx = {
     play('hop', { gain: 1 + Math.min(Math.log2(count), 4) * 0.1, rate: semitones(semis) });
   },
 
-  land(stopped: boolean) {
+  land() {
     play('land', { rate: wobble() });
-    if (stopped) play('settle', { at: 0.1 });
-  },
-
-  goal() {
-    if (!gap('goal', 70)) return;
-    play('goal', { rate: wobble(0.08) });
   },
 
   hatch() {
     if (!gap('hatch', 40)) return;
-    play('crack', { rate: wobble(0.1) });
     play('hop', { gain: 0.6, rate: semitones(7), at: 0.2 });
   },
 
   slabs(rose: number, sank: number) {
     if ((!rose && !sank) || !gap('slabs', 120)) return;
     play(rose ? 'rise' : 'sink');
-  },
-
-  pass(i: number) {
-    play('chime', { rate: semitones([0, 4, 7][i] ?? 12) });
   },
 
   fail() {
@@ -216,12 +196,5 @@ if (typeof window !== 'undefined') {
   for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
     window.addEventListener(type, start, { capture: true });
   }
-  window.addEventListener(
-    'click',
-    (e) => {
-      if ((e.target as Element | null)?.closest?.('button:not(:disabled):not([data-silent])')) sfx.click();
-    },
-    { capture: true },
-  );
   document.addEventListener('visibilitychange', syncRunning);
 }

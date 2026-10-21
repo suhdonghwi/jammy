@@ -1,5 +1,6 @@
 import { t as messages } from '../i18n/i18n';
-import type { Expr, Program, Span, Stmt } from './ast';
+import { freeVars, type Expr, type Program, type Span, type Stmt } from './ast';
+import { evaluate } from './eval';
 import { LangError } from './parser';
 
 type Type = 'int' | 'bool';
@@ -10,6 +11,16 @@ export const intScope = (names: Iterable<string>): Scope => new Map([...names].m
 
 const ARITH = new Set(['+', '-', '*', '/', '%']);
 const REL = new Set(['<', '<=', '>', '>=']);
+const MAX_CONSTANT_RANGE = 1000;
+
+function constantWidth(e: Extract<Expr, { kind: 'quant' }>): bigint | null {
+  if (freeVars(e.lo).size > 0 || freeVars(e.hi).size > 0) return null;
+  const lo = evaluate(e.lo, {}) as bigint;
+  const hi = evaluate(e.hi, {}) as bigint;
+  const first = e.ops[0] === '<' ? lo + 1n : lo;
+  const last = e.ops[e.ops.length - 1] === '<' ? hi - 1n : hi;
+  return last - first + 1n;
+}
 
 function typeOf(e: Expr, scope: Scope, src: string): Type {
   const E = messages().langErrors;
@@ -50,6 +61,10 @@ function typeOf(e: Expr, scope: Scope, src: string): Type {
       }
       want(e.lo, 'int', E.aBound);
       want(e.hi, 'int', E.aBound);
+      const width = constantWidth(e);
+      if (width !== null && width > BigInt(MAX_CONSTANT_RANGE)) {
+        throw new LangError(E.rangeTooWide(MAX_CONSTANT_RANGE), { from: e.lo.span.from, to: e.hi.span.to });
+      }
       const got = typeOf(e.body, inner, src);
       if (got !== 'bool') throw new LangError(E.needsCondition(text(e.body), e.q), e.body.span);
       return 'bool';

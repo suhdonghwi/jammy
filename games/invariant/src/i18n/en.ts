@@ -25,6 +25,14 @@ export const en = {
     source: 'Source on GitHub',
   },
 
+  trouble: {
+    webglTitle: 'This game needs 3D graphics',
+    webgl: 'Your browser couldn’t start WebGL 2. Turn on hardware acceleration in your browser’s settings, or try another browser, then reload the page.',
+    crashTitle: 'Something went wrong',
+    crash: 'The game ran into a problem it couldn’t recover from.',
+    reload: 'Reload',
+  },
+
   topBar: {
     home: 'Home',
     allLevels: 'All levels',
@@ -147,6 +155,7 @@ export const en = {
     notArray: (name: string) => `${name} is a number, not an array`,
     nameTaken: (name: string) => `'${name}' is already a name here; pick another for the bound name`,
     quantRange: (q: string) => `${q} needs a range, like \`${q} 0 <= k < n: …\``,
+    rangeTooWide: (max: number) => `This range is too wide to check: keep it to at most ${max} values`,
     quantName: 'The names in the middle of the range are the bound names, like `k` in `0 <= k < n`',
     needsNumber: (text: string, ctx: string) => `\`${text}\` is true/false, but ${ctx} needs a number`,
     needsCondition: (text: string, ctx: string) => `\`${text}\` is a number, but ${ctx} needs a true/false condition`,
@@ -155,6 +164,8 @@ export const en = {
     arity: (fn: string, n: number) => `${fn} takes ${n} argument${n > 1 ? 's' : ''}`,
     positiveDivisor: (op: string) => `'${op}' only works with a positive number on the right, like \`x ${op} 2\``,
     unexpectedChar: (c: string) => `Unexpected character '${c}'`,
+    doubleSlash: 'Use `/`: it already rounds down',
+    chainedEquality: (op: string) => `'${op}' can't be chained with other comparisons; add parentheses, like \`(x >= 0) ${op} (y >= 0)\``,
     expectedEnded: (text: string) => `Expected '${text}' but the input ended`,
     expectedFound: (text: string, found: string) => `Expected '${text}' but found '${found}'`,
     expected: (text: string) => `Expected '${text}'`,

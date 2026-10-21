@@ -164,7 +164,12 @@ language:
 - integers and booleans, strictly typed (a number is not a condition — the error
   says so and suggests a fix);
 - `+ - * / %`, comparisons, `&& || !`, `abs`, `min`, `max`;
-- **chained comparisons**: `0 <= i <= n` means `0 <= i && i <= n`;
+- **chained comparisons**: `0 <= i <= n` means `0 <= i && i <= n`; only
+  `< <= > >=` chain, and `==` or `!=` in a chain is an error asking for
+  parentheses (`x >= 0 == y >= 0` would otherwise silently mean something
+  else);
+- `//` is an error pointing at `/`, which already rounds down (a line comment
+  would quietly drop the rest of the formula);
 - **mathematical integers**: unbounded, no overflow;
 - **`/` and `%` only by positive number literals**; `%` is Euclidean (always
   `0..k-1`) and `/` the matching floor division. This removes division by zero
@@ -179,7 +184,10 @@ language:
   comparisons whose inner names are the bound names (`forall 0 <= j <= k < n:
   A[j] <= A[k]` binds two, which is how sortedness is written so the solver
   needs no induction), and the body is one comparison (parenthesise more). A
-  bound name may not be a name the program already uses.
+  bound name may not be a name the program already uses. A range with
+  constant bounds wider than 1000 values is refused; any other range is
+  evaluated up to a total budget per formula and tile, past which the tile
+  simply reads as outside the area (the proof still goes to Z3).
 
 While typing, the slabs follow the last valid formula; errors appear only once
 typing pauses, underlined in place.

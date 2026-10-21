@@ -10,7 +10,13 @@ export function euclidMod(a: bigint, k: bigint): bigint {
   return r < 0n ? r + k : r;
 }
 
-const MAX_RANGE = 100_000;
+export const EVAL_BUDGET = 4096;
+
+export class OverBudget extends Error {
+  constructor() {
+    super('over budget');
+  }
+}
 
 type Value = bigint | boolean;
 
@@ -19,6 +25,10 @@ function cell(arr: bigint[], k: bigint): bigint {
 }
 
 export function evaluate(e: Expr, s: State): Value {
+  return ev(e, s, { left: EVAL_BUDGET });
+}
+
+function ev(e: Expr, s: State, meter: { left: number }): Value {
   switch (e.kind) {
     case 'num': return e.value;
     case 'bool': return e.value;
@@ -30,22 +40,22 @@ export function evaluate(e: Expr, s: State): Value {
     case 'index': {
       const arr = s[e.array];
       if (!Array.isArray(arr)) throw new Error(`unbound array ${e.array}`);
-      return cell(arr, evaluate(e.index, s) as bigint);
+      return cell(arr, ev(e.index, s, meter) as bigint);
     }
     case 'quant': {
-      const lo = evaluate(e.lo, s) as bigint;
-      const hi = evaluate(e.hi, s) as bigint;
+      const lo = ev(e.lo, s, meter) as bigint;
+      const hi = ev(e.hi, s, meter) as bigint;
       const first = e.ops[0] === '<' ? lo + 1n : lo;
       const last = e.ops[e.ops.length - 1] === '<' ? hi - 1n : hi;
-      if (last - first > BigInt(MAX_RANGE)) throw new Error(`a range of more than ${MAX_RANGE} values`);
       const inner: State = { ...s };
       const go = (k: number, prev: bigint): boolean => {
         if (k === e.vars.length) {
           if (!(e.ops[k] === '<' ? prev < hi : prev <= hi)) return e.q === 'forall';
-          return evaluate(e.body, inner) === true;
+          return ev(e.body, inner, meter) === true;
         }
         const from = k === 0 ? first : e.ops[k] === '<' ? prev + 1n : prev;
         for (let v = from; v <= last; v++) {
+          if (--meter.left < 0) throw new OverBudget();
           inner[e.vars[k]] = v;
           const r = go(k + 1, v);
           if (e.q === 'forall' ? !r : r) return r;
@@ -55,22 +65,22 @@ export function evaluate(e: Expr, s: State): Value {
       return go(0, lo);
     }
     case 'unary': {
-      const a = evaluate(e.arg, s);
+      const a = ev(e.arg, s, meter);
       return e.op === '-' ? -(a as bigint) : !(a as boolean);
     }
     case 'call': {
-      const a = e.args.map((x) => evaluate(x, s) as bigint);
+      const a = e.args.map((x) => ev(x, s, meter) as bigint);
       if (e.fn === 'abs') return a[0] < 0n ? -a[0] : a[0];
       if (e.fn === 'min') return a[0] < a[1] ? a[0] : a[1];
       return a[0] > a[1] ? a[0] : a[1];
     }
     case 'ite':
-      return evaluate(e.cond, s) ? evaluate(e.then, s) : evaluate(e.else, s);
+      return ev(e.cond, s, meter) ? ev(e.then, s, meter) : ev(e.else, s, meter);
     case 'binary': {
-      if (e.op === '&&') return (evaluate(e.left, s) as boolean) && (evaluate(e.right, s) as boolean);
-      if (e.op === '||') return (evaluate(e.left, s) as boolean) || (evaluate(e.right, s) as boolean);
-      const l = evaluate(e.left, s);
-      const r = evaluate(e.right, s);
+      if (e.op === '&&') return (ev(e.left, s, meter) as boolean) && (ev(e.right, s, meter) as boolean);
+      if (e.op === '||') return (ev(e.left, s, meter) as boolean) || (ev(e.right, s, meter) as boolean);
+      const l = ev(e.left, s, meter);
+      const r = ev(e.right, s, meter);
       switch (e.op) {
         case '+': return (l as bigint) + (r as bigint);
         case '-': return (l as bigint) - (r as bigint);
@@ -163,9 +173,9 @@ export function compileFast(e: Expr): FastFn {
           const v = `s[${JSON.stringify(e.vars[k])}]`;
           const from = k === 0 ? (e.ops[0] === '<' ? `${lo}+1` : lo) : e.ops[k] === '<' ? `s[${JSON.stringify(e.vars[k - 1])}]+1` : `s[${JSON.stringify(e.vars[k - 1])}]`;
           const to = e.ops[e.ops.length - 1] === '<' ? `${hi}-1` : hi;
-          inner = `for(let k=${from};k<=${to};k++){${v}=k;${inner}}`;
+          inner = `for(let k=${from};k<=${to};k++){if(--m.left<0)throw over;${v}=k;${inner}}`;
         }
-        return `((s)=>{const ${lo}=${go(e.lo)},${hi}=${go(e.hi)};if(${hi}-${lo}>${MAX_RANGE})throw new Error("range");s={...s};${inner}return ${all};})(s)`;
+        return `((s)=>{const ${lo}=${go(e.lo)},${hi}=${go(e.hi)};s={...s};${inner}return ${all};})(s)`;
       }
       case 'unary': return `(${e.op}${go(e.arg)})`;
       case 'call':
@@ -185,6 +195,21 @@ export function compileFast(e: Expr): FastFn {
       }
     }
   };
-  const f = new Function('cell', 's', `return ${go(e)};`) as (cell: typeof fastCell, s: FastState) => number | boolean;
-  return (s) => f(fastCell, s);
+  const body = go(e);
+  if (tmp === 0) {
+    const f = new Function('cell', 's', `return ${body};`) as (cell: typeof fastCell, s: FastState) => number | boolean;
+    return (s) => f(fastCell, s);
+  }
+  const f = new Function('cell', 'm', 'over', 's', `return ${body};`) as (cell: typeof fastCell, m: { left: number }, over: OverBudget, s: FastState) => number | boolean;
+  const meter = { left: 0 };
+  const over = new OverBudget();
+  return (s) => {
+    meter.left = EVAL_BUDGET;
+    try {
+      return f(fastCell, meter, over, s);
+    } catch (err) {
+      if (err === over) return NaN;
+      throw err;
+    }
+  };
 }

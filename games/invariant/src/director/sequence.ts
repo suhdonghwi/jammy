@@ -6,6 +6,7 @@ export interface Token {
 }
 
 let current = 0;
+let currentCheck = 0;
 
 export function begin(): Token {
   const id = ++current;
@@ -14,6 +15,19 @@ export function begin(): Token {
       return id === current;
     },
   };
+}
+
+export function beginCheck(): Token {
+  const id = ++currentCheck;
+  return {
+    get alive() {
+      return id === currentCheck;
+    },
+  };
+}
+
+export function abandonCheck() {
+  currentCheck++;
 }
 
 export const currentLevel = (): CompiledLevel => useGame.getState().level!;

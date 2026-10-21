@@ -1,4 +1,3 @@
-import { sfx } from '../../audio/sfx';
 import type { State } from '../../lang/ast';
 import { holds, step } from '../../lang/eval';
 import { inputsOf, planeKey, type CompiledLevel } from '../../levels/level';
@@ -114,16 +113,15 @@ class FrogWorld {
         f.y = ty;
         f.hop = undefined;
         f.face = facingFor(level, next, f.face);
-        if (batch) landInBatch(batch, holds(level.guard, next));
-        if (!holds(level.guard, next) && holds(level.post, next)) this.landOnGoal(f, quiet);
+        if (batch) landInBatch(batch);
+        if (!holds(level.guard, next) && holds(level.post, next)) this.landOnGoal(f);
         res();
       }),
     );
   }
 
-  landOnGoal(f: FrogSim, quiet = false) {
+  landOnGoal(f: FrogSim) {
     goalEvents.push(f.x, f.y, f.plane);
-    if (!quiet) sfx.goal();
     f.cheerT0 = sceneNow();
   }
 }

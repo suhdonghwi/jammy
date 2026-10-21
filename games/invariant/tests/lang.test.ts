@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { show } from '../src/lang/ast';
-import { compileFast, evaluate, euclidMod, floorDiv, step } from '../src/lang/eval';
+import { compileFast, evaluate, euclidMod, floorDiv, OverBudget, step } from '../src/lang/eval';
 import { LangError, parseFormula, parseProgram } from '../src/lang/parser';
 import { checkCondition, checkProgram, intScope, type Scope } from '../src/lang/typecheck';
 
@@ -26,6 +26,23 @@ describe('parser', () => {
     expect(p.inputs).toEqual(['n']);
     const s = step(p.loop.body, { n: 10n, i: 2n });
     expect(s.i).toBe(5n);
+  });
+  it('refuses // in a formula, which would round down twice', () => {
+    expect(() => parseFormula('i <= n//2')).toThrow(/Use `\/`/);
+    expect(() => parseFormula('i <= n // 2')).toThrow(LangError);
+    expect(show(parseFormula('i <= n / 2'))).toBe('i <= n / 2');
+  });
+  it('still skips // comments in programs', () => {
+    const p = parseProgram(`input n; // the input\nvar i = 0; while (i < n) { i++; } ensures i == n;`);
+    expect(p.inputs).toEqual(['n']);
+  });
+  it('only chains orderings, not == or !=', () => {
+    expect(() => parseFormula('x >= 0 == y >= 0')).toThrow(/parentheses/);
+    expect(() => parseFormula('a == b == c')).toThrow(LangError);
+    expect(() => parseFormula('0 <= i != n')).toThrow(/'!='/);
+    expect(show(parseFormula('a == b'))).toBe('a == b');
+    expect(show(parseFormula('(x >= 0) == (y >= 0)'))).toBe('(x >= 0) == (y >= 0)');
+    expect(show(parseFormula('0 <= i < n'))).toBe('0 <= i && i < n');
   });
   it('forbids assigning inputs', () => {
     const p = parseProgram(`input n; var i = 0; while (i < n) { n = n - 1; }`);
@@ -71,6 +88,42 @@ describe('arrays and quantifiers', () => {
     checkProgram(p);
     expect(p.arrays).toEqual({ A: 'n' });
     expect(() => checkProgram(parseProgram(`input A[n]; input n; var i = 0; while (i < n) { i++; }`))).toThrow(/before the array/);
+  });
+});
+
+describe('quantifier ranges', () => {
+  const scope: Scope = new Map([
+    ['A', 'array'],
+    ['n', 'int'],
+    ['i', 'int'],
+    ['m', 'int'],
+  ]);
+  const s = { A: [3n, 1n, 4n], n: 3n, i: 2n, m: 5n };
+  const fs = { A: [3, 1, 4], n: 3, i: 2, m: 5 };
+  const check = (src: string) => checkCondition(parseFormula(src), scope, src, 'an area');
+  it('refuses constant ranges too wide to check', () => {
+    expect(() => check('forall 0 <= k < 200000: A[k] <= m')).toThrow(/too wide/);
+    expect(() => check('forall -5000 <= k <= 5000: A[k] <= m')).toThrow(/too wide/);
+    expect(() => check('forall 0 <= k < 1000: A[k] <= m')).not.toThrow();
+    expect(() => check('forall 0 <= k < n * 100000: A[k] <= m')).not.toThrow();
+  });
+  it('stops a wide range at a total budget instead of throwing or hanging', () => {
+    const wide = parseFormula('forall 0 <= k < n * 100000: A[k] <= m');
+    expect(Number.isNaN(compileFast(wide)(fs))).toBe(true);
+    expect(() => evaluate(wide, s)).toThrow(OverBudget);
+    const nested = parseFormula('forall 0 <= j < k < n * 100: A[j] <= A[k] + m');
+    expect(Number.isNaN(compileFast(nested)(fs))).toBe(true);
+    expect(() => evaluate(nested, s)).toThrow(OverBudget);
+  });
+  it('shares one budget across every quantifier in a formula', () => {
+    const one = 'forall 0 <= k < n * 1000: A[k] <= m';
+    expect(compileFast(parseFormula(one))(fs)).toBe(true);
+    expect(Number.isNaN(compileFast(parseFormula(`${one} && ${one}`))(fs))).toBe(true);
+  });
+  it('gives the same answers within the budget', () => {
+    const f = parseFormula('forall 0 <= j < k < n: A[j] <= A[k] + m');
+    expect(compileFast(f)(fs)).toBe(true);
+    expect(evaluate(f, s)).toBe(true);
   });
 });
 

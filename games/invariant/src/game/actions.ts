@@ -69,6 +69,8 @@ export async function check(): Promise<'refused' | void> {
   if (!res) return;
   const out = await playVerification(res, RULES, () => ({ extra: res.pitfall?.message }));
   if (!out || out.failing) return;
+  const now = useGame.getState();
+  if (now.level !== g.level || now.valid !== g.valid) return;
   if (out.undecided) {
     const tip = g.formulaText.includes('/') ? t().level.avoidDivision : '';
     showUndecided(`${t().level.undecided}${tip}`);
@@ -77,7 +79,6 @@ export async function check(): Promise<'refused' | void> {
   const level = g.level;
   markCleared(level.id);
   const others = otherAnswers(level.solutions, g.formulaText);
-  if (useGame.getState().level !== level) return;
   const next = levels[levels.findIndex((l) => l.id === level.id) + 1];
   sfx.cleared();
   useGame.setState({

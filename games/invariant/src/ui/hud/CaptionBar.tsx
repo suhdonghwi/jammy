@@ -16,6 +16,7 @@ export function CaptionBar() {
   const { value: caption, leaving } = useLingering(useGame((s) => s.caption));
   const pitfall = useGame((s) => s.pitfallMessage);
   const back = useGame((s) => (s.mode === 'tutorial' ? s.tutorial.back : null));
+  const replayLocked = useGame((s) => s.busy || s.checking);
   const tr = useT();
   if (!caption) return null;
   const replay = caption.action?.label === tr.caption.replay;
@@ -55,13 +56,13 @@ export function CaptionBar() {
             </button>
           )}
           {caption.secondary && (
-            <button className={button('quiet', 'sm')} onClick={caption.secondary.onClick}>
+            <button className={button('quiet', 'sm')} disabled={replayLocked} onClick={caption.secondary.onClick}>
               <RotateCcw size={15} strokeWidth={2.4} />
               {caption.secondary.label}
             </button>
           )}
           {caption.action && (
-            <button className={button('primary', 'sm')} disabled={caption.action.disabled} onClick={() => caption.action!.onClick()}>
+            <button className={button('primary', 'sm')} disabled={caption.action.disabled || (replay && replayLocked)} onClick={() => caption.action!.onClick()}>
               {replay ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
               {caption.action.label}
               {!replay ? <ArrowRight size={15} strokeWidth={2.4} /> : null}

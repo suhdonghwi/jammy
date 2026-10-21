@@ -5,7 +5,7 @@ import type { Z3LowLevel } from 'z3-solver';
 // mid-check corrupts the heap. So dec_refs are queued while a check runs.
 type LowLevel = Z3LowLevel['Z3'];
 
-let solving = false;
+let solving = 0;
 const queued: (() => void)[] = [];
 
 export function guardDecRefs(Z3: LowLevel): void {
@@ -21,11 +21,10 @@ export function guardDecRefs(Z3: LowLevel): void {
 }
 
 export async function whileSolving<T>(run: () => Promise<T>): Promise<T> {
-  solving = true;
+  solving++;
   try {
     return await run();
   } finally {
-    solving = false;
-    for (const f of queued.splice(0)) f();
+    if (--solving === 0) for (const f of queued.splice(0)) f();
   }
 }

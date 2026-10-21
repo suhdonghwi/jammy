@@ -173,7 +173,7 @@ export function show(e: Expr): string {
       case 'ite': return `(${go(e.cond, 0)} ? ${go(e.then, 0)} : ${go(e.else, 0)})`;
       case 'binary': {
         const p = prec[e.op];
-        const s = `${go(e.left, p)} ${e.op} ${go(e.right, p + 1)}`;
+        const s = `${go(e.left, COMPARISON_OPS.has(e.op) ? p + 1 : p)} ${e.op} ${go(e.right, p + 1)}`;
         return p < ctx ? `(${s})` : s;
       }
     }
