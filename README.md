@@ -1,18 +1,22 @@
 # jammy.fun
 
-The hub for jammy.fun. It owns the domain and forwards each game's path to
-that game's own Vercel project (see `vercel.json`):
+The landing page for jammy.fun.
 
-| Path          | Project                                |
+The whole site is one Vercel project, deployed from the repository root
+(see `/vercel.json`). `pnpm build` at the root assembles it in `dist/`:
+
+| Path          | From                                   |
 | ------------- | -------------------------------------- |
-| `/invariant/` | [invariant-frog](../games/invariant/)  |
+| `/`           | `hub/index.html`                       |
+| `/invariant/` | [Invariant Frog](../games/invariant/)'s build |
 
-Each game builds with its path as Vite's `base` and serves itself under it,
-so its own `*.vercel.app` URL (and preview deployments) work at the same path.
+Each game builds with its path as Vite's `base`. One deployment serves the
+landing page and every game together, so a page and the assets it asks for
+always come from the same build.
 
 www.jammy.fun redirects to jammy.fun through the domain's own settings in
 Vercel (Project → Domains), not through `vercel.json`.
 
 Any other path redirects to the landing page (a temporary redirect, so a game
-added later at a new path is never shadowed by a cached one). Paths a game
-doesn't have reach that game, whose `404.html` sends the visitor here too.
+added later at a new path is never shadowed by a cached one). A path under a
+game that doesn't exist gets `404.html`, which sends the visitor here too.
