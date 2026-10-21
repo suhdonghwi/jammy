@@ -1,4 +1,3 @@
-import { QuadraticBezierLine } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
@@ -6,7 +5,8 @@ import { useGame } from '../../game/store';
 import type { FastState } from '../../lang/eval';
 import { tileState } from '../../levels/tiles';
 import { field } from '../area/field';
-import { COLORS, SLAB_H } from '../constants';
+import { SLAB_H } from '../constants';
+import { HopLine } from '../frogs/HopLine';
 import { useHover } from '../hover';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
@@ -42,22 +42,15 @@ export function HoverPreview() {
   });
 
   if (!enabled || !hop) return null;
-  const h0 = field.heightAt(hop.from[0], hop.from[1]) * SLAB_H;
-  const h1 = field.heightAt(hop.to[0], hop.to[1]) * SLAB_H;
-  const dist = Math.hypot(hop.to[0] - hop.from[0], hop.to[1] - hop.from[1]);
   return (
     <group>
-      <QuadraticBezierLine
-        start={[hop.from[0], h0 + 0.2, -hop.from[1]]}
-        end={[hop.to[0], h1 + 0.2, -hop.to[1]]}
-        mid={[(hop.from[0] + hop.to[0]) / 2, Math.max(h0, h1) + 1.1 + 0.25 * dist, -(hop.from[1] + hop.to[1]) / 2]}
-        color={COLORS.hover}
-        lineWidth={2.5}
-        dashed
-        dashSize={0.1}
-        gapSize={0.07}
-        transparent
-        opacity={0.85}
+      <HopLine
+        path={() => ({
+          from: [hop.from[0], hop.from[1], field.heightAt(hop.from[0], hop.from[1]) * SLAB_H],
+          to: [hop.to[0], hop.to[1], field.heightAt(hop.to[0], hop.to[1]) * SLAB_H],
+          drawn: 1,
+          opacity: 1,
+        })}
       />
       <group ref={ghost}>
         <mesh geometry={assets.geom} material={assets.depth} renderOrder={4} />

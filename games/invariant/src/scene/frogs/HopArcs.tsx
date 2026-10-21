@@ -1,20 +1,18 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useSyncExternalStore } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/level';
 import { field } from '../area/field';
 import { clamp01 } from '../easing';
-import { COLORS, SLAB_H } from '../constants';
+import { SLAB_H } from '../constants';
 import { ringGeometry, TONE_COLORS } from '../labels/TileTag';
 import { sceneNow } from '../sceneTime';
-import { frogWorld } from './frogWorld';
-import { hopHeight } from './motion';
+import { frogWorld, type FrogSim } from './frogWorld';
+import { HopLine } from './HopLine';
 
-const DOTS = 16;
 export const ARC_DRAW = 0.45;
 const MAX = 80;
-const LIFT = 0.22;
 
 interface Arc {
   frog: number;
@@ -28,14 +26,21 @@ interface Arc {
 }
 
 let arcs: Arc[] = [];
+const listeners = new Set<() => void>();
+const changed = () => listeners.forEach((l) => l());
 
 export const hopArcs = {
   add(a: Arc) {
-    arcs.push(a);
-    if (arcs.length > MAX) arcs.shift();
+    arcs = [...arcs, a].slice(-MAX);
+    changed();
   },
   clear() {
     arcs = [];
+    changed();
+  },
+  subscribe(l: () => void) {
+    listeners.add(l);
+    return () => void listeners.delete(l);
   },
 };
 
@@ -59,8 +64,8 @@ void main() {
 }
 `;
 
-function instancedParts(base: THREE.BufferGeometry, count: number) {
-  const g = base.clone();
+function instancedRings(count: number) {
+  const g = ringGeometry.clone();
   const color = new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3);
   const alpha = new THREE.InstancedBufferAttribute(new Float32Array(count), 1);
   g.setAttribute('aColor', color);
@@ -73,73 +78,70 @@ const m = new THREE.Matrix4();
 const q = new THREE.Quaternion();
 const pos = new THREE.Vector3();
 const scl = new THREE.Vector3();
-const DOT = new THREE.Color(COLORS.outline);
 const RING = new THREE.Color(TONE_COLORS.good);
 
+const fading = (frog: FrogSim | undefined, t: number) => (frog?.leave ? 1 - clamp01((t - frog.leave.t0) / frog.leave.dur) : 1);
+
+function GhostHop({ arc, plane }: { arc: Arc; plane: string }) {
+  return (
+    <HopLine
+      path={() => {
+        if (arc.plane !== plane) return null;
+        const frog = frogWorld.frogs.find((f) => f.id === arc.frog);
+        if (!frog) return null;
+        const t = sceneNow();
+        const fx = frog.drawn ? frog.drawn.x : arc.fx;
+        const fy = frog.drawn ? -frog.drawn.z : arc.fy;
+        return {
+          from: [fx, fy, field.heightAt(arc.fx, arc.fy) * SLAB_H],
+          to: [arc.tx, arc.ty, field.heightAt(arc.tx, arc.ty) * SLAB_H],
+          drawn: (t - arc.t0) / ARC_DRAW,
+          opacity: arc.fade * fading(frog, t),
+        };
+      }}
+    />
+  );
+}
+
 export function HopArcs() {
-  const dots = useRef<THREE.InstancedMesh>(null);
+  const list = useSyncExternalStore(hopArcs.subscribe, () => arcs);
   const rings = useRef<THREE.InstancedMesh>(null);
   const plane = useGame((s) => planeKey(s.inputs));
-  const parts = useMemo(
-    () => ({ dot: instancedParts(new THREE.SphereGeometry(0.045, 10, 8), MAX * DOTS), ring: instancedParts(ringGeometry, MAX) }),
-    [],
-  );
+  const parts = useMemo(() => instancedRings(MAX), []);
 
   useFrame(() => {
-    const d = dots.current;
     const r = rings.current;
-    if (!d || !r) return;
+    if (!r) return;
     const t = sceneNow();
     const ghosts = new Map(frogWorld.frogs.map((f) => [f.id, f]));
-    if (arcs.some((a) => !ghosts.has(a.frog))) arcs = arcs.filter((a) => ghosts.has(a.frog));
-    let nd = 0;
+    if (arcs.some((a) => !ghosts.has(a.frog))) {
+      arcs = arcs.filter((a) => ghosts.has(a.frog));
+      changed();
+    }
     let nr = 0;
     for (const a of arcs) {
       if (a.plane !== plane) continue;
-      const frog = ghosts.get(a.frog);
-      const drawn = frog?.drawn;
-      const gone = frog?.leave ? 1 - clamp01((t - frog.leave.t0) / frog.leave.dur) : 1;
-      const fx = drawn ? drawn.x : a.fx;
-      const fy = drawn ? -drawn.z : a.fy;
-      const h0 = field.heightAt(a.fx, a.fy) * SLAB_H;
-      const h1 = field.heightAt(a.tx, a.ty) * SLAB_H;
-      const H = hopHeight(Math.hypot(a.tx - fx, a.ty - fy));
-      for (let k = 0; k < DOTS; k++) {
-        const f = (k + 0.5) / DOTS;
-        const shown = clamp01((t - a.t0 - f * ARC_DRAW) / 0.08);
-        if (shown <= 0) continue;
-        pos.set(fx + (a.tx - fx) * f, h0 + (h1 - h0) * f + 4 * H * f * (1 - f) + LIFT, -(fy + (a.ty - fy) * f));
-        m.compose(pos, q, scl.setScalar(0.6 + 0.4 * shown));
-        d.setMatrixAt(nd, m);
-        parts.dot.color.setXYZ(nd, DOT.r, DOT.g, DOT.b);
-        parts.dot.alpha.setX(nd, 0.55 * shown * a.fade * gone);
-        nd++;
-      }
       const ring = clamp01((t - a.t0 - ARC_DRAW) / 0.25);
-      if (ring > 0) {
-        m.compose(pos.set(a.tx, h1 + 0.014, -a.ty), q, scl.setScalar(0.9 + 0.1 * ring));
-        r.setMatrixAt(nr, m);
-        parts.ring.color.setXYZ(nr, RING.r, RING.g, RING.b);
-        parts.ring.alpha.setX(nr, 0.85 * ring * a.fade * gone);
-        nr++;
-      }
+      if (ring <= 0) continue;
+      const h1 = field.heightAt(a.tx, a.ty) * SLAB_H;
+      m.compose(pos.set(a.tx, h1 + 0.014, -a.ty), q, scl.setScalar(0.9 + 0.1 * ring));
+      r.setMatrixAt(nr, m);
+      parts.color.setXYZ(nr, RING.r, RING.g, RING.b);
+      parts.alpha.setX(nr, 0.85 * ring * a.fade * fading(ghosts.get(a.frog), t));
+      nr++;
     }
-    d.count = nd;
     r.count = nr;
-    for (const [mesh, p] of [
-      [d, parts.dot],
-      [r, parts.ring],
-    ] as const) {
-      mesh.instanceMatrix.needsUpdate = true;
-      p.color.needsUpdate = true;
-      p.alpha.needsUpdate = true;
-    }
+    r.instanceMatrix.needsUpdate = true;
+    parts.color.needsUpdate = true;
+    parts.alpha.needsUpdate = true;
   });
 
   return (
     <>
-      <instancedMesh ref={dots} args={[parts.dot.g, parts.dot.mat, MAX * DOTS]} count={0} frustumCulled={false} renderOrder={10} />
-      <instancedMesh ref={rings} args={[parts.ring.g, parts.ring.mat, MAX]} count={0} frustumCulled={false} renderOrder={9} />
+      {list.map((a) => (
+        <GhostHop key={a.frog} arc={a} plane={plane} />
+      ))}
+      <instancedMesh ref={rings} args={[parts.g, parts.mat, MAX]} count={0} frustumCulled={false} renderOrder={9} />
     </>
   );
 }
