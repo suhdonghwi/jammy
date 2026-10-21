@@ -5,7 +5,7 @@ import { previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
 import { playProof } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
-import { EXIT_MS } from '../hooks/presence';
+import { EXIT_MS } from '../ui/timing';
 import { t } from '../i18n/i18n';
 import { toBig } from '../levels/level';
 import { eggsNear, tileState } from '../levels/tiles';

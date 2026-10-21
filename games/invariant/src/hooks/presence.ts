@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-// keep in step with the animate-*-out durations in styles.css
-export const EXIT_MS = 150;
+import { EXIT_MS } from '../ui/timing';
 
 export function usePresence(show: boolean): { mounted: boolean; leaving: boolean } {
   const [mounted, setMounted] = useState(show);

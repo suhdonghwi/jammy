@@ -1,6 +1,6 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { EXIT_MS } from '../hooks/presence';
+import { EXIT_MS } from '../ui/timing';
 import { sceneStarted, sleep } from './sceneTime';
 
 export type Tile = readonly [number, number];

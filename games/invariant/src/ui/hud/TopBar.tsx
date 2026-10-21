@@ -11,8 +11,8 @@ export function TopBar() {
   const tr = useT();
   if (!level) return null;
   return (
-    <div className="topbar pointer-events-none! flex animate-slide-in items-center" data-frame>
-      <div className={PILLS}>
+    <div className="pointer-events-none! flex animate-slide-in items-center" data-frame data-topbar>
+      <div className={PILLS} data-pill>
         <button
           className={button('quiet', 'icon')}
           title={mode === 'tutorial' ? tr.topBar.home : tr.topBar.allLevels}
@@ -30,4 +30,4 @@ export function TopBar() {
   );
 }
 
-const PILLS = 'pill-group pointer-events-auto flex min-w-0 items-center gap-1.5 rounded-full border border-line bg-card p-1.25 shadow-card backdrop-blur-md';
+const PILLS = 'pointer-events-auto flex min-w-0 items-center gap-1.5 rounded-full border border-line bg-card p-1.25 shadow-card backdrop-blur-md';

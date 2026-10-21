@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { EXIT_MS } from '../../hooks/presence';
+import { EXIT_MS } from '../../ui/timing';
 
 export function useExitFade(leaving: boolean): () => number {
   const leftAt = useRef<number | null>(null);

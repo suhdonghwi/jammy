@@ -28,13 +28,14 @@ export function guard(gen: number) {
 }
 
 const DOUBLE_CLICK_MS = 120;
+const tooSoonAfter = (shownAt: number) => performance.now() - shownAt < DOUBLE_CLICK_MS;
 
 function earlyNext(label = messages().caption.next, last?: () => void) {
   const shownAt = performance.now();
   return {
     label,
     onClick: () => {
-      if (performance.now() - shownAt < DOUBLE_CLICK_MS) return;
+      if (tooSoonAfter(shownAt)) return;
       const skip = useGame.getState().skip;
       if (skip) skip();
       else last?.();
@@ -61,7 +62,7 @@ function next(gen: number, text: string, label = messages().caption.next, spot: 
     const shown = useGame.getState().caption;
     const shownAt = shown?.text === text ? captionShownAt : performance.now();
     pendingNext = () => {
-      if (performance.now() - shownAt < DOUBLE_CLICK_MS) return;
+      if (tooSoonAfter(shownAt)) return;
       pendingNext = null;
       useGame.setState({ spotLines: [], nextAction: null });
       const passing = useGame.getState().caption;
