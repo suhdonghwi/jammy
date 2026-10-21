@@ -21,7 +21,7 @@ export function App() {
   }, [wantSolver]);
 
   return (
-    <div className="fixed inset-0 bg-linear-to-b from-sky via-horizon via-60% to-[#e3e8ef]">
+    <div className="fixed inset-0">
       <div className="screen">
         <div className="world fixed inset-0">
           <World />
