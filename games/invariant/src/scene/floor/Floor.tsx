@@ -79,7 +79,6 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
 
   const u = material.uniforms;
   const key = planeKey(inputs);
-  useMemo(() => setInputUniforms(u, level, inputs, planeExists(level, inputs)), [u, level, inputs, key]);
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 
@@ -87,6 +86,7 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     const dt = Math.min(frameDt, 0.1);
     const m = mesh.current;
     if (!m) return;
+    setInputUniforms(u, level, inputs, planeExists(level, inputs));
     const R = updateFade(u);
     const t = cameraRig.target();
     m.position.set(Math.round(t.x), 0, Math.round(t.z));
