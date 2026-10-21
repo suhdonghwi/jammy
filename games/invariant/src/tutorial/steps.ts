@@ -25,6 +25,7 @@ export interface Scene {
   formula?: string | 'learner';
   camera?: View;
   focus?: readonly Tile[];
+  labels?: readonly Tile[];
   loop?: boolean;
 }
 
@@ -95,7 +96,7 @@ export const STEPS: Step[] = [
     run: (gen) => beat(gen, T().hello, { label: T().letsGo, settle: 0 }),
   },
   {
-    scene: { reveal: {}, focus: [[0, 3]] },
+    scene: { reveal: {}, labels: [[0, 3]] },
     run: (gen) =>
       beat(gen, T().frog, {
         prepare: async () => {
@@ -107,7 +108,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { reveal: { axes: true }, frogs: [[0, 3]], tags: true, focus: [[0, 3]] },
+    scene: { reveal: { axes: true }, frogs: [[0, 3]], tags: true, labels: [[0, 3]] },
     run: (gen) =>
       beat(gen, T().program, {
         spot: 'code',
@@ -115,7 +116,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { reveal: { axes: true, code: true }, frogs: [[0, 3]], tags: true, focus: [[0, 3], [3, 3]] },
+    scene: { reveal: { axes: true, code: true }, frogs: [[0, 3]], tags: true, labels: [[0, 3], [3, 3]] },
     run: async (gen) => {
       useGame.getState().setReveal({ step: true });
       allow({ step: true });
@@ -127,7 +128,7 @@ export const STEPS: Step[] = [
     },
   },
   {
-    scene: { reveal: { axes: true, code: true, step: true }, frogs: [[3, 3]], tags: true, focus: [[3, 3]] },
+    scene: { reveal: { axes: true, code: true, step: true }, frogs: [[3, 3]], tags: true, labels: [[3, 3]] },
     run: (gen) =>
       beat(gen, T().stops, {
         prepare: () => useGame.getState().setReveal({ stop: true, hover: true }),
@@ -337,7 +338,7 @@ export const STEPS: Step[] = [
       await beat(gen, T().together, {
         prepare: async () => {
           resetFrogs();
-          await cameraRig.arrive({ at: [1.5, 3, 12], focus: [[0, 3], [3, 3]] });
+          await cameraRig.arrive({ at: [1.5, 3, 12], labels: [[0, 3], [3, 3]] });
           guard(gen);
           const f = hatch(st(0, 3));
           await sleep(700);

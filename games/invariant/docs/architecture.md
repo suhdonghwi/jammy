@@ -114,10 +114,12 @@ agree. `pnpm validate` and the tests are the safety net.
   cancels whatever was playing; after every `await` it checks `tok.alive` and
   stops if it was superseded. `busy` locks the learner's input while one plays.
 - **The camera moves through one call.** `cameraRig.frame({ at, focus })`
-  takes the tiles a moment is about (`focus`) and, optionally, a preferred
-  view (`at`). It measures the screen left free by every element marked
-  `data-frame` (top bar, code panel, caption column), and moves only when
-  the focus doesn't fit there, with room for tags. Tutorial steps, callouts,
+  takes the tiles a moment is about (`focus`, plus `labels` for tiles that
+  carry a tag) and, optionally, a preferred view (`at`). It measures the
+  screen left free by every element marked `data-frame` (top bar, code
+  panel, caption column). With `at` it always goes there, zoomed out and
+  shifted only as far as the tiles need; without it, it moves only when
+  the tiles don't fit. Tutorial steps, callouts,
   counterexamples, Run and a level's start all frame this way; don't call
   `moveTo`/`dollyTo` for them directly. `Framing` re-checks the last shot when
   the panels settle at a new size, unless the learner has moved the camera

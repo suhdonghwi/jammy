@@ -8,6 +8,7 @@ export type View = readonly [number, number, number];
 export interface Shot {
   at?: View;
   focus?: readonly Tile[];
+  labels?: readonly Tile[];
 }
 
 interface Rect {
@@ -38,7 +39,6 @@ const TAG_ROOM = 46;
 const TAG_HALF = 64;
 const TILE_RADIUS = 0.5;
 const MAX_DISTANCE = 60;
-const TOO_FAR = 1.4;
 const ZOOM_OUT = 1.6;
 const MIN_FREE = 150;
 const FAR_TRAVEL = 2.2;
@@ -88,16 +88,21 @@ function toScreen(x: number, y: number): [number, number] | null {
   return [((p.x + 1) / 2) * size.width, ((1 - p.y) / 2) * size.height];
 }
 
-function bounds(focus: readonly Tile[]): Rect | null {
+const tilesOf = (shot: Shot) => [...(shot.focus ?? []), ...(shot.labels ?? [])];
+
+function bounds(shot: Shot): Rect | null {
   const b: Rect = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
-  for (const [x, y] of focus) {
+  for (const [x, y] of tilesOf(shot)) {
     for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
       const s = toScreen(x + dx * TILE_RADIUS, y + dy * TILE_RADIUS);
       if (!s) return null;
       b.left = Math.min(b.left, s[0]);
       b.right = Math.max(b.right, s[0]);
+      b.top = Math.min(b.top, s[1]);
       b.bottom = Math.max(b.bottom, s[1]);
     }
+  }
+  for (const [x, y] of shot.labels ?? []) {
     const c = toScreen(x, y);
     if (!c) return null;
     b.top = Math.min(b.top, c[1] - TAG_ROOM);
@@ -116,22 +121,22 @@ function ground(sx: number, sy: number): { x: number; y: number } | null {
   return hit ? { x: hit.x, y: -hit.z } : null;
 }
 
-function fits(x: number, y: number, d: number, focus: readonly Tile[], r: Rect): boolean {
+function fits(x: number, y: number, d: number, shot: Shot, r: Rect): boolean {
   place(x, y, d);
-  return inside(bounds(focus), r);
+  return inside(bounds(shot), r);
 }
 
-function solve(x: number, y: number, d: number, focus: readonly Tile[], r: Rect): { x: number; y: number; d: number } {
+function solve(x: number, y: number, d: number, shot: Shot, r: Rect): { x: number; y: number; d: number } {
   const far = Math.max(d, reach);
   for (let i = 0; i < 8; i++) {
     place(x, y, d);
-    let b = bounds(focus);
+    let b = bounds(shot);
     if (inside(b, r)) break;
     const grow = b ? Math.max((b.right - b.left) / (r.right - r.left), (b.bottom - b.top) / (r.bottom - r.top)) : 1.5;
     if (grow > 1 && d < far) {
       d = Math.min(far, d * grow * 1.04);
       place(x, y, d);
-      b = bounds(focus);
+      b = bounds(shot);
     }
     if (!b) continue;
     const from = ground((b.left + b.right) / 2, (b.top + b.bottom) / 2);
@@ -191,33 +196,27 @@ export const cameraRig = {
     current = shot;
     userMoved = false;
     if (!controls) return;
-    const focus = shot.focus ?? [];
     const r = safeRect();
-    const now = endView();
-    const at = shot.at ? { x: shot.at[0], y: shot.at[1], d: shot.at[2] } : null;
-    reach = Math.min(MAX_DISTANCE, (at ?? now).d * ZOOM_OUT);
-    const stay = focus.length > 0 && (!at || now.d <= at.d * TOO_FAR) && fits(now.x, now.y, now.d, focus, r);
-    if (smooth && stay) return;
-    if (at && (!focus.length || fits(at.x, at.y, at.d, focus, r))) return glide(at.x, at.y, at.d, smooth);
-    if (!focus.length) return;
-    const start = at ?? now;
-    const to = solve(start.x, start.y, start.d, focus, r);
+    const from = shot.at ? { x: shot.at[0], y: shot.at[1], d: shot.at[2] } : endView();
+    reach = Math.min(MAX_DISTANCE, from.d * ZOOM_OUT);
+    if (!shot.at && fits(from.x, from.y, from.d, shot, r)) return;
+    const to = solve(from.x, from.y, from.d, shot, r);
     return glide(to.x, to.y, to.d, smooth);
   },
   async arrive(shot: Shot, all = false) {
     const move = cameraRig.frame(shot);
     await (all ? move : Promise.race([move, sleep(ARRIVING_MS)]));
   },
-  include(tiles: readonly Tile[]) {
-    if (!tiles.length) return;
-    void cameraRig.frame({ at: current?.at, focus: [...(current?.focus ?? []), ...tiles] });
+  include(labels: readonly Tile[]) {
+    if (!labels.length) return;
+    void cameraRig.frame({ ...current, labels: [...(current?.labels ?? []), ...labels] });
   },
   reframe() {
-    if (!controls || !current?.focus?.length || userMoved) return;
+    if (!controls || !current || !tilesOf(current).length || userMoved) return;
     if (!sceneStarted()) return void cameraRig.frame(current);
     const now = endView();
-    if (fits(now.x, now.y, now.d, current.focus, safeRect())) return;
-    const to = solve(now.x, now.y, now.d, current.focus, safeRect());
+    if (fits(now.x, now.y, now.d, current, safeRect())) return;
+    const to = solve(now.x, now.y, now.d, current, safeRect());
     void glide(to.x, to.y, to.d, true);
   },
   userMoved() {

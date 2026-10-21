@@ -63,9 +63,10 @@ behind many small decisions; keep them when changing or adding UI.
   screen the camera stays put; the light turns red as the
   caption arrives. The last picture stays under the result caption, and
   clear of it: a taller caption nudges the camera.
-- **The camera leaves the learner alone until it must move.** A learner who
-  drags the view keeps it; the camera only glides back when the next step,
-  callout or failure is not on the free part of the screen.
+- **Each step has its view.** A step, and each callout it adds, glides the
+  camera to the step's view, fitted so what it is about clears the panels,
+  whether or not the learner moved the camera. A failure moves the camera
+  only when its tile is off the free part of the screen.
 
 ## Clarity
 

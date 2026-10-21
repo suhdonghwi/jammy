@@ -31,8 +31,8 @@ async function focusOn(cex: Counterexample) {
     useGame.setState({ inputs });
     await sleep(250);
   }
-  const focus = [cex.state, cex.next].flatMap((s) => (s ? [[Number(s[L.view.x]), Number(s[L.view.y])] as const] : []));
-  await cameraRig.arrive({ focus }, cex.far);
+  const labels = [cex.state, cex.next].flatMap((s) => (s ? [[Number(s[L.view.x]), Number(s[L.view.y])] as const] : []));
+  await cameraRig.arrive({ labels }, cex.far);
 }
 
 export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {

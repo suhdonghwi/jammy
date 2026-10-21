@@ -14,7 +14,7 @@ let stepIndex = 0;
 let onFinish: () => void = () => {};
 
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
-const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? TUTORIAL_CAMERA, focus: scene.focus });
+const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? TUTORIAL_CAMERA, focus: scene.focus, labels: scene.labels });
 
 function restore(gen: number, scene: Scene) {
   const level = levelOf(scene);
