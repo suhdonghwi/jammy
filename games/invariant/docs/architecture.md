@@ -24,6 +24,7 @@ src/
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
   audio/       the sound effects
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
+  storage.ts   localStorage behind a try/catch, for the language, mute and cleared levels
   scene/       the 3D world
     floor/       the infinite floor, drawn per pixel from the level's formulas (formulas → GLSL)
     area/        the learner's slabs, eggs and goal columns
@@ -37,6 +38,7 @@ src/
     home/        title (3D lettering), home copy, level list
     rules/       the rules and syntax cards
     dev/         the link preview's page (`?poster`, development only)
+    timing.ts    EXIT_MS, the length of every exit animation
   styles.css   Tailwind setup: design tokens, keyframes, the page, the spotlight
 scripts/       level validation, the Z3 copy, font subsets, the title's glyphs, the link preview image
 tests/         unit tests (language, box search)
@@ -75,7 +77,7 @@ agree. `pnpm validate` and the tests are the safety net.
 - **The store** (`game/store.ts`, zustand) holds what the UI and the sequences
   share: mode, level, the plane in view (`inputs`: the off-axis inputs'
   values, with `planeKey` naming it for frogs and effects), formula, verdicts,
-  caption, reveal flags, tutorial state.
+  caption, reveal flags, and the tutorial's own state under `tutorial`.
   Components read it with selectors; other code reads `useGame.getState()` and
   writes `useGame.setState()`. Store actions exist only where there is logic
   (opening a level, compiling a formula).
