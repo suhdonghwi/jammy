@@ -184,7 +184,8 @@ agree. `pnpm validate` and the tests are the safety net.
 Z3 runs as WebAssembly with threads, so the page must be **cross-origin
 isolated**: every host must send `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp`. Its browser build is copied into
-`public/z3/` by `pnpm dev` and `pnpm build`, and loaded lazily: it is warmed up once the player
+`public/z3/<version>/` by `pnpm dev` and `pnpm build` (versioned, so hosts can
+cache it forever), and loaded lazily: it is warmed up once the player
 opens the level list or a level, never on the home screen alone.
 
 ## Conventions
