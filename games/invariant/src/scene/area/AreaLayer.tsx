@@ -62,7 +62,6 @@ export function AreaLayer({ level, inputs, inv, dim, showStop, showGoal, showEgg
     sfx.slabs(moved.rose, moved.sank);
     setVersion((v) => v + 1);
     return after(RISE_DUR * 1000 + 60, () => field.prune() && setVersion((v) => v + 1));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level, key, inv, win, showArea]);
 
   return (

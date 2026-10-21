@@ -115,7 +115,6 @@ function useTicks(region: Region | null, plan: Sweep | null, t0: number) {
     if (!region?.tick || !plan) return;
     const late = sceneNow() - t0;
     sfx.ticks(plan.ticks.map((at) => at - late));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region]);
 }
 
@@ -137,7 +136,6 @@ export function OutlineRegion() {
     if (!region) return null;
     const tiles = region.tiles(win);
     return { tiles, sweep: region.tick && tiles.length ? sweep(tiles, camera) : null };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region, win, valid]);
   useTicks(region, plan?.sweep ?? null, t0);
   const geoms = useMemo(() => {

@@ -71,7 +71,6 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
   const slots = useRef(new Map<string, { fx: number; fy: number; fs: number; tx: number; ty: number; ts: number; t0: number }>());
 
   const key = planeKey(inputs);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const eggs = useMemo(() => eggsNear(level, inputs, win.cx, win.cy, win.R), [level, key, win]);
   useEffect(
     () => () => {
@@ -121,7 +120,6 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
     occupancy.eggSlots = eggSlots;
     const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aHide: [hide, 1], aBack: [back, 1], aSlot: [slot, 4], aSlotAnim: [slotAnim, 3] } as const;
     return { geom: instanced(base, n, attrs), shadowGeom: instanced(shadowBase, n, attrs) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eggs, version, hatchVersion, occVersion, base, shadowBase]);
   useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
 

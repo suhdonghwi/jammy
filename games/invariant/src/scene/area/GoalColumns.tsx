@@ -77,7 +77,6 @@ export function GoalColumns({
   const tiles = useMemo(() => {
     const f = level.fast;
     return tilesNear(level, inputs, { ...win, R: Math.min(win.R, 24) }, (s, x, y) => (f.planeReq(s) && f.guard(s) !== true && f.post(s) === true ? [x, y] : undefined));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level, key, win]);
 
   const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
@@ -91,7 +90,6 @@ export function GoalColumns({
       anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
     });
     return instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3] });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiles, version, base]);
   useEffect(() => () => geom.dispose(), [geom]);
 

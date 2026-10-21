@@ -142,7 +142,6 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     const geom = instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3], aFlags: [flags, 2] });
     const shadowGeom = instanced(shadowBase, n, { aTile: [tile, 2], aAnim: [anim, 3] });
     return { geom, shadowGeom };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, base, shadowBase]);
   useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
 

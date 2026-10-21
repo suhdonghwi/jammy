@@ -74,8 +74,6 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     });
     setAxisNames(m.uniforms, level);
     return m;
-    // the program only depends on the level
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
   useEffect(() => () => material.dispose(), [material]);
 
