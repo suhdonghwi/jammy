@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { GlyphCommand, TitleGlyphs } from './glyphs';
+import type { GlyphCommand, TitleGlyphs } from './glyphs.ts';
 
 function glyphShapes(path: GlyphCommand[], scale: number): THREE.Shape[] {
   const sp = new THREE.ShapePath();

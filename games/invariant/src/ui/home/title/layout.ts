@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { LINE1, LINE2, type TitleGlyphs } from './glyphs';
-import { letterGeometries, type LetterOptions } from './text3d';
+import { LINE1, LINE2, type TitleGlyphs } from './glyphs.ts';
+import { letterGeometries, type LetterOptions } from './text3d.ts';
 
 export const SIZE = 1;
 export const LINE_GAP = 1.18;
