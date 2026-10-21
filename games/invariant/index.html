@@ -22,9 +22,60 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐸</text></svg>" />
     <!-- z3-solver's Emscripten build expects Node's `global` -->
     <script>globalThis.global = globalThis;</script>
+    <style>
+      html {
+        height: 100%;
+        background: linear-gradient(#f6f8fb, #e8ecf2 60%, #e3e8ef);
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        pointer-events: none;
+        animation: boot-in 0.4s ease-out 1s both;
+      }
+      #boot i {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        background: #5c9df5;
+        box-shadow: 0 3px 0 #3a78d8;
+        animation: boot-hop 0.9s ease-in-out infinite;
+      }
+      #boot i:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      #boot i:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      @keyframes boot-in {
+        from {
+          opacity: 0;
+        }
+      }
+      @keyframes boot-hop {
+        0%,
+        60%,
+        100% {
+          transform: none;
+        }
+        30% {
+          transform: translateY(-8px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot i {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="boot" role="status" aria-label="Loading"><i></i><i></i><i></i></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

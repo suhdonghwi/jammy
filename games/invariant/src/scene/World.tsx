@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { prepareSound } from '../audio/sfx';
 import { useGame } from '../game/store';
 import { cameraRig } from './cameraRig';
+import { MAX_DPR } from './constants';
 import { HomeScene } from './home/HomeScene';
 import { LevelScene } from './level/LevelScene';
 import { Framing } from './Framing';
@@ -78,8 +79,6 @@ function SceneSwitch() {
   );
 }
 
-const MAX_DPR = 1.75;
-
 export function World() {
   const top = Math.max(1, Math.min(window.devicePixelRatio, MAX_DPR));
   const [dpr, setDpr] = useState(top);
@@ -88,7 +87,7 @@ export function World() {
       flat
       dpr={dpr}
       camera={{ position: [3, 10, 12], fov: 36, near: 0.1, far: 500 }}
-      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      gl={{ antialias: true, alpha: true }}
     >
       <PerformanceMonitor
         factor={1}
