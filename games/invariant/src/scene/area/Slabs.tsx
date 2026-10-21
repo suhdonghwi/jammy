@@ -183,7 +183,7 @@ export function Slabs({ level, version, dim, showStop, showGoal }: { level: Comp
     const dt = Math.min(frameDt, 0.1);
     material.uniforms.uTime.value = sceneNow();
     setAxisNames(material.uniforms, level);
-    material.uniforms.uLastEvent.value = goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], planeKey(useGame.getState().inputs));
+    goalEvents.sync(planeKey(useGame.getState().inputs));
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);

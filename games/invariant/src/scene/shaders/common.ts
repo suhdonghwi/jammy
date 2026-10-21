@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { cameraRig } from '../cameraRig';
 import type { CompiledLevel } from '../../levels/level';
+import { cameraRig } from '../cameraRig';
 import { COLORS } from '../constants';
+import { goalEvents, MAX_EVENTS } from '../goalEvents';
 
 export const GLSL_COMMON = /* glsl */ `
 float sdRoundBox(vec2 p, vec2 b, float r) {
@@ -126,7 +127,6 @@ export function setAxisNames(u: Record<string, THREE.IUniform>, level: CompiledL
   u.uDigitW.value = Math.max(...advance.slice(0, 10));
 }
 
-export const MAX_EVENTS = 24;
 export const GLSL_GOAL = /* glsl */ `
 uniform vec3 uGoal;
 uniform vec3 uPoolLight;
@@ -210,8 +210,7 @@ export function goalUniforms(): Record<string, THREE.IUniform> {
     uGoal: { value: new THREE.Color(COLORS.goal) },
     uPoolLight: { value: new THREE.Color(COLORS.poolLight) },
     uPoolDeep: { value: new THREE.Color(COLORS.poolDeep) },
-    uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
-    uLastEvent: { value: -100 },
+    ...goalEvents.uniforms,
   };
 }
 

@@ -5,9 +5,8 @@ import { useGame } from '../../game/store';
 import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
 import { tilesNear, type TileWindow } from '../../levels/tiles';
 import { COLORS, SLAB_H } from '../constants';
-import { goalEvents } from '../goalEvents';
+import { goalEvents, MAX_EVENTS } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
-import { MAX_EVENTS } from '../shaders/common';
 import { field } from './field';
 import { GLSL_HEIGHT, instanced } from './glsl';
 
@@ -105,15 +104,14 @@ export function GoalColumns({
           uTime: { value: 0 },
           uColor: { value: new THREE.Color(COLORS.goal) },
           uAppearT0: { value: sceneNow() },
-          uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
+          uEvents: goalEvents.uniforms.uEvents,
         },
       }),
     [],
   );
   useFrame(() => {
     material.uniforms.uTime.value = sceneNow();
-    const g = useGame.getState();
-    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], planeKey(g.inputs));
+    goalEvents.sync(planeKey(useGame.getState().inputs));
   });
   return <mesh geometry={geom} material={material} frustumCulled={false} renderOrder={6} />;
 }
