@@ -107,7 +107,7 @@ export function CodePanel() {
         <pre
           className={`m-0 -mx-4 min-h-0 overflow-auto px-4 max-md:-mx-2.5 max-md:px-2.5 ${hasInputs ? 'pb-2.5 max-md:pb-2' : '-mb-3 rounded-b-2xl pb-3 max-md:-mb-2.5 max-md:pb-2.5'} font-mono text-sm leading-[1.62] whitespace-pre text-[#4a5368] max-md:text-[11px]`}
         >
-          {nodes}
+          <div className="w-max min-w-full">{nodes}</div>
         </pre>
       )}
       <InputsSection key={level.id} inline={!open} />
