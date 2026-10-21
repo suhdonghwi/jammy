@@ -9,7 +9,7 @@
   }
 }
 
-@custom-variant short (@media (max-height: 500px) and (orientation: landscape));
+@custom-variant short (@media (max-height: 500px) and (min-aspect-ratio: 3/2));
 
 @custom-variant compact {
   @media (max-width: 639.98px) {
