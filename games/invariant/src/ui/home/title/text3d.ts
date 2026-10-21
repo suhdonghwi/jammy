@@ -96,8 +96,8 @@ export function extrudeLetters({ glyphs, kerning, unitsPerEm }: TitleGlyphs, tex
         bevelEnabled: true,
         bevelThickness: bevel,
         bevelSize: bevel * 0.8,
-        bevelSegments: 5,
-        curveSegments: 10,
+        bevelSegments: 3,
+        curveSegments: 5,
       });
       geom.translate(0, 0, -o.depth / 2);
     }
