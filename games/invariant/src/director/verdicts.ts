@@ -32,7 +32,7 @@ async function focusOn(cex: Counterexample) {
     await sleep(250);
   }
   const labels = [cex.state, cex.next].flatMap((s) => (s ? [[Number(s[L.view.x]), Number(s[L.view.y])] as const] : []));
-  await cameraRig.arrive({ labels }, cex.far);
+  await cameraRig.arrive({ labels });
 }
 
 export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {

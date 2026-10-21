@@ -21,7 +21,6 @@ interface Rect {
 let controls: CameraControls | null = null;
 let size = { width: 1, height: 1 };
 let current: Shot | null = null;
-let userMoved = false;
 let reach = 60;
 let free: Rect = { left: 0, top: 0, right: 1, bottom: 1 };
 
@@ -41,7 +40,6 @@ const TILE_RADIUS = 0.5;
 const MAX_DISTANCE = 60;
 const ZOOM_OUT = 1.6;
 const MIN_FREE = 150;
-const FAR_TRAVEL = 2.2;
 const ARRIVING_MS = 450;
 
 const area = (r: Rect) => Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
@@ -151,13 +149,6 @@ function solve(x: number, y: number, d: number, shot: Shot, r: Rect): { x: numbe
 async function glide(x: number, y: number, d: number, smooth: boolean) {
   if (!controls) return;
   smooth &&= sceneStarted();
-  const from = endView();
-  if (smooth && Math.hypot(x - from.x, y - from.y) > FAR_TRAVEL * Math.max(d, from.d)) {
-    await controls.dollyTo(Math.min(MAX_DISTANCE, Math.max(45, from.d)), true);
-    await controls.moveTo(x, 0, -y, true);
-    await controls.dollyTo(d, true);
-    return;
-  }
   await Promise.all([controls.moveTo(x, 0, -y, smooth), controls.dollyTo(d, smooth)]);
 }
 
@@ -194,7 +185,6 @@ export const cameraRig = {
   },
   async frame(shot: Shot, smooth = true) {
     current = shot;
-    userMoved = false;
     if (!controls) return;
     const r = safeRect();
     const from = shot.at ? { x: shot.at[0], y: shot.at[1], d: shot.at[2] } : endView();
@@ -203,24 +193,20 @@ export const cameraRig = {
     const to = solve(from.x, from.y, from.d, shot, r);
     return glide(to.x, to.y, to.d, smooth);
   },
-  async arrive(shot: Shot, all = false) {
-    const move = cameraRig.frame(shot);
-    await (all ? move : Promise.race([move, sleep(ARRIVING_MS)]));
+  async arrive(shot: Shot) {
+    await Promise.race([cameraRig.frame(shot), sleep(ARRIVING_MS)]);
   },
   include(labels: readonly Tile[]) {
     if (!labels.length) return;
     void cameraRig.frame({ ...current, labels: [...(current?.labels ?? []), ...labels] });
   },
   reframe() {
-    if (!controls || !current || !tilesOf(current).length || userMoved) return;
+    if (!controls || !current || !tilesOf(current).length) return;
     if (!sceneStarted()) return void cameraRig.frame(current);
     const now = endView();
     if (fits(now.x, now.y, now.d, current, safeRect())) return;
     const to = solve(now.x, now.y, now.d, current, safeRect());
     void glide(to.x, to.y, to.d, true);
-  },
-  userMoved() {
-    userMoved = true;
   },
   async zoomTo(distance: number) {
     if (!controls) return;

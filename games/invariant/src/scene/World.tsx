@@ -29,14 +29,8 @@ function Controls() {
       c.mouseButtons.left = CameraControlsImpl.ACTION.SCREEN_PAN;
       c.mouseButtons.right = CameraControlsImpl.ACTION.ROTATE;
       c.touches.one = CameraControlsImpl.ACTION.TOUCH_SCREEN_PAN;
-      c.addEventListener('controlstart', cameraRig.userMoved);
-      c.addEventListener('control', cameraRig.userMoved);
     }
-    return () => {
-      c?.removeEventListener('controlstart', cameraRig.userMoved);
-      c?.removeEventListener('control', cameraRig.userMoved);
-      cameraRig.attach(null);
-    };
+    return () => cameraRig.attach(null);
   }, []);
   return (
     <CameraControls
