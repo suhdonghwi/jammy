@@ -34,12 +34,12 @@ export function HighlightedCode({ src }: { src: string }) {
 
 const SCAN = /\s+|[0-9]+|[A-Za-z_][A-Za-z0-9_]*|==|!=|<=|>=|&&|\|\||[^\sA-Za-z0-9_]/g;
 
-export function colorRuns(src: string): { from: number; to: number; cls: string }[] {
+export function colorRuns(src: string, boldNames = true): { from: number; to: number; cls: string }[] {
   return [...src.matchAll(SCAN)].map((m) => {
     const text = m[0];
     let cls = '';
     if (/^[0-9]/.test(text)) cls = TOKEN.num;
-    else if (/^[A-Za-z_]/.test(text)) cls = KEYWORDS.has(text) || BUILTINS.has(text) ? TOKEN.keyword : `${TOKEN.name} font-semibold`;
+    else if (/^[A-Za-z_]/.test(text)) cls = KEYWORDS.has(text) || BUILTINS.has(text) ? TOKEN.keyword : boldNames ? `${TOKEN.name} font-semibold` : TOKEN.name;
     else if (/^[-+*/%<>=!&|(){},;]/.test(text)) cls = TOKEN.op;
     return { from: m.index, to: m.index + text.length, cls };
   });
