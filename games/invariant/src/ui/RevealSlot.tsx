@@ -9,7 +9,9 @@ export function RevealSlot({ open, children }: { open: boolean; children: ReactN
       aria-hidden={!open}
       onTransitionEnd={(e) => e.target === e.currentTarget && e.propertyName === 'grid-template-rows' && setSettled(open)}
     >
-      <div className={`-m-2 min-h-0 p-2 ${settled ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
+      <div className={`-m-2 min-h-0 p-2 ${settled ? 'overflow-visible' : 'overflow-hidden'}`}>
+        <div className="pt-2">{children}</div>
+      </div>
     </div>
   );
 }
