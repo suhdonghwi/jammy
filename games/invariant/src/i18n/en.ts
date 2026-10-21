@@ -248,7 +248,7 @@ export const en = {
     afterOwnTermination: (weak: string, mine: string) =>
       `Your earlier area ${weak} was a true claim too, but it left room to stop off a goal, so it was too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
     twoWays:
-      'So two things can keep an area from proving the program:\n\n- It fails **rules 1 and 2**, so its claim isn’t proved: an egg is off it, or a hop leads off it, even from a tile no real frog reaches.\n- It fails **rule 3**: its claim may be true, but it is too **weak**, leaving room to stop off a goal.\n\nThe area that proves the program passes all three.',
+      'So two things can keep an area from proving the program:\n\n- If it fails **rule 1 or 2**, we can’t be sure frogs stay on it: an egg is off the area, or a hop from some tile on it lands off it.\n- If it fails **rule 3**, frogs may stay on it and still stop off a goal. The area is too **weak**.\n\nThe area that proves the program passes all three.',
     notProvedTag: 'not proved: egg off it',
     tooWeakTag: 'too weak: stops off a goal',
 
