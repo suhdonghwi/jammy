@@ -75,13 +75,13 @@ export function FormulaBox() {
   const canCheck = !busy && !checking && (mode !== 'tutorial' || awaitingCheck);
   return (
     // 16px on phones: any smaller and iOS zooms the page when the box is focused
-    <div className="animate-[rise_0.4s_ease-out] [--formula-size:17px] max-sm:[--formula-size:16px]">
+    <div className="animate-[rise_0.4s_ease-out] [--formula-size:17px] compact:[--formula-size:16px]">
       <div
         ref={box}
-        className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card max-sm:gap-x-2 max-sm:pl-3 transition-colors duration-150 ${shownError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''}`}
+        className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card compact:gap-x-2 compact:pl-3 transition-colors duration-150 ${shownError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''}`}
       >
         <span className="flex items-center gap-1.75 font-display text-xs font-semibold tracking-[0.08em] text-brand uppercase before:size-3 before:-translate-y-px before:rounded-sm before:bg-slab before:shadow-[0_2px_0_var(--color-slab-side)]">
-          <span className="max-sm:sr-only">{tr.formula.area}</span>
+          <span className="compact:sr-only">{tr.formula.area}</span>
         </span>
         <div className={`grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] ${locked ? 'cursor-default opacity-60' : ''}`}>
           <div aria-hidden className={`${TEXT} pointer-events-none text-ink`}>

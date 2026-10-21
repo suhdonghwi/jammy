@@ -23,7 +23,7 @@ export function RunControls() {
   const onHint = hinting ? showHint : levelHints > 0 ? showLevelHint : null;
   const rules = reveal.lights.length > 0;
   const crowded = !!onHint || (reveal.run && !tut) || (rules && reveal.formula);
-  const square = (iconOnly: boolean) => (iconOnly ? 'max-sm:w-9.5 max-sm:self-stretch max-sm:px-0!' : '');
+  const square = (iconOnly: boolean) => (iconOnly ? 'compact:w-9.5 compact:self-stretch compact:px-0!' : '');
   return (
     <div className="flex animate-[rise_0.4s_ease-out] items-center gap-1.5 max-[22.5rem]:gap-1">
       {reveal.run &&
@@ -51,13 +51,13 @@ export function RunControls() {
       )}
       {reveal.run && !tut && (
         <button className={`${button()} ${square(crowded)}`} disabled={busy} title={tr.controls.resetTitle} aria-label={tr.controls.reset} onClick={resetFrogs}>
-          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> <span className={crowded ? 'max-sm:hidden' : ''}>{tr.controls.reset}</span>
+          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> <span className={crowded ? 'compact:hidden' : ''}>{tr.controls.reset}</span>
         </button>
       )}
       <span className="flex-1" />
       {onHint && (
         <button className={`${button('glass')} ${square(!tut)}`} disabled={busy} title={tr.controls.hintTitle} aria-label={tr.controls.hint} onClick={onHint}>
-          <Lightbulb size={16} strokeWidth={2.2} /> <span className={tut ? '' : 'max-sm:hidden'}>{tr.controls.hint}</span>
+          <Lightbulb size={16} strokeWidth={2.2} /> <span className={tut ? '' : 'compact:hidden'}>{tr.controls.hint}</span>
         </button>
       )}
       {reveal.formula && (
@@ -67,12 +67,12 @@ export function RunControls() {
           aria-label={tr.controls.syntax}
           onClick={() => useGame.setState({ showSyntax: true })}
         >
-          <Braces size={16} strokeWidth={2.2} /> <span className={crowded ? 'max-sm:hidden' : ''}>{tr.controls.syntax}</span>
+          <Braces size={16} strokeWidth={2.2} /> <span className={crowded ? 'compact:hidden' : ''}>{tr.controls.syntax}</span>
         </button>
       )}
       {rules && (
         <button className={`${button('glass')} ${square(crowded)}`} title={tr.controls.rules} aria-label={tr.controls.rules} onClick={() => useGame.setState({ showRules: true })}>
-          <BookOpen size={16} strokeWidth={2.2} /> <span className={crowded ? 'max-sm:hidden' : ''}>{tr.controls.rules}</span>
+          <BookOpen size={16} strokeWidth={2.2} /> <span className={crowded ? 'compact:hidden' : ''}>{tr.controls.rules}</span>
         </button>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-export const PHONE = '(max-width: 639.98px)';
+export const COMPACT = '(max-width: 639.98px), (max-height: 500px) and (orientation: landscape)';
 
 export const NARROW_HOME = '(max-width: 768px), (max-aspect-ratio: 11/10)';
 

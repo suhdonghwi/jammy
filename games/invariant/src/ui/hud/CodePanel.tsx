@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useGame } from '../../game/store';
-import { PHONE, useMedia } from '../../hooks/media';
+import { COMPACT, useMedia } from '../../hooks/media';
 import { useT } from '../../i18n/i18n';
 import { planeExists, type CompiledLevel } from '../../levels/level';
 import { CARD, CARD_LABEL } from '../classes';
@@ -96,11 +96,11 @@ export function CodePanel() {
   );
   const spot = useGame((s) => s.spotlight);
   const tutorial = useGame((s) => s.mode === 'tutorial');
-  const phone = useMedia(PHONE);
+  const compact = useMedia(COMPACT);
   const [folded, setFolded] = useState<boolean | null>(null);
   const tr = useT();
-  const pointedAt = spot === 'code' || spotLines.length > 0 || (tutorial && phone && spot === 'step');
-  const open = pointedAt || !(folded ?? (tutorial && phone));
+  const pointedAt = spot === 'code' || spotLines.length > 0 || (tutorial && compact && spot === 'step');
+  const open = pointedAt || !(folded ?? (tutorial && compact));
   const hasInputs = inputRows(level).length > 0;
   if (!shown) return null;
   return (

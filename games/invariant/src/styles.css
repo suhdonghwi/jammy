@@ -9,6 +9,17 @@
   }
 }
 
+@custom-variant short (@media (max-height: 500px) and (orientation: landscape));
+
+@custom-variant compact {
+  @media (max-width: 639.98px) {
+    @slot;
+  }
+  @media (max-height: 500px) and (orientation: landscape) {
+    @slot;
+  }
+}
+
 @font-face {
   font-family: 'NanumSquareRound';
   src: url('./assets/fonts/NanumSquareRound-Regular.woff2') format('woff2');

@@ -23,7 +23,7 @@ export function CaptionBar() {
     <div
       key={caption.text}
       data-caption
-      className={`flex flex-col gap-2.5 rounded-2xl border-2 bg-card py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md transition-colors duration-200 max-sm:gap-2 max-sm:py-2.75 max-sm:pr-3 max-sm:pl-3.5 max-sm:text-sm max-sm:leading-[1.45] ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
+      className={`flex flex-col gap-2.5 rounded-2xl border-2 bg-card py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md transition-colors duration-200 compact:gap-2 compact:py-2.75 compact:pr-3 compact:pl-3.5 compact:text-sm compact:leading-[1.45] ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
     >
       <div>
         <Markdown text={caption.text} />
