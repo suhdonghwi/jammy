@@ -85,8 +85,8 @@ export const ko: Messages = {
     intro:
       '영역은 모든 개구리가 언제나 그 위에 있다고 주장합니다. 초기화와 유지는 이 주장을 참으로 만들고, 종료는 이 주장이 사후 조건을 증명할 만큼 강하게 만듭니다. 어떤 입력이든 말이죠.',
     initialization: '모든 알이 영역 위에 있습니다.',
-    maintenance: '어떤 점프도 영역 밖으로 나가지 않습니다.',
-    termination: '영역 위의 빗금 친 칸은 모두 목표입니다.',
+    maintenance: '모든 점프가 영역 위에 착지합니다.',
+    termination: '영역 위에서 멈추는 곳은 모두 목표입니다.',
   },
 
   syntax: {
@@ -125,7 +125,7 @@ export const ko: Messages = {
     realLandsOutside: (egg, from, to, area) => `${egg}의 알에서 나온 개구리가 ${from}까지 온 뒤, 다음 점프에서 ${to}에 착지하는데, ${area} 밖입니다.`,
     offGoalTag: '멈췄지만 목표가 아님',
     holdsTag: {
-      initialization: '모든 알이 영역 위',
+      initialization: '모든 알이 영역 위에',
       maintenance: '모든 점프가 영역 위에 착지',
       termination: '영역 위에서 멈추는 곳은 모두 목표',
     },
@@ -207,9 +207,6 @@ export const ko: Messages = {
     exEndingTag: '멈출 수 있는 곳',
     exRules:
       '결국 다음 세 가지만 성립하면 됩니다.\n\n- **초기화:** 모든 알이 영역 위에 있다.\n- **유지:** 어떤 점프도 영역 밖으로 나가지 않는다.\n- **종료:** 영역 위의 빗금 친 칸은 모두 목표다.\n\n그러면 모든 개구리가 목표에서 멈춘다는 것이 증명됩니다.',
-    exRule1Tag: '알이 모두 위에',
-    exRule2Tag: '점프해도 안 나감',
-    exRule3Tag: '멈추는 곳은 모두 목표',
     backToOurs: '우리 루프로',
 
     draw: '우리 루프로 돌아왔습니다. 이번에는 직접 영역을 그려 봅시다. `i`와 `n`으로 아무 조건이나 써 보세요. 조건이 참인 칸들이 **블록**으로 솟아오릅니다.\n\n`i == 2`, `i % 2 == 0`, `i < n` 같은 식을 써 보세요.',

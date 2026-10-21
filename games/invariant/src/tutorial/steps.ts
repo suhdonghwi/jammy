@@ -59,6 +59,7 @@ const TESTED = Array.from({ length: 10 }, (_, n): [number, number] => [n, n]);
 const upTo = (r: Rule): Rule[] => RULES.slice(0, RULES.indexOf(r) + 1);
 
 const T = () => t().tutorial;
+const holds = () => t().verdicts.holdsTag;
 
 const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
@@ -243,15 +244,15 @@ export const STEPS: Step[] = [
       beat(gen, T().exRules, {
         label: T().backToOurs,
         callouts: [
-          { x: 0, y: 2, text: T().exRule1Tag, tone: 'info' },
-          { x: 4, y: 3, text: T().exRule3Tag, tone: 'good' },
+          { x: 0, y: 2, text: holds().initialization, tone: 'good' },
+          { x: 4, y: 3, text: holds().termination, tone: 'good' },
         ],
         prepare: async () => {
           await sleep(400);
           guard(gen);
           sfx.ghost();
           const f = previewHop({ x: 1n, y: 0n });
-          useGame.setState((g) => ({ callouts: [...g.callouts, { x: f.x, y: f.y, frog: f.id, text: T().exRule2Tag, tone: 'info' }] }));
+          useGame.setState((g) => ({ callouts: [...g.callouts, { x: f.x, y: f.y, frog: f.id, text: holds().maintenance, tone: 'good' }] }));
         },
       }),
   },
