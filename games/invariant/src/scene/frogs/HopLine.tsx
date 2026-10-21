@@ -11,7 +11,7 @@ const SEGMENTS = 24;
 const LIFT = 0.22;
 const curve = new THREE.QuadraticBezierCurve3();
 
-export interface HopPath {
+interface HopPath {
   from: readonly [number, number, number];
   to: readonly [number, number, number];
   drawn: number;

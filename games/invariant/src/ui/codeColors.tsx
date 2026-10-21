@@ -9,38 +9,35 @@ const TOKEN = {
 
 type Token = ReturnType<typeof tokenize>[number];
 
-function tokenClass(t: Token): string {
+function tokenClass(t: Token, boldNames: boolean): string {
   if (t.kind === 'num') return TOKEN.num;
-  if (t.kind === 'ident') return KEYWORDS.has(t.text) || BUILTINS.has(t.text) ? TOKEN.keyword : TOKEN.name;
-  return TOKEN.op;
+  if (t.kind === 'op') return TOKEN.op;
+  if (t.kind !== 'ident') return '';
+  if (KEYWORDS.has(t.text) || BUILTINS.has(t.text)) return TOKEN.keyword;
+  return boldNames ? `${TOKEN.name} font-semibold` : TOKEN.name;
 }
 
-export function HighlightedCode({ src }: { src: string }) {
-  const out: React.ReactNode[] = [];
+export interface ColorRun {
+  from: number;
+  to: number;
+  cls: string;
+}
+
+export function colorRuns(src: string, boldNames = true): ColorRun[] {
+  const out: ColorRun[] = [];
   let p = 0;
-  for (const t of tokenize(src)) {
-    if (t.kind === 'eof') break;
-    if (t.span.from > p) out.push(src.slice(p, t.span.from));
-    out.push(
-      <span key={t.span.from} className={tokenClass(t)}>
-        {t.text}
-      </span>,
-    );
+  for (const t of tokenize(src, { lenient: true })) {
+    if (t.span.from > p) out.push({ from: p, to: t.span.from, cls: '' });
+    if (t.kind !== 'eof') out.push({ from: t.span.from, to: t.span.to, cls: tokenClass(t, boldNames) });
     p = t.span.to;
   }
-  out.push(src.slice(p));
-  return <>{out}</>;
+  return out;
 }
 
-const SCAN = /\s+|[0-9]+|[A-Za-z_][A-Za-z0-9_]*|==|!=|<=|>=|&&|\|\||[^\sA-Za-z0-9_]/g;
-
-export function colorRuns(src: string, boldNames = true): { from: number; to: number; cls: string }[] {
-  return [...src.matchAll(SCAN)].map((m) => {
-    const text = m[0];
-    let cls = '';
-    if (/^[0-9]/.test(text)) cls = TOKEN.num;
-    else if (/^[A-Za-z_]/.test(text)) cls = KEYWORDS.has(text) || BUILTINS.has(text) ? TOKEN.keyword : boldNames ? `${TOKEN.name} font-semibold` : TOKEN.name;
-    else if (/^[-+*/%<>=!&|(){},;]/.test(text)) cls = TOKEN.op;
-    return { from: m.index, to: m.index + text.length, cls };
-  });
+export function HighlightedCode({ src, boldNames = false }: { src: string; boldNames?: boolean }) {
+  return colorRuns(src, boldNames).map((r) => (
+    <span key={r.from} className={r.cls}>
+      {src.slice(r.from, r.to)}
+    </span>
+  ));
 }

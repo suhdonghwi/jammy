@@ -12,11 +12,11 @@ export function RunControls() {
   const busy = useGame((s) => s.busy);
   const stepping = useGame((s) => s.stepping);
   const mode = useGame((s) => s.mode);
-  const hint = useGame((s) => s.hint);
+  const hint = useGame((s) => s.tutorial.hint);
   const levelHints = useGame((s) => (s.mode === 'level' ? (s.level?.hints?.length ?? 0) : 0));
-  const awaitingCheck = useGame((s) => s.awaitingCheck);
-  const spot = useGame((s) => s.spotlight);
-  const allow = useGame((s) => s.tutorialAllow);
+  const awaitingCheck = useGame((s) => s.tutorial.awaitingCheck);
+  const spot = useGame((s) => s.tutorial.spotlight);
+  const allow = useGame((s) => s.tutorial.allow);
   const tut = mode === 'tutorial';
   const tr = useT();
   const hinting = tut && !!hint && !hint.shown && awaitingCheck;

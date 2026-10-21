@@ -1,8 +1,8 @@
 import type { Rule } from '../checker/types';
-import { events } from '../director/events';
 import { dismissFrogs } from '../director/frogs';
+import { events } from '../director/sequence';
 import { playVerification, revealAll, runChecker, showUndecided } from '../director/verdicts';
-import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
+import { ALLOW_NONE, setTutorial, useGame, type CaptionTone, type Game, type TutorialState } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import { cameraRig } from '../scene/cameraRig';
 import { sleep } from '../scene/sceneTime';
@@ -28,32 +28,35 @@ export function guard(gen: number) {
 }
 
 const DOUBLE_CLICK_MS = 120;
+const tooSoonAfter = (shownAt: number) => performance.now() - shownAt < DOUBLE_CLICK_MS;
 
 function earlyNext(label = messages().caption.next, last?: () => void) {
   const shownAt = performance.now();
   return {
     label,
     onClick: () => {
-      if (performance.now() - shownAt < DOUBLE_CLICK_MS) return;
-      const skip = useGame.getState().skip;
+      if (tooSoonAfter(shownAt)) return;
+      const skip = useGame.getState().tutorial.skip;
       if (skip) skip();
       else last?.();
     },
   };
 }
 
-const nextAfterCounterexample = () => useGame.getState().nextAction ?? earlyNext();
+const nextAfterCounterexample = () => useGame.getState().tutorial.nextAction ?? earlyNext();
 
-type Spot = Game['spotlight'];
+type Spot = TutorialState['spotlight'];
 
 export function say(text: string, spot: Spot = null, tone: CaptionTone = 'info', reserve?: string, last?: () => void) {
   captionShownAt = performance.now();
-  useGame.setState({ caption: { text, tone, action: reserve ? earlyNext(reserve, last) : undefined }, spotlight: spot });
+  useGame.setState({ caption: { text, tone, action: reserve ? earlyNext(reserve, last) : undefined } });
+  setTutorial({ spotlight: spot });
 }
 
 export function sayWaiting(text: string, spot: Spot = null) {
   captionShownAt = performance.now();
-  useGame.setState({ caption: { text, tone: 'info', action: { label: messages().caption.next, onClick: () => {}, disabled: true } }, spotlight: spot });
+  useGame.setState({ caption: { text, tone: 'info', action: { label: messages().caption.next, onClick: () => {}, disabled: true } } });
+  setTutorial({ spotlight: spot });
 }
 
 function next(gen: number, text: string, label = messages().caption.next, spot: Spot = null, tone: CaptionTone = 'info'): Promise<void> {
@@ -61,19 +64,20 @@ function next(gen: number, text: string, label = messages().caption.next, spot: 
     const shown = useGame.getState().caption;
     const shownAt = shown?.text === text ? captionShownAt : performance.now();
     pendingNext = () => {
-      if (performance.now() - shownAt < DOUBLE_CLICK_MS) return;
+      if (tooSoonAfter(shownAt)) return;
       pendingNext = null;
-      useGame.setState({ spotLines: [], nextAction: null });
+      setTutorial({ spotLines: [], nextAction: null });
       const passing = useGame.getState().caption;
       setTimeout(() => {
-        if (useGame.getState().caption === passing) useGame.setState({ spotlight: null });
+        if (useGame.getState().caption === passing) setTutorial({ spotlight: null });
       });
       if (gen !== generation) reject(new Aborted());
       else resolve();
     };
     const action = { label, onClick: () => pendingNext?.() };
     const secondary = shown?.text === text ? shown.secondary : undefined;
-    useGame.setState({ caption: { text, tone, action, secondary }, spotlight: spot, nextAction: action });
+    useGame.setState({ caption: { text, tone, action, secondary } });
+    setTutorial({ spotlight: spot, nextAction: action });
   });
 }
 
@@ -88,11 +92,14 @@ export async function beat(
     callouts?: Game['callouts'];
     region?: Game['region'];
     keep?: boolean;
-    lines?: Game['spotLines'];
+    lines?: TutorialState['spotLines'];
     tone?: CaptionTone;
   } = {},
 ): Promise<void> {
-  if (!opts.keep) useGame.setState({ callouts: opts.callouts ?? [], region: opts.region ?? null, spotLines: opts.lines ?? [] });
+  if (!opts.keep) {
+    useGame.setState({ callouts: opts.callouts ?? [], region: opts.region ?? null });
+    setTutorial({ spotLines: opts.lines ?? [] });
+  }
   if (opts.callouts) cameraRig.include(opts.callouts.map((c) => [c.x, c.y] as const));
   const tone = opts.tone ?? 'info';
   const label = opts.label ?? messages().caption.next;
@@ -117,8 +124,8 @@ function holdCaption(gen: number): Promise<void> {
   return next(gen, c?.text ?? '', messages().caption.next, null, c?.tone ?? 'info');
 }
 
-export function allow(a: Partial<Game['tutorialAllow']>) {
-  useGame.setState({ tutorialAllow: { ...ALLOW_NONE, ...a } });
+export function allow(a: Partial<TutorialState['allow']>) {
+  setTutorial({ allow: { ...ALLOW_NONE, ...a } });
 }
 
 export function waitEvent(gen: number, name: 'stepped' | 'runDone', until?: () => boolean): Promise<void> {
@@ -158,10 +165,10 @@ function choose<K extends string>(gen: number, text: string, choices: { key: K; 
     };
     useGame.setState({
       caption: { text, tone: 'info', choices: choices.map((c) => ({ label: c.label, tone: c.tone, onClick: pick(c.key) })) },
-      spotlight: null,
       callouts: [],
       region: null,
     });
+    setTutorial({ spotlight: null });
   });
 }
 
@@ -184,19 +191,20 @@ function waitCheck(gen: number): Promise<void> {
   return new Promise((resolve, reject) => {
     pendingCheck = () => {
       pendingCheck = null;
-      useGame.setState({ awaitingCheck: false });
+      setTutorial({ awaitingCheck: false });
       if (gen !== generation) reject(new Aborted());
       else resolve();
     };
     allow({ formula: true });
-    useGame.setState({ awaitingCheck: true });
+    setTutorial({ awaitingCheck: true });
   });
 }
 
 export function showHint() {
-  const h = useGame.getState().hint;
+  const h = useGame.getState().tutorial.hint;
   if (!h || h.shown) return;
-  useGame.setState({ hint: { ...h, shown: true }, caption: { text: `${h.ask}\n\n**${messages().tutorial.hint}** ${h.nudge}`, tone: 'info' }, spotlight: null });
+  useGame.setState({ caption: { text: `${h.ask}\n\n**${messages().tutorial.hint}** ${h.nudge}`, tone: 'info' } });
+  setTutorial({ hint: { ...h, shown: true }, spotlight: null });
 }
 
 interface StageOptions {
@@ -209,13 +217,15 @@ interface StageOptions {
 }
 
 export async function stage(gen: number, o: StageOptions): Promise<void> {
-  useGame.setState({ hint: { ask: o.ask, nudge: o.nudge, shown: false }, callouts: [], region: o.region ?? null });
+  useGame.setState({ callouts: [], region: o.region ?? null });
+  setTutorial({ hint: { ask: o.ask, nudge: o.nudge, shown: false } });
   let askNow = true;
   for (;;) {
     if (askNow) say(o.ask, 'check');
     await waitCheck(gen);
     askNow = false;
-    useGame.setState({ spotlight: null, region: null });
+    useGame.setState({ region: null });
+    setTutorial({ spotlight: null });
     void dismissFrogs('test');
     const res = await runChecker(o.rules);
     guard(gen);
@@ -241,7 +251,7 @@ export async function stage(gen: number, o: StageOptions): Promise<void> {
       continue;
     }
     allow({});
-    useGame.setState({ hint: null });
+    setTutorial({ hint: null });
     return;
   }
 }
@@ -258,7 +268,7 @@ export async function demo(
   void dismissFrogs('test');
   say(messages().tutorial.trying(formula), null, 'muted');
   if (g.formulaText.trim() !== formula) {
-    useGame.setState({ spotlight: 'formula' });
+    setTutorial({ spotlight: 'formula' });
     await sleep(500);
     guard(gen);
     for (let k = 1; k <= formula.length; k++) {

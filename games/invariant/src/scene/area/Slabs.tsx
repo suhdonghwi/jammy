@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { useGame } from '../../game/store';
-import { planeKey } from '../../levels/level';
+import { planeKey, type CompiledLevel } from '../../levels/level';
 import { SLAB_H, TILE } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
@@ -120,7 +120,7 @@ void main() {
 }
 `;
 
-export function Slabs({ version, dim, showStop, showGoal }: { version: number; dim: boolean; showStop: boolean; showGoal: boolean }) {
+export function Slabs({ level, version, dim, showStop, showGoal }: { level: CompiledLevel; version: number; dim: boolean; showStop: boolean; showGoal: boolean }) {
   const base = useMemo(() => {
     const g = new RoundedBoxGeometry(TILE, SLAB_H, TILE, 3, 0.07);
     g.translate(0, SLAB_H / 2, 0);
@@ -142,7 +142,6 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
     const geom = instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3], aFlags: [flags, 2] });
     const shadowGeom = instanced(shadowBase, n, { aTile: [tile, 2], aAnim: [anim, 3] });
     return { geom, shadowGeom };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, base, shadowBase]);
   useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
 
@@ -183,9 +182,8 @@ export function Slabs({ version, dim, showStop, showGoal }: { version: number; d
   useFrame((_, frameDt) => {
     const dt = Math.min(frameDt, 0.1);
     material.uniforms.uTime.value = sceneNow();
-    const g = useGame.getState();
-    setAxisNames(material.uniforms, g.level);
-    material.uniforms.uLastEvent.value = goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], planeKey(g.inputs));
+    setAxisNames(material.uniforms, level);
+    goalEvents.sync(planeKey(useGame.getState().inputs));
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);

@@ -82,20 +82,13 @@ export interface Game {
   caption: Caption | null;
   reveal: Reveal;
   codeCursor: CodeCursor | null;
-  hint: Hint | null;
   hintsShown: number;
   showRules: boolean;
   showSyntax: boolean;
   pitfallMessage: string | null;
   stepping: boolean;
   frogTags: boolean;
-  back: (() => void) | null;
-  skip: (() => void) | null;
-  awaitingCheck: boolean;
-  nextAction: { label: string; onClick: () => void } | null;
-  tutorialAllow: { step: boolean; run: boolean; eggs: boolean; formula: boolean };
-  spotLines: number[];
-  spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
+  tutorial: TutorialState;
   inputHover: string | null;
   callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];
   region: Region | null;
@@ -126,7 +119,33 @@ export interface Region {
   tick?: boolean;
 }
 
-export const ALLOW_NONE: Game['tutorialAllow'] = { step: false, run: false, eggs: false, formula: false };
+export interface TutorialState {
+  back: (() => void) | null;
+  skip: (() => void) | null;
+  awaitingCheck: boolean;
+  nextAction: { label: string; onClick: () => void } | null;
+  allow: { step: boolean; run: boolean; eggs: boolean; formula: boolean };
+  spotLines: number[];
+  spotlight: 'code' | 'step' | 'run' | 'formula' | 'check' | 'lights' | null;
+  hint: Hint | null;
+}
+
+export const ALLOW_NONE: TutorialState['allow'] = { step: false, run: false, eggs: false, formula: false };
+
+export const NO_TUTORIAL: TutorialState = {
+  back: null,
+  skip: null,
+  awaitingCheck: false,
+  nextAction: null,
+  allow: ALLOW_NONE,
+  spotLines: [],
+  spotlight: null,
+  hint: null,
+};
+
+export function setTutorial(patch: Partial<TutorialState>) {
+  useGame.setState((g) => ({ tutorial: { ...g.tutorial, ...patch } }));
+}
 
 const FRESH = {
   formulaText: '',
@@ -137,7 +156,6 @@ const FRESH = {
   pending: [],
   busy: false,
   running: false,
-  hint: null,
   hintsShown: 0,
   pitfallMessage: null,
   failMark: null,
@@ -145,13 +163,7 @@ const FRESH = {
   region: null,
   stepping: false,
   frogTags: false,
-  back: null,
-  skip: null,
-  awaitingCheck: false,
-  tutorialAllow: ALLOW_NONE,
-  spotLines: [],
-  nextAction: null,
-  spotlight: null,
+  tutorial: NO_TUTORIAL,
   inputHover: null,
 } satisfies Partial<Game>;
 

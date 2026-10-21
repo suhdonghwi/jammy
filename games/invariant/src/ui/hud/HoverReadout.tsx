@@ -17,7 +17,7 @@ function useTopRowPlacement(ref: React.RefObject<HTMLDivElement | null>) {
     const el = ref.current;
     if (!el) return;
     el.style.transform = '';
-    const groups = document.querySelectorAll('.topbar > .pill-group');
+    const groups = document.querySelectorAll('[data-topbar] > [data-pill]');
     if (!groups.length) return;
     const left = groups[0].getBoundingClientRect();
     const right = groups[groups.length - 1].getBoundingClientRect();

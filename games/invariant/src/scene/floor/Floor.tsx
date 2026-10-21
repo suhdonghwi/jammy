@@ -28,7 +28,7 @@ function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
 }
 
 interface FloorProps {
-  level: CompiledLevel | null;
+  level: CompiledLevel;
   inputs: Inputs;
   fadeIn?: number;
   interactive?: boolean;
@@ -74,14 +74,11 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     });
     setAxisNames(m.uniforms, level);
     return m;
-    // the program only depends on the level
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
   useEffect(() => () => material.dispose(), [material]);
 
   const u = material.uniforms;
   const key = planeKey(inputs);
-  useMemo(() => setInputUniforms(u, level, inputs, level ? planeExists(level, inputs) : true), [u, level, inputs, key]);
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 
@@ -89,13 +86,14 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     const dt = Math.min(frameDt, 0.1);
     const m = mesh.current;
     if (!m) return;
+    setInputUniforms(u, level, inputs, planeExists(level, inputs));
     const R = updateFade(u);
     const t = cameraRig.target();
     m.position.set(Math.round(t.x), 0, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
     u.uTime.value = sceneNow();
     setAxisNames(u, level);
-    u.uLastEvent.value = goalEvents.fill(u.uEvents.value as THREE.Vector3[], key);
+    goalEvents.sync(key);
     const kr = 1 - Math.exp(-dt * 3.2);
     const towards = (cur: number, on: boolean) => {
       const v = cur + ((on ? 1 : 0) - cur) * kr;

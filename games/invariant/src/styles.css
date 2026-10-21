@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 
+/* the same queries as hooks/media.ts */
 @custom-variant narrow {
   @media (max-width: 768px) and (min-height: 500.02px) {
     @slot;
@@ -18,7 +19,7 @@
   @media (max-width: 639.98px) {
     @slot;
   }
-  @media (max-height: 500px) and (orientation: landscape) {
+  @media (max-height: 500px) and (min-aspect-ratio: 3/2) {
     @slot;
   }
 }

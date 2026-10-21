@@ -62,12 +62,11 @@ export function AreaLayer({ level, inputs, inv, dim, showStop, showGoal, showEgg
     sfx.slabs(moved.rose, moved.sank);
     setVersion((v) => v + 1);
     return after(RISE_DUR * 1000 + 60, () => field.prune() && setVersion((v) => v + 1));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level, key, inv, win, showArea]);
 
   return (
     <group>
-      <Slabs version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
+      <Slabs level={level} version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
       {showEggs && <Eggs level={level} inputs={inputs} win={win} version={version} />}
       {showGoal && <GoalColumns level={level} inputs={inputs} win={win} version={version} />}
     </group>

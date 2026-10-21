@@ -45,7 +45,6 @@ export function useHomeCamera() {
     camera.position.copy(intro.current.eye);
     camera.lookAt(intro.current.target);
     void cameraRig.controls?.setLookAt(...intro.current.eye.toArray(), ...intro.current.target.toArray(), false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useFrame(({ size, camera }) => {

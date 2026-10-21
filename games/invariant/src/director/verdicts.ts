@@ -7,7 +7,7 @@ import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
 import { hop, inputsOf, planeKey, showState, toBig } from '../levels/level';
 import { tilesNear } from '../levels/tiles';
-import { EGG_REGROW } from '../scene/area/Eggs';
+import { EGG_REGROW } from '../scene/area/glsl';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
@@ -147,7 +147,7 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
   useGame.setState({ caption: action ? { text, tone, action, secondary: replay } : { text, tone, action: replay } });
 }
 
-export interface Outcome {
+interface Outcome {
   failing?: Rule;
   undecided: boolean;
 }

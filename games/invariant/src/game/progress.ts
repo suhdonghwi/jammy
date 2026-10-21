@@ -1,10 +1,11 @@
 import { create } from 'zustand';
+import { storage } from '../storage';
 
 const KEY = 'invariant-frog:cleared';
 
 function load(): string[] {
   try {
-    const saved = JSON.parse(localStorage.getItem(KEY) ?? '[]');
+    const saved: unknown = JSON.parse(storage.get(KEY) ?? '[]');
     return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [];
   } catch {
     return [];
@@ -12,17 +13,10 @@ function load(): string[] {
 }
 
 function save(cleared: string[]) {
-  try {
-    if (cleared.length) localStorage.setItem(KEY, JSON.stringify(cleared));
-    else localStorage.removeItem(KEY);
-  } catch {
-    // not remembered, but still shown for this visit
-  }
+  storage.set(KEY, cleared.length ? JSON.stringify(cleared) : null);
 }
 
-export const useProgress = create<{ cleared: string[] }>(() => ({
-  cleared: typeof window === 'undefined' ? [] : load(),
-}));
+export const useProgress = create<{ cleared: string[] }>(() => ({ cleared: load() }));
 
 export function markCleared(id: string) {
   const { cleared } = useProgress.getState();

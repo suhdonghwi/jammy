@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef, useSyncExternalStore } from 'react';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { create } from 'zustand';
 import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/level';
 import { field } from '../area/field';
@@ -26,22 +27,14 @@ interface Arc {
   fade: number;
 }
 
-let arcs: Arc[] = [];
-const listeners = new Set<() => void>();
-const changed = () => listeners.forEach((l) => l());
+const useHopArcs = create<{ arcs: Arc[] }>(() => ({ arcs: [] }));
 
 export const hopArcs = {
   add(a: Arc) {
-    arcs = [...arcs, a].slice(-MAX);
-    changed();
+    useHopArcs.setState((s) => ({ arcs: [...s.arcs, a].slice(-MAX) }));
   },
   clear() {
-    arcs = [];
-    changed();
-  },
-  subscribe(l: () => void) {
-    listeners.add(l);
-    return () => void listeners.delete(l);
+    useHopArcs.setState({ arcs: [] });
   },
 };
 
@@ -105,7 +98,7 @@ function GhostHop({ arc, plane }: { arc: Arc; plane: string }) {
 }
 
 export function HopArcs() {
-  const list = useSyncExternalStore(hopArcs.subscribe, () => arcs);
+  const list = useHopArcs((s) => s.arcs);
   const rings = useRef<THREE.InstancedMesh>(null);
   const washes = useRef<THREE.InstancedMesh>(null);
   const plane = useGame((s) => planeKey(s.inputs));
@@ -117,9 +110,10 @@ export function HopArcs() {
     if (!r || !w) return;
     const t = sceneNow();
     const ghosts = new Map(frogWorld.frogs.map((f) => [f.id, f]));
+    let { arcs } = useHopArcs.getState();
     if (arcs.some((a) => !ghosts.has(a.frog))) {
       arcs = arcs.filter((a) => ghosts.has(a.frog));
-      changed();
+      useHopArcs.setState({ arcs });
     }
     let nr = 0;
     for (const a of arcs) {

@@ -21,6 +21,15 @@ vec3 slotNow() {
 }
 `;
 
+export const EGG_REGROW = 0.35;
+export const GLSL_BACK = /* glsl */ `
+attribute float aBack;
+float backNow() {
+  float b = clamp((uTime - aBack) / ${EGG_REGROW.toFixed(2)}, 0.0, 1.0);
+  return 1.0 - pow(1.0 - b, 3.0);
+}
+`;
+
 export const GLSL_APPEAR = /* glsl */ `
 uniform float uAppearT0;
 uniform vec2 uAppearCenter;

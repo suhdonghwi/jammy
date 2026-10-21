@@ -185,7 +185,6 @@ export function compileFast(e: Expr): FastFn {
       }
     }
   };
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const f = new Function('cell', 's', `return ${go(e)};`) as (cell: typeof fastCell, s: FastState) => number | boolean;
   return (s) => f(fastCell, s);
 }

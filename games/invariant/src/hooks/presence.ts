@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-// keep in step with the animate-*-out durations in styles.css
-export const EXIT_MS = 150;
+import { EXIT_MS } from '../ui/timing';
 
 export function usePresence(show: boolean): { mounted: boolean; leaving: boolean } {
   const [mounted, setMounted] = useState(show);
@@ -43,4 +41,13 @@ export function usePresentList<T>(items: readonly T[], keyOf: (t: T) => string):
   const out = items.map((item) => ({ item, key: keyOf(item), leaving: false }));
   for (const [key, g] of gone.current) out.splice(Math.min(g.index, out.length), 0, { item: g.item, key, leaving: true });
   return out;
+}
+
+export function useExitFade(leaving: boolean): () => number {
+  const leftAt = useRef<number | null>(null);
+  return () => {
+    if (!leaving) leftAt.current = null;
+    else if (leftAt.current === null) leftAt.current = performance.now();
+    return leftAt.current === null ? 1 : Math.max(0, 1 - (performance.now() - leftAt.current) / EXIT_MS);
+  };
 }

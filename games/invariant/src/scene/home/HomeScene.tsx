@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { compileLevel } from '../../levels/level';
 import type { TileWindow } from '../../levels/tiles';
 import { field } from '../area/field';
 import { GoalColumns } from '../area/GoalColumns';
@@ -9,9 +10,20 @@ import { frogWorld, yawToward } from '../frogs/frogWorld';
 import { HATCH_EMERGE, HatchShells, hatchFx } from '../frogs/Hatch';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
-import { DIAGONAL } from './decor';
 import { StartEggs, type StartEgg } from './StartEggs';
 import { useHomeCamera } from './useHomeCamera';
+
+const DIAGONAL = compileLevel({
+  id: 'home-diagonal',
+  title: 'home',
+  source: `var x, y;
+while (x < y) {
+  x = x + 1;
+}
+ensures x == y && x >= 2 && x <= 9;`,
+  view: { x: 'x', y: 'y' },
+  solutions: [],
+});
 
 const RING = { x0: 1, y0: 8, w: 7, h: 5 };
 const FROGS = 5;
@@ -91,7 +103,7 @@ export function HomeScene() {
   return (
     <group>
       <Floor level={DIAGONAL} inputs={{}} fadeIn={2.6} showAxes={false} />
-      <Slabs version={version} dim={false} showStop showGoal />
+      <Slabs level={DIAGONAL} version={version} dim={false} showStop showGoal />
       <GoalColumns level={DIAGONAL} inputs={{}} win={WINDOW} version={version} />
       <StartEggs eggs={eggs} />
       <Frogs />

@@ -1,4 +1,4 @@
-import { EXIT_MS } from '../hooks/presence';
+import { EXIT_MS } from '../ui/timing';
 
 let started = false;
 let hidden = typeof document !== 'undefined' && document.hidden;

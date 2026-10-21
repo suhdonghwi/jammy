@@ -5,7 +5,7 @@ game is, see [design.md](design.md); for how it should feel, see
 [experience.md](experience.md).
 
 Stack: Vite, React (with React Compiler), TypeScript, react-three-fiber (three.js) with drei,
-zustand, GSAP, Tailwind CSS v4, z3-solver (WebAssembly). The area box is a
+zustand, Tailwind CSS v4, z3-solver (WebAssembly). The area box is a
 plain textarea over a coloured copy of its text; the 3D title's letter
 outlines are read from the font at build time (`scripts/title-glyphs.ts`); the
 Korean fonts are subsets made by `pnpm fonts`.
@@ -24,6 +24,7 @@ src/
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
   audio/       the sound effects
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
+  storage.ts   localStorage behind a try/catch, for the language, mute and cleared levels
   scene/       the 3D world
     floor/       the infinite floor, drawn per pixel from the level's formulas (formulas → GLSL)
     area/        the learner's slabs, eggs and goal columns
@@ -37,6 +38,7 @@ src/
     home/        title (3D lettering), home copy, level list
     rules/       the rules and syntax cards
     dev/         the link preview's page (`?poster`, development only)
+    timing.ts    EXIT_MS, the length of every exit animation
   styles.css   Tailwind setup: design tokens, keyframes, the page, the spotlight
 scripts/       level validation, the Z3 copy, font subsets, the title's glyphs, the link preview image
 tests/         unit tests (language, box search)
@@ -75,7 +77,7 @@ agree. `pnpm validate` and the tests are the safety net.
 - **The store** (`game/store.ts`, zustand) holds what the UI and the sequences
   share: mode, level, the plane in view (`inputs`: the off-axis inputs'
   values, with `planeKey` naming it for frogs and effects), formula, verdicts,
-  caption, reveal flags, tutorial state.
+  caption, reveal flags, and the tutorial's own state under `tutorial`.
   Components read it with selectors; other code reads `useGame.getState()` and
   writes `useGame.setState()`. Store actions exist only where there is logic
   (opening a level, compiling a formula).
@@ -194,6 +196,5 @@ opens the level list or a level, never on the home screen alone.
 - Remove dead code rather than leaving it behind.
 - Before committing: `pnpm typecheck`, `pnpm test`, `pnpm validate` (when
   levels, the language or the checker changed), `pnpm build`.
-- In development, `window.__game`, `__open(id)`, `__check()`, `__frogs`,
-  `__rig` and `__siren(n)` (plays ghost siren candidate n; `?siren=n` picks
-  the one the game uses) are available in the console.
+- In development, `window.__game`, `__open(id)`, `__check()`, `__frogs` and
+  `__rig` are available in the console.

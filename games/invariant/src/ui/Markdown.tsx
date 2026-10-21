@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import { colorRuns } from './codeColors';
+import { HighlightedCode } from './codeColors';
 
 export function Markdown({ text }: { text: string }) {
   const blocks = text.trim().split(/\n[ \t]*\n/);
@@ -47,7 +47,7 @@ function renderInline(text: string): ReactNode[] {
     if (part.length > 2 && part.startsWith('`') && part.endsWith('`'))
       return (
         <code key={i} className="rounded-md bg-shade/6 px-1.5 py-px font-mono text-[0.9em] whitespace-nowrap">
-          <InlineCode src={part.slice(1, -1)} />
+          <HighlightedCode src={part.slice(1, -1)} />
         </code>
       );
     if (part.length > 4 && part.startsWith('**') && part.endsWith('**'))
@@ -60,12 +60,4 @@ function renderInline(text: string): ReactNode[] {
       return <em key={i}>{renderInline(part.slice(1, -1))}</em>;
     return <Fragment key={i}>{part}</Fragment>;
   });
-}
-
-function InlineCode({ src }: { src: string }) {
-  return colorRuns(src, false).map((r) => (
-    <span key={r.from} className={r.cls}>
-      {src.slice(r.from, r.to)}
-    </span>
-  ));
 }

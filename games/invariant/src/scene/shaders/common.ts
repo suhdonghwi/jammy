@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { cameraRig } from '../cameraRig';
 import type { CompiledLevel } from '../../levels/level';
+import { cameraRig } from '../cameraRig';
 import { COLORS } from '../constants';
+import { goalEvents, MAX_EVENTS } from '../goalEvents';
 
 export const GLSL_COMMON = /* glsl */ `
 float sdRoundBox(vec2 p, vec2 b, float r) {
@@ -93,11 +94,11 @@ interface NameLayout {
 const NO_NAME: NameLayout = { glyphs: [0, 0, 0], len: 0, mid: [0, 0, 0, 0], width: 0 };
 const layouts = new Map<string, NameLayout>();
 
-function nameLayout(name: string | undefined): NameLayout {
+function nameLayout(name: string): NameLayout {
   const key = `${name}|${atlasVersion}`;
   const known = layouts.get(key);
   if (known) return known;
-  const glyphs = [...(name ?? '')].map((c) => GLYPHS.indexOf(c));
+  const glyphs = [...name].map((c) => GLYPHS.indexOf(c));
   let out = NO_NAME;
   if (glyphs.length && glyphs.length <= 3 && !glyphs.includes(-1)) {
     const mid: number[] = [];
@@ -112,9 +113,9 @@ function nameLayout(name: string | undefined): NameLayout {
   return out;
 }
 
-export function setAxisNames(u: Record<string, THREE.IUniform>, level: CompiledLevel | null) {
-  const x = nameLayout(level?.view.x);
-  const y = nameLayout(level?.view.y);
+export function setAxisNames(u: Record<string, THREE.IUniform>, level: CompiledLevel) {
+  const x = nameLayout(level.view.x);
+  const y = nameLayout(level.view.y);
   u.uNameX.value = x.glyphs;
   u.uNameXLen.value = x.len;
   u.uNameXMid.value = x.mid;
@@ -126,7 +127,6 @@ export function setAxisNames(u: Record<string, THREE.IUniform>, level: CompiledL
   u.uDigitW.value = Math.max(...advance.slice(0, 10));
 }
 
-export const MAX_EVENTS = 24;
 export const GLSL_GOAL = /* glsl */ `
 uniform vec3 uGoal;
 uniform vec3 uPoolLight;
@@ -210,8 +210,7 @@ export function goalUniforms(): Record<string, THREE.IUniform> {
     uGoal: { value: new THREE.Color(COLORS.goal) },
     uPoolLight: { value: new THREE.Color(COLORS.poolLight) },
     uPoolDeep: { value: new THREE.Color(COLORS.poolDeep) },
-    uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
-    uLastEvent: { value: -100 },
+    ...goalEvents.uniforms,
   };
 }
 

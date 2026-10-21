@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useGame, type Game } from '../../game/store';
-import { usePresentList } from '../../hooks/presence';
+import { useLingering, usePresentList } from '../../hooks/presence';
 import { frogWorld, type FrogSim } from '../frogs/frogWorld';
 import { SceneTag } from './SceneTag';
 import { TileTag, TONE_PREFIX } from './TileTag';
@@ -30,4 +30,10 @@ export function Callouts() {
       })}
     </>
   );
+}
+
+export function FailMarker() {
+  const { value: mark, leaving } = useLingering(useGame((s) => s.failMark));
+  if (!mark) return null;
+  return <TileTag key={`${mark.x},${mark.y},${mark.t0}`} x={mark.x} y={mark.y} label={mark.label} tone="fail" pulse wash leaving={leaving} />;
 }

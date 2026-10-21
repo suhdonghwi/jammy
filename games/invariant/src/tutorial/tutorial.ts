@@ -1,9 +1,9 @@
 import { interrupt, placeFrog, resetLevel } from '../director/frogs';
-import { ALLOW_NONE, EMPTY_REVEAL, useGame, type Game } from '../game/store';
+import { EMPTY_REVEAL, NO_TUTORIAL, setTutorial, useGame, type Game } from '../game/store';
 import { exampleLevel, tutorialLevel } from '../levels/catalog';
 import { cameraRig, type Shot } from '../scene/cameraRig';
 import { sleep, switchScene } from '../scene/sceneTime';
-import { Aborted, allow, currentGeneration, guard, newGeneration } from './script';
+import { Aborted, currentGeneration, guard, newGeneration } from './script';
 import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
 
 export { tutorialCheck } from './script';
@@ -23,16 +23,12 @@ function restore(gen: number, scene: Scene) {
     resetLevel();
     useGame.getState().openLevel(level, 'tutorial');
   } else interrupt();
-  allow({});
   useGame.setState({
     reveal: { ...EMPTY_REVEAL, ...scene.reveal },
     frogTags: !!scene.tags,
     callouts: [],
     region: null,
-    spotLines: [],
-    spotlight: null,
-    hint: null,
-    awaitingCheck: false,
+    tutorial: NO_TUTORIAL,
     verdicts: {},
     pitfallMessage: null,
   });
@@ -50,7 +46,8 @@ function crossTo(gen: number, scene: Scene): Promise<void> {
       restore(gen, scene);
       resolve();
     };
-    useGame.setState({ callouts: [], region: null, failMark: null, spotlight: null });
+    useGame.setState({ callouts: [], region: null, failMark: null });
+    setTutorial({ spotlight: null });
     if (!switchScene(go)) go();
   });
 }
@@ -61,7 +58,7 @@ function play(from: number, rewound = false) {
     if (from > 0) restore(gen, STEPS[from].scene);
     else if (!rewound) {
       void cameraRig.frame(shotOf(STEPS[0].scene));
-      allow({});
+      setTutorial({ allow: NO_TUTORIAL.allow });
       await sleep(500);
       guard(gen);
     }
@@ -70,7 +67,7 @@ function play(from: number, rewound = false) {
       else if (i > from) void cameraRig.frame(shotOf(STEPS[i].scene));
       stepIndex = i;
       stepCaption = useGame.getState().caption;
-      useGame.setState({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
+      setTutorial({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
       await STEPS[i].run(gen);
       guard(gen);
       noteShown();
@@ -90,17 +87,7 @@ export function startTutorial(finish: () => void, from = 0) {
 
 export function stopTutorial() {
   newGeneration();
-  useGame.setState({
-    awaitingCheck: false,
-    spotlight: null,
-    spotLines: [],
-    region: null,
-    hint: null,
-    nextAction: null,
-    back: null,
-    skip: null,
-    tutorialAllow: ALLOW_NONE,
-  });
+  useGame.setState({ region: null, tutorial: NO_TUTORIAL });
 }
 
 function noteShown() {

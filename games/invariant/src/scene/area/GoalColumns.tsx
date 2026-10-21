@@ -5,9 +5,8 @@ import { useGame } from '../../game/store';
 import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
 import { tilesNear, type TileWindow } from '../../levels/tiles';
 import { COLORS, SLAB_H } from '../constants';
-import { goalEvents } from '../goalEvents';
+import { goalEvents, MAX_EVENTS } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
-import { MAX_EVENTS } from '../shaders/common';
 import { field } from './field';
 import { GLSL_HEIGHT, instanced } from './glsl';
 
@@ -77,7 +76,6 @@ export function GoalColumns({
   const tiles = useMemo(() => {
     const f = level.fast;
     return tilesNear(level, inputs, { ...win, R: Math.min(win.R, 24) }, (s, x, y) => (f.planeReq(s) && f.guard(s) !== true && f.post(s) === true ? [x, y] : undefined));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level, key, win]);
 
   const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
@@ -91,7 +89,6 @@ export function GoalColumns({
       anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
     });
     return instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3] });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiles, version, base]);
   useEffect(() => () => geom.dispose(), [geom]);
 
@@ -107,15 +104,14 @@ export function GoalColumns({
           uTime: { value: 0 },
           uColor: { value: new THREE.Color(COLORS.goal) },
           uAppearT0: { value: sceneNow() },
-          uEvents: { value: Array.from({ length: MAX_EVENTS }, () => new THREE.Vector3(0, 0, -100)) },
+          uEvents: goalEvents.uniforms.uEvents,
         },
       }),
     [],
   );
   useFrame(() => {
     material.uniforms.uTime.value = sceneNow();
-    const g = useGame.getState();
-    goalEvents.fill(material.uniforms.uEvents.value as THREE.Vector3[], planeKey(g.inputs));
+    goalEvents.sync(planeKey(useGame.getState().inputs));
   });
   return <mesh geometry={geom} material={material} frustumCulled={false} renderOrder={6} />;
 }
