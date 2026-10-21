@@ -39,15 +39,44 @@ function renderBlock(block: string, key: number): ReactNode {
 
 const LI = 'marker:text-muted [&+li]:mt-0.5';
 
-const INLINE = /(`[^`]+`|\*\*.+?\*\*|(?<![\w*])\*(?!\s)[^*]+?\*(?!\w)|(?<!\w)_(?!\s)[^_]+?_(?!\w))/g;
+const INLINE = /`[^`]+`|\*\*.+?\*\*|\*(?!\s)[^*]+?\*(?!\w)|_(?!\s)[^_]+?_(?!\w)/g;
+const NOT_AFTER: Record<string, RegExp> = { '*': /[\w*]/, _: /\w/ };
+
+function splitInline(text: string): string[] {
+  const parts: string[] = [];
+  let last = 0;
+  INLINE.lastIndex = 0;
+  for (let m; (m = INLINE.exec(text)); ) {
+    const guard = m[0][1] === '*' ? undefined : NOT_AFTER[m[0][0]];
+    if (guard?.test(text[m.index - 1] ?? '')) {
+      INLINE.lastIndex = m.index + 1;
+      continue;
+    }
+    parts.push(text.slice(last, m.index), m[0]);
+    last = INLINE.lastIndex;
+  }
+  parts.push(text.slice(last));
+  return parts;
+}
+
+function wrapPoints(src: string): string[] {
+  return (src.match(/.+?(?:(?:&&|\|\|) +|$)/g) ?? [src]).map((c) => c.trimEnd()).filter(Boolean);
+}
 
 function renderInline(text: string): ReactNode[] {
-  return text.split(INLINE).map((part, i) => {
+  return splitInline(text).map((part, i) => {
     if (!part) return null;
     if (part.length > 2 && part.startsWith('`') && part.endsWith('`'))
       return (
-        <code key={i} className="rounded-md bg-shade/6 px-1.5 py-px font-mono text-[0.9em] whitespace-nowrap">
-          <HighlightedCode src={part.slice(1, -1)} />
+        <code key={i} className="rounded-md bg-shade/6 box-decoration-clone px-1.5 py-px font-mono text-[0.9em]">
+          {wrapPoints(part.slice(1, -1)).map((chunk, j) => (
+            <Fragment key={j}>
+              {j > 0 && ' '}
+              <span className="whitespace-nowrap">
+                <HighlightedCode src={chunk} />
+              </span>
+            </Fragment>
+          ))}
         </code>
       );
     if (part.length > 4 && part.startsWith('**') && part.endsWith('**'))
