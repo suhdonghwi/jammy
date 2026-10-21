@@ -85,6 +85,7 @@ export function SceneTag({
   const width = useRef(0);
   const height = useRef(0);
   const lift = useRef(0);
+  const shift = useRef(0);
   const measure = useCallback((el: HTMLDivElement | null) => {
     box.current = el;
     if (!el) return;
@@ -115,7 +116,8 @@ export function SceneTag({
       const reach = Math.max(0, half - POINTER_INSET * k);
       const { left, right } = cameraRig.free;
       const [from, to] = right - left > 2 * half ? [left, right] : [EDGE, size.width - EDGE];
-      const dx = THREE.MathUtils.clamp(Math.max(from + half - x, Math.min(0, to - half - x)), -reach, reach);
+      const aside = THREE.MathUtils.clamp(Math.max(from + half - x, Math.min(0, to - half - x)), -reach, reach);
+      const dx = (shift.current = placed.current > 1 ? THREE.MathUtils.damp(shift.current, aside, 12, dt) : aside);
       const bottom = y - POINTER_ROOM * k;
       const shown = !leaving && !hidden?.();
       const goal = shown ? liftClear({ left: x + dx - half, right: x + dx + half, top: bottom - height.current * k, bottom }, clock.elapsedTime) : lift.current;
