@@ -106,7 +106,7 @@ function sweep(tiles: RegionTile[], camera: THREE.Camera): Sweep {
   const delays = all.map((i) => (hi > lo ? span * THREE.MathUtils.clamp((along(i) - lo) / (hi - lo), 0, 1) : 0));
   pick.forEach((i, rank) => (delays[i] = at(rank)));
   const count = Math.min(TICKS, n);
-  const ticks = Array.from({ length: count }, (_, k) => at(count > 1 ? Math.round((k * (n - 1)) / (count - 1)) : 0) + POP);
+  const ticks = Array.from({ length: count }, (_, k) => (count > 1 ? (span * k) / (count - 1) : 0) + POP);
   return { delays, ticks };
 }
 
