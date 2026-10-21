@@ -1,5 +1,8 @@
 {
   "name": "jammy",
   "private": true,
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "build": "rm -rf dist && BASE_PATH=/invariant/ pnpm --filter invariant-frog build && mkdir dist && cp hub/index.html hub/404.html dist/ && cp -r games/invariant/dist dist/invariant"
+  }
 }
