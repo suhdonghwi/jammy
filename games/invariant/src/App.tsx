@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { browserZ3 } from './checker/z3-browser';
 import { useGame } from './game/store';
 import { World } from './scene/World';
@@ -37,6 +38,7 @@ export function App() {
         <RulesCard />
         <SyntaxCard />
       </div>
+      <Analytics />
     </div>
   );
 }
