@@ -107,8 +107,7 @@ class FrogWorld {
     const ty = Number(next[level.view.y]);
     if (tx !== f.x || ty !== f.y) f.face = yawToward(f.x, f.y, tx, ty);
     f.hop = { fx: f.x, fy: f.y, tx, ty, t0: sceneNow(), dur };
-    const batch = quiet ? null : joinHopBatch();
-    if (batch?.pending === 1) traceHop(level, from, next, dur);
+    const batch = quiet ? null : joinHopBatch(() => traceHop(level, from, next, dur));
     return new Promise((res) =>
       after(dur * 1000, () => {
         f.x = tx;

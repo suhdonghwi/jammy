@@ -3,19 +3,22 @@ import { sfx } from '../../audio/sfx';
 interface HopBatch {
   pending: number;
   results: boolean[];
+  follow: () => void;
 }
 let openBatch: HopBatch | null = null;
 
-export function joinHopBatch(): HopBatch {
+export function joinHopBatch(follow: () => void): HopBatch {
   if (!openBatch) {
-    const b: HopBatch = { pending: 0, results: [] };
+    const b: HopBatch = { pending: 0, results: [], follow };
     openBatch = b;
     queueMicrotask(() => {
       openBatch = null;
       sfx.hop(b.pending);
+      b.follow();
     });
   }
   openBatch.pending++;
+  openBatch.follow = follow;
   return openBatch;
 }
 
