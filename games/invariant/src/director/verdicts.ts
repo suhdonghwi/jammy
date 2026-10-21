@@ -88,7 +88,7 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
   }
 }
 
-const HOLD_MS = 1300;
+const HOLD_MS = 1000;
 const REGION_MS = 1300;
 const BETWEEN_MS = 300;
 
