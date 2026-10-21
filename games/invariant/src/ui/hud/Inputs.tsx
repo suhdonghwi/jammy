@@ -118,7 +118,7 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
   };
   const bad = editing && !INT.test(text.trim());
   return (
-    <div key={pops} className="flex animate-[pop_0.3s_ease-out] items-center">
+    <div key={pops} className="flex animate-[pop_0.3s_var(--ease-entrance)] items-center">
       <SmallButton onClick={() => commit(value - 1)} disabled={disabled} label={labels[0]} className="rounded-r-none">
         <Minus size={12} strokeWidth={2.6} />
       </SmallButton>
@@ -167,7 +167,7 @@ function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: C
   };
   const bad = editing && !incomplete(text) && parseArray(text) === null;
   return (
-    <div key={pops} className="flex min-w-0 flex-1 animate-[pop_0.3s_ease-out] items-center gap-1.5">
+    <div key={pops} className="flex min-w-0 flex-1 animate-[pop_0.3s_var(--ease-entrance)] items-center gap-1.5">
       <input
         className={`${FIELD} flex-1 ${bad ? 'border-fail/50 text-fail' : ''}`}
         value={editing ? text : shown}

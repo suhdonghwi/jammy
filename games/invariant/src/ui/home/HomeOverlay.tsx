@@ -25,7 +25,7 @@ export function HomeOverlay() {
         <HeroCopy behind={view === 'levels'} />
       </div>
       <div
-        className={`fixed top-4 right-4 flex max-sm:top-2.5 max-sm:right-2.5 animate-[fade_0.4s_ease-out_0.6s_both] items-center gap-2 transition-opacity duration-180 ${
+        className={`fixed top-4 right-4 flex max-sm:top-2.5 max-sm:right-2.5 animate-[fade_0.4s_var(--ease-entrance)_0.6s_both] items-center gap-2 transition-opacity duration-180 ${
           view === 'levels' ? 'opacity-35' : ''
         }`}
       >
@@ -45,7 +45,7 @@ const WASH =
 function HomeButtons() {
   const tr = useT();
   return (
-    <div className="flex animate-[rise_0.5s_ease-out_0.45s_both] gap-3.5 narrow:justify-center max-sm:gap-2.5">
+    <div className="flex animate-[rise_0.5s_var(--ease-entrance)_0.45s_both] gap-3.5 narrow:justify-center max-sm:gap-2.5">
       <button className={button('primary', 'lg')} onClick={openTutorial}>
         <GraduationCap size={22} strokeWidth={2.2} /> {tr.home.tutorial}
       </button>
@@ -61,12 +61,12 @@ function HeroCopy({ behind }: { behind: boolean }) {
   const narrow = useMedia(NARROW_HOME);
   return (
     <div className={`max-w-118 narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
-      <p className="mb-3 animate-[rise_0.5s_ease-out_0.1s_both] font-display short:mb-2 text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
+      <p className="mb-3 animate-[rise_0.5s_var(--ease-entrance)_0.1s_both] font-display short:mb-2 text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
       <h1 className="mb-3.5 short:mb-2">
         <span className="sr-only">Invariant Frog</span>
         <Title3D align={narrow ? 'center' : 'left'} />
       </h1>
-      <p className="mb-6.5 animate-[rise_0.5s_ease-out_0.35s_both] text-lg leading-[1.55] text-muted max-sm:text-base short:mb-4 short:max-w-[min(29.5rem,48vw)] short:text-base">{tr.home.pitch}</p>
+      <p className="mb-6.5 animate-[rise_0.5s_var(--ease-entrance)_0.35s_both] text-lg leading-[1.55] text-muted max-sm:text-base short:mb-4 short:max-w-[min(29.5rem,48vw)] short:text-base">{tr.home.pitch}</p>
       <HomeButtons />
     </div>
   );

@@ -72,7 +72,7 @@ export function CodePanel() {
   return (
     <div
       data-frame="top"
-      className={`${CARD} flex min-h-0 animate-slide-in px-4 pt-3.25 pb-3 max-md:p-2.5 ${open ? 'flex-col' : 'flex-wrap items-center gap-x-3 gap-y-2'} ${spot === 'code' ? 'spotlight' : ''}`}
+      className={`${CARD} flex min-h-0 animate-slide-in px-4 [animation-delay:70ms] pt-3.25 pb-3 max-md:p-2.5 ${open ? 'flex-col' : 'flex-wrap items-center gap-x-3 gap-y-2'} ${spot === 'code' ? 'spotlight' : ''}`}
     >
       <button
         className={`${CARD_LABEL} -mx-1.5 -mt-1 flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-shade/6 hover:text-muted ${open ? 'mb-0.5! self-start' : '-mb-1!'}`}

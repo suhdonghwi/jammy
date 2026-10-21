@@ -66,7 +66,7 @@ function Value({ value }: { value: string }) {
           {cur.old}
         </span>
       )}
-      <span key={`n${cur.k}`} className={cur.old !== null ? 'animate-[tag-new_0.7s_ease-out]' : ''}>
+      <span key={`n${cur.k}`} className={cur.old !== null ? 'animate-[tag-new_0.7s_var(--ease-entrance)]' : ''}>
         {cur.v}
       </span>
     </span>

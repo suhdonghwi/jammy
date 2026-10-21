@@ -6,7 +6,8 @@ behind many small decisions; keep them when changing or adding UI.
 ## Nothing pops
 
 - **Everything that appears or disappears animates**: dialogs, the level list,
-  captions, toasts, tags in the scene. Entrances fade or rise in (about 0.2 s);
+  captions, toasts, tags in the scene. Entrances fade or rise in (about 0.2 s, on the one
+  entrance curve, `--ease-entrance`: quick, then settling);
   exits play a short reverse (`EXIT_MS`, 150 ms). Use the presence helpers in
   `hooks/presence.ts` rather than unmounting things outright. In the scene,
   frogs leave through `dismissFrogs` (they shrink away, ghosts fade, their

@@ -7,7 +7,7 @@ import { useHover } from '../../scene/hover';
 import { tileState } from '../../levels/tiles';
 
 const READOUT =
-  'flex animate-[fade_0.15s_ease-out] items-center gap-2 rounded-full bg-ink/86 px-3.5 py-1.75 text-sm text-white shadow-card has-[>span+span]:pr-2 compact:mx-4 compact:flex-wrap compact:justify-center compact:gap-y-1 compact:rounded-2xl';
+  'flex animate-[fade_0.15s_var(--ease-entrance)] items-center gap-2 rounded-full bg-ink/86 px-3.5 py-1.75 text-sm text-white shadow-card has-[>span+span]:pr-2 compact:mx-4 compact:flex-wrap compact:justify-center compact:gap-y-1 compact:rounded-2xl';
 const TAG = 'rounded-full px-2.5 py-0.75 font-display text-sm font-medium';
 
 const READOUT_ROOM = 440;

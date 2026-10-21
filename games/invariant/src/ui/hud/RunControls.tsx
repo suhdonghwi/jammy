@@ -25,7 +25,7 @@ export function RunControls() {
   const crowded = !!onHint || (reveal.run && !tut) || (rules && reveal.formula);
   const square = (iconOnly: boolean) => (iconOnly ? 'compact:w-9.5 compact:self-stretch compact:px-0!' : '');
   return (
-    <div className="flex animate-[rise_0.4s_ease-out] items-center gap-1.5 max-[22.5rem]:gap-1">
+    <div className="flex animate-[rise_0.4s_var(--ease-entrance)] items-center gap-1.5 max-[22.5rem]:gap-1">
       {reveal.run &&
         (runningNow ? (
           <button className={button()} onClick={pauseRun}>

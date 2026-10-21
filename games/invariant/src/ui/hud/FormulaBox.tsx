@@ -75,7 +75,7 @@ export function FormulaBox() {
   const canCheck = !busy && !checking && (mode !== 'tutorial' || awaitingCheck);
   return (
     // 16px on phones: any smaller and iOS zooms the page when the box is focused
-    <div className="animate-[rise_0.4s_ease-out] [--formula-size:17px] compact:[--formula-size:16px]">
+    <div className="animate-[rise_0.4s_var(--ease-entrance)] [--formula-size:17px] compact:[--formula-size:16px]">
       <div
         ref={box}
         className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card compact:gap-x-2 compact:pl-3 transition-colors duration-150 ${shownError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''}`}

@@ -86,10 +86,12 @@
   --shadow-toy-brand: 0 4px 0 var(--color-brand-deep), 0 8px 18px rgb(59 130 246 / 0.3);
   --shadow-toy-brand-pressed: 0 1px 0 var(--color-brand-deep), 0 3px 8px rgb(59 130 246 / 0.3);
 
-  --animate-fade: fade 0.2s ease-out;
-  --animate-rise: rise 0.2s ease-out;
-  --animate-slide-in: slide-in 0.4s ease-out;
-  --animate-tag-in: tag-in 0.2s ease-out;
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade: fade 0.2s var(--ease-entrance);
+  --animate-rise: rise 0.25s var(--ease-entrance);
+  --animate-slide-in: slide-in 0.45s var(--ease-entrance) both;
+  --animate-tag-in: tag-in 0.2s var(--ease-entrance);
   --animate-fade-out: fade-out 0.15s ease-in forwards;
   --animate-pop-out: pop-out 0.15s ease-in forwards;
   --animate-sink-out: sink-out 0.15s ease-in forwards;
@@ -145,12 +147,12 @@ html[data-leaving] .screen {
   border-radius: inherit;
   pointer-events: none;
   animation:
-    fade 0.3s ease-out,
+    fade 0.3s var(--ease-entrance),
     spotlight 1.6s ease-in-out infinite;
 }
 .spotlight-soft::after {
   animation:
-    fade 0.3s ease-out,
+    fade 0.3s var(--ease-entrance),
     spotlight-soft 1.6s ease-in-out infinite;
 }
 .spotlight-glow:not(:disabled) {
