@@ -42,3 +42,12 @@ export function usePresentList<T>(items: readonly T[], keyOf: (t: T) => string):
   for (const [key, g] of gone.current) out.splice(Math.min(g.index, out.length), 0, { item: g.item, key, leaving: true });
   return out;
 }
+
+export function useExitFade(leaving: boolean): () => number {
+  const leftAt = useRef<number | null>(null);
+  return () => {
+    if (!leaving) leftAt.current = null;
+    else if (leftAt.current === null) leftAt.current = performance.now();
+    return leftAt.current === null ? 1 : Math.max(0, 1 - (performance.now() - leftAt.current) / EXIT_MS);
+  };
+}

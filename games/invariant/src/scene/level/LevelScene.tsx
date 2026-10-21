@@ -9,10 +9,9 @@ import { GroundBursts } from '../frogs/Burst';
 import { Frogs } from '../frogs/Frogs';
 import { HatchShells } from '../frogs/Hatch';
 import { HopArcs } from '../frogs/HopArcs';
-import { Callouts } from '../labels/Callouts';
-import { OutlineRegion } from '../labels/Region';
-import { FailMarker } from '../labels/FailMarker';
+import { Callouts, FailMarker } from '../labels/Callouts';
 import { FrogTags } from '../labels/FrogTags';
+import { OutlineRegion } from '../labels/Region';
 import { HoverPreview } from './HoverPreview';
 
 export function LevelScene() {

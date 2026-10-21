@@ -1,6 +1,6 @@
 import type { Rule } from '../checker/types';
-import { events } from '../director/events';
 import { dismissFrogs } from '../director/frogs';
+import { events } from '../director/sequence';
 import { playVerification, revealAll, runChecker, showUndecided } from '../director/verdicts';
 import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';

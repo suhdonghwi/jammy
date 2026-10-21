@@ -3,8 +3,8 @@ import { useRef } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
+import { useExitFade } from '../../hooks/presence';
 import { sceneNow } from '../sceneTime';
-import { useExitFade } from './exitFade';
 import { SceneTag, type TagTone } from './SceneTag';
 
 export const TONE_COLORS: Record<TagTone, string> = {

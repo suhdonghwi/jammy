@@ -12,8 +12,7 @@ import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { occupancy } from '../scene/frogs/occupancy';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
-import { events } from './events';
-import { begin, currentLevel } from './sequence';
+import { begin, currentLevel, events } from './sequence';
 
 const RUN_EGGS = 10;
 
