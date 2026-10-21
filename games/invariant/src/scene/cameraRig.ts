@@ -186,6 +186,10 @@ export const cameraRig = {
     const to = solve(start.x, start.y, start.d, focus, r);
     return glide(to.x, to.y, to.d, smooth);
   },
+  include(tiles: readonly Tile[]) {
+    if (!tiles.length) return;
+    void cameraRig.frame({ at: current?.at, focus: [...(current?.focus ?? []), ...tiles] });
+  },
   reframe() {
     if (!controls || !current?.focus?.length || userMoved) return;
     const now = endView();

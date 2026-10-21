@@ -4,6 +4,7 @@ import { dismissFrogs } from '../director/frogs';
 import { playVerification, revealAll, runChecker, showUndecided } from '../director/verdicts';
 import { ALLOW_NONE, useGame, type CaptionTone, type Game } from '../game/store';
 import { t as messages } from '../i18n/i18n';
+import { cameraRig } from '../scene/cameraRig';
 import { sleep } from '../scene/sceneTime';
 
 export class Aborted extends Error {}
@@ -92,6 +93,7 @@ export async function beat(
   } = {},
 ): Promise<void> {
   if (!opts.keep) useGame.setState({ callouts: opts.callouts ?? [], region: opts.region ?? null, spotLines: opts.lines ?? [] });
+  if (opts.callouts) cameraRig.include(opts.callouts.map((c) => [c.x, c.y] as const));
   const tone = opts.tone ?? 'info';
   const label = opts.label ?? messages().caption.next;
   let pressed = false;

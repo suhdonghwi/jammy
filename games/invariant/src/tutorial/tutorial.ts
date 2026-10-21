@@ -1,19 +1,20 @@
 import { interrupt, placeFrog, resetLevel } from '../director/frogs';
 import { ALLOW_NONE, EMPTY_REVEAL, useGame } from '../game/store';
 import { exampleLevel, tutorialLevel } from '../levels/catalog';
-import { cameraRig } from '../scene/cameraRig';
+import { cameraRig, type Shot, type View } from '../scene/cameraRig';
 import { after, sleep, switchScene } from '../scene/sceneTime';
 import { Aborted, allow, currentGeneration, guard, newGeneration } from './script';
 import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, type Scene } from './steps';
 
 export { tutorialCheck } from './script';
 
-const TUTORIAL_CAMERA: [number, number, number] = [2, 2, 13];
+const TUTORIAL_CAMERA: View = [2, 2, 13];
 
 let stepIndex = 0;
 let onFinish: () => void = () => {};
 
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
+const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? TUTORIAL_CAMERA, focus: scene.focus });
 
 function restore(gen: number, scene: Scene) {
   const level = levelOf(scene);
@@ -38,9 +39,8 @@ function restore(gen: number, scene: Scene) {
   useGame.getState().setFormula(scene.formula === 'learner' ? learnerFormula : (scene.formula ?? ''));
   if (level === tutorialLevel) for (const [i, n] of scene.frogs ?? []) placeFrog(st(i, n));
   if (scene.loop) loopExampleFrogs();
-  const [x, y, d] = scene.camera ?? TUTORIAL_CAMERA;
-  if (switched) after(80, () => gen === currentGeneration() && void cameraRig.lookAtTile(x, y, d, false));
-  else void cameraRig.lookAtTile(x, y, d);
+  if (switched) after(80, () => gen === currentGeneration() && void cameraRig.frame(shotOf(scene), false));
+  else void cameraRig.frame(shotOf(scene));
   guard(gen);
 }
 
@@ -67,6 +67,7 @@ function play(from: number, rewound = false) {
     }
     for (let i = from; i < STEPS.length; i++) {
       if (i > from && levelOf(STEPS[i].scene).id !== useGame.getState().level?.id) await crossTo(gen, STEPS[i].scene);
+      else if (i > from) void cameraRig.frame(shotOf(STEPS[i].scene));
       stepIndex = i;
       useGame.setState({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
       await STEPS[i].run(gen);
