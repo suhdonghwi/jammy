@@ -193,7 +193,7 @@ export const STEPS: Step[] = [
           { x: 0, y: 18, text: T().endlessTag, tone: 'info' },
         ],
         prepare: async () => {
-          await cameraRig.frame({ at: [4, 10, 55], focus: [[0, 0], [9, 9], [0, 18]] });
+          await cameraRig.arrive({ at: [4, 10, 55], focus: [[0, 0], [9, 9], [0, 18]] });
           guard(gen);
           allow({ eggs: true });
         },
@@ -337,7 +337,7 @@ export const STEPS: Step[] = [
       await beat(gen, T().together, {
         prepare: async () => {
           resetFrogs();
-          await cameraRig.frame({ at: [1.5, 3, 12], focus: [[0, 3], [3, 3]] });
+          await cameraRig.arrive({ at: [1.5, 3, 12], focus: [[0, 3], [3, 3]] });
           guard(gen);
           const f = hatch(st(0, 3));
           await sleep(700);

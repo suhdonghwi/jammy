@@ -2,7 +2,7 @@ import { interrupt, placeFrog, resetLevel } from '../director/frogs';
 import { ALLOW_NONE, EMPTY_REVEAL, useGame } from '../game/store';
 import { exampleLevel, tutorialLevel } from '../levels/catalog';
 import { cameraRig, type Shot, type View } from '../scene/cameraRig';
-import { after, sleep, switchScene } from '../scene/sceneTime';
+import { sleep, switchScene } from '../scene/sceneTime';
 import { Aborted, allow, currentGeneration, guard, newGeneration } from './script';
 import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, type Scene } from './steps';
 
@@ -16,7 +16,7 @@ let onFinish: () => void = () => {};
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
 const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? TUTORIAL_CAMERA, focus: scene.focus });
 
-function restore(gen: number, scene: Scene, smooth = true) {
+function restore(gen: number, scene: Scene) {
   const level = levelOf(scene);
   const switched = useGame.getState().level?.id !== level.id;
   if (switched) {
@@ -39,8 +39,7 @@ function restore(gen: number, scene: Scene, smooth = true) {
   useGame.getState().setFormula(scene.formula === 'learner' ? learnerFormula : (scene.formula ?? ''));
   if (level === tutorialLevel) for (const [i, n] of scene.frogs ?? []) placeFrog(st(i, n));
   if (scene.loop) loopExampleFrogs();
-  if (switched) after(80, () => gen === currentGeneration() && void cameraRig.frame(shotOf(scene), false));
-  else void cameraRig.frame(shotOf(scene), smooth);
+  void cameraRig.frame(shotOf(scene));
   guard(gen);
 }
 
@@ -59,9 +58,9 @@ function crossTo(gen: number, scene: Scene): Promise<void> {
 function play(from: number, rewound = false) {
   const gen = newGeneration();
   void (async () => {
-    if (from > 0) restore(gen, STEPS[from].scene, false);
+    if (from > 0) restore(gen, STEPS[from].scene);
     else if (!rewound) {
-      void cameraRig.frame(shotOf(STEPS[0].scene), false);
+      void cameraRig.frame(shotOf(STEPS[0].scene));
       allow({});
       await sleep(500);
       guard(gen);

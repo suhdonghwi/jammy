@@ -1,5 +1,6 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { sceneStarted, sleep } from './sceneTime';
 
 export type Tile = readonly [number, number];
 export type View = readonly [number, number, number];
@@ -41,6 +42,7 @@ const TOO_FAR = 1.4;
 const ZOOM_OUT = 1.6;
 const MIN_FREE = 150;
 const FAR_TRAVEL = 2.2;
+const ARRIVING_MS = 450;
 
 const area = (r: Rect) => Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
 
@@ -143,6 +145,7 @@ function solve(x: number, y: number, d: number, focus: readonly Tile[], r: Rect)
 
 async function glide(x: number, y: number, d: number, smooth: boolean) {
   if (!controls) return;
+  smooth &&= sceneStarted();
   const from = endView();
   if (smooth && Math.hypot(x - from.x, y - from.y) > FAR_TRAVEL * Math.max(d, from.d)) {
     await controls.dollyTo(Math.min(MAX_DISTANCE, Math.max(45, from.d)), true);
@@ -201,12 +204,17 @@ export const cameraRig = {
     const to = solve(start.x, start.y, start.d, focus, r);
     return glide(to.x, to.y, to.d, smooth);
   },
+  async arrive(shot: Shot, all = false) {
+    const move = cameraRig.frame(shot);
+    await (all ? move : Promise.race([move, sleep(ARRIVING_MS)]));
+  },
   include(tiles: readonly Tile[]) {
     if (!tiles.length) return;
     void cameraRig.frame({ at: current?.at, focus: [...(current?.focus ?? []), ...tiles] });
   },
   reframe() {
     if (!controls || !current?.focus?.length || userMoved) return;
+    if (!sceneStarted()) return void cameraRig.frame(current);
     const now = endView();
     if (fits(now.x, now.y, now.d, current.focus, safeRect())) return;
     const to = solve(now.x, now.y, now.d, current.focus, safeRect());

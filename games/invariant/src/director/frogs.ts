@@ -146,7 +146,7 @@ export async function runFrogs() {
     const L = currentLevel();
     const eggs = firstEggs(RUN_EGGS);
     if (eggs.length) {
-      await cameraRig.frame({ focus: eggs.flatMap((s) => runTiles(L, s)) });
+      await cameraRig.arrive({ focus: eggs.flatMap((s) => runTiles(L, s)) });
       if (!tok.alive) return;
     }
     eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatch(s)));

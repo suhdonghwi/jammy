@@ -16,7 +16,6 @@ import { GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
 import { begin, caption, currentLevel, type Token } from './sequence';
 
-const GLIDE_MS = 450;
 
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
 
@@ -33,8 +32,7 @@ async function focusOn(cex: Counterexample) {
     await sleep(250);
   }
   const focus = [cex.state, cex.next].flatMap((s) => (s ? [[Number(s[L.view.x]), Number(s[L.view.y])] as const] : []));
-  const glide = cameraRig.frame({ focus });
-  await (cex.far ? glide : Promise.race([glide, sleep(GLIDE_MS)]));
+  await cameraRig.arrive({ focus }, cex.far);
 }
 
 export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {

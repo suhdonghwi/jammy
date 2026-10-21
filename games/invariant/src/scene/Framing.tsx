@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../game/store';
 import { cameraRig } from './cameraRig';
+import { sceneStarted } from './sceneTime';
 
 const PHONE = 640;
 const FOV = 36;
@@ -27,8 +28,11 @@ export function Framing() {
     const key = cameraRig.measure();
     const s = seen.current;
     const now = performance.now();
-    if (key !== s.key) Object.assign(s, { key, at: now, settled: false });
-    else if (!s.settled && now - s.at > SETTLE_MS) {
+    if (key !== s.key) {
+      const hidden = !sceneStarted();
+      Object.assign(s, { key, at: now, settled: hidden });
+      if (hidden) cameraRig.reframe();
+    } else if (!s.settled && now - s.at > SETTLE_MS) {
       s.settled = true;
       cameraRig.reframe();
     }
