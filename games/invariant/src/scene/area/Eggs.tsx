@@ -13,13 +13,15 @@ import { colorUniform, fadeUniforms, getBlobTexture, GLSL_COMMON, GLSL_FADE, upd
 import { field } from './field';
 import { GLSL_APPEAR, GLSL_HEIGHT, GLSL_SLOT, instanced, SLOT_DUR } from './glsl';
 
+export const EGG_REGROW = 0.35;
+
 const eggVertex = /* glsl */ `
 ${GLSL_HEIGHT}
 ${GLSL_SLOT}
 ${GLSL_APPEAR}
 attribute float aHide;
 attribute float aBack;
-float backNow() { float b = clamp((uTime - aBack) / 0.35, 0.0, 1.0); return 1.0 - pow(1.0 - b, 3.0); }
+float backNow() { float b = clamp((uTime - aBack) / ${EGG_REGROW.toFixed(2)}, 0.0, 1.0); return 1.0 - pow(1.0 - b, 3.0); }
 varying vec3 vN;
 varying vec3 vWorld;
 varying vec3 vLocal;
@@ -147,7 +149,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
           ${GLSL_APPEAR}
           attribute float aHide;
 attribute float aBack;
-float backNow() { float b = clamp((uTime - aBack) / 0.35, 0.0, 1.0); return 1.0 - pow(1.0 - b, 3.0); }
+float backNow() { float b = clamp((uTime - aBack) / ${EGG_REGROW.toFixed(2)}, 0.0, 1.0); return 1.0 - pow(1.0 - b, 3.0); }
           varying vec2 vUv;
           varying float vA;
           void main() {

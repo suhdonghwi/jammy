@@ -49,7 +49,8 @@ behind many small decisions; keep them when changing or adding UI.
 - **Every verification plays the same way**, whether Check in a level, Check
   in the tutorial, or a what-if after a yes/no: the result is held back, each
   rule checked is shown in turn in the scene, and only then does the caption
-  say what happened.
+  say what happened. It starts from a clean scene: frogs out on the board go
+  home and their eggs grow back before the first rule is shown.
 - **One rule at a time, with a visible seam.** Its light spins while its
   picture plays (Initialization: every egg ringed, one after another out from
   the middle, each with a soft rising tick; Maintenance: ghost frogs showing

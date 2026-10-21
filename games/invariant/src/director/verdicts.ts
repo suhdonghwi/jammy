@@ -7,6 +7,7 @@ import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
 import { hop, inputsOf, planeKey, showState, toBig } from '../levels/level';
 import { tilesNear } from '../levels/tiles';
+import { EGG_REGROW } from '../scene/area/Eggs';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
@@ -154,10 +155,14 @@ export interface Outcome {
 export async function playVerification(res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions = () => ({})): Promise<Outcome | null> {
   const tok = begin();
   useGame.setState({ busy: true, running: false, failMark: null, region: null, callouts: [] });
-  void dismissFrogs('test');
   const order = RULES.filter((r) => rules.includes(r));
   let undecided = false;
   try {
+    if (frogWorld.frogs.length) {
+      await dismissFrogs();
+      await sleep(EGG_REGROW * 1000);
+      if (!tok.alive) return null;
+    }
     for (const [i, rule] of order.entries()) {
       const v = res.verdicts[rule];
       if (!v) continue;
