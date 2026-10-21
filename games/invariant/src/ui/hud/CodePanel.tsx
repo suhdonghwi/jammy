@@ -93,7 +93,7 @@ export function CodePanel() {
               className={`pointer-events-none absolute inset-x-0 top-0 -mx-4 transition-[translate,height,opacity,background-color] duration-150 ease-out max-md:-mx-2.5 ${cursorLine < 0 ? 'opacity-0' : ''} ${stops ? 'bg-warn/15 text-warn' : 'bg-pass/15 text-pass'}`}
               style={{ translate: `0 ${inLines(Math.max(0, cursorLine))}`, height: inLines(cursorLines) }}
             >
-              <span className="absolute left-0.5 -translate-y-1/2 leading-none max-md:left-0" style={{ top: inLines(0.5) }}>
+              <span className="absolute left-0.5 -translate-y-1/2 leading-none max-md:left-px" style={{ top: inLines(0.5) }}>
                 {cursor?.loops === true ? <Check className="size-2.75 max-md:size-2" strokeWidth={3.2} /> : cursor?.loops === false ? <X className="size-2.75 max-md:size-2" strokeWidth={3.2} /> : <Play className="size-2 max-md:size-1.5" fill="currentColor" strokeWidth={0} />}
               </span>
             </div>
