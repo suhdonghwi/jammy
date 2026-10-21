@@ -29,7 +29,7 @@ export function inputRows(level: CompiledLevel): string[] {
   return level.offAxis.filter((n) => !lengths.has(n));
 }
 
-export function InputsSection({ inline }: { inline: boolean }) {
+export function InputsSection({ folded }: { folded: boolean }) {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
   const busy = useGame((s) => s.busy);
@@ -44,11 +44,18 @@ export function InputsSection({ inline }: { inline: boolean }) {
   const hasArrays = Object.keys(level.arrays).length > 0;
   return (
     <div
-      className={`flex min-w-0 flex-col transition-opacity ${busy ? 'opacity-60' : ''} ${
-        inline ? (hasArrays ? 'basis-full' : 'min-w-36 flex-1') : '-mx-4 shrink-0 border-t border-line px-4 pt-2.5 max-md:-mx-2.5 max-md:px-2.5 max-md:pt-2'
+      className={`-mx-4 flex min-w-0 shrink-0 flex-col border-t px-4 transition-[opacity,border-color,padding] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none max-md:-mx-2.5 max-md:px-2.5 ${busy ? 'opacity-60' : ''} ${
+        folded ? 'border-transparent pt-1' : 'border-line pt-2.5 max-md:pt-2'
       }`}
     >
-      {!inline && <div className={CARD_LABEL}>{tr.inputs.title}</div>}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none ${folded ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'}`}
+        aria-hidden={folded}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className={CARD_LABEL}>{tr.inputs.title}</div>
+        </div>
+      </div>
       <div className="flex flex-col gap-1.5">
         {rows.map((name) => (
           <div

@@ -41,6 +41,9 @@ export const en = {
 
   code: {
     title: 'Code',
+    show: 'Show',
+    hide: 'Hide',
+    resize: 'Drag to resize the code panel; double-click to reset',
   },
 
   formula: {

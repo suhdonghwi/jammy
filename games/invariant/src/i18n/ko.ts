@@ -41,6 +41,9 @@ export const ko: Messages = {
 
   code: {
     title: '코드',
+    show: '펼치기',
+    hide: '접기',
+    resize: '드래그해서 코드 패널 너비 조절, 더블클릭하면 원래대로',
   },
 
   formula: {
