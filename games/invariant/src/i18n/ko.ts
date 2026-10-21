@@ -73,7 +73,7 @@ export const ko: Messages = {
   },
 
   hover: {
-    impossible: '있을 수 없는 상태',
+    impossible: '불가능한 상태',
     hopsTo: (to) => `다음 칸 ${to}`,
     stopsOnGoal: '멈춤 · 목표 ✓',
     stops: '여기서 멈춤',
