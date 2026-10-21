@@ -34,11 +34,11 @@ export function SyntaxCard() {
 
 function Row({ name, code }: { name: string; code: string[] }) {
   return (
-    <div className="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 rounded-2xl bg-sky px-4 py-2.5 max-sm:grid-cols-1 max-sm:gap-1">
+    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-3 rounded-2xl bg-sky px-4 py-2.5 max-sm:grid-cols-1 max-sm:gap-1">
       <div className="font-display text-md font-semibold">{name}</div>
-      <div className="flex flex-wrap gap-x-2 gap-y-1.5">
+      <div className="flex min-w-0 flex-wrap gap-x-2 gap-y-1.5">
         {code.map((c) => (
-          <code key={c} className="rounded-md bg-white px-1.5 py-px font-mono text-sm whitespace-nowrap">
+          <code key={c} className="max-w-full rounded-md bg-white px-1.5 py-px font-mono text-sm">
             <HighlightedCode src={c} />
           </code>
         ))}
