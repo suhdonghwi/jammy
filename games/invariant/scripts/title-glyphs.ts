@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import opentype from 'opentype.js';
 import type { Plugin } from 'vite';
 import { LINE1, LINE2, type TitleGlyphs } from '../src/ui/home/title/glyphs.ts';
+import { computeLayout } from '../src/ui/home/title/layout.ts';
 
 const require = createRequire(import.meta.url);
 const FONT = '@fontsource/fredoka/files/fredoka-latin-700-normal.woff';
@@ -43,6 +44,11 @@ export function titleGlyphs(): Plugin {
   return {
     name: 'title-glyphs',
     resolveId: (id) => (id === ID ? `\0${ID}` : null),
-    load: (id) => (id === `\0${ID}` ? `export default ${JSON.stringify(extract())};` : null),
+    load: (id) => {
+      if (id !== `\0${ID}`) return null;
+      const glyphs = extract();
+      const layouts = { left: computeLayout(glyphs, 'left'), center: computeLayout(glyphs, 'center') };
+      return `export default ${JSON.stringify(glyphs)};\nexport const layouts = ${JSON.stringify(layouts)};`;
+    },
   };
 }

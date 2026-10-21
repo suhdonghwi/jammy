@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import titleGlyphs from 'virtual:title-glyphs';
-import type { GlyphCommand } from './glyphs';
+import type { GlyphCommand, TitleGlyphs } from './glyphs';
 
 function glyphShapes(path: GlyphCommand[], scale: number): THREE.Shape[] {
   const sp = new THREE.ShapePath();
@@ -84,11 +83,10 @@ function clearance(left: number, lp: Profile, rp: Profile, ex: number, gap: numb
   return need;
 }
 
-export function letterGeometries(text: string, o: LetterOptions): { geom: THREE.BufferGeometry; x: number }[] {
-  const { glyphs, kerning, unitsPerEm } = titleGlyphs;
+export function extrudeLetters({ glyphs, kerning, unitsPerEm }: TitleGlyphs, text: string, o: LetterOptions) {
   const scale = o.size / unitsPerEm;
   const bevel = o.size * 0.045;
-  const letters = [...text].map((ch, i) => {
+  return [...text].map((ch, i) => {
     const g = glyphs[ch];
     const shapes = glyphShapes(g.path, scale);
     let geom: THREE.BufferGeometry | null = null;
@@ -104,9 +102,12 @@ export function letterGeometries(text: string, o: LetterOptions): { geom: THREE.
       geom.translate(0, 0, -o.depth / 2);
     }
     const next = text[i + 1];
-    const advance = (g.advance + (next ? (kerning[ch + next] ?? 0) : 0)) * scale;
-    return { geom, advance, profile: geom && profile(geom, o.eye) };
+    return { geom, advance: (g.advance + (next ? (kerning[ch + next] ?? 0) : 0)) * scale };
   });
+}
+
+export function letterGeometries(glyphs: TitleGlyphs, text: string, o: LetterOptions): { geom: THREE.BufferGeometry; x: number }[] {
+  const letters = extrudeLetters(glyphs, text, o).map((l) => ({ ...l, profile: l.geom && profile(l.geom, o.eye) }));
 
   let xs: number[] = [];
   let width = 0;

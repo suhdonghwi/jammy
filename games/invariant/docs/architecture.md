@@ -7,7 +7,8 @@ game is, see [design.md](design.md); for how it should feel, see
 Stack: Vite, React (with React Compiler), TypeScript, react-three-fiber (three.js) with drei,
 zustand, Tailwind CSS v4, z3-solver (WebAssembly). The area box is a
 plain textarea over a coloured copy of its text; the 3D title's letter
-outlines are read from the font at build time (`scripts/title-glyphs.ts`); the
+outlines are read from the font, and the letters spaced, at build time
+(`scripts/title-glyphs.ts`, `ui/home/title/layout.ts`); the
 Korean fonts are subsets made by `pnpm fonts`.
 
 ## Layout
