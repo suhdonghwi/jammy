@@ -1,9 +1,10 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { popIn } from '../easing';
+import { uploadInstances } from '../instances';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 
@@ -24,6 +25,7 @@ export function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
     m.count = 0;
     return m;
   }, []);
+  useEffect(() => () => mesh.geometry.dispose(), [mesh]);
   useFrame(() => {
     const t = sceneNow();
     let n = 0;
@@ -35,7 +37,7 @@ export function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
       mesh.setMatrixAt(n++, dummy.matrix);
     }
     mesh.count = n;
-    mesh.instanceMatrix.needsUpdate = true;
+    uploadInstances(n, mesh.instanceMatrix);
   });
   return <primitive object={mesh} />;
 }

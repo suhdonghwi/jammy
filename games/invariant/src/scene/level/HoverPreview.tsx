@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import type { FastState } from '../../lang/eval';
@@ -23,6 +23,7 @@ export function HoverPreview() {
     const depth = ghostDepthMaterial();
     return { geom, mat, depth };
   }, []);
+  useEffect(() => () => assets.geom.dispose(), [assets]);
 
   const hop = useMemo(() => {
     if (!tile) return null;

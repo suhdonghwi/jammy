@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { create } from 'zustand';
 import { useGame } from '../../game/store';
@@ -7,6 +7,7 @@ import { planeKey } from '../../levels/level';
 import { field } from '../area/field';
 import { clamp01 } from '../easing';
 import { SLAB_H } from '../constants';
+import { uploadInstances } from '../instances';
 import { APPEAR, ringPop } from '../labels/Region';
 import { ringGeometry, TONE_COLORS, washGeometry } from '../labels/TileTag';
 import { sceneNow } from '../sceneTime';
@@ -103,6 +104,7 @@ export function HopArcs() {
   const washes = useRef<THREE.InstancedMesh>(null);
   const plane = useGame((s) => planeKey(s.inputs));
   const parts = useMemo(() => ({ ring: instancedParts(ringGeometry, MAX), wash: instancedParts(washGeometry, MAX) }), []);
+  useEffect(() => () => (parts.ring.g.dispose(), parts.wash.g.dispose()), [parts]);
 
   useFrame(() => {
     const r = rings.current;
@@ -139,9 +141,7 @@ export function HopArcs() {
       [w, parts.wash],
     ] as const) {
       mesh.count = nr;
-      mesh.instanceMatrix.needsUpdate = true;
-      p.color.needsUpdate = true;
-      p.alpha.needsUpdate = true;
+      uploadInstances(nr, mesh.instanceMatrix, p.color, p.alpha);
     }
   });
 

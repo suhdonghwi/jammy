@@ -1,9 +1,10 @@
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey, toNum } from '../../levels/level';
 import { COLORS } from '../constants';
+import { uploadInstances } from '../instances';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
 import { getBlobTexture } from '../shaders/common';
@@ -42,6 +43,7 @@ export function Frogs() {
     return m;
   }, []);
   const shadowGeom = useMemo(() => new THREE.PlaneGeometry(0.62, 0.62).rotateX(-Math.PI / 2), []);
+  useEffect(() => () => (geom.dispose(), ghostGeom.dispose(), shadowGeom.dispose()), [geom, ghostGeom, shadowGeom]);
   const shadowMat = useMemo(
     () => new THREE.MeshBasicMaterial({ map: getBlobTexture(), transparent: true, depthWrite: false }),
     [],
@@ -142,12 +144,9 @@ export function Frogs() {
     b.count = nReal;
     gh.count = gd.count = nGhost;
     sh.count = n;
-    b.instanceMatrix.needsUpdate = true;
-    gh.instanceMatrix.needsUpdate = true;
-    gd.instanceMatrix.needsUpdate = true;
-    sh.instanceMatrix.needsUpdate = true;
-    if (gh.instanceColor) gh.instanceColor.needsUpdate = true;
-    fades.needsUpdate = true;
+    uploadInstances(nReal, b.instanceMatrix);
+    uploadInstances(nGhost, gh.instanceMatrix, gd.instanceMatrix, gh.instanceColor, fades);
+    uploadInstances(n, sh.instanceMatrix);
   });
 
   return (

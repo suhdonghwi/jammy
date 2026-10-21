@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { clickTile, tileClickable } from '../../director/frogs';
 import { useGame } from '../../game/store';
-import { planeKey, startView } from '../../levels/level';
+import { startView } from '../../levels/level';
 import { AreaLayer } from '../area/AreaLayer';
 import { cameraRig } from '../cameraRig';
 import { Floor } from '../floor/Floor';
@@ -17,7 +17,6 @@ import { HoverPreview } from './HoverPreview';
 export function LevelScene() {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
-  const key = planeKey(inputs);
   const reveal = useGame((s) => s.reveal);
   const valid = useGame((s) => s.valid);
   const formula = useGame((s) => s.formula);
@@ -31,7 +30,7 @@ export function LevelScene() {
   return (
     <>
       <Floor
-        key={`${level.id}-${key}`}
+        key={level.id}
         level={level}
         inputs={inputs}
         interactive
