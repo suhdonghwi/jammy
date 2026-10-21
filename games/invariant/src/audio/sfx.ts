@@ -80,7 +80,9 @@ export function prepareSound() {
 
 function start() {
   prepareSound();
-  if (ctx!.state === 'suspended') void ctx!.resume();
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+  if (session) session.type = 'playback';
+  if (ctx!.state !== 'running') void ctx!.resume();
 }
 
 function live(): AudioContext | null {
@@ -212,8 +214,9 @@ export const sfx = {
 };
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('pointerdown', start, { capture: true });
-  window.addEventListener('keydown', start, { capture: true });
+  for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
+    window.addEventListener(type, start, { capture: true });
+  }
   window.addEventListener(
     'click',
     (e) => {
