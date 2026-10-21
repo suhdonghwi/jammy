@@ -2,7 +2,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { layouts } from 'virtual:title-glyphs';
-import { COLORS } from '../../../scene/constants';
+import { COLORS, MAX_DPR } from '../../../scene/constants';
 import { frogGeometry, frogMaterial, outlineMaterial } from '../../../scene/models';
 import { sceneNow, sceneStarted } from '../../../scene/sceneTime';
 import { LINE1, LINE2 } from './glyphs';
@@ -82,7 +82,7 @@ export function Title3D({
 }) {
   return (
     <div className={width} style={{ aspectRatio: TITLE_ASPECT }}>
-      <Canvas flat dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: FOV, near: 0.1, far: 200 }}>
+      <Canvas flat dpr={[1, MAX_DPR]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: FOV, near: 0.1, far: 200 }}>
         <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />
         <directionalLight position={[4, 10, 6]} intensity={1.6} color="#ffffff" />
         <directionalLight position={[-6, 4, -4]} intensity={0.35} color="#ffffff" />
