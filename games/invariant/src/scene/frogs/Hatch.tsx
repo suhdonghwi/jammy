@@ -133,7 +133,7 @@ export function HatchShells() {
       if (v < CUP_LIFE) {
         const k = 1 - smoothstep(clamp01((v - CUP_HOLD) / (CUP_LIFE - CUP_HOLD)));
         q.identity();
-        m.compose(pos.set(bx, base, bz), q, scl.set(fx.s * (1 + 0.25 * (1 - k)), fx.s * k * k, fx.s * (1 + 0.25 * (1 - k))));
+        m.compose(pos.set(bx, base, bz), q, scl.setScalar(fx.s * k));
         a.setMatrixAt(na++, m);
       }
       if (v < CAP_LIFE) {
