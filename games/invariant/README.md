@@ -32,7 +32,7 @@ the same headers. `pnpm dev` and `pnpm build` copy Z3's browser build into `publ
 |---|---|
 | `pnpm dev` | Dev server |
 | `pnpm typecheck` | Typecheck only |
-| `pnpm test` | Unit tests (parser, types, integer semantics, box search) |
+| `pnpm test` | Unit tests (parser, types, integer semantics, counterexample search) |
 | `pnpm validate` | Proves every level's solutions with Z3, checks every pitfall fails the intended rule, checks real frogs terminate, and checks no hint gives a solution away |
 | `pnpm build` | Typecheck + production build |
 | `pnpm preview` | Serves the production build with the solver's headers |

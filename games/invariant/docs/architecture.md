@@ -17,7 +17,7 @@ from the font, and spaced, at build time (`scripts/title-glyphs.ts`,
 src/
   main.tsx, App.tsx   entry point and the page's top-level layout
   lang/        parser, type checker, AST, interpreter, symbolic body execution
-  checker/     box search (nice counterexamples), Z3 (proofs) and its loaders and dec_ref guard, verdicts
+  checker/     counterexamples on the plane in view (nearby.ts), Z3 (proofs) and its loaders and dec_ref guard, verdicts
   levels/      the level format (level.ts), every level (catalog.ts), its Korean text (catalog.ko.ts, localize.ts), the plane's tiles
   i18n/        the language switch, and every other line the game says (en.ts, ko.ts)
   game/        the zustand store, cleared levels (progress.ts), what the app's buttons do (actions.ts)
@@ -42,7 +42,7 @@ src/
     timing.ts    EXIT_MS, the length of every exit animation
   styles.css   Tailwind setup and the little that is clearer as CSS (see Styling)
 scripts/       level validation, the Z3 copy, font subsets, the title's glyphs, the link preview image
-tests/         unit tests (language, box search)
+tests/         unit tests (language, counterexample search)
 ```
 
 Dependencies point downward: `lang` knows nothing of levels (it uses `i18n`
@@ -56,9 +56,8 @@ A level's program and the learner's formula are parsed once into one AST,
 which feeds:
 
 - an **exact interpreter** (BigInt) for frog hops, eggs, and confirming what
-  the box search found;
-- **fast float functions** for building thousands of tiles at once and for
-  the box search's scan;
+  Z3 found;
+- **fast float functions** for building thousands of tiles at once;
 - **Z3** for proofs: an array input is an uninterpreted function from index
   to value (0 outside its length), `forall`/`exists` are Z3's own
   quantifiers. Bounded passes (small values first, for small
@@ -77,7 +76,7 @@ which feeds:
 The interpreter and the float functions share one iteration budget per
 evaluation across a formula's quantifiers (`EVAL_BUDGET`): past it the exact
 interpreter throws `OverBudget`, which the checker treats as "can't confirm"
-(the rule goes on to Z3), and a float function returns `NaN`, which reads as
+(the tile is skipped and the rule goes on to Z3), and a float function returns `NaN`, which reads as
 false. They never throw while rendering. The type checker refuses constant
 ranges wider than 1000 values up front.
 

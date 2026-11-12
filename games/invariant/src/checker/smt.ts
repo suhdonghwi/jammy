@@ -1,6 +1,8 @@
 import type { Arith, Bool, Context, FuncDecl, Model } from 'z3-solver';
 import { hasQuantifier, mk, subst, type Expr, type RangeOp, type State } from '../lang/ast';
+import { holds, OverBudget } from '../lang/eval';
 import { MAX_LEN, type CompiledLevel } from '../levels/level';
+import { NEAR } from './nearby';
 import type { Rule } from './types';
 import { whileSolving } from './z3-guard';
 
@@ -122,9 +124,10 @@ type SolveResult = { kind: 'sat'; state: State } | { kind: 'unsat' } | { kind: '
 
 interface SolveOptions {
   timeout: number;
-  bounds?: number[];
   verify?: (s: State) => boolean;
 }
+
+const BOUNDS = [NEAR, 64, 1024];
 
 export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], query: Expr, opts: SolveOptions): Promise<SolveResult> {
   const env: Env = { ints: {}, arrays: {} };
@@ -164,8 +167,7 @@ export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], quer
     if (r === 'sat') return { kind: 'sat', state: readModel(solver.model()) };
     return { kind: r === 'unsat' ? 'unsat' : 'unknown' };
   };
-  const bounds = opts.bounds ?? [8, 64, 1024];
-  for (const b of bounds) {
+  for (const b of BOUNDS) {
     const form = quantified ? unroll(query, b) : query;
     if (hasQuantifier(form)) continue;
     const r = await check(form, undefined, (solver) => {
@@ -205,8 +207,18 @@ export function ruleQuery(level: CompiledLevel, inv: Expr, rule: Rule): { dims: 
   return { dims: level.names, query: mk.andAll([level.planeReq, inv, mk.not(level.guard), mk.not(level.post)]) };
 }
 
+function differs(query: Expr, s: State): boolean {
+  try {
+    return holds(query, s);
+  } catch (e) {
+    if (e instanceof OverBudget) return false;
+    throw e;
+  }
+}
+
 export async function equivalent(ctx: Ctx, level: CompiledLevel, a: Expr, b: Expr, timeout: number): Promise<boolean> {
   const differ: Expr = { kind: 'binary', op: '!=', left: a, right: b, span: a.span };
-  const r = await solve(ctx, level, level.names, mk.and(level.planeReq, differ), { timeout, bounds: [] });
+  const query = mk.and(level.planeReq, differ);
+  const r = await solve(ctx, level, level.names, query, { timeout, verify: (s) => differs(query, s) });
   return r.kind === 'unsat';
 }

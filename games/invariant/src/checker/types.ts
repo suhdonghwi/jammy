@@ -9,6 +9,7 @@ export interface Counterexample {
   next?: State;
   broken?: string;
   far?: boolean;
+  run?: State[];
 }
 
 export type RuleVerdict =

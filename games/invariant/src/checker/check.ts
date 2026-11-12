@@ -1,9 +1,9 @@
 import type { Context } from 'z3-solver';
-import { compileFormula, type CompiledLevel, type Formula, type Pitfall } from '../levels/level';
-import { boxSearch, sameOnBox, type Box } from './box';
+import { compileFormula, type CompiledLevel, type Formula, type Inputs, type Pitfall } from '../levels/level';
+import { realFailure, realRunTo, smallestOnPlane } from './nearby';
 import { breaksRule, counterexample } from './rules';
 import { equivalent, ruleQuery, solve } from './smt';
-import { RULES, type Rule, type RuleVerdict, type Verdicts } from './types';
+import { RULES, type Counterexample, type Rule, type RuleVerdict, type Verdicts } from './types';
 
 interface CheckOptions {
   timeout?: number;
@@ -15,21 +15,25 @@ export interface CheckResult {
   pitfall?: Pitfall;
 }
 
+function withRun(level: CompiledLevel, cex: Counterexample): Counterexample {
+  if (cex.run) return cex;
+  return { ...cex, run: cex.rule === 'initialization' ? [cex.state] : realRunTo(level, cex.state) };
+}
+
 export async function checkFormula(
   ctx: Context<'main'>,
   level: CompiledLevel,
   inv: Formula,
-  box: Box,
+  inputs: Inputs,
   opts: CheckOptions = {},
 ): Promise<CheckResult> {
   const timeout = opts.timeout ?? 3000;
   const rules = opts.rules ?? RULES;
-  const found = boxSearch(level, inv, box, rules);
   const verdicts: Partial<Verdicts> = {};
   for (const rule of rules) {
-    const cex = found[rule];
-    if (cex) {
-      verdicts[rule] = { status: 'fail', cex };
+    const near = (rule === 'maintenance' ? realFailure(level, inv, inputs) : undefined) ?? smallestOnPlane(level, inv, rule, inputs);
+    if (near) {
+      verdicts[rule] = { status: 'fail', cex: withRun(level, near) };
       continue;
     }
     const { dims, query } = ruleQuery(level, inv.expr, rule);
@@ -38,14 +42,14 @@ export async function checkFormula(
       r.kind === 'unsat'
         ? { status: 'pass', how: 'proved' }
         : r.kind === 'sat'
-          ? { status: 'fail', cex: counterexample(level, inv, rule, r.state, true) }
+          ? { status: 'fail', cex: withRun(level, counterexample(level, inv, rule, r.state, true)) }
           : { status: 'undecided' };
   }
 
   const firstEquivalent = async <T>(items: T[], formula: (x: T) => string, timeout: number) => {
     for (const x of items) {
       const f = compileFormula(level, formula(x));
-      if (f.ok && sameOnBox(level, inv.fast, f.expr, box) && (await equivalent(ctx, level, inv.expr, f.expr, timeout))) return x;
+      if (f.ok && (await equivalent(ctx, level, inv.expr, f.expr, timeout))) return x;
     }
   };
 
