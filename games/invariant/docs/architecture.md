@@ -183,6 +183,11 @@ backend agree. `pnpm validate` and the tests are the safety net.
   postcondition are evaluated per pixel, so the plane is truly infinite.
 - Slabs, eggs, goal columns, frogs and hatching shells are **instanced**;
   only the tiles near the camera are built, in a window that moves in steps.
+  The window and the fade into the horizon share one radius
+  (`cameraRig.viewRadius()`), so the window always reaches past where the
+  floor is still visible and nothing built ends inside the view. The radius
+  is capped (`VIEW_REACH`): zoomed far out, the horizon closes in rather than
+  the tile count growing.
 - **Errors don't take the page down**: the WebGL 2 check (`scene/webgl.ts`),
   the error boundary around the game (`ui/ErrorBoundary.tsx`) and the 3D
   title's own boundary fall back to `ui/Trouble.tsx` or plain text.
