@@ -10,11 +10,15 @@ import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 import { colorUniform, GLSL_COMMON } from '../shaders/common';
 import { clamp01, smoothstep } from '../easing';
+import { HATCH_CLEAR, HATCH_GROW } from './motion';
 
-const HATCH_WOBBLE = 0.16;
-export const HATCH_EMERGE = HATCH_WOBBLE + 0.05;
-const CAP_LIFE = 0.5;
-const CUP_LIFE = 0.55;
+const HATCH_WOBBLE = 0.07;
+export const HATCH_EMERGE = HATCH_WOBBLE + 0.02;
+const FROG_OUT = HATCH_EMERGE - HATCH_WOBBLE + HATCH_GROW * HATCH_CLEAR;
+const CAP_LIFE = 0.3;
+const CAP_HOLD = 0.12;
+const CUP_HOLD = FROG_OUT * 0.7;
+const CUP_LIFE = FROG_OUT + 0.08;
 const MAX = 256;
 
 interface HatchFx {
@@ -127,15 +131,15 @@ export function HatchShells() {
       }
       const v = u - HATCH_WOBBLE;
       if (v < CUP_LIFE) {
-        const k = 1 - smoothstep(clamp01((v - 0.15) / (CUP_LIFE - 0.15)));
+        const k = 1 - smoothstep(clamp01((v - CUP_HOLD) / (CUP_LIFE - CUP_HOLD)));
         q.identity();
-        m.compose(pos.set(bx, base - 0.03 * (1 - k), bz), q, scl.set(fx.s * k, fx.s * k * k, fx.s * k));
+        m.compose(pos.set(bx, base, bz), q, scl.setScalar(fx.s * k));
         a.setMatrixAt(na++, m);
       }
       if (v < CAP_LIFE) {
-        const k = 1 - smoothstep(clamp01((v - 0.22) / (CAP_LIFE - 0.22)));
-        const side = 0.9 * v;
-        const lift = 2.8 * v - 6.5 * v * v;
+        const k = 1 - smoothstep(clamp01((v - CAP_HOLD) / (CAP_LIFE - CAP_HOLD)));
+        const side = 1.9 * v;
+        const lift = 4.4 * v - 9 * v * v;
         pos.set(bx + Math.cos(fx.dir) * side, base + Math.max(lift, -0.05), bz - Math.sin(fx.dir) * side);
         q.setFromAxisAngle(axis.set(Math.sin(fx.dir), 0, Math.cos(fx.dir)), -7 * v);
         pivot.makeTranslation(0, 0.2 * fx.s, 0);

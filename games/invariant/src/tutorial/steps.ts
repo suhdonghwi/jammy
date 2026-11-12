@@ -1,6 +1,6 @@
 import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
-import { dismissFrogs, hatch, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs, testEggs } from '../director/frogs';
+import { dismissFrogs, hatch, HATCH_MS, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs, testEggs } from '../director/frogs';
 import { previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
 import { playProof } from '../director/verdicts';
@@ -105,7 +105,7 @@ export const STEPS: Step[] = [
           useGame.getState().setReveal({ axes: true });
           useGame.setState({ frogTags: true });
           hatch(st(0, 3));
-          await sleep(600);
+          await sleep(HATCH_MS + 150);
         },
       }),
   },
@@ -327,7 +327,7 @@ export const STEPS: Step[] = [
         prepare: async () => {
           resetFrogs();
           const f = hatch(st(0, 3));
-          await sleep(700);
+          await sleep(HATCH_MS + 200);
           guard(gen);
           useGame.setState({ callouts: [{ x: f.x, y: f.y, frog: f.id, text: T().stillOnTag, tone: 'good' }] });
           for (let k = 0; k < 6 && !f.stopped; k++) {

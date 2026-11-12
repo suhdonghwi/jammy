@@ -11,7 +11,7 @@ float heightNow() {
 }
 `;
 
-export const SLOT_DUR = 0.3;
+export const SLOT_DUR = 0.18;
 export const GLSL_SLOT = /* glsl */ `
 attribute vec4 aSlot;
 attribute vec3 aSlotAnim;
@@ -21,7 +21,7 @@ vec3 slotNow() {
 }
 `;
 
-export const EGG_REGROW = 0.35;
+export const EGG_REGROW = 0.2;
 export const GLSL_BACK = /* glsl */ `
 attribute float aBack;
 float backNow() {

@@ -8,6 +8,9 @@ import { joinHopBatch, landInBatch } from './hopBatch';
 
 export type FrogKind = 'real' | 'test';
 
+export const HOP = 0.34;
+export const HOP_GAP_MS = 90;
+
 export interface FrogSim {
   id: number;
   kind: FrogKind;
@@ -22,6 +25,7 @@ export interface FrogSim {
   trail?: [number, number][];
   fade?: number;
   hatchT0?: number;
+  landT0?: number;
   stopped: boolean;
   phase: number;
   face: number;
@@ -38,8 +42,8 @@ export interface FrogSim {
 
 export const yawToward = (fx: number, fy: number, tx: number, ty: number) => Math.atan2(tx - fx, -(ty - fy));
 
-function facingFor(level: CompiledLevel, s: State, fallback: number): number {
-  if (!holds(level.guard, s)) return fallback;
+function facingFor(level: CompiledLevel, s: State, fallback: number, stoppedToo = false): number {
+  if (!stoppedToo && !holds(level.guard, s)) return fallback;
   const n = step(level.program.loop.body, s);
   const fx = Number(s[level.view.x]);
   const fy = Number(s[level.view.y]);
@@ -73,7 +77,7 @@ class FrogWorld {
   }
 
   add(level: CompiledLevel, kind: FrogKind, state: State, opts: Partial<FrogSim> = {}): FrogSim {
-    const face = facingFor(level, state, 0);
+    const face = facingFor(level, state, 0, true);
     const f: FrogSim = {
       id: this.nextId++,
       kind,
@@ -100,7 +104,7 @@ class FrogWorld {
     }
   }
 
-  hopTo(level: CompiledLevel, f: FrogSim, next: State, dur = 0.42, quiet = false): Promise<void> {
+  hopTo(level: CompiledLevel, f: FrogSim, next: State, dur = HOP, quiet = false): Promise<void> {
     const from = f.state;
     f.state = next;
     const tx = Number(next[level.view.x]);
@@ -113,6 +117,7 @@ class FrogWorld {
         f.x = tx;
         f.y = ty;
         f.hop = undefined;
+        f.landT0 = sceneNow();
         f.trail?.push([tx, ty]);
         f.face = facingFor(level, next, f.face);
         if (batch) landInBatch(batch);

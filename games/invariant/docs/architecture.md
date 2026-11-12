@@ -96,7 +96,7 @@ backend agree. `pnpm validate` and the tests are the safety net.
   the hovered tile (`useHover`).
 - **Per-frame scene data lives outside the store**, in plain module objects
   read in `useFrame`: the frogs (`frogWorld`), slab heights (`field`),
-  hatching shells and slab chips, tile occupancy, goal ripples. Never put
+  hatching shells, tile occupancy, goal ripples. Never put
   per-frame data in zustand.
 - **Slab height has one source**: `field`. Slabs and eggs animate on the GPU
   from `(from, to, t0)`, and `field.heightAt` gives the same height on the

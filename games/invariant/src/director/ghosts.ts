@@ -1,6 +1,5 @@
 import type { State } from '../lang/ast';
 import { hop } from '../levels/level';
-import { burstFx } from '../scene/frogs/Burst';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { ARC_DRAW, hopArcs } from '../scene/frogs/HopArcs';
 import { after, sceneNow } from '../scene/sceneTime';
@@ -12,9 +11,7 @@ const TURNS = 2;
 
 export function raiseGhost(s: State, delay = 0, fade = 1): FrogSim {
   const t0 = sceneNow() + delay;
-  const f = frogWorld.add(currentLevel(), 'test', s, { rise: { t0, dur: GHOST_RISE, turns: TURNS }, fade });
-  burstFx.push(f.x, f.y, f.plane, t0 + GHOST_RISE * 0.18, fade);
-  return f;
+  return frogWorld.add(currentLevel(), 'test', s, { rise: { t0, dur: GHOST_RISE, turns: TURNS }, fade });
 }
 
 export function previewHop(s: State, delay = 0, fade = 1): FrogSim {

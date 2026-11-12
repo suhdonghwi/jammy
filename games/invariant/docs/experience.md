@@ -32,10 +32,20 @@ behind many small decisions; keep them when changing or adding UI.
 
 ## Motion in the scene
 
-- **Continuous motion.** A hop accelerates, flies and lands without any jerk;
+- **Continuous motion.** A hop starts the moment it is asked for, accelerates,
+  flies and lands without any jerk, and the frog's squash on landing eases
+  out after the hop is over;
   frogs sharing a tile glide into their slots and arrive exactly on landing;
   slabs rise and sink rather than appear. Prefer curves that are smooth in
   both position and speed.
+- **Quick where nothing is being shown.** A hop is the loop body running, so
+  it takes long enough to follow, and every hop takes the same 0.34 s
+  whichever button or sequence starts it, with the same short pause between
+  hops in a run. Only a long run staged by Check hops faster, so it ends in
+  a few seconds. Hatching, a frog going home,
+  an egg coming back or stepping aside carry no content, so they take about
+  a fifth of a second, and an egg starts coming back as its frog starts to
+  leave rather than after it has gone.
 - **Every movement means something.** A frog turns (with a tiny hop) only
   when its next hop goes another way; it cheers only when it lands on a goal.
   The code panel's cursor walks the lines a hop runs (in the tutorial's
