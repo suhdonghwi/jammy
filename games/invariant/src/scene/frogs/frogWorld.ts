@@ -42,8 +42,8 @@ export interface FrogSim {
 
 export const yawToward = (fx: number, fy: number, tx: number, ty: number) => Math.atan2(tx - fx, -(ty - fy));
 
-function facingFor(level: CompiledLevel, s: State, fallback: number): number {
-  if (!holds(level.guard, s)) return fallback;
+function facingFor(level: CompiledLevel, s: State, fallback: number, stoppedToo = false): number {
+  if (!stoppedToo && !holds(level.guard, s)) return fallback;
   const n = step(level.program.loop.body, s);
   const fx = Number(s[level.view.x]);
   const fy = Number(s[level.view.y]);
@@ -77,7 +77,7 @@ class FrogWorld {
   }
 
   add(level: CompiledLevel, kind: FrogKind, state: State, opts: Partial<FrogSim> = {}): FrogSim {
-    const face = facingFor(level, state, 0);
+    const face = facingFor(level, state, 0, true);
     const f: FrogSim = {
       id: this.nextId++,
       kind,
