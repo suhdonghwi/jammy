@@ -6,7 +6,7 @@ import { eggsNear, type TileWindow } from '../../levels/tiles';
 import { SLAB_H } from '../constants';
 import { clamp01, smoothstep } from '../easing';
 import { frogWorld } from '../frogs/frogWorld';
-import { occupancy, slotFor, type Slot } from '../frogs/occupancy';
+import { EGG_ALONE, EGG_ASIDE, occupancy, type Slot } from '../frogs/occupancy';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 import { colorUniform, fadeUniforms, getBlobTexture, GLSL_COMMON, GLSL_FADE, updateFade } from '../shaders/common';
@@ -143,8 +143,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
       hide[i] = hatched ? 1 : 0;
       back[i] = frogWorld.returned.get(k) ?? -100;
       if (!hatched) visibleEggs.add(k);
-      const frogs = occupancy.frogs.get(k) ?? 0;
-      const target = slotFor(frogs, frogs + 1);
+      const target = occupancy.frogs.has(k) ? EGG_ASIDE : EGG_ALONE;
       const prev = slots.current.get(k);
       let cur: SlotAnim = { fx: target.dx, fy: target.dy, fs: target.scale, tx: target.dx, ty: target.dy, ts: target.scale, t0: 0 };
       if (prev) {

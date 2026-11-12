@@ -5,6 +5,7 @@ import { useGame } from '../../game/store';
 import { planeKey, toNum } from '../../levels/level';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
+import { clamp01, smoothstep } from '../easing';
 import { uploadInstances } from '../instances';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
@@ -70,11 +71,15 @@ export function Frogs() {
       if (g) g.push(f);
       else groups.set(key, [f]);
     }
+    const walker = trailFrog(plane);
+    const leftTiles = walker?.trail ? (walker.hop ? walker.trail : walker.trail.slice(0, -1)) : [];
+    const taken = new Map([...groups].map(([k, g]) => [k, g.length]));
+    for (const [x, y] of leftTiles) taken.set(`${x},${y}`, (taken.get(`${x},${y}`) ?? 0) + 1);
     let sig = '';
-    for (const [k, g] of groups) if (occupancy.eggs.has(k)) sig += `${k}:${g.length}|`;
+    for (const [k, count] of taken) if (occupancy.eggs.has(k)) sig += `${k}:${count}|`;
     if (sig !== occupancy.signature) {
       occupancy.signature = sig;
-      occupancy.frogs = new Map([...groups].filter(([k]) => occupancy.eggs.has(k)).map(([k, g]) => [k, g.length]));
+      occupancy.frogs = new Map([...taken].filter(([k]) => occupancy.eggs.has(k)));
       occupancy.version++;
     }
     let n = 0;
@@ -94,8 +99,7 @@ export function Frogs() {
       }
       const key = tileOf(f);
       const g = groups.get(key)!;
-      const count = g.length + (occupancy.eggs.has(key) ? 1 : 0);
-      const target = slotFor(g.indexOf(f), count);
+      const target = slotFor(g.indexOf(f), g.length);
       if (g.length > MAX_SHOWN && g.indexOf(f) === 0 && badges < BADGES) {
         placeBadge(badgeRefs.current[badges++], f.x, f.y, p.ground, g.length);
       }
@@ -140,14 +144,14 @@ export function Frogs() {
       sh.setMatrixAt(n, dummy.matrix);
       n++;
     }
-    const walker = trailFrog(plane);
     if (walker?.trail) {
       const trail = walker.trail;
-      const past = walker.hop ? trail : trail.slice(0, -1);
-      const fade = ECHO_FADE * (walker.leave ? 1 - Math.min(1, (t - walker.leave.t0) / walker.leave.dur) : 1);
-      past.forEach(([x, y], i) => {
+      const leaving = walker.leave ? 1 - Math.min(1, (t - walker.leave.t0) / walker.leave.dur) : 1;
+      const arriving = walker.hop ? smoothstep(clamp01((t - walker.hop.t0) / walker.hop.dur)) : 1;
+      leftTiles.forEach(([x, y], i) => {
         if (nGhost >= MAX_FROGS) return;
         const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
+        const fade = ECHO_FADE * leaving * (i === trail.length - 1 ? arriving : 1);
         dummy.position.set(x, field.heightAt(x, y) * SLAB_H, -y);
         dummy.rotation.set(0, yawToward(x, y, tx, ty), 0);
         dummy.scale.setScalar(1);

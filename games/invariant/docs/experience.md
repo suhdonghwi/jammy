@@ -111,8 +111,13 @@ behind many small decisions; keep them when changing or adding UI.
   at a time: picking another egg sends the last one home. Pressed with no
   frog, Step and Run point at an egg ("pick an egg first"); pressed on a
   frog that has stopped, they say so. They never choose a frog themselves.
+- **A frog has the middle of its tile.** An egg sharing the tile with a frog,
+  live or in a trail, shrinks into the near corner and comes back when the
+  frog is gone. So a frog looks the same on every tile, and only frogs
+  sharing a tile with other frogs split it between them.
 - **A real frog leaves a trail.** On every tile it has left stands a
-  see-through green frog facing the way it went, and a dashed green arc
+  see-through green frog facing the way it went, fading in where the frog
+  stood as it hops away, and a dashed green arc
   joins each to the next, the same arc a hop draws. The trail grows with
   each hop and stays after the frog stops, so where it came from can still
   be read. One trail shows at a time: the frog the learner picked, or the
