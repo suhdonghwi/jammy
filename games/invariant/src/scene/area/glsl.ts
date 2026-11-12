@@ -1,13 +1,26 @@
 import * as THREE from 'three';
-import { RISE_DUR } from './field';
+import { MASK_SIZE } from './mask';
+
+export const GLSL_MASK = /* glsl */ `
+uniform highp sampler2D uMask;
+uniform vec2 uMaskOrigin;
+uniform float uRise;
+vec4 maskAt(vec2 tile) {
+  ivec2 at = ivec2(floor(tile - uMaskOrigin + 0.5));
+  if (at.x < 0 || at.y < 0 || at.x >= ${MASK_SIZE} || at.y >= ${MASK_SIZE}) return vec4(0.0);
+  return texelFetch(uMask, at, 0);
+}
+float heightOf(vec4 m) {
+  return mix(m.g, m.r, uRise);
+}
+`;
 
 export const GLSL_HEIGHT = /* glsl */ `
+${GLSL_MASK}
 attribute vec2 aTile;
-attribute vec3 aAnim;
 uniform float uTime;
 float heightNow() {
-  float u = smoothstep(0.0, 1.0, (uTime - aAnim.z) / ${RISE_DUR.toFixed(3)});
-  return mix(aAnim.x, aAnim.y, u);
+  return heightOf(maskAt(aTile));
 }
 `;
 

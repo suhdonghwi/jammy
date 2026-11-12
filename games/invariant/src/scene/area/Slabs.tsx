@@ -1,7 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { useGame } from '../../game/store';
 import { planeKey, type CompiledLevel } from '../../levels/level';
 import { SLAB_H, TILE } from '../constants';
@@ -22,27 +21,40 @@ import {
   setAxisNames,
   updateFade,
 } from '../shaders/common';
-import { field } from './field';
-import { GLSL_HEIGHT, instanced } from './glsl';
+import { cameraRig } from '../cameraRig';
+import { GLSL_MASK, instanced } from './glsl';
+import { areaMask, MASK_REACH } from './mask';
+
+const CORNER = 0.07;
+const CORNER_STEPS = 3;
+const BEVEL = 0.07;
+const BEVEL_STEPS = 3;
 
 const slabVertex = /* glsl */ `
-${GLSL_HEIGHT}
-attribute vec2 aFlags;
+${GLSL_MASK}
+attribute vec2 aOffset;
+uniform vec2 uGrid;
 varying vec3 vN;
 varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
 void main() {
-  float h = heightNow();
+  vec2 tile = uGrid + aOffset;
+  vec4 m = maskAt(tile);
+  float h = heightOf(m);
+  if (h < 0.002) {
+    gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
+    return;
+  }
   vec3 p = position;
   p.y += (h - 1.0) * ${SLAB_H.toFixed(3)} - (1.0 - h) * 0.04;
-  vec4 w = modelMatrix * vec4(p + vec3(aTile.x, 0.0, -aTile.y), 1.0);
+  vec4 w = modelMatrix * vec4(p + vec3(tile.x, 0.0, -tile.y), 1.0);
   vWorld = w.xyz;
   vN = normalize(mat3(modelMatrix) * normal);
   vF = vec2(position.x, -position.z);
-  vFlags = aFlags;
-  vTile = aTile;
+  vFlags = vec2(m.b, mod(floor(m.a * 3.0 + 0.5), 2.0));
+  vTile = tile;
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;
@@ -100,13 +112,20 @@ void main() {
 `;
 
 const shadowVertex = /* glsl */ `
-${GLSL_HEIGHT}
+${GLSL_MASK}
+attribute vec2 aOffset;
+uniform vec2 uGrid;
 varying vec2 vUv;
 varying float vH;
 void main() {
+  vec2 tile = uGrid + aOffset;
   vUv = uv;
-  vH = heightNow();
-  vec4 w = modelMatrix * vec4(position + vec3(aTile.x, 0.003, -aTile.y), 1.0);
+  vH = heightOf(maskAt(tile));
+  if (vH < 0.002) {
+    gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
+    return;
+  }
+  vec4 w = modelMatrix * vec4(position + vec3(tile.x, 0.003, -tile.y), 1.0);
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;
@@ -120,30 +139,78 @@ void main() {
 }
 `;
 
-export function Slabs({ level, version, dim, showStop, showGoal }: { level: CompiledLevel; version: number; dim: boolean; showStop: boolean; showGoal: boolean }) {
-  const base = useMemo(() => {
-    const g = new RoundedBoxGeometry(TILE, SLAB_H, TILE, 3, 0.07);
-    g.translate(0, SLAB_H / 2, 0);
-    return g;
-  }, []);
-  const shadowBase = useMemo(() => new THREE.PlaneGeometry(1.45, 1.45).rotateX(-Math.PI / 2), []);
 
-  const { geom, shadowGeom } = useMemo(() => {
-    const anims = version === 0 ? [] : [...field.anims.values()];
-    const n = anims.length;
-    const tile = new Float32Array(n * 2);
-    const anim = new Float32Array(n * 3);
-    const flags = new Float32Array(n * 2);
-    anims.forEach((a, i) => {
-      tile.set([a.x, a.y], i * 2);
-      anim.set([a.from, a.to, a.t0], i * 3);
-      flags.set([a.stop ? 1 : 0, a.goal ? 1 : 0], i * 2);
-    });
-    const geom = instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3], aFlags: [flags, 2] });
-    const shadowGeom = instanced(shadowBase, n, { aTile: [tile, 2], aAnim: [anim, 3] });
-    return { geom, shadowGeom };
-  }, [version, base, shadowBase]);
-  useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
+function slabGeometry(): THREE.BufferGeometry {
+  const half = TILE / 2;
+  const rim: [number, number, number, number][] = [];
+  for (let c = 0; c < 4; c++) {
+    const sx = c === 0 || c === 3 ? 1 : -1;
+    const sz = c < 2 ? 1 : -1;
+    for (let k = 0; k <= CORNER_STEPS; k++) {
+      const a = (c + k / CORNER_STEPS) * (Math.PI / 2);
+      rim.push([sx * (half - CORNER), sz * (half - CORNER), Math.cos(a), Math.sin(a)]);
+    }
+  }
+  const n = rim.length;
+  const position: number[] = [0, SLAB_H, 0];
+  const normal: number[] = [0, 1, 0];
+  const ring = (reach: number, y: number, tilt: number) => {
+    const first = position.length / 3;
+    for (const [x, z, nx, nz] of rim) {
+      position.push(x + nx * reach, y, z + nz * reach);
+      normal.push(nx * Math.sin(tilt), Math.cos(tilt), nz * Math.sin(tilt));
+    }
+    return first;
+  };
+  const rings = Array.from({ length: BEVEL_STEPS + 1 }, (_, k) => {
+    const tilt = (k / BEVEL_STEPS) * (Math.PI / 2);
+    return ring(CORNER - BEVEL * (1 - Math.sin(tilt)), SLAB_H - BEVEL * (1 - Math.cos(tilt)), tilt);
+  });
+  rings.push(ring(CORNER, 0, Math.PI / 2));
+  const index: number[] = [];
+  for (let k = 0; k < n; k++) {
+    const next = (k + 1) % n;
+    index.push(0, rings[0] + next, rings[0] + k);
+    for (let r = 1; r < rings.length; r++) {
+      const upper = rings[r - 1];
+      const lower = rings[r];
+      index.push(upper + k, upper + next, lower + k, upper + next, lower + next, lower + k);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
+  g.setIndex(index);
+  return g;
+}
+
+const grid = (() => {
+  const cells: [number, number, number][] = [];
+  for (let y = -MASK_REACH; y <= MASK_REACH; y++) {
+    for (let x = -MASK_REACH; x <= MASK_REACH; x++) {
+      const d = Math.hypot(x, y);
+      if (d <= MASK_REACH) cells.push([x, y, d]);
+    }
+  }
+  cells.sort((a, b) => a[2] - b[2]);
+  const offsets = new Float32Array(cells.length * 2);
+  const within = new Uint32Array(MASK_REACH + 1);
+  cells.forEach(([x, y, d], i) => {
+    offsets.set([x, y], i * 2);
+    within.fill(i + 1, Math.ceil(d));
+  });
+  return { offsets, within };
+})();
+
+export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel; dim: boolean; showStop: boolean; showGoal: boolean }) {
+  const geoms = useMemo(() => {
+    const cells = { aOffset: [grid.offsets, 2] } as const;
+    return {
+      slabs: instanced(slabGeometry(), 0, cells),
+      shadow: instanced(new THREE.PlaneGeometry(1.45, 1.45).rotateX(-Math.PI / 2), 0, cells),
+    };
+  }, []);
+  useEffect(() => () => Object.values(geoms).forEach((g) => g.dispose()), [geoms]);
 
   const material = useMemo(
     () =>
@@ -164,6 +231,8 @@ export function Slabs({ level, version, dim, showStop, showGoal }: { level: Comp
           uDigits: { value: getDigitTexture() },
           ...axisNameUniforms(),
           ...fadeUniforms(),
+          ...areaMask.uniforms,
+          uGrid: { value: new THREE.Vector2() },
         },
       }),
     [],
@@ -175,7 +244,7 @@ export function Slabs({ level, version, dim, showStop, showGoal }: { level: Comp
         fragmentShader: shadowFragment,
         transparent: true,
         depthWrite: false,
-        uniforms: { uTime: material.uniforms.uTime, uMap: { value: getBlobTexture() } },
+        uniforms: { ...areaMask.uniforms, uGrid: material.uniforms.uGrid, uMap: { value: getBlobTexture() } },
       }),
     [material],
   );
@@ -192,12 +261,15 @@ export function Slabs({ level, version, dim, showStop, showGoal }: { level: Comp
     const kr = 1 - Math.exp(-dt * 3.2);
     material.uniforms.uStopAmt.value += ((showStop ? 1 : 0) - material.uniforms.uStopAmt.value) * kr;
     material.uniforms.uGoalAmt.value += ((showGoal ? 1 : 0) - material.uniforms.uGoalAmt.value) * kr;
-    updateFade(material.uniforms);
+    const reach = Math.min(MASK_REACH, Math.ceil(updateFade(material.uniforms)));
+    const t = cameraRig.target();
+    (material.uniforms.uGrid.value as THREE.Vector2).set(Math.round(t.x), Math.round(-t.z));
+    geoms.slabs.instanceCount = geoms.shadow.instanceCount = grid.within[reach];
   });
   return (
     <>
-      <mesh geometry={shadowGeom} material={shadowMat} frustumCulled={false} renderOrder={1} />
-      <mesh geometry={geom} material={material} frustumCulled={false} />
+      <mesh geometry={geoms.shadow} material={shadowMat} frustumCulled={false} renderOrder={1} />
+      <mesh geometry={geoms.slabs} material={material} frustumCulled={false} />
     </>
   );
 }

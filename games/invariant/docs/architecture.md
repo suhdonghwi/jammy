@@ -98,9 +98,15 @@ backend agree. `pnpm validate` and the tests are the safety net.
   read in `useFrame`: the frogs (`frogWorld`), slab heights (`field`),
   hatching shells, tile occupancy, goal ripples. Never put
   per-frame data in zustand.
-- **Slab height has one source**: `field`. Slabs and eggs animate on the GPU
-  from `(from, to, t0)`, and `field.heightAt` gives the same height on the
-  CPU for everything else standing on the floor (frogs, tags, chips).
+- **Slab height has one source: the area's formula.** Nothing lists the
+  tiles of the area. On the GPU, `areaMask` (`scene/area/mask.ts`) evaluates
+  the area over the window around the camera into a small texture, one texel
+  per tile: on it now, on it before the last change, stop, goal, egg. It is
+  redrawn only when the formula, the inputs or the window change. Slabs,
+  eggs, goal columns and outlines read their tile's texel in the vertex
+  shader, and rise or sink as one uniform blends "before" into "now". On the
+  CPU, `field.heightAt` evaluates the same two formulas for whatever else
+  stands on the floor (frogs, tags, trails, picking).
 
 ## Time
 
@@ -181,8 +187,21 @@ backend agree. `pnpm validate` and the tests are the safety net.
 
 - The floor is **one shader plane**: the level's precondition, guard and
   postcondition are evaluated per pixel, so the plane is truly infinite.
-- Slabs, eggs, goal columns, frogs and hatching shells are **instanced**;
-  only the tiles near the camera are built, in a window that moves in steps.
+- **Slabs are one instanced grid centred on the camera**, sorted outward,
+  drawn as far as the floor is still visible. A cell with no slab collapses
+  in the vertex shader. So the area reaches the horizon at any zoom, and a
+  near slab and a far one are the same mesh and shader. The slab is the
+  same mesh at every zoom: a rounded prism whose top edge is a modelled
+  quarter-round, kept to 75 vertices so it can serve tens of thousands of
+  cells. Labels start close to the edge, so the edge must stay nearly
+  level there; a straight chamfer makes them run down the side.
+- **Eggs and goal columns are sparse, so they are listed.** The mask also
+  marks which tiles hold an egg (`level.eggAt`) and which are goals. When
+  the level, inputs or window change it is read back once, and the tiles
+  within view are listed from it (`useMaskTiles`), again out to where the
+  floor is visible. Eggs within 40 tiles of the camera target use the full
+  egg model and the rest a coarse one; a far egg is a few pixels.
+- Frogs and hatching shells are **instanced**.
 - **Errors don't take the page down**: the WebGL 2 check (`scene/webgl.ts`),
   the error boundary around the game (`ui/ErrorBoundary.tsx`) and the 3D
   title's own boundary fall back to `ui/Trouble.tsx` or plain text.

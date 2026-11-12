@@ -1,77 +1,47 @@
+import type { FastFn } from '../../lang/eval';
+import type { CompiledLevel, Formula, Inputs } from '../../levels/level';
+import { tileState } from '../../levels/tiles';
 import { clamp01, smoothstep } from '../easing';
 import { sceneNow } from '../sceneTime';
 
 export const RISE_DUR = 0.26;
 
-export interface TileFlags {
-  x: number;
-  y: number;
-  stop: boolean;
-  goal: boolean;
-}
-
-interface SlabAnim extends TileFlags {
-  from: number;
-  to: number;
-  t0: number;
-}
-
-const key = (x: number, y: number) => `${x},${y}`;
-
-function animValue(a: { from: number; to: number; t0: number }, t: number): number {
-  return a.from + (a.to - a.from) * smoothstep(clamp01((t - a.t0) / RISE_DUR));
-}
-
 class AreaField {
-  anims = new Map<string, SlabAnim>();
+  level: CompiledLevel | null = null;
+  inputs: Inputs = {};
+  area: Formula | null = null;
+  before: Formula | null = null;
+  private since = -Infinity;
 
   reset() {
-    this.anims.clear();
+    this.level = null;
+    this.area = null;
+    this.before = null;
+    this.since = -Infinity;
+  }
+
+  show(level: CompiledLevel, area: Formula | null) {
+    this.before = level === this.level ? this.area : null;
+    this.level = level;
+    this.area = area;
+    this.since = sceneNow();
+  }
+
+  risen(): number {
+    return smoothstep(clamp01((sceneNow() - this.since) / RISE_DUR));
   }
 
   heightAt(x: number, y: number): number {
-    const a = this.anims.get(key(Math.round(x), Math.round(y)));
-    return a ? animValue(a, sceneNow()) : 0;
-  }
-
-  update(tiles: TileFlags[], animate: boolean): { rose: number; sank: number } {
-    let rose = 0;
-    let sank = 0;
-    const now = sceneNow();
-    const next = new Map<string, SlabAnim>();
-    for (const tile of tiles) {
-      const k = key(tile.x, tile.y);
-      const cur = this.anims.get(k);
-      if (cur && cur.to === 1) next.set(k, { ...cur, ...tile });
-      else if (!animate) next.set(k, { ...tile, from: 1, to: 1, t0: 0 });
-      else {
-        next.set(k, { ...tile, from: cur ? animValue(cur, now) : 0, to: 1, t0: now });
-        rose++;
-      }
-    }
-    if (animate) {
-      for (const [k, cur] of this.anims) {
-        if (next.has(k)) continue;
-        const h = animValue(cur, now);
-        if (h < 0.002) continue;
-        if (cur.to !== 0) sank++;
-        next.set(k, cur.to === 0 ? cur : { ...cur, from: h, to: 0, t0: now });
-      }
-    }
-    this.anims = next;
-    return { rose, sank };
-  }
-
-  prune(): boolean {
-    const now = sceneNow();
-    let changed = false;
-    for (const [k, a] of this.anims) {
-      if (a.to === 0 && now - a.t0 > RISE_DUR) {
-        this.anims.delete(k);
-        changed = true;
-      }
-    }
-    return changed;
+    const level = this.level;
+    if (!level) return 0;
+    const s = tileState(level, Math.round(x), Math.round(y), this.inputs);
+    if (level.fast.planeReq(s) !== true) return 0;
+    const covers = (f: FastFn | undefined) => (f?.(s) === true ? 1 : 0);
+    const to = covers(this.area?.fast);
+    const risen = this.risen();
+    if (risen >= 1) return to;
+    const from = covers(this.before?.fast);
+    return from + (to - from) * risen;
   }
 }
 

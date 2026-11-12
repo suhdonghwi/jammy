@@ -11,7 +11,7 @@ import { clearTrace } from '../scene/frogs/codeTrace';
 import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { HATCH_GROW } from '../scene/frogs/motion';
-import { occupancy } from '../scene/frogs/occupancy';
+import { EGG_ALONE, EGG_ASIDE, occupancy } from '../scene/frogs/occupancy';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { eggRegion } from './regions';
 import { abandonCheck, begin, currentLevel, events } from './sequence';
@@ -56,7 +56,7 @@ export function hatch(s: State): FrogSim {
   const L = currentLevel();
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
-  const slot = occupancy.eggSlots.get(`${x},${y}`) ?? { dx: 0, dy: 0, scale: 1 };
+  const slot = occupancy.frogs.has(`${x},${y}`) ? EGG_ASIDE : EGG_ALONE;
   hatchFx.push({ x, y, plane: planeKey(inputsOf(L, s)), dx: slot.dx, dy: slot.dy, s: slot.scale });
   sfx.hatch();
   return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale, home: [x, y] });
@@ -98,7 +98,6 @@ export function interrupt() {
   abandonCheck();
   clearTrace();
   frogWorld.clear();
-  occupancy.eggs = new Set();
   hatchFx.clear();
   hopArcs.clear();
   useGame.setState({ busy: false, running: false, stepping: false, failMark: null, pending: [] });

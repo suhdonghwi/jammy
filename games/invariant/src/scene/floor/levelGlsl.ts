@@ -6,6 +6,8 @@ const ident = (name: string) => `v_${name}`;
 const inputUniform = (name: string) => `uIn_${name}`;
 const arrayUniform = (name: string) => `uArr_${name}`;
 
+const INT_MAX = 2147483647n;
+
 class Compiler {
   fns: string[] = [];
   private n = 0;
@@ -14,7 +16,7 @@ class Compiler {
   expr(e: Expr): string {
     switch (e.kind) {
       case 'num':
-        return e.value.toString();
+        return (e.value > INT_MAX ? INT_MAX : e.value < -INT_MAX ? -INT_MAX : e.value).toString();
       case 'bool':
         return e.value ? 'true' : 'false';
       case 'var':
@@ -64,7 +66,7 @@ int fdiv(int a, int k) { return int(floor(float(a) / float(k))); }
 int emod(int a, int k) { return a - k * fdiv(a, k); }
 `;
 
-export function levelGlsl(level: CompiledLevel): string {
+export function levelGlsl(level: CompiledLevel, areas?: { area: Expr | null; before: Expr | null }): string {
   const c = new Compiler(level);
   const uniforms = level.offAxis
     .map((n) => (level.arrays[n] ? `uniform int ${arrayUniform(n)}[${MAX_LEN}];` : `uniform int ${inputUniform(n)};`))
@@ -75,6 +77,8 @@ export function levelGlsl(level: CompiledLevel): string {
   const exists = c.expr(level.axisReq);
   const stop = c.expr(level.guard);
   const goal = c.expr(level.post);
+  const area = areas?.area ? c.expr(areas.area) : 'false';
+  const before = areas?.before ? c.expr(areas.before) : 'false';
   const decls = [`int ${ident(level.view.x)} = t.x;`, `int ${ident(level.view.y)} = t.y;`, ...level.offAxis.filter((n) => !level.arrays[n]).map((n) => `int ${ident(n)} = ${inputUniform(n)};`)].join(' ');
   return `
 uniform bool uExists;
@@ -84,6 +88,7 @@ ${c.fns.join('\n')}
 bool L_exists(ivec2 t) { ${decls} return ${exists}; }
 bool L_stop(ivec2 t) { ${decls} return !(${stop}); }
 bool L_goal(ivec2 t) { ${decls} return ${goal}; }
+${areas ? `bool L_area(ivec2 t) { ${decls} return ${area}; }\nbool L_before(ivec2 t) { ${decls} return ${before}; }\nbool L_egg(ivec2 t) { ${decls} return ${c.expr(level.eggAt)}; }` : ''}
 `;
 }
 

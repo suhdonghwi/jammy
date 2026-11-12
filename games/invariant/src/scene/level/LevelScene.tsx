@@ -40,12 +40,11 @@ export function LevelScene() {
       <AreaLayer
         level={level}
         inputs={inputs}
-        inv={valid?.fast ?? null}
+        area={reveal.area ? valid : null}
         dim={formula !== null && !formula.ok}
         showStop={reveal.stop}
         showGoal={reveal.goals}
         showEggs={reveal.eggs}
-        showArea={reveal.area}
       />
       <FrogTrail />
       <Frogs />

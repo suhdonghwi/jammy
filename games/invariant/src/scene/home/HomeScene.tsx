@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { compileLevel } from '../../levels/level';
-import type { TileWindow } from '../../levels/tiles';
-import { field } from '../area/field';
+import { useEffect, useRef } from 'react';
+import { compileFormula, compileLevel, type Formula, type Inputs } from '../../levels/level';
+import { useArea } from '../area/AreaLayer';
 import { GoalColumns } from '../area/GoalColumns';
 import { Slabs } from '../area/Slabs';
 import { Floor } from '../floor/Floor';
@@ -27,7 +26,6 @@ ensures x == y && x >= 2 && x <= 9;`,
 
 const RING = { x0: 1, y0: 8, w: 7, h: 5 };
 const FROGS = 5;
-const WINDOW: TileWindow = { cx: 5, cy: 9, R: 16 };
 const EGG_IN = 0.25;
 const EGG_HOLD = 0.9;
 const EGG_STAGGER = 0.3;
@@ -43,22 +41,19 @@ function edgePath({ x0, y0, w, h }: typeof RING): [number, number][] {
 }
 const PATH = edgePath(RING);
 
+function ringArea({ x0, y0, w, h }: typeof RING): Formula {
+  const [x1, y1] = [x0 + w - 1, y0 + h - 1];
+  const f = compileFormula(DIAGONAL, `${x0} <= x <= ${x1} && ${y0} <= y <= ${y1} && (x == ${x0} || x == ${x1} || y == ${y0} || y == ${y1})`);
+  if (!f.ok) throw f.error;
+  return f;
+}
+const AREA = ringArea(RING);
+const NO_INPUTS: Inputs = {};
+
 export function HomeScene() {
   useHomeCamera();
 
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    field.reset();
-    field.update(
-      PATH.map(([x, y]) => {
-        const stop = DIAGONAL.fast.guard({ x, y }) !== true;
-        return { x, y, stop, goal: stop && DIAGONAL.fast.post({ x, y }) === true };
-      }),
-      true,
-    );
-    setVersion((v) => v + 1);
-    return () => field.reset();
-  }, []);
+  useArea(DIAGONAL, NO_INPUTS, AREA);
 
   const eggs = useRef<StartEgg[]>([]);
   useEffect(() => {
@@ -102,9 +97,9 @@ export function HomeScene() {
 
   return (
     <group>
-      <Floor level={DIAGONAL} inputs={{}} fadeIn={2.6} showAxes={false} />
-      <Slabs level={DIAGONAL} version={version} dim={false} showStop showGoal />
-      <GoalColumns level={DIAGONAL} inputs={{}} win={WINDOW} version={version} />
+      <Floor level={DIAGONAL} inputs={NO_INPUTS} fadeIn={2.6} showAxes={false} />
+      <Slabs level={DIAGONAL} dim={false} showStop showGoal />
+      <GoalColumns />
       <StartEggs eggs={eggs} />
       <Frogs />
       <HatchShells />

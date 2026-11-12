@@ -1,16 +1,16 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
-import { eggsNear, type TileWindow } from '../../levels/tiles';
+import { cameraRig } from '../cameraRig';
 import { SLAB_H } from '../constants';
 import { clamp01, smoothstep } from '../easing';
 import { frogWorld } from '../frogs/frogWorld';
-import { EGG_ALONE, EGG_ASIDE, occupancy, type Slot } from '../frogs/occupancy';
+import { EGG_ALONE, EGG_ASIDE, occupancy } from '../frogs/occupancy';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 import { colorUniform, fadeUniforms, getBlobTexture, GLSL_COMMON, GLSL_FADE, updateFade } from '../shaders/common';
-import { field } from './field';
+import { areaMask, EGG } from './mask';
+import { useMaskTiles } from './maskTiles';
 import { GLSL_APPEAR, GLSL_BACK, GLSL_HEIGHT, GLSL_SLOT, instanced, SLOT_DUR } from './glsl';
 
 const eggVertex = /* glsl */ `
@@ -90,40 +90,43 @@ interface SlotAnim {
 
 const PER_FROG_ATTRS = ['aHide', 'aBack', 'aSlot', 'aSlotAnim'] as const;
 
-export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; inputs: Inputs; win: TileWindow; version: number }) {
-  const base = useMemo(() => eggGeometry(), []);
+const DETAILED_WITHIN = 40;
+
+export function Eggs() {
+  const { tiles, cx, cy } = useMaskTiles(EGG);
+  const { near, far } = useMemo(() => {
+    const close = (t: [number, number]) => Math.hypot(t[0] - cx, t[1] - cy) <= DETAILED_WITHIN;
+    return { near: tiles.filter(close), far: tiles.filter((t) => !close(t)) };
+  }, [tiles, cx, cy]);
+  const shapes = useMemo(() => ({ detailed: eggGeometry(), plain: eggGeometry(5, 8) }), []);
+  useEffect(() => () => (shapes.detailed.dispose(), shapes.plain.dispose()), [shapes]);
+  return (
+    <>
+      <EggField eggs={near} base={shapes.detailed} />
+      <EggField eggs={far} base={shapes.plain} />
+    </>
+  );
+}
+
+function EggField({ eggs, base }: { eggs: [number, number][]; base: THREE.BufferGeometry }) {
   const shadowBase = useMemo(() => new THREE.PlaneGeometry(0.66, 0.66).rotateX(-Math.PI / 2), []);
   const slots = useRef(new Map<string, SlotAnim>());
   const synced = useRef({ geom: null as THREE.BufferGeometry | null, hatch: -1, occ: -1 });
 
-  const key = planeKey(inputs);
-  const eggs = useMemo(() => eggsNear(level, inputs, win.cx, win.cy, win.R), [level, key, win]);
-  useEffect(
-    () => () => {
-      occupancy.eggs = new Set();
-    },
-    [],
-  );
 
   const { geom, shadowGeom } = useMemo(() => {
     const n = eggs.length;
     const tile = new Float32Array(n * 2);
-    const anim = new Float32Array(n * 3);
-    eggs.forEach(([x, y], i) => {
-      tile.set([x, y], i * 2);
-      const a = field.anims.get(`${x},${y}`);
-      anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
-    });
+    eggs.forEach(([x, y], i) => tile.set([x, y], i * 2));
     const attrs = {
       aTile: [tile, 2],
-      aAnim: [anim, 3],
       aHide: [new Float32Array(n), 1],
       aBack: [new Float32Array(n), 1],
       aSlot: [new Float32Array(n * 4), 4],
       aSlotAnim: [new Float32Array(n * 3), 3],
     } as const;
     return { geom: instanced(base, n, attrs), shadowGeom: instanced(shadowBase, n, attrs) };
-  }, [eggs, version, base, shadowBase]);
+  }, [eggs, base, shadowBase]);
   useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
 
   const syncFrogs = () => {
@@ -135,14 +138,11 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
     const slot = geom.getAttribute('aSlot').array as Float32Array;
     const slotAnim = geom.getAttribute('aSlotAnim').array as Float32Array;
     const now = sceneNow();
-    const visibleEggs = new Set<string>();
-    const eggSlots = new Map<string, Slot>();
     eggs.forEach(([x, y], i) => {
       const k = `${x},${y}`;
       const hatched = frogWorld.hatched.has(k);
       hide[i] = hatched ? 1 : 0;
       back[i] = frogWorld.returned.get(k) ?? -100;
-      if (!hatched) visibleEggs.add(k);
       const target = occupancy.frogs.has(k) ? EGG_ASIDE : EGG_ALONE;
       const prev = slots.current.get(k);
       let cur: SlotAnim = { fx: target.dx, fy: target.dy, fs: target.scale, tx: target.dx, ty: target.dy, ts: target.scale, t0: 0 };
@@ -155,12 +155,9 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
             : { fx: at.x, fy: at.y, fs: at.s, tx: target.dx, ty: target.dy, ts: target.scale, t0: now };
       }
       slots.current.set(k, cur);
-      eggSlots.set(k, { dx: cur.tx, dy: cur.ty, scale: cur.ts });
       slot.set([cur.fx, cur.fy, cur.tx, cur.ty], i * 4);
       slotAnim.set([cur.fs, cur.ts, cur.t0], i * 3);
     });
-    occupancy.eggs = visibleEggs;
-    occupancy.eggSlots = eggSlots;
     for (const g of [geom, shadowGeom]) for (const name of PER_FROG_ATTRS) g.getAttribute(name).needsUpdate = true;
   };
 
@@ -173,8 +170,9 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
           uTime: { value: 0 },
           uEgg: colorUniform('egg'),
           uAppearT0: { value: sceneNow() },
-          uAppearCenter: { value: new THREE.Vector2(win.cx, win.cy) },
+          uAppearCenter: { value: new THREE.Vector2(cameraRig.target().x, -cameraRig.target().z) },
           ...fadeUniforms(),
+          ...areaMask.uniforms,
         },
       }),
     [],
@@ -186,7 +184,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
         fragmentShader: shadowFragment,
         transparent: true,
         depthWrite: false,
-        uniforms: { uTime: material.uniforms.uTime, uMap: { value: getBlobTexture() }, uAppearT0: material.uniforms.uAppearT0, uAppearCenter: material.uniforms.uAppearCenter },
+        uniforms: { ...areaMask.uniforms, uTime: material.uniforms.uTime, uMap: { value: getBlobTexture() }, uAppearT0: material.uniforms.uAppearT0, uAppearCenter: material.uniforms.uAppearCenter },
       }),
     [material],
   );

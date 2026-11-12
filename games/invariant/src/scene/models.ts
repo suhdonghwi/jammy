@@ -139,9 +139,9 @@ export function outlineGeometry(geom: THREE.BufferGeometry): THREE.BufferGeometr
   return welded;
 }
 
-export function eggGeometry() {
+export function eggGeometry(rings = 22, around = 28) {
   const pts: THREE.Vector2[] = [];
-  const N = 22;
+  const N = rings;
   for (let i = 0; i <= N; i++) {
     const t = i / N;
     const a = Math.PI * t;
@@ -149,5 +149,5 @@ export function eggGeometry() {
     const y = (1 - Math.cos(a)) * 0.182;
     pts.push(new THREE.Vector2(Math.max(r, 0.0001), y));
   }
-  return new THREE.LatheGeometry(pts, 28);
+  return new THREE.LatheGeometry(pts, around);
 }

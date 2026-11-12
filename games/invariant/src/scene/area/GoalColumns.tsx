@@ -2,12 +2,12 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
-import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
-import { tilesNear, type TileWindow } from '../../levels/tiles';
+import { planeKey } from '../../levels/level';
 import { COLORS, SLAB_H } from '../constants';
 import { goalEvents, MAX_EVENTS } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
-import { field } from './field';
+import { areaMask, GOAL } from './mask';
+import { useMaskTiles } from './maskTiles';
 import { GLSL_HEIGHT, instanced } from './glsl';
 
 const vertex = /* glsl */ `
@@ -61,35 +61,16 @@ void main() {
 }
 `;
 
-export function GoalColumns({
-  level,
-  inputs,
-  win,
-  version,
-}: {
-  level: CompiledLevel;
-  inputs: Inputs;
-  win: TileWindow;
-  version: number;
-}) {
-  const key = planeKey(inputs);
-  const tiles = useMemo(() => {
-    const f = level.fast;
-    return tilesNear(level, inputs, { ...win, R: Math.min(win.R, 24) }, (s, x, y) => (f.planeReq(s) && f.guard(s) !== true && f.post(s) === true ? [x, y] : undefined));
-  }, [level, key, win]);
+export function GoalColumns() {
+  const { tiles } = useMaskTiles(GOAL);
 
   const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
   const geom = useMemo(() => {
     const n = tiles.length;
     const tile = new Float32Array(n * 2);
-    const anim = new Float32Array(n * 3);
-    tiles.forEach(([x, y], i) => {
-      tile.set([x, y], i * 2);
-      const a = field.anims.get(`${x},${y}`);
-      anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
-    });
-    return instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3] });
-  }, [tiles, version, base]);
+    tiles.forEach(([x, y], i) => tile.set([x, y], i * 2));
+    return instanced(base, n, { aTile: [tile, 2] });
+  }, [tiles, base]);
   useEffect(() => () => geom.dispose(), [geom]);
 
   const material = useMemo(
@@ -105,6 +86,7 @@ export function GoalColumns({
           uColor: { value: new THREE.Color(COLORS.goal) },
           uAppearT0: { value: sceneNow() },
           uEvents: goalEvents.uniforms.uEvents,
+          ...areaMask.uniforms,
         },
       }),
     [],

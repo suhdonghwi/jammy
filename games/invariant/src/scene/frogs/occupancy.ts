@@ -36,8 +36,6 @@ export function slotFor(index: number, count: number): Slot {
 
 export const occupancy = {
   frogs: new Map<string, number>(),
-  eggs: new Set<string>(),
-  eggSlots: new Map<string, Slot>(),
   version: 0,
   signature: '',
 };
