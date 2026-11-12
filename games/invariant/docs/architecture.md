@@ -190,10 +190,9 @@ backend agree. `pnpm validate` and the tests are the safety net.
 - **Slabs are one instanced grid centred on the camera**, sorted outward,
   drawn as far as the floor is still visible. A cell with no slab collapses
   in the vertex shader. So the area reaches the horizon at any zoom, and a
-  near slab and a far one are the same mesh and shader. Zoomed out past a
-  The slab is a plain prism at every zoom; the bevel along its top edge is
-  shaded in the fragment shader, not modelled, so one light mesh serves
-  tens of thousands of cells.
+  near slab and a far one are the same mesh and shader. The slab is the
+  same mesh at every zoom: a rounded prism with a bevel modelled along its
+  top edge, kept to 49 vertices so it can serve tens of thousands of cells.
 - **Eggs and goal columns are sparse, so they are listed.** The mask also
   marks which tiles hold an egg (`level.eggAt`) and which are goals. When
   the level, inputs or window change it is read back once, and the tiles

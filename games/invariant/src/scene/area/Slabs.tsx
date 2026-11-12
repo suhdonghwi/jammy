@@ -38,7 +38,6 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
-varying float vUp;
 void main() {
   vec2 tile = uGrid + aOffset;
   vec4 m = maskAt(tile);
@@ -55,7 +54,6 @@ void main() {
   vF = vec2(position.x, -position.z);
   vFlags = vec2(m.b, mod(floor(m.a * 3.0 + 0.5), 2.0));
   vTile = tile;
-  vUp = position.y;
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;
@@ -68,7 +66,6 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
-varying float vUp;
 uniform vec3 uTop, uSide, uStopTop;
 uniform vec2 uHover;
 uniform float uHoverOn;
@@ -86,18 +83,6 @@ void main() {
   float fwRing = fwidth(ringD);
   vec3 n = normalize(vN);
   float top = step(0.6, n.y);
-  // the bevel along the top edge is shaded, not modelled: the mesh is a plain prism
-  if (top > 0.5) {
-    vec2 outward = sign(vF) * max(abs(vF) - ${(TILE / 2 - CORNER).toFixed(3)}, 0.0);
-    float lean = (1.0 - clamp(-sdRoundBox(vF, vec2(${(TILE / 2).toFixed(3)}), ${CORNER.toFixed(2)}) / ${BEVEL.toFixed(2)}, 0.0, 1.0)) * 0.785;
-    if (dot(outward, outward) > 1e-8) {
-      outward = normalize(outward);
-      n = normalize(vec3(outward.x * sin(lean), cos(lean), -outward.y * sin(lean)));
-    }
-  } else {
-    float lean = (1.0 - clamp((${SLAB_H.toFixed(3)} - vUp) / ${BEVEL.toFixed(2)}, 0.0, 1.0)) * 0.785;
-    n = normalize(vec3(n.x * cos(lean), sin(lean), n.z * cos(lean)));
-  }
   bool stop = vFlags.x > 0.5 && uStopAmt > 0.002;
   vec3 col;
   if (top > 0.5) {
@@ -154,7 +139,7 @@ void main() {
 `;
 
 
-function prismGeometry(): THREE.BufferGeometry {
+function slabGeometry(): THREE.BufferGeometry {
   const half = TILE / 2;
   const rim: [number, number, number, number][] = [];
   for (let c = 0; c < 4; c++) {
@@ -162,29 +147,33 @@ function prismGeometry(): THREE.BufferGeometry {
     const sz = c < 2 ? 1 : -1;
     for (let k = 0; k <= CORNER_STEPS; k++) {
       const a = (c + k / CORNER_STEPS) * (Math.PI / 2);
-      const nx = Math.cos(a);
-      const nz = Math.sin(a);
-      rim.push([sx * (half - CORNER) + nx * CORNER, sz * (half - CORNER) + nz * CORNER, nx, nz]);
+      rim.push([sx * (half - CORNER), sz * (half - CORNER), Math.cos(a), Math.sin(a)]);
     }
   }
   const n = rim.length;
   const position: number[] = [0, SLAB_H, 0];
   const normal: number[] = [0, 1, 0];
+  const ring = (reach: number, y: number, up: number) => {
+    const first = position.length / 3;
+    for (const [x, z, nx, nz] of rim) {
+      position.push(x + nx * reach, y, z + nz * reach);
+      normal.push(nx * (1 - up), up, nz * (1 - up));
+    }
+    return first;
+  };
+  const top = ring(CORNER - BEVEL, SLAB_H, 1);
+  const shoulder = ring(CORNER, SLAB_H - BEVEL, 0);
+  const foot = ring(CORNER, 0, 0);
   const index: number[] = [];
-  for (const [x, z] of rim) {
-    position.push(x, SLAB_H, z);
-    normal.push(0, 1, 0);
-  }
-  for (let k = 0; k < n; k++) index.push(0, 1 + ((k + 1) % n), 1 + k);
-  const side = 1 + n;
-  for (const [x, z, nx, nz] of rim) {
-    position.push(x, SLAB_H, z, x, 0, z);
-    normal.push(nx, 0, nz, nx, 0, nz);
-  }
   for (let k = 0; k < n; k++) {
-    const a = side + 2 * k;
-    const b = side + 2 * ((k + 1) % n);
-    index.push(a, b, a + 1, b, b + 1, a + 1);
+    const next = (k + 1) % n;
+    index.push(0, top + next, top + k);
+    for (const [upper, lower] of [
+      [top, shoulder],
+      [shoulder, foot],
+    ]) {
+      index.push(upper + k, upper + next, lower + k, upper + next, lower + next, lower + k);
+    }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
@@ -215,7 +204,7 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
   const geoms = useMemo(() => {
     const cells = { aOffset: [grid.offsets, 2] } as const;
     return {
-      slabs: instanced(prismGeometry(), 0, cells),
+      slabs: instanced(slabGeometry(), 0, cells),
       shadow: instanced(new THREE.PlaneGeometry(1.45, 1.45).rotateX(-Math.PI / 2), 0, cells),
     };
   }, []);
