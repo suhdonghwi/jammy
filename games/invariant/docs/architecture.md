@@ -67,7 +67,7 @@ which feeds:
   quantifiers. Z3's WebAssembly build has crashed on quantified *model
   finding* under a timeout, so bounded passes never send it a quantifier;
 - **GLSL** for the floor shader (32-bit ints: visual only), from the level's
-  formulas only; the area is drawn as slabs. An integer input is a uniform,
+  formulas and, past the built slabs, the learner's area (see below). An integer input is a uniform,
   an array input a uniform `int[MAX_LEN]` with its length's uniform; a
   quantifier becomes a loop of at most MAX_LEN + 1 steps. The inputs' part of
   the precondition is the same for every tile, so it is one uniform set from
@@ -183,11 +183,13 @@ backend agree. `pnpm validate` and the tests are the safety net.
   postcondition are evaluated per pixel, so the plane is truly infinite.
 - Slabs, eggs, goal columns, frogs and hatching shells are **instanced**;
   only the tiles near the camera are built, in a window that moves in steps.
-  The window and the fade into the horizon share one radius
-  (`cameraRig.viewRadius()`), so the window always reaches past where the
-  floor is still visible and nothing built ends inside the view. The radius
-  is capped (`VIEW_REACH`): zoomed far out, the horizon closes in rather than
-  the tile count growing.
+- **Beyond that window the floor shader draws the slabs itself.** The
+  learner's area is compiled into the floor's fragment shader next to the
+  level's formulas, and for a tile outside the window (`field.built`) the
+  shader finds where the view ray meets that slab's top or side and shades
+  it as the slab mesh would. So the area has no edge however far the camera
+  pulls back. The shader is rebuilt 250 ms after the area last changed, and
+  an area with a number too large for a GLSL int is not drawn there.
 - **Errors don't take the page down**: the WebGL 2 check (`scene/webgl.ts`),
   the error boundary around the game (`ui/ErrorBoundary.tsx`) and the 3D
   title's own boundary fall back to `ui/Trouble.tsx` or plain text.

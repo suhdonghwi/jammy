@@ -34,6 +34,8 @@ export function LevelScene() {
         showStop={reveal.stop}
         showGoal={reveal.goals}
         showAxes={reveal.axes}
+        area={reveal.area ? (valid?.expr ?? null) : null}
+        areaDim={formula !== null && !formula.ok}
         onTile={clickTile}
         clickable={tileClickable}
       />

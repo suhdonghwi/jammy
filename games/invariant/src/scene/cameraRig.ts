@@ -41,8 +41,6 @@ const TAG_ROOM = 46;
 const TAG_HALF = 64;
 const TILE_RADIUS = 0.5;
 const MAX_DISTANCE = 60;
-const VIEW_NEAR = 26;
-const VIEW_REACH = 48;
 const ZOOM_OUT = 1.6;
 const MIN_FREE = 150;
 const ARRIVING_MS = 450;
@@ -198,9 +196,6 @@ export const cameraRig = {
   },
   distance(): number {
     return controls ? controls.distance : 14;
-  },
-  viewRadius(): number {
-    return Math.min(VIEW_REACH, Math.max(VIEW_NEAR, cameraRig.distance() * 2.6));
   },
   viewCenter(): { x: number; y: number } {
     const v = endView();

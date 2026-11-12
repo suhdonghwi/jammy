@@ -282,7 +282,7 @@ export function fadeUniforms(): Record<string, THREE.IUniform> {
 
 export function updateFade(u: Record<string, THREE.IUniform>): number {
   const t = cameraRig.target();
-  const R = cameraRig.viewRadius();
+  const R = Math.max(26, cameraRig.distance() * 2.6);
   (u.uCenter.value as THREE.Vector2).set(t.x, t.z);
   (u.uFade.value as THREE.Vector2).set(R * 0.62, R);
   return R;

@@ -24,6 +24,7 @@ function animValue(a: { from: number; to: number; t0: number }, t: number): numb
 
 class AreaField {
   anims = new Map<string, SlabAnim>();
+  built = { cx: 0, cy: 0, R: 0 };
 
   reset() {
     this.anims.clear();
