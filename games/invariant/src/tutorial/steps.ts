@@ -1,6 +1,6 @@
 import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
-import { dismissFrogs, hatch, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs } from '../director/frogs';
+import { dismissFrogs, hatch, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs, testEggs } from '../director/frogs';
 import { previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
 import { playProof } from '../director/verdicts';
@@ -44,7 +44,7 @@ export function resetProgress() {
   weakArea = '';
 }
 
-const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
+const WORLD = { axes: true, code: true, step: true, run: true, stop: true, hover: true, eggs: true, goals: true } as const;
 const DRAW = { ...WORLD, formula: true, area: true, lights: RULES };
 export const VIEW: View = [2, 2, 15.6];
 const PROOF_VIEW: View = [2, 2, 18];
@@ -123,14 +123,16 @@ export const STEPS: Step[] = [
       useGame.getState().setReveal({ step: true });
       allow({ step: true });
       say(T().pressStep, 'step');
-      await waitEvent(gen, 'stepped');
-      say(T().keepStepping, 'step');
-      await waitEvent(gen, 'stepped', realFrogsStopped);
+      await waitEvent(gen, ['stepped']);
+      useGame.getState().setReveal({ run: true });
+      allow({ step: true, run: true });
+      say(T().pressRun, 'run');
+      await waitEvent(gen, ['stepped', 'runDone'], realFrogsStopped);
       allow({});
     },
   },
   {
-    scene: { reveal: { axes: true, code: true, step: true }, frogs: [[3, 3]], tags: true, labels: [[3, 3]] },
+    scene: { reveal: { axes: true, code: true, step: true, run: true }, frogs: [[3, 3]], tags: true, labels: [[3, 3]] },
     run: (gen) =>
       beat(gen, T().stops, {
         prepare: () => useGame.getState().setReveal({ stop: true, hover: true }),
@@ -139,7 +141,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true }, frogs: [[3, 3]], tags: true, focus: [[0, 0], [0, 4], [3, 3]] },
+    scene: { reveal: { axes: true, code: true, step: true, run: true, stop: true, hover: true }, frogs: [[3, 3]], tags: true, focus: [[0, 0], [0, 4], [3, 3]] },
     run: (gen) =>
       beat(gen, T().eggs, {
         lines: [2, 4],
@@ -153,7 +155,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true }, frogs: [[3, 3]], focus: BOARD },
+    scene: { reveal: { axes: true, code: true, step: true, run: true, stop: true, hover: true, eggs: true }, frogs: [[3, 3]], focus: BOARD },
     run: (gen) =>
       beat(gen, T().goals, {
         lines: [9],
@@ -166,7 +168,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true }, frogs: [[3, 3]], focus: [...BOARD, [3, 1]] },
+    scene: { reveal: { axes: true, code: true, step: true, run: true, stop: true, hover: true, eggs: true, goals: true }, frogs: [[3, 3]], focus: [...BOARD, [3, 1]] },
     run: async (gen) => {
       await beat(gen, T().bug, {
         prepare: () => useGame.setState({ failMark: { x: 3, y: 1, label: T().bugTag, t0: sceneNow() } }),
@@ -176,14 +178,12 @@ export const STEPS: Step[] = [
     },
   },
   {
-    scene: { reveal: { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true }, focus: BOARD },
+    scene: { reveal: { axes: true, code: true, step: true, run: true, stop: true, hover: true, eggs: true, goals: true }, focus: BOARD },
     run: async (gen) => {
-      useGame.getState().setReveal({ run: true });
-      useGame.setState({ callouts: [], failMark: null });
-      allow({ run: true });
-      say(T().pressRun, 'run');
-      await waitEvent(gen, 'runDone', realFrogsStopped);
-      allow({});
+      await beat(gen, T().testTen, { label: T().hatchTen });
+      say(T().testTen);
+      void testEggs();
+      await waitEvent(gen, ['runDone'], realFrogsStopped);
       await beat(gen, T().allTen);
     },
   },
@@ -195,7 +195,7 @@ export const STEPS: Step[] = [
           { x: 9, y: 9, text: T().testedTag, tone: 'good' },
           { x: 0, y: 18, text: T().endlessTag, tone: 'info' },
         ],
-        prepare: () => allow({ eggs: true }),
+        prepare: () => allow({ eggs: true, step: true, run: true }),
       });
       allow({});
     },

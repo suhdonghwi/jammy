@@ -128,13 +128,13 @@ export function allow(a: Partial<TutorialState['allow']>) {
   setTutorial({ allow: { ...ALLOW_NONE, ...a } });
 }
 
-export function waitEvent(gen: number, name: 'stepped' | 'runDone', until?: () => boolean): Promise<void> {
+export function waitEvent(gen: number, names: ('stepped' | 'runDone')[], until?: () => boolean): Promise<void> {
   return new Promise((resolve, reject) => {
     const off = events.on((e) => {
       if (gen !== generation) {
         off();
         reject(new Aborted());
-      } else if (e === name && (!until || until())) {
+      } else if (names.includes(e) && (!until || until())) {
         off();
         resolve();
       }

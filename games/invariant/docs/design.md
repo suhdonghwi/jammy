@@ -258,8 +258,9 @@ endless as the loop it stands in for. Both are real levels (`tutorialLevel`,
 `src/i18n/`.
 
 - **Progressive reveal:** a bare plane and one frog first; then the code,
-  Step, the stop region, eggs (with `requires` and the initialisation code),
-  goals (with `ensures`), Run, the example, and finally the formula box with
+  Step and Run, the stop region, eggs (with `requires` and the initialisation
+  code), goals (with `ensures`), a test of ten eggs started from the caption,
+  the example, and finally the formula box with
   the three rule lights, dim until their stage.
 - **The example is shown, not solved.** Its area is fixed and its code
   hidden. While the claim is introduced, one frog at a time hatches, runs and

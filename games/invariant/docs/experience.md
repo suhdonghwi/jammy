@@ -38,8 +38,8 @@ behind many small decisions; keep them when changing or adding UI.
   both position and speed.
 - **Every movement means something.** A frog turns (with a tiny hop) only
   when its next hop goes another way; it cheers only when it lands on a goal.
-  The code panel's cursor walks the lines a hop runs (following the last of
-  the frogs hopping together, so after Run the longest run), then sits on the
+  The code panel's cursor walks the lines a hop runs (in the tutorial's
+  ten-egg test, the last of the frogs hopping together), then sits on the
   `while` line, green with a tick if the loop goes on, amber with a cross if
   it stops, and drops to cover the `ensures` lines when the loop ends.
 - **Visible, not loud.** A goal landing should be noticed (a ripple, a flash,
@@ -105,6 +105,12 @@ behind many small decisions; keep them when changing or adding UI.
 - **Draw what doesn't exist faintly**, rather than not at all: states the
   precondition rules out are ghost tiles, still hoverable, and the readout
   says they are not possible states.
+- **Step and Run move one frog: the one the learner picked.** Clicking an
+  egg hatches its frog, which waits. Step hops it once; Run hops it until it
+  stops, and turns into Pause meanwhile. In a level there is one real frog
+  at a time: picking another egg sends the last one home. Pressed with no
+  frog, Step and Run point at an egg ("pick an egg first"); pressed on a
+  frog that has stopped, they say so. They never choose a frog themselves.
 - **Reset puts the screen back as the level opened**: frogs in their eggs,
   the starting inputs and view, the intro in the caption. The area and its
   verdicts stay, since those are the learner's work.

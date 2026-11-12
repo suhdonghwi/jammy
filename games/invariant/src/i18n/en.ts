@@ -118,6 +118,8 @@ export const en = {
     proved: 'Proved. Every frog, everywhere you claimed — for every input.',
     next: (title: string) => `Next: ${title}`,
     backToLevels: 'Back to levels',
+    pickEgg: 'pick an egg first',
+    frogStopped: 'this frog has stopped',
     otherAnswers: (count: number): string => (count > 1 ? 'Other answers that work:' : 'Another answer that works:'),
   },
 
@@ -195,7 +197,7 @@ export const en = {
     frog: 'Each frog stands for the program, run on one input. The tile it sits on is its **program state**, the current values of its variables.',
     program: 'Here is the **code** of the program we are running. The loop runs its body again and again while `i < n`.',
     pressStep: 'Press **Step** to run the loop body once.',
-    keepStepping: 'One hop is the loop body running once: `i` went from `0` to `1`.\n\nKeep pressing **Step** until the frog stops.',
+    pressRun: 'One hop is the loop body running once: `i` went from `0` to `1`.\n\n**Run** keeps the frog hopping until the loop stops. Press it.',
     stops: 'Now `i < n` is false (`3 < 3`), so the loop ends and the frog **stops**. The striped tiles are where the loop stops.',
     stopsTag: 'stops: 3 < 3 is false',
     eggs: 'Where can a frog start? The **precondition** is what we assume about the input. Here, the precondition `requires n >= 0` lets `n` be any number from `0` up.\n\nEach **egg** is one place a frog can start.',
@@ -205,7 +207,8 @@ export const en = {
     goalsTag: 'stopped on a goal',
     bug: 'Not every place to stop is a goal. A frog that stopped here, at `i = 3, n = 1`, would leave the loop with `i ≠ n`: the program would be wrong.\n\nFor the program to be correct, **every frog must stop on a goal**.',
     bugTag: 'stops, but i ≠ n',
-    pressRun: 'Does every frog really stop on a goal? Let’s test it. Press **Run** to hatch ten eggs.',
+    testTen: 'Does every frog really stop on a goal? Let’s test it on ten eggs.',
+    hatchTen: 'Hatch ten eggs',
     allTen: 'All ten frogs stopped on a goal, which means the program works for `n` = 0 to 9.',
     endless:
       'But that was only ten inputs. `n` can be any number, so the eggs never end: however many you test, infinitely many are left.\n\n**So how can we be sure the program works for every egg?**',
