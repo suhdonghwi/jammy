@@ -1,7 +1,6 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { useGame } from '../../game/store';
 import { planeKey, type CompiledLevel } from '../../levels/level';
 import { SLAB_H, TILE } from '../constants';
@@ -26,6 +25,10 @@ import { cameraRig } from '../cameraRig';
 import { GLSL_MASK, instanced } from './glsl';
 import { areaMask, MASK_REACH } from './mask';
 
+const CORNER = 0.07;
+const CORNER_STEPS = 3;
+const BEVEL = 0.07;
+
 const slabVertex = /* glsl */ `
 ${GLSL_MASK}
 attribute vec2 aOffset;
@@ -35,6 +38,7 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
+varying float vUp;
 void main() {
   vec2 tile = uGrid + aOffset;
   vec4 m = maskAt(tile);
@@ -51,6 +55,7 @@ void main() {
   vF = vec2(position.x, -position.z);
   vFlags = m.ba;
   vTile = tile;
+  vUp = position.y;
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;
@@ -63,6 +68,7 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
+varying float vUp;
 uniform vec3 uTop, uSide, uStopTop;
 uniform vec2 uHover;
 uniform float uHoverOn;
@@ -80,6 +86,18 @@ void main() {
   float fwRing = fwidth(ringD);
   vec3 n = normalize(vN);
   float top = step(0.6, n.y);
+  // the bevel along the top edge is shaded, not modelled: the mesh is a plain prism
+  if (top > 0.5) {
+    vec2 outward = sign(vF) * max(abs(vF) - ${(TILE / 2 - CORNER).toFixed(3)}, 0.0);
+    float lean = (1.0 - clamp(-sdRoundBox(vF, vec2(${(TILE / 2).toFixed(3)}), ${CORNER.toFixed(2)}) / ${BEVEL.toFixed(2)}, 0.0, 1.0)) * 0.785;
+    if (dot(outward, outward) > 1e-8) {
+      outward = normalize(outward);
+      n = normalize(vec3(outward.x * sin(lean), cos(lean), -outward.y * sin(lean)));
+    }
+  } else {
+    float lean = (1.0 - clamp((${SLAB_H.toFixed(3)} - vUp) / ${BEVEL.toFixed(2)}, 0.0, 1.0)) * 0.785;
+    n = normalize(vec3(n.x * cos(lean), sin(lean), n.z * cos(lean)));
+  }
   bool stop = vFlags.x > 0.5 && uStopAmt > 0.002;
   vec3 col;
   if (top > 0.5) {
@@ -135,9 +153,6 @@ void main() {
 }
 `;
 
-const CORNER = 0.1;
-const CORNER_STEPS = 2;
-const DETAILED_WITHIN = 24;
 
 function prismGeometry(): THREE.BufferGeometry {
   const half = TILE / 2;
@@ -197,14 +212,10 @@ const grid = (() => {
 })();
 
 export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel; dim: boolean; showStop: boolean; showGoal: boolean }) {
-  const slabs = useRef<THREE.Mesh>(null);
   const geoms = useMemo(() => {
-    const rounded = new RoundedBoxGeometry(TILE, SLAB_H, TILE, 3, 0.07);
-    rounded.translate(0, SLAB_H / 2, 0);
     const cells = { aOffset: [grid.offsets, 2] } as const;
     return {
-      detailed: instanced(rounded, 0, cells),
-      plain: instanced(prismGeometry(), 0, cells),
+      slabs: instanced(prismGeometry(), 0, cells),
       shadow: instanced(new THREE.PlaneGeometry(1.45, 1.45).rotateX(-Math.PI / 2), 0, cells),
     };
   }, []);
@@ -262,14 +273,12 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
     const reach = Math.min(MASK_REACH, Math.ceil(updateFade(material.uniforms)));
     const t = cameraRig.target();
     (material.uniforms.uGrid.value as THREE.Vector2).set(Math.round(t.x), Math.round(-t.z));
-    const geom = cameraRig.distance() <= DETAILED_WITHIN ? geoms.detailed : geoms.plain;
-    geom.instanceCount = geoms.shadow.instanceCount = grid.within[reach];
-    if (slabs.current && slabs.current.geometry !== geom) slabs.current.geometry = geom;
+    geoms.slabs.instanceCount = geoms.shadow.instanceCount = grid.within[reach];
   });
   return (
     <>
       <mesh geometry={geoms.shadow} material={shadowMat} frustumCulled={false} renderOrder={1} />
-      <mesh ref={slabs} geometry={geoms.detailed} material={material} frustumCulled={false} />
+      <mesh geometry={geoms.slabs} material={material} frustumCulled={false} />
     </>
   );
 }
