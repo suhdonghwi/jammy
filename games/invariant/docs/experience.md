@@ -105,6 +105,9 @@ behind many small decisions; keep them when changing or adding UI.
 - **Draw what doesn't exist faintly**, rather than not at all: states the
   precondition rules out are ghost tiles, still hoverable, and the readout
   says they are not possible states.
+- **Reset puts the screen back as the level opened**: frogs in their eggs,
+  the starting inputs and view, the intro in the caption. The area and its
+  verdicts stay, since those are the learner's work.
 - **Hovering a tile answers Check's question.** The readout gives the tile's
   values, where it hops or that it stops, and whether it is on the area; a
   ghost frog shows the hop, on the same dashed line Check's ghost frogs draw.

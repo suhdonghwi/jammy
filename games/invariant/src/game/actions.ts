@@ -1,15 +1,16 @@
 import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
-import { dismissFrogs, resetLevel } from '../director/frogs';
+import { dismissFrogs, resetFrogs, resetLevel } from '../director/frogs';
 import { playVerification, runChecker, showUndecided } from '../director/verdicts';
 import { t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
-import type { LevelDef } from '../levels/level';
+import { startInputs, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
+import { cameraRig } from '../scene/cameraRig';
 import { switchScene } from '../scene/sceneTime';
 import { startTutorial, stopTutorial, tutorialCheck } from '../tutorial/tutorial';
 import { markCleared } from './progress';
-import { useGame } from './store';
+import { openingCaption, useGame } from './store';
 
 export function openLevel(def: LevelDef) {
   switchScene(() => {
@@ -34,6 +35,14 @@ export function goMenu(view: 'home' | 'levels' = 'home') {
     resetLevel();
     useGame.getState().backToMenu(view);
   });
+}
+
+export function resetScreen() {
+  const { level, busy } = useGame.getState();
+  if (!level || busy) return;
+  resetFrogs();
+  useGame.setState({ inputs: startInputs(level), caption: openingCaption(level), callouts: [], region: null });
+  cameraRig.opening(level, true);
 }
 
 export function showLevelHint() {

@@ -178,7 +178,7 @@ async function runEgg(s: State) {
   try {
     await sleep(350);
     const L = currentLevel();
-    for (let k = 0; !f.stopped && k < 60 && frogWorld.frogs.includes(f); k++) {
+    for (let k = 0; !f.stopped && !f.leave && k < 60 && frogWorld.frogs.includes(f); k++) {
       const n = hop(L, f.state);
       await frogWorld.hopTo(L, f, n, 0.36);
       f.stopped = !running(L, n);

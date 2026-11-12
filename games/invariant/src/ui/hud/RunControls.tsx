@@ -1,6 +1,6 @@
 import { BookOpen, Braces, Lightbulb, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
-import { pauseRun, resetFrogs, runFrogs, stepFrogs } from '../../director/frogs';
-import { showLevelHint } from '../../game/actions';
+import { pauseRun, runFrogs, stepFrogs } from '../../director/frogs';
+import { resetScreen, showLevelHint } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { showHint } from '../../tutorial/script';
@@ -50,7 +50,7 @@ export function RunControls() {
         </button>
       )}
       {reveal.run && !tut && (
-        <button className={`${button()} ${square(crowded)}`} disabled={busy} title={tr.controls.resetTitle} aria-label={tr.controls.reset} onClick={resetFrogs}>
+        <button className={`${button()} ${square(crowded)}`} disabled={busy} title={tr.controls.resetTitle} aria-label={tr.controls.reset} onClick={resetScreen}>
           <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> <span className={crowded ? 'compact:hidden' : ''}>{tr.controls.reset}</span>
         </button>
       )}

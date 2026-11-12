@@ -166,6 +166,10 @@ const FRESH = {
   inputHover: null,
 } satisfies Partial<Game>;
 
+export function openingCaption(level: CompiledLevel): Caption | null {
+  return level.intro ? { text: level.intro, tone: 'info' } : null;
+}
+
 export const useGame = create<Game>((set, get) => ({
   ...FRESH,
   mode: 'menu',
@@ -186,7 +190,7 @@ export const useGame = create<Game>((set, get) => ({
       mode,
       level,
       inputs: startInputs(level),
-      caption: level.intro ? { text: level.intro, tone: 'info' } : null,
+      caption: openingCaption(level),
       reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
     });
   },
