@@ -72,8 +72,10 @@ export function Frogs() {
       else groups.set(key, [f]);
     }
     const walkers = trailFrogs(plane);
-    const taken = new Map([...groups].map(([k, g]) => [k, g.length]));
-    for (const w of walkers) for (const [x, y] of leftTiles(w)) taken.set(`${x},${y}`, (taken.get(`${x},${y}`) ?? 0) + 1);
+    const taken = new Map<string, number>();
+    const take = (k: string) => taken.set(k, (taken.get(k) ?? 0) + 1);
+    for (const f of visible) if (!f.leave) take(tileOf(f));
+    for (const w of walkers) if (!w.leave) for (const [x, y] of leftTiles(w)) take(`${x},${y}`);
     let sig = '';
     for (const [k, count] of taken) if (occupancy.eggs.has(k)) sig += `${k}:${count}|`;
     if (sig !== occupancy.signature) {
