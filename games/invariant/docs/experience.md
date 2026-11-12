@@ -108,7 +108,8 @@ behind many small decisions; keep them when changing or adding UI.
   says they are not possible states.
 - **In a level a frog starts from its egg.** The learner clicks an egg and
   its frog hops until it stops. Step and Run are the tutorial's alone, where
-  the story needs one hop at a time and then ten frogs at once.
+  the story needs one hop at a time and then ten frogs at once; they leave
+  once the ten have run.
 - **Reset puts the screen back as the level opened**: frogs in their eggs,
   the starting inputs and view, the intro in the caption. The area and its
   verdicts stay, since those are the learner's work.

@@ -44,7 +44,7 @@ export function resetProgress() {
   weakArea = '';
 }
 
-const WORLD = { axes: true, code: true, step: true, stop: true, hover: true, eggs: true, goals: true, run: true } as const;
+const WORLD = { axes: true, code: true, stop: true, hover: true, eggs: true, goals: true } as const;
 const DRAW = { ...WORLD, formula: true, area: true, lights: RULES };
 export const VIEW: View = [2, 2, 15.6];
 const PROOF_VIEW: View = [2, 2, 18];
@@ -184,6 +184,7 @@ export const STEPS: Step[] = [
       say(T().pressRun, 'run');
       await waitEvent(gen, 'runDone', realFrogsStopped);
       allow({});
+      useGame.getState().setReveal({ run: false, step: false });
       await beat(gen, T().allTen);
     },
   },

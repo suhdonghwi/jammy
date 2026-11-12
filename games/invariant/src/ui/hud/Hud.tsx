@@ -27,7 +27,7 @@ export function Hud() {
         <RevealSlot open={reveal.formula}>
           <FormulaBox />
         </RevealSlot>
-        <RevealSlot open={inLevel || reveal.run || reveal.step}>
+        <RevealSlot open={inLevel || reveal.run || reveal.step || reveal.formula || reveal.lights.length > 0}>
           <RunControls />
         </RevealSlot>
       </div>
