@@ -44,6 +44,7 @@ const MAX_DISTANCE = 60;
 const ZOOM_OUT = 1.6;
 const MIN_FREE = 150;
 const ARRIVING_MS = 450;
+const SWIFT_SMOOTH_TIME = 0.16;
 const SETTLE_MS = EXIT_MS + 100;
 
 const area = (r: Rect) => Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
@@ -168,6 +169,20 @@ function keyOf(r: Rect): string {
   return `${Math.round(r.left / 8)},${Math.round(r.top / 8)},${Math.round(r.right / 8)},${Math.round(r.bottom / 8)}`;
 }
 
+let swift = 0;
+let usualSmoothTime = 0;
+
+async function swiftly(move: () => Promise<unknown>) {
+  if (!controls) return;
+  if (swift++ === 0) usualSmoothTime = controls.smoothTime;
+  controls.smoothTime = SWIFT_SMOOTH_TIME;
+  try {
+    await move();
+  } finally {
+    if (--swift === 0 && controls) controls.smoothTime = usualSmoothTime;
+  }
+}
+
 export const cameraRig = {
   attach(c: CameraControls | null) {
     controls = c;
@@ -246,8 +261,16 @@ export const cameraRig = {
     await controls.rotateTo(VIEW.azimuth, VIEW.polar, smooth);
   },
   opening(level: CompiledLevel, smooth: boolean) {
-    void cameraRig.resetAngle(smooth);
     const v = startView(level);
-    void cameraRig.frame({ at: [v.x, v.y, v.distance], focus: [[v.x, v.y]] }, smooth);
+    const shot: Shot = { at: [v.x, v.y, v.distance], focus: [[v.x, v.y]] };
+    if (!smooth || !controls) {
+      void cameraRig.resetAngle(false);
+      void cameraRig.frame(shot, false);
+      return;
+    }
+    current = shot;
+    pending?.done();
+    pending = null;
+    void swiftly(() => Promise.all([cameraRig.resetAngle(), apply(shot, true)]));
   },
 };
