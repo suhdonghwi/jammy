@@ -9,7 +9,6 @@ import { SLAB_H } from '../constants';
 import { HopLine } from '../frogs/HopLine';
 import { useHover } from '../hover';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
-import { sceneNow } from '../sceneTime';
 
 export function HoverPreview() {
   const level = useGame((s) => s.level)!;
@@ -38,7 +37,7 @@ export function HoverPreview() {
     const g = ghost.current;
     if (!g || !hop) return;
     const h = field.heightAt(hop.to[0], hop.to[1]) * SLAB_H;
-    g.position.set(hop.to[0], h + 0.02 + Math.abs(Math.sin(sceneNow() * 3)) * 0.05, -hop.to[1]);
+    g.position.set(hop.to[0], h, -hop.to[1]);
     g.rotation.y = Math.atan2(hop.to[0] - hop.from[0], -(hop.to[1] - hop.from[1]));
   });
 

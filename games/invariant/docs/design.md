@@ -90,7 +90,8 @@ there, shrink the claim — that is **strengthening**.
 A failure on a real frog's path is acted out by that real frog, hopping
 there from its egg. Check looks for those first: if a real frog in view
 leaves the area, that is the failure shown. A ghost frog stands on a tile no
-real frog passes.
+real frog passes. The scene shows the difference: a real frog trails its
+earlier selves back to its egg, a ghost frog trails nothing.
 
 Nothing else stages the scene: tags, outlines, the spotlight, lit code lines
 and the camera show where to look.

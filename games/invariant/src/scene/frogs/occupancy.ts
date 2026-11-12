@@ -25,6 +25,9 @@ const LAYOUTS: Slot[][] = [
 
 export const MAX_SHOWN = 4;
 
+export const EGG_ALONE: Slot = { dx: 0, dy: 0, scale: 1 };
+export const EGG_ASIDE: Slot = { dx: 0.27, dy: -0.25, scale: 0.5 };
+
 export function slotFor(index: number, count: number): Slot {
   const layout = LAYOUTS[Math.min(count, MAX_SHOWN) - 1] ?? LAYOUTS[0];
   if (index >= MAX_SHOWN) return { dx: 0, dy: 0, scale: 0 };

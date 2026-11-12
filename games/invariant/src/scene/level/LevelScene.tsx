@@ -6,6 +6,7 @@ import { cameraRig } from '../cameraRig';
 import { Floor } from '../floor/Floor';
 import { GroundBursts } from '../frogs/Burst';
 import { Frogs } from '../frogs/Frogs';
+import { FrogTrail } from '../frogs/FrogTrail';
 import { HatchShells } from '../frogs/Hatch';
 import { HopArcs } from '../frogs/HopArcs';
 import { Callouts, FailMarker } from '../labels/Callouts';
@@ -47,6 +48,7 @@ export function LevelScene() {
         showEggs={reveal.eggs}
         showArea={reveal.area}
       />
+      <FrogTrail />
       <Frogs />
       <HatchShells />
       <GroundBursts />

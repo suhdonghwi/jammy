@@ -61,6 +61,12 @@ export function hatch(s: State): FrogSim {
   return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale, home: [x, y] });
 }
 
+function hatchUntrailed(s: State): FrogSim {
+  const f = hatch(s);
+  f.trail = undefined;
+  return f;
+}
+
 function movingFrogs(): FrogSim[] {
   const plane = planeKey(useGame.getState().inputs);
   return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.stopped && f.plane === plane);
@@ -122,7 +128,7 @@ export function placeFrog(s: State, opts: Partial<FrogSim> = {}): FrogSim {
   const x = Number(s[L.view.x]);
   const y = Number(s[L.view.y]);
   frogWorld.markHatched(x, y);
-  const f = frogWorld.add(L, 'real', s, { home: [x, y], ...opts });
+  const f = frogWorld.add(L, 'real', s, { home: [x, y], trail: [[x, y]], ...opts });
   f.stopped = !running(L, s);
   return f;
 }
@@ -203,7 +209,7 @@ export async function testEggs() {
     await cameraRig.arrive({ focus: eggs.flatMap((s) => runTiles(L, s)) });
     if (!tok.alive) return;
   }
-  eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatch(s)));
+  eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatchUntrailed(s)));
   await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
   for (let beats = 0; tok.alive && beats < RUN_BEATS; beats++) {
     if ((await hopAllOnce(0.34)) === 0) break;
@@ -249,7 +255,7 @@ export function loopFrogs(eggs: State[]) {
   void (async () => {
     await sleep(400);
     for (let k = 0; tok.alive; k = (k + 1) % eggs.length) {
-      const f = hatch(eggs[k]);
+      const f = hatchUntrailed(eggs[k]);
       await sleep(650);
       while (tok.alive && !f.stopped) {
         const n = hop(L, f.state);

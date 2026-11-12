@@ -19,6 +19,7 @@ export interface FrogSim {
   rise?: { t0: number; dur: number; turns: number };
   leave?: { t0: number; dur: number };
   home?: [number, number];
+  trail?: [number, number][];
   fade?: number;
   hatchT0?: number;
   stopped: boolean;
@@ -112,6 +113,7 @@ class FrogWorld {
         f.x = tx;
         f.y = ty;
         f.hop = undefined;
+        f.trail?.push([tx, ty]);
         f.face = facingFor(level, next, f.face);
         if (batch) landInBatch(batch);
         if (!holds(level.guard, next) && holds(level.post, next)) this.landOnGoal(f);
@@ -124,6 +126,12 @@ class FrogWorld {
     goalEvents.push(f.x, f.y, f.plane);
     f.cheerT0 = sceneNow();
   }
+}
+
+export function trailFrogs(plane: string): FrogSim[] {
+  const trailed = frogWorld.frogs.filter((f) => f.kind === 'real' && f.trail && f.plane === plane);
+  const latest = trailed.filter((f) => !f.leave).at(-1);
+  return trailed.filter((f) => f.leave || f === latest);
 }
 
 export const frogWorld = new FrogWorld();

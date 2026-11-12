@@ -29,7 +29,7 @@ src/
   scene/       the 3D world: canvas, camera rig, scene time, hovered tile, WebGL check
     floor/       the infinite floor, drawn per pixel from the level's formulas (GLSL)
     area/        the learner's slabs, eggs and goal columns
-    frogs/       frog state, motion, rendering, hatching
+    frogs/       frog state, motion, rendering, hatching, the real frog's trail
     labels/      tags over tiles and frogs, and outlines of endless regions
     level/       a level's scene and hover preview
     home/        the home screen's scene
