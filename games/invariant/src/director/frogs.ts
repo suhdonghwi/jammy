@@ -7,7 +7,6 @@ import { eggsNear, tileState } from '../levels/tiles';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, HOP_GAP_MS, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
-import { burstFx } from '../scene/frogs/Burst';
 import { clearTrace } from '../scene/frogs/codeTrace';
 import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
@@ -101,7 +100,6 @@ export function interrupt() {
   frogWorld.clear();
   occupancy.eggs = new Set();
   hatchFx.clear();
-  burstFx.clear();
   hopArcs.clear();
   useGame.setState({ busy: false, running: false, stepping: false, failMark: null, pending: [] });
 }

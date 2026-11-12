@@ -4,7 +4,6 @@ import { useGame } from '../../game/store';
 import { AreaLayer } from '../area/AreaLayer';
 import { cameraRig } from '../cameraRig';
 import { Floor } from '../floor/Floor';
-import { GroundBursts } from '../frogs/Burst';
 import { Frogs } from '../frogs/Frogs';
 import { FrogTrail } from '../frogs/FrogTrail';
 import { HatchShells } from '../frogs/Hatch';
@@ -51,7 +50,6 @@ export function LevelScene() {
       <FrogTrail />
       <Frogs />
       <HatchShells />
-      <GroundBursts />
       <HopArcs />
       <FrogTags />
       {reveal.hover && <HoverPreview />}
