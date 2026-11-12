@@ -192,7 +192,7 @@ backend agree. `pnpm validate` and the tests are the safety net.
   in the vertex shader. So the area reaches the horizon at any zoom, and a
   near slab and a far one are the same mesh and shader. The slab is the
   same mesh at every zoom: a rounded prism with a bevel modelled along its
-  top edge, kept to 49 vertices so it can serve tens of thousands of cells.
+  top edge, rounded like the labels drawn across it expect, kept to 75 vertices so it can serve tens of thousands of cells.
 - **Eggs and goal columns are sparse, so they are listed.** The mask also
   marks which tiles hold an egg (`level.eggAt`) and which are goals. When
   the level, inputs or window change it is read back once, and the tiles

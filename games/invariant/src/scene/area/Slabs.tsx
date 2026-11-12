@@ -28,6 +28,7 @@ import { areaMask, MASK_REACH } from './mask';
 const CORNER = 0.07;
 const CORNER_STEPS = 3;
 const BEVEL = 0.07;
+const BEVEL_STEPS = 3;
 
 const slabVertex = /* glsl */ `
 ${GLSL_MASK}
@@ -153,25 +154,26 @@ function slabGeometry(): THREE.BufferGeometry {
   const n = rim.length;
   const position: number[] = [0, SLAB_H, 0];
   const normal: number[] = [0, 1, 0];
-  const ring = (reach: number, y: number, up: number) => {
+  const ring = (reach: number, y: number, tilt: number) => {
     const first = position.length / 3;
     for (const [x, z, nx, nz] of rim) {
       position.push(x + nx * reach, y, z + nz * reach);
-      normal.push(nx * (1 - up), up, nz * (1 - up));
+      normal.push(nx * Math.sin(tilt), Math.cos(tilt), nz * Math.sin(tilt));
     }
     return first;
   };
-  const top = ring(CORNER - BEVEL, SLAB_H, 1);
-  const shoulder = ring(CORNER, SLAB_H - BEVEL, 0);
-  const foot = ring(CORNER, 0, 0);
+  const rings = Array.from({ length: BEVEL_STEPS + 1 }, (_, k) => {
+    const tilt = (k / BEVEL_STEPS) * (Math.PI / 2);
+    return ring(CORNER - BEVEL * (1 - Math.sin(tilt)), SLAB_H - BEVEL * (1 - Math.cos(tilt)), tilt);
+  });
+  rings.push(ring(CORNER, 0, Math.PI / 2));
   const index: number[] = [];
   for (let k = 0; k < n; k++) {
     const next = (k + 1) % n;
-    index.push(0, top + next, top + k);
-    for (const [upper, lower] of [
-      [top, shoulder],
-      [shoulder, foot],
-    ]) {
+    index.push(0, rings[0] + next, rings[0] + k);
+    for (let r = 1; r < rings.length; r++) {
+      const upper = rings[r - 1];
+      const lower = rings[r];
       index.push(upper + k, upper + next, lower + k, upper + next, lower + next, lower + k);
     }
   }
