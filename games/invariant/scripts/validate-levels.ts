@@ -3,7 +3,7 @@ import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import type { State } from '../src/lang/ast';
 import { allLevels, exampleLevel, tutorialLevel } from '../src/levels/catalog';
 import { levelsKo } from '../src/levels/catalog.ko';
-import { compileFormula, compileLevel, hop, isEgg, running, startInputs, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
+import { compileFormula, compileLevel, hop, isEgg, running, showState, startInputs, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
 
 const ctx = await nodeZ3();
 let failures = 0;
@@ -79,7 +79,7 @@ for (const def of allLevels) {
     if ((def.hints?.length ?? 0) < 2) fail('needs at least two hints');
     checkHints(def, def.hints ?? []);
   }
-  const box = { cx: 0, cy: 0, r: 12, planeR: 8, inputs: startInputs(level) };
+  const inputs = startInputs(level);
 
   const eggs = sampleEggs(level);
   if (eggs.length === 0) fail('no starting states');
@@ -103,7 +103,7 @@ for (const def of allLevels) {
       continue;
     }
     const t = performance.now();
-    const r = await checkFormula(ctx, level, f, box, { timeout: 5000 });
+    const r = await checkFormula(ctx, level, f, inputs, { timeout: 5000 });
     const ms = Math.round(performance.now() - t);
     const bad = Object.entries(r.verdicts).filter(([, v]) => v.status !== 'pass' || v.how !== 'proved');
     if (bad.length) fail(`solution '${sol}': ${bad.map(([k, v]) => `${k}=${v.status}`).join(', ')}`);
@@ -116,8 +116,8 @@ for (const def of allLevels) {
       fail(`pitfall '${p.formula}' does not compile: ${f.error.message}`);
       continue;
     }
-    const r = await checkFormula(ctx, level, f, box, { timeout: 5000 });
-    const failed = Object.entries(r.verdicts).filter(([, v]) => v.status === 'fail').map(([k]) => k);
+    const r = await checkFormula(ctx, level, f, inputs, { timeout: 5000 });
+    const failed = Object.entries(r.verdicts).flatMap(([k, v]) => (v.status === 'fail' ? [`${k} (${v.cex.run ? 'real' : 'ghost'} frog at ${showState(level, v.cex.state)}${v.cex.far ? ', far' : ''})`] : []));
     const undecided = Object.entries(r.verdicts).filter(([, v]) => v.status === 'undecided').map(([k]) => k);
     if (failed.length === 0) fail(`pitfall '${p.formula}' does not fail`);
     else if (undecided.length) fail(`pitfall '${p.formula}' has undecided rules: ${undecided}`);

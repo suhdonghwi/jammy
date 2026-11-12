@@ -87,9 +87,10 @@ Check asks of every tile: if a frog were here, where would it land, or where
 would it stop? A ghost frog acts out that question. If you don't want a frog
 there, shrink the claim — that is **strengthening**.
 
-A failure a real frog can reach (from a nearby egg within a few hops) is
-acted out by that real frog instead: then the area is simply wrong, while a
-ghost frog's failure says the area claims more than real frogs do.
+A failure on a real frog's path is acted out by that real frog, hopping
+there from its egg. Check looks for those first: if a real frog in view
+leaves the area, that is the failure shown. A ghost frog stands on a tile no
+real frog passes.
 
 Nothing else stages the scene: tags, outlines, the spotlight, lit code lines
 and the camera show where to look.
@@ -127,13 +128,27 @@ programmer expects, and have room for arrays.)
 - **A rule passes only if it is proved.** Z3 decides every rule over every
   plane and tile. A large search never silently stands in for a proof — that
   would contradict what the game teaches.
-- **On failure, show one concrete frog**, and prefer a nice one: the current
-  plane first, then small values, then near the camera. If the only
-  counterexample is far away, the camera flies to it: "everything you could
-  see looked fine" is not a proof.
+- **On failure, show one concrete frog**, the first found in this order:
+  1. *a real frog on the plane in view* — the eggs within 8 tiles of the
+     origin are run until they stop; the first hop that leaves the area is a
+     Maintenance failure;
+  2. *the smallest tile on the plane in view* — of the tiles within 8 of the
+     origin, the one nearest the origin that breaks the rule (for
+     Initialization, the nearest egg off the area);
+  3. *anything Z3 finds*, with values within 8, then 64, then 1024, then
+     unbounded; the camera flies to it: "everything you could see looked
+     fine" is not a proof.
+
+  Steps 1 and 2 are exact evaluation, with no solver. The 8 is the same in
+  all three.
+- **Real or ghost is decided by running the frog.** The counterexample's
+  inputs fix its egg; that egg is run until it stops, and the counterexample
+  is a real frog if the run passes through it, a ghost frog otherwise. Where
+  a variable starts unset (Meet in the Middle, Even Out) a plane has many
+  eggs, and the ones within 8 of the origin are tried.
 - **Three verdicts**, played rule by rule (see experience.md, *Verifying*):
   proved (the level is cleared); a counterexample (acted out by a real frog if
-  one can reach it, otherwise a ghost frog); **undecided** (said in the
+  it is on that frog's path, otherwise a ghost frog); **undecided** (said in the
   caption, the level is *not* cleared). Before giving up, the checker tries
   proving the formula equivalent to a known solution. Ghost frogs only show
   where they would hop: Check asks the question, it doesn't run the frog.

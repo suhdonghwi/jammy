@@ -13,7 +13,7 @@ import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
 import { dismissFrogs, hatch } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
-import { GHOST_RISE, previewHop, raiseGhost, realRunTo } from './ghosts';
+import { GHOST_RISE, previewHop, raiseGhost } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
 import { begin, beginCheck, caption, currentLevel, type Token } from './sequence';
 
@@ -32,8 +32,9 @@ async function focusOn(cex: Counterexample) {
     useGame.setState({ inputs });
     await sleep(250);
   }
-  const labels = [cex.state, cex.next].flatMap((s) => (s ? [[Number(s[L.view.x]), Number(s[L.view.y])] as const] : []));
-  await cameraRig.arrive({ labels });
+  const tile = (s: State) => [Number(s[L.view.x]), Number(s[L.view.y])] as const;
+  const labels = [cex.state, cex.next].flatMap((s) => (s ? [tile(s)] : []));
+  await cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile) });
 }
 
 let inFlight = 0;
@@ -42,8 +43,6 @@ export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
   const g = useGame.getState();
   const inv = g.valid;
   if (!g.level || !inv || (g.formula && !g.formula.ok)) return null;
-  const t = cameraRig.target();
-  const box = { cx: Math.round(t.x), cy: Math.round(-t.z), r: 20, planeR: 20, inputs: g.inputs };
   const keep = { ...g.verdicts };
   for (const r of rules) delete keep[r];
   const run = beginCheck();
@@ -56,7 +55,7 @@ export async function runChecker(rules: Rule[]): Promise<CheckResult | null> {
   let res: CheckResult | null = null;
   try {
     const ctx = await browserZ3();
-    const checked = await checkFormula(ctx, g.level, inv, box, { rules, timeout: 4000 });
+    const checked = await checkFormula(ctx, g.level, inv, g.inputs, { rules, timeout: 4000 });
     if (current()) res = checked;
   } catch (e) {
     if (current()) caption(messages().verdicts.solverFailed((e as Error).message), 'fail');
@@ -101,6 +100,8 @@ export async function playCounterexample(cex: Counterexample, opts: Counterexamp
   }
 }
 
+const REAL_RUN_SECONDS = 6;
+const FASTEST_HOP = 0.08;
 const HOLD_MS = 1000;
 const REGION_MS = 1300;
 const BETWEEN_MS = 300;
@@ -118,14 +119,15 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
   const prefix = opts.prefix ?? (cex.far ? say.far : '');
   const area = opts.area ?? say.yourArea;
   const broken = cex.broken ? (cex.rule === 'maintenance' ? say.noLongerHolds(cex.broken) : say.falseThere(cex.broken)) : '';
-  const run = cex.rule === 'initialization' ? [cex.state] : realRunTo(cex.state);
+  const run = cex.run;
   let f: FrogSim;
   if (run) {
     f = hatch(run[0]);
     await sleep(450);
+    const pace = Math.max(FASTEST_HOP, Math.min(0.36, REAL_RUN_SECONDS / run.length));
     for (const s of run.slice(1)) {
       if (!tok.alive) return;
-      await frogWorld.hopTo(L, f, s, 0.36);
+      await frogWorld.hopTo(L, f, s, pace);
     }
   } else {
     sfx.ghost();
