@@ -17,6 +17,7 @@ export const COLORS = {
   poolDeep: '#ffcf73',
   egg: '#f8efd9',
   frog: '#52c24a',
+  trail: '#2f9e44',
   ghostFrog: '#b9caff',
   fail: '#f04f55',
   outline: '#2a3142',

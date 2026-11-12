@@ -111,6 +111,13 @@ behind many small decisions; keep them when changing or adding UI.
   at a time: picking another egg sends the last one home. Pressed with no
   frog, Step and Run point at an egg ("pick an egg first"); pressed on a
   frog that has stopped, they say so. They never choose a frog themselves.
+- **A real frog leaves a trail.** A solid green line runs from its egg,
+  ringed, through a dot on every tile it has landed on, and grows with each
+  hop. It stays after the frog stops, so where the frog came from can still
+  be read. One trail shows at a time: the frog the learner picked, or the
+  real frog Check staged. It goes when the frog does. A ghost frog has no
+  trail, only the dashed arc of its one hop: it has no past. The tutorial's
+  ten tested frogs and the example's looping frogs leave none.
 - **Reset puts the screen back as the level opened**: frogs in their eggs,
   the starting inputs and view, the intro in the caption. The area and its
   verdicts stay, since those are the learner's work.
