@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { compileFormula, compileLevel, type Formula, type Inputs } from '../../levels/level';
-import type { TileWindow } from '../../levels/tiles';
 import { useArea } from '../area/AreaLayer';
 import { GoalColumns } from '../area/GoalColumns';
 import { Slabs } from '../area/Slabs';
@@ -27,7 +26,6 @@ ensures x == y && x >= 2 && x <= 9;`,
 
 const RING = { x0: 1, y0: 8, w: 7, h: 5 };
 const FROGS = 5;
-const WINDOW: TileWindow = { cx: 5, cy: 9, R: 16 };
 const EGG_IN = 0.25;
 const EGG_HOLD = 0.9;
 const EGG_STAGGER = 0.3;
@@ -101,7 +99,7 @@ export function HomeScene() {
     <group>
       <Floor level={DIAGONAL} inputs={NO_INPUTS} fadeIn={2.6} showAxes={false} />
       <Slabs level={DIAGONAL} dim={false} showStop showGoal />
-      <GoalColumns level={DIAGONAL} inputs={NO_INPUTS} win={WINDOW} />
+      <GoalColumns />
       <StartEggs eggs={eggs} />
       <Frogs />
       <HatchShells />

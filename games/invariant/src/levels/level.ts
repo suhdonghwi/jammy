@@ -1,5 +1,5 @@
 import { t } from '../i18n/i18n';
-import { conjuncts, freeVars, mk, subst, type Expr, type Program, type State } from '../lang/ast';
+import { conjuncts, freeVars, mk, NO_SPAN, subst, type Expr, type Program, type State } from '../lang/ast';
 import { compileFast, evaluate, holds, step, symbolicStep, type FastFn, type FastState } from '../lang/eval';
 import { LangError, parseFormula, parseProgram } from '../lang/parser';
 import { checkCondition, checkProgram, programScope, type Scope } from '../lang/typecheck';
@@ -45,6 +45,7 @@ export interface CompiledLevel extends LevelDef {
   axisReq: Expr;
   inputsReq: Expr;
   eggReq: Expr;
+  eggAt: Expr;
   guard: Expr;
   post: Expr;
   next: Record<string, Expr>;
@@ -96,6 +97,8 @@ export function compileLevel(def: LevelDef): CompiledLevel {
   const axisReq = mk.andAll(reqs.filter((e) => isInputOnly(e) && onAxis(e)));
   const inputsReq = mk.andAll(reqs.filter((e) => isInputOnly(e) && !onAxis(e)));
   const eggReq = mk.andAll(reqs.filter((e) => !isInputOnly(e)));
+  const startsOn = [x, y].filter((a) => a in initExprs).map((a): Expr => ({ kind: 'binary', op: '==', left: { kind: 'var', name: a, span: NO_SPAN }, right: initExprs[a], span: NO_SPAN }));
+  const eggAt = mk.andAll([subst(eggReq, initExprs), ...startsOn]);
   const guard = program.loop.guard;
   const post = mk.andAll(program.ensures);
   const next = symbolicStep(program.loop.body, vars);
@@ -116,6 +119,7 @@ export function compileLevel(def: LevelDef): CompiledLevel {
     axisReq,
     inputsReq,
     eggReq,
+    eggAt,
     guard,
     post,
     next,

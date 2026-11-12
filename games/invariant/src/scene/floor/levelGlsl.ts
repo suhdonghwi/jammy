@@ -88,7 +88,7 @@ ${c.fns.join('\n')}
 bool L_exists(ivec2 t) { ${decls} return ${exists}; }
 bool L_stop(ivec2 t) { ${decls} return !(${stop}); }
 bool L_goal(ivec2 t) { ${decls} return ${goal}; }
-${areas ? `bool L_area(ivec2 t) { ${decls} return ${area}; }\nbool L_before(ivec2 t) { ${decls} return ${before}; }` : ''}
+${areas ? `bool L_area(ivec2 t) { ${decls} return ${area}; }\nbool L_before(ivec2 t) { ${decls} return ${before}; }\nbool L_egg(ivec2 t) { ${decls} return ${c.expr(level.eggAt)}; }` : ''}
 `;
 }
 

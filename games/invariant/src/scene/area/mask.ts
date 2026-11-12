@@ -7,6 +7,10 @@ export const MASK_SIZE = 352;
 const SNAP = 16;
 export const MASK_REACH = MASK_SIZE / 2 - SNAP / 2;
 
+export const GOAL = 1;
+export const EGG = 2;
+export type MaskBit = typeof GOAL | typeof EGG;
+
 const vertex = /* glsl */ `
 void main() {
   gl_Position = vec4(position.xy, 0.0, 1.0);
@@ -34,7 +38,7 @@ void main() {
     exists && L_area(t) ? 1.0 : 0.0,
     exists && L_before(t) ? 1.0 : 0.0,
     stop ? 1.0 : 0.0,
-    stop && L_goal(t) ? 1.0 : 0.0
+    ((stop && L_goal(t) ? 1.0 : 0.0) + (exists && L_egg(t) ? 2.0 : 0.0)) / 3.0
   );
 }
 `;
@@ -56,6 +60,11 @@ class AreaMask {
   private level: CompiledLevel | null = null;
   private drawn = '';
   private shown = 0;
+  private levels = 0;
+  private pixels = new Uint8Array(MASK_SIZE * MASK_SIZE * 4);
+  private read = '';
+  private origin = { x: 0, y: 0 };
+  revision = 0;
 
   constructor() {
     this.quad.frustumCulled = false;
@@ -65,6 +74,7 @@ class AreaMask {
   private use(material: THREE.ShaderMaterial, level: CompiledLevel | null) {
     this.quad.material.dispose();
     this.quad.material = material;
+    if (level !== this.level) this.levels++;
     this.level = level;
     this.shown++;
   }
@@ -75,6 +85,18 @@ class AreaMask {
 
   clear() {
     this.use(shader(empty, {}), null);
+  }
+
+  tilesWithin(bit: MaskBit, cx: number, cy: number, R: number): [number, number][] {
+    const out: [number, number][] = [];
+    const { x: ox, y: oy } = this.origin;
+    for (let y = Math.max(oy, cy - R); y <= Math.min(oy + MASK_SIZE - 1, cy + R); y++) {
+      for (let x = Math.max(ox, cx - R); x <= Math.min(ox + MASK_SIZE - 1, cx + R); x++) {
+        const bits = Math.round(this.pixels[((y - oy) * MASK_SIZE + (x - ox)) * 4 + 3] / 85);
+        if (bits & bit && Math.hypot(x - cx, y - cy) <= R) out.push([x, y]);
+      }
+    }
+    return out;
   }
 
   draw(gl: THREE.WebGLRenderer, x: number, y: number, inputs: Inputs, risen: number) {
@@ -95,6 +117,13 @@ class AreaMask {
     const back = gl.getRenderTarget();
     gl.setRenderTarget(this.target);
     gl.render(this.scene, this.camera);
+    const read = `${this.levels}|${ox},${oy}|${this.level ? planeKey(inputs) : ''}`;
+    if (read !== this.read) {
+      this.read = read;
+      gl.readRenderTargetPixels(this.target, 0, 0, MASK_SIZE, MASK_SIZE, this.pixels);
+      this.origin = { x: ox, y: oy };
+      this.revision++;
+    }
     gl.setRenderTarget(back);
   }
 }

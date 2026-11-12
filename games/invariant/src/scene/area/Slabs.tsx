@@ -53,7 +53,7 @@ void main() {
   vWorld = w.xyz;
   vN = normalize(mat3(modelMatrix) * normal);
   vF = vec2(position.x, -position.z);
-  vFlags = m.ba;
+  vFlags = vec2(m.b, mod(floor(m.a * 3.0 + 0.5), 2.0));
   vTile = tile;
   vUp = position.y;
   gl_Position = projectionMatrix * viewMatrix * w;

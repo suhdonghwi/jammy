@@ -101,7 +101,7 @@ backend agree. `pnpm validate` and the tests are the safety net.
 - **Slab height has one source: the area's formula.** Nothing lists the
   tiles of the area. On the GPU, `areaMask` (`scene/area/mask.ts`) evaluates
   the area over the window around the camera into a small texture, one texel
-  per tile: on it now, on it before the last change, stop, goal. It is
+  per tile: on it now, on it before the last change, stop, goal, egg. It is
   redrawn only when the formula, the inputs or the window change. Slabs,
   eggs, goal columns and outlines read their tile's texel in the vertex
   shader, and rise or sink as one uniform blends "before" into "now". On the
@@ -191,11 +191,16 @@ backend agree. `pnpm validate` and the tests are the safety net.
   drawn as far as the floor is still visible. A cell with no slab collapses
   in the vertex shader. So the area reaches the horizon at any zoom, and a
   near slab and a far one are the same mesh and shader. Zoomed out past a
-  camera distance of 24 the grid uses a lighter slab shape (rounded in plan,
-  no bevel on the top edge), since there are tens of thousands of them.
-- Eggs, goal columns, frogs and hatching shells are **instanced**; eggs and
-  goal columns are built only near the camera, in a window that moves in
-  steps.
+  The slab is a plain prism at every zoom; the bevel along its top edge is
+  shaded in the fragment shader, not modelled, so one light mesh serves
+  tens of thousands of cells.
+- **Eggs and goal columns are sparse, so they are listed.** The mask also
+  marks which tiles hold an egg (`level.eggAt`) and which are goals. When
+  the level, inputs or window change it is read back once, and the tiles
+  within view are listed from it (`useMaskTiles`), again out to where the
+  floor is visible. Eggs within 40 tiles of the camera target use the full
+  egg model and the rest a coarse one; a far egg is a few pixels.
+- Frogs and hatching shells are **instanced**.
 - **Errors don't take the page down**: the WebGL 2 check (`scene/webgl.ts`),
   the error boundary around the game (`ui/ErrorBoundary.tsx`) and the 3D
   title's own boundary fall back to `ui/Trouble.tsx` or plain text.

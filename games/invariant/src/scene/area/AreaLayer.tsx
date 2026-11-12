@@ -68,13 +68,12 @@ export function useArea(level: CompiledLevel, inputs: Inputs, area: Formula | nu
 }
 
 export function AreaLayer({ level, inputs, area, dim, showStop, showGoal, showEggs }: AreaLayerProps) {
-  const win = useTileWindow();
   useArea(level, inputs, area);
   return (
     <group>
       <Slabs level={level} dim={dim} showStop={showStop} showGoal={showGoal} />
-      {showEggs && <Eggs level={level} inputs={inputs} win={win} />}
-      {showGoal && <GoalColumns level={level} inputs={inputs} win={win} />}
+      {showEggs && <Eggs />}
+      {showGoal && <GoalColumns />}
     </group>
   );
 }

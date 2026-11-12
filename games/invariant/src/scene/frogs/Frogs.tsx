@@ -77,10 +77,10 @@ export function Frogs() {
     for (const f of visible) if (!f.leave) take(tileOf(f));
     for (const w of walkers) if (!w.leave) for (const [x, y] of leftTiles(w)) take(`${x},${y}`);
     let sig = '';
-    for (const [k, count] of taken) if (occupancy.eggs.has(k)) sig += `${k}:${count}|`;
+    for (const [k, count] of taken) sig += `${k}:${count}|`;
     if (sig !== occupancy.signature) {
       occupancy.signature = sig;
-      occupancy.frogs = new Map([...taken].filter(([k]) => occupancy.eggs.has(k)));
+      occupancy.frogs = taken;
       occupancy.version++;
     }
     let n = 0;
