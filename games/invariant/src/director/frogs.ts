@@ -6,7 +6,7 @@ import { hop, inputsOf, planeKey, running, toBig, type CompiledLevel } from '../
 import { eggsNear, tileState } from '../levels/tiles';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
-import { frogWorld, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
+import { frogWorld, HOP_GAP_MS, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
 import { burstFx } from '../scene/frogs/Burst';
 import { clearTrace } from '../scene/frogs/codeTrace';
 import { hopArcs } from '../scene/frogs/HopArcs';
@@ -74,7 +74,7 @@ function movingFrogs(): FrogSim[] {
   return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.stopped && f.plane === plane);
 }
 
-async function hopAllOnce(dur = 0.42): Promise<number> {
+async function hopAllOnce(): Promise<number> {
   const L = currentLevel();
   const frogs = movingFrogs();
   if (frogs.length === 0) return 0;
@@ -83,7 +83,7 @@ async function hopAllOnce(dur = 0.42): Promise<number> {
     await Promise.all(
       frogs.map((f) => {
         const n = hop(L, f.state);
-        return frogWorld.hopTo(L, f, n, dur).then(() => {
+        return frogWorld.hopTo(L, f, n).then(() => {
           f.stopped = !running(L, n);
         });
       }),
@@ -140,12 +140,12 @@ function currentFrog(): FrogSim | undefined {
   return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.leave && f.plane === plane).at(-1);
 }
 
-async function hopOnce(f: FrogSim, dur = 0.42) {
+async function hopOnce(f: FrogSim) {
   const L = currentLevel();
   const n = hop(L, f.state);
   useGame.setState({ stepping: true });
   try {
-    await frogWorld.hopTo(L, f, n, dur);
+    await frogWorld.hopTo(L, f, n);
     f.stopped = !running(L, n);
   } finally {
     useGame.setState({ stepping: false });
@@ -189,8 +189,8 @@ export async function runFrogs() {
   useGame.setState({ failMark: null, running: true });
   void dismissFrogs('test');
   for (let beats = 0; tok.alive && useGame.getState().running && beats < RUN_BEATS && !f.leave && running(L, f.state); beats++) {
-    await hopOnce(f, 0.34);
-    await sleep(90);
+    await hopOnce(f);
+    await sleep(HOP_GAP_MS);
   }
   if (tok.alive) {
     useGame.setState({ running: false });
@@ -214,8 +214,8 @@ export async function testEggs() {
   eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatchUntrailed(s)));
   await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
   for (let beats = 0; tok.alive && beats < RUN_BEATS; beats++) {
-    if ((await hopAllOnce(0.34)) === 0) break;
-    await sleep(90);
+    if ((await hopAllOnce()) === 0) break;
+    await sleep(HOP_GAP_MS);
   }
   if (tok.alive) {
     useGame.setState({ busy: false });
@@ -261,9 +261,9 @@ export function loopFrogs(eggs: State[]) {
       await sleep(650);
       while (tok.alive && !f.stopped) {
         const n = hop(L, f.state);
-        await frogWorld.hopTo(L, f, n, 0.42);
+        await frogWorld.hopTo(L, f, n);
         f.stopped = !running(L, n);
-        await sleep(160);
+        await sleep(HOP_GAP_MS);
       }
       await sleep(1200);
       if (!tok.alive) return;

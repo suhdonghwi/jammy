@@ -8,6 +8,9 @@ import { joinHopBatch, landInBatch } from './hopBatch';
 
 export type FrogKind = 'real' | 'test';
 
+export const HOP = 0.34;
+export const HOP_GAP_MS = 90;
+
 export interface FrogSim {
   id: number;
   kind: FrogKind;
@@ -100,7 +103,7 @@ class FrogWorld {
     }
   }
 
-  hopTo(level: CompiledLevel, f: FrogSim, next: State, dur = 0.42, quiet = false): Promise<void> {
+  hopTo(level: CompiledLevel, f: FrogSim, next: State, dur = HOP, quiet = false): Promise<void> {
     const from = f.state;
     f.state = next;
     const tx = Number(next[level.view.x]);
