@@ -1,5 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -9,91 +9,77 @@ import { planeKey } from '../../levels/level';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { clamp01 } from '../easing';
-import { ringGeometry } from '../labels/TileTag';
 import { sceneNow } from '../sceneTime';
-import { frogWorld, type FrogSim } from './frogWorld';
+import { trailFrog, type FrogSim } from './frogWorld';
+import { hopHeight } from './motion';
 
-const LIFT = 0.03;
-const MAX_STEPS = 400;
-const STEP_RADIUS = 0.11;
+const SEGMENTS = 16;
+const LIFT = 0.22;
+const curve = new THREE.QuadraticBezierCurve3();
 
-const stepGeometry = new THREE.CircleGeometry(STEP_RADIUS, 20).rotateX(-Math.PI / 2);
-const m = new THREE.Matrix4();
+type Tile = readonly [number, number];
 
-const heightAt = (x: number, y: number) => field.heightAt(x, y) * SLAB_H + LIFT;
-
-function trailFrog(plane: string): FrogSim | undefined {
-  return frogWorld.frogs.filter((f) => f.kind === 'real' && f.trail && f.plane === plane).at(-1);
+function arc(from: Tile, to: Tile, upTo = 1): number[] {
+  const h0 = field.heightAt(from[0], from[1]) * SLAB_H;
+  const h1 = field.heightAt(to[0], to[1]) * SLAB_H;
+  const H = hopHeight(Math.hypot(to[0] - from[0], to[1] - from[1]));
+  curve.v0.set(from[0], h0 + LIFT, -from[1]);
+  curve.v1.set((from[0] + to[0]) / 2, (h0 + h1) / 2 + 2 * H + LIFT, -(from[1] + to[1]) / 2);
+  curve.v2.set(to[0], h1 + LIFT, -to[1]);
+  const count = Math.round(SEGMENTS * clamp01(upTo));
+  return Array.from({ length: count + 1 }, (_, k) => curve.getPoint(k / SEGMENTS)).flatMap((v) => [v.x, v.y, v.z]);
 }
 
 function pathOf(f: FrogSim): number[] {
-  const points = f.trail!.flatMap(([x, y]) => [x, heightAt(x, y), -y]);
-  if (f.hop) {
-    const k = clamp01((sceneNow() - f.hop.t0) / f.hop.dur);
-    const { fx, fy, tx, ty } = f.hop;
-    const from = heightAt(fx, fy);
-    points.push(fx + (tx - fx) * k, from + (heightAt(tx, ty) - from) * k, -(fy + (ty - fy) * k));
-  }
+  const trail = f.trail!;
+  const points = trail.slice(1).flatMap((to, k) => arc(trail[k], to));
+  if (f.hop) points.push(...arc([f.hop.fx, f.hop.fy], [f.hop.tx, f.hop.ty], (sceneNow() - f.hop.t0) / f.hop.dur));
   return points;
 }
 
 export function FrogTrail() {
   const size = useThree((s) => s.size);
   const plane = useGame((s) => planeKey(s.inputs));
-  const steps = useRef<THREE.InstancedMesh>(null);
-  const start = useRef<THREE.Mesh>(null);
-  const parts = useMemo(() => {
-    const material = new LineMaterial({ color: new THREE.Color(COLORS.trail), linewidth: 3, transparent: true, depthWrite: false });
-    const line = new Line2(new LineGeometry(), material);
-    line.frustumCulled = false;
-    line.renderOrder = 9;
-    line.visible = false;
-    const flat = new THREE.MeshBasicMaterial({ color: COLORS.trail, transparent: true, depthWrite: false });
-    return { line, flat };
+  const line = useMemo(() => {
+    const material = new LineMaterial({
+      color: new THREE.Color(COLORS.trail),
+      linewidth: 2.5,
+      dashed: true,
+      dashSize: 0.1,
+      gapSize: 0.07,
+      transparent: true,
+      depthWrite: false,
+    });
+    const l = new Line2(new LineGeometry(), material);
+    l.frustumCulled = false;
+    l.renderOrder = 10;
+    l.visible = false;
+    l.userData.key = '';
+    return l;
   }, []);
   useEffect(
     () => () => {
-      parts.line.geometry.dispose();
-      parts.line.material.dispose();
-      parts.flat.dispose();
+      line.geometry.dispose();
+      line.material.dispose();
     },
-    [parts],
+    [line],
   );
 
   useFrame(() => {
-    const { line, flat } = parts;
     const f = trailFrog(plane);
     const points = f ? pathOf(f) : [];
-    const shown = !!f && points.length >= 6;
-    line.visible = shown;
-    if (steps.current) steps.current.visible = shown;
-    if (start.current) start.current.visible = shown;
-    if (!f || !shown) return;
-    const opacity = f.leave ? 1 - clamp01((sceneNow() - f.leave.t0) / f.leave.dur) : 1;
+    line.visible = !!f && points.length >= 6;
+    if (!f || !line.visible) return;
     const key = points.join();
     if (key !== line.userData.key) {
       line.userData.key = key;
       line.geometry.dispose();
       line.geometry = new LineGeometry().setPositions(points);
+      line.computeLineDistances();
     }
-    line.material.opacity = 0.9 * opacity;
+    line.material.opacity = 0.9 * (f.leave ? 1 - clamp01((sceneNow() - f.leave.t0) / f.leave.dur) : 1);
     line.material.resolution.set(size.width, size.height);
-    flat.opacity = opacity;
-    const [sx, sy] = f.trail![0];
-    start.current?.position.set(sx, heightAt(sx, sy), -sy);
-    const mesh = steps.current;
-    if (!mesh) return;
-    const count = Math.min(f.trail!.length, MAX_STEPS);
-    f.trail!.slice(-count).forEach(([x, y], k) => mesh.setMatrixAt(k, m.makeTranslation(x, heightAt(x, y), -y)));
-    mesh.count = count;
-    mesh.instanceMatrix.needsUpdate = true;
   });
 
-  return (
-    <>
-      <primitive object={parts.line} />
-      <instancedMesh ref={steps} args={[stepGeometry, parts.flat, MAX_STEPS]} count={0} frustumCulled={false} renderOrder={9} visible={false} />
-      <mesh ref={start} geometry={ringGeometry} material={parts.flat} renderOrder={9} visible={false} />
-    </>
-  );
+  return <primitive object={line} />;
 }

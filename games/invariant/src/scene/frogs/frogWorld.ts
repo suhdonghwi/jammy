@@ -128,4 +128,8 @@ class FrogWorld {
   }
 }
 
+export function trailFrog(plane: string): FrogSim | undefined {
+  return frogWorld.frogs.filter((f) => f.kind === 'real' && f.trail && f.plane === plane).at(-1);
+}
+
 export const frogWorld = new FrogWorld();

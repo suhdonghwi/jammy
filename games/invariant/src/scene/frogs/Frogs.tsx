@@ -3,13 +3,14 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey, toNum } from '../../levels/level';
-import { COLORS } from '../constants';
+import { field } from '../area/field';
+import { COLORS, SLAB_H } from '../constants';
 import { uploadInstances } from '../instances';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
 import { getBlobTexture } from '../shaders/common';
 import { placeBadge } from './badges';
-import { frogWorld, type FrogSim } from './frogWorld';
+import { frogWorld, trailFrog, yawToward, type FrogSim } from './frogWorld';
 import { pose } from './motion';
 import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
 
@@ -18,6 +19,8 @@ const BADGES = 24;
 
 const dummy = new THREE.Object3D();
 const GHOST = new THREE.Color(COLORS.ghostFrog);
+const ECHO = new THREE.Color(COLORS.frog);
+const ECHO_FADE = 0.6;
 const FLOAT = 0.12;
 const BOB = 0.035;
 
@@ -136,6 +139,24 @@ export function Frogs() {
       dummy.updateMatrix();
       sh.setMatrixAt(n, dummy.matrix);
       n++;
+    }
+    const walker = trailFrog(plane);
+    if (walker?.trail) {
+      const trail = walker.trail;
+      const past = walker.hop ? trail : trail.slice(0, -1);
+      const fade = ECHO_FADE * (walker.leave ? 1 - Math.min(1, (t - walker.leave.t0) / walker.leave.dur) : 1);
+      past.forEach(([x, y], i) => {
+        if (nGhost >= MAX_FROGS) return;
+        const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
+        dummy.position.set(x, field.heightAt(x, y) * SLAB_H, -y);
+        dummy.rotation.set(0, yawToward(x, y, tx, ty), 0);
+        dummy.scale.setScalar(1);
+        dummy.updateMatrix();
+        gd.setMatrixAt(nGhost, dummy.matrix);
+        gh.setMatrixAt(nGhost, dummy.matrix);
+        fades.setX(nGhost, fade);
+        gh.setColorAt(nGhost++, ECHO);
+      });
     }
     for (let i = badges; i < BADGES; i++) {
       const sp = badgeRefs.current[i];
