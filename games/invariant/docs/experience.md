@@ -39,7 +39,8 @@ behind many small decisions; keep them when changing or adding UI.
 - **Every movement means something.** A frog turns (with a tiny hop) only
   when its next hop goes another way; it cheers only when it lands on a goal.
   The code panel's cursor walks the lines a hop runs (following the last of
-  the frogs hopping together, so after Run the longest run), then sits on the
+  the frogs hopping together, so after the tutorial's Run the longest run),
+  then sits on the
   `while` line, green with a tick if the loop goes on, amber with a cross if
   it stops, and drops to cover the `ensures` lines when the loop ends.
 - **Visible, not loud.** A goal landing should be noticed (a ripple, a flash,
@@ -105,6 +106,12 @@ behind many small decisions; keep them when changing or adding UI.
 - **Draw what doesn't exist faintly**, rather than not at all: states the
   precondition rules out are ghost tiles, still hoverable, and the readout
   says they are not possible states.
+- **In a level a frog starts from its egg.** The learner clicks an egg and
+  its frog hops until it stops. Step and Run are the tutorial's alone, where
+  the story needs one hop at a time and then ten frogs at once.
+- **Reset puts the screen back as the level opened**: frogs in their eggs,
+  the starting inputs and view, the intro in the caption. The area and its
+  verdicts stay, since those are the learner's work.
 - **Hovering a tile answers Check's question.** The readout gives the tile's
   values, where it hops or that it stops, and whether it is on the area; a
   ghost frog shows the hop, on the same dashed line Check's ghost frogs draw.

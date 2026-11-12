@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { clickTile, tileClickable } from '../../director/frogs';
 import { useGame } from '../../game/store';
-import { startView } from '../../levels/level';
 import { AreaLayer } from '../area/AreaLayer';
 import { cameraRig } from '../cameraRig';
 import { Floor } from '../floor/Floor';
@@ -21,10 +20,8 @@ export function LevelScene() {
   const valid = useGame((s) => s.valid);
   const formula = useGame((s) => s.formula);
   useEffect(() => {
-    void cameraRig.resetAngle(false);
-    if (useGame.getState().mode === 'tutorial') return;
-    const v = startView(level);
-    void cameraRig.frame({ at: [v.x, v.y, v.distance], focus: [[v.x, v.y]] }, false);
+    if (useGame.getState().mode === 'tutorial') void cameraRig.resetAngle(false);
+    else cameraRig.opening(level, false);
   }, [level]);
 
   return (

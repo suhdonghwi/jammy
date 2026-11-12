@@ -1,5 +1,6 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { startView, type CompiledLevel } from '../levels/level';
 import { EXIT_MS } from '../ui/timing';
 import { sceneStarted, sleep } from './sceneTime';
 
@@ -243,5 +244,10 @@ export const cameraRig = {
   async resetAngle(smooth = true) {
     if (!controls) return;
     await controls.rotateTo(VIEW.azimuth, VIEW.polar, smooth);
+  },
+  opening(level: CompiledLevel, smooth: boolean) {
+    void cameraRig.resetAngle(smooth);
+    const v = startView(level);
+    void cameraRig.frame({ at: [v.x, v.y, v.distance], focus: [[v.x, v.y]] }, smooth);
   },
 };

@@ -19,15 +19,15 @@ export interface Reveal {
   awake: Rule[];
 }
 
-const FULL_REVEAL: Reveal = {
+const LEVEL_REVEAL: Reveal = {
   code: true,
   axes: true,
   stop: true,
   hover: true,
   eggs: true,
   goals: true,
-  run: true,
-  step: true,
+  run: false,
+  step: false,
   formula: true,
   area: true,
   lights: RULES,
@@ -166,6 +166,10 @@ const FRESH = {
   inputHover: null,
 } satisfies Partial<Game>;
 
+export function openingCaption(level: CompiledLevel): Caption | null {
+  return level.intro ? { text: level.intro, tone: 'info' } : null;
+}
+
 export const useGame = create<Game>((set, get) => ({
   ...FRESH,
   mode: 'menu',
@@ -174,7 +178,7 @@ export const useGame = create<Game>((set, get) => ({
   inputs: {},
   checking: false,
   caption: null,
-  reveal: FULL_REVEAL,
+  reveal: LEVEL_REVEAL,
   codeCursor: null,
   showRules: false,
   showSyntax: false,
@@ -186,8 +190,8 @@ export const useGame = create<Game>((set, get) => ({
       mode,
       level,
       inputs: startInputs(level),
-      caption: level.intro ? { text: level.intro, tone: 'info' } : null,
-      reveal: mode === 'tutorial' ? EMPTY_REVEAL : FULL_REVEAL,
+      caption: openingCaption(level),
+      reveal: mode === 'tutorial' ? EMPTY_REVEAL : LEVEL_REVEAL,
     });
   },
   backToMenu(view = 'home') {

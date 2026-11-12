@@ -10,6 +10,7 @@ import { TopBar } from './TopBar';
 export function Hud() {
   const reveal = useGame((s) => s.reveal);
   const levelId = useGame((s) => s.level?.id);
+  const inLevel = useGame((s) => s.mode === 'level');
   return (
     <div className="pointer-events-none fixed inset-0 flex flex-col gap-3 px-4 pt-3.5 pb-4 *:pointer-events-auto compact:gap-2 compact:p-2.5 short:grid short:grid-cols-[minmax(0,1fr)_min(23rem,max(20rem,46%))] short:grid-rows-[auto_minmax(0,1fr)]">
       <TopBar />
@@ -26,7 +27,7 @@ export function Hud() {
         <RevealSlot open={reveal.formula}>
           <FormulaBox />
         </RevealSlot>
-        <RevealSlot open={reveal.run || reveal.step}>
+        <RevealSlot open={inLevel || reveal.run || reveal.step}>
           <RunControls />
         </RevealSlot>
       </div>

@@ -1,6 +1,6 @@
 import { BookOpen, Braces, Lightbulb, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
-import { pauseRun, resetFrogs, runFrogs, stepFrogs } from '../../director/frogs';
-import { showLevelHint } from '../../game/actions';
+import { pauseRun, runFrogs, stepFrogs } from '../../director/frogs';
+import { resetScreen, showLevelHint } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { showHint } from '../../tutorial/script';
@@ -22,7 +22,7 @@ export function RunControls() {
   const hinting = tut && !!hint && !hint.shown && awaitingCheck;
   const onHint = hinting ? showHint : levelHints > 0 ? showLevelHint : null;
   const rules = reveal.lights.length > 0;
-  const crowded = !!onHint || (reveal.run && !tut) || (rules && reveal.formula);
+  const crowded = !tut || !!onHint || (rules && reveal.formula);
   const square = (iconOnly: boolean) => (iconOnly ? 'compact:w-9.5 compact:self-stretch compact:px-0!' : '');
   return (
     <div className="flex animate-[rise_0.4s_var(--ease-entrance)] items-center gap-1.5 max-[22.5rem]:gap-1">
@@ -49,15 +49,15 @@ export function RunControls() {
           <StepForward size={16} strokeWidth={2.4} className="text-brand" /> {tr.controls.step}
         </button>
       )}
-      {reveal.run && !tut && (
-        <button className={`${button()} ${square(crowded)}`} disabled={busy} title={tr.controls.resetTitle} aria-label={tr.controls.reset} onClick={resetFrogs}>
-          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> <span className={crowded ? 'compact:hidden' : ''}>{tr.controls.reset}</span>
+      {!tut && (
+        <button className={button()} disabled={busy} title={tr.controls.resetTitle} onClick={resetScreen}>
+          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> {tr.controls.reset}
         </button>
       )}
       <span className="flex-1" />
       {onHint && (
-        <button className={`${button('glass')} ${square(!tut)}`} disabled={busy} title={tr.controls.hintTitle} aria-label={tr.controls.hint} onClick={onHint}>
-          <Lightbulb size={16} strokeWidth={2.2} /> <span className={tut ? '' : 'compact:hidden'}>{tr.controls.hint}</span>
+        <button className={button('glass')} disabled={busy} title={tr.controls.hintTitle} aria-label={tr.controls.hint} onClick={onHint}>
+          <Lightbulb size={16} strokeWidth={2.2} /> {tr.controls.hint}
         </button>
       )}
       {reveal.formula && (
