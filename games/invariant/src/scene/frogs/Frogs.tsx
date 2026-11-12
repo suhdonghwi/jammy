@@ -5,7 +5,6 @@ import { useGame } from '../../game/store';
 import { planeKey, toNum } from '../../levels/level';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
-import { clamp01, smoothstep } from '../easing';
 import { uploadInstances } from '../instances';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
@@ -146,12 +145,10 @@ export function Frogs() {
     }
     if (walker?.trail) {
       const trail = walker.trail;
-      const leaving = walker.leave ? 1 - Math.min(1, (t - walker.leave.t0) / walker.leave.dur) : 1;
-      const arriving = walker.hop ? smoothstep(clamp01((t - walker.hop.t0) / walker.hop.dur)) : 1;
+      const fade = ECHO_FADE * (walker.leave ? 1 - Math.min(1, (t - walker.leave.t0) / walker.leave.dur) : 1);
       leftTiles.forEach(([x, y], i) => {
         if (nGhost >= MAX_FROGS) return;
         const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
-        const fade = ECHO_FADE * leaving * (i === trail.length - 1 ? arriving : 1);
         dummy.position.set(x, field.heightAt(x, y) * SLAB_H, -y);
         dummy.rotation.set(0, yawToward(x, y, tx, ty), 0);
         dummy.scale.setScalar(1);

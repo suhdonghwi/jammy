@@ -116,8 +116,8 @@ behind many small decisions; keep them when changing or adding UI.
   frog is gone. So a frog looks the same on every tile, and only frogs
   sharing a tile with other frogs split it between them.
 - **A real frog leaves a trail.** On every tile it has left stands a
-  see-through green frog facing the way it went, fading in where the frog
-  stood as it hops away, and a dashed green arc
+  see-through green frog facing the way it went, standing exactly where the
+  frog stood so the frog hopping away uncovers it, and a dashed green arc
   joins each to the next, the same arc a hop draws. The trail grows with
   each hop and stays after the frog stops, so where it came from can still
   be read. One trail shows at a time: the frog the learner picked, or the
