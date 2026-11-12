@@ -85,7 +85,10 @@ const CHEER_KEYS = [
   [1, 0],
 ] as const;
 const TURN_DUR = 0.2;
-export const HATCH_GROW = 0.25;
+export const HATCH_GROW = 0.28;
+export const HATCH_CLEAR = 0.5;
+const HATCH_SMALL = 0.5;
+const HATCH_JUMP = 0.3;
 export const hopHeight = (dist: number) => 0.3 + 0.14 * dist;
 const RISE_DEPTH = 0.85;
 
@@ -162,8 +165,11 @@ export function pose(f: FrogSim, t: number): Pose {
   let s = 1;
   if (f.hatchT0 !== undefined) {
     const raw = (t - f.hatchT0) / HATCH_GROW;
-    s = raw <= 0 ? 0 : raw >= 1 ? 1 : 0.15 + 0.85 * (1 - Math.pow(1 - raw, 3)) + Math.sin(raw * Math.PI) * 0.12;
-    h += 0.16 * bump(raw);
+    if (raw <= 0) s = 0;
+    else if (raw < 1) {
+      s = HATCH_SMALL + (1 - HATCH_SMALL) * smoothstep(clamp01(raw / HATCH_CLEAR));
+      h += HATCH_JUMP * Math.sin(Math.PI * raw);
+    } else squash += 0.16 * bump(clamp01((raw - 1) / 0.5));
   }
   if (f.leave) {
     const u = clamp01((t - f.leave.t0) / f.leave.dur);
