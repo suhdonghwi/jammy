@@ -67,7 +67,7 @@ export const en = {
     pause: 'Pause',
     step: 'Step',
     reset: 'Reset',
-    resetTitle: 'Put every frog back in its egg (your area stays)',
+    resetTitle: 'Back to how the level opened: frogs, inputs and view (your area stays)',
     hint: 'Hint',
     hintTitle: "A nudge for when you're stuck",
     syntax: 'Syntax',

@@ -67,7 +67,7 @@ export const ko: Messages = {
     pause: '일시정지',
     step: '한 단계',
     reset: '리셋',
-    resetTitle: '개구리를 모두 알로 되돌립니다 (영역은 그대로 남습니다)',
+    resetTitle: '레벨을 처음 열었을 때로 되돌립니다: 개구리, 입력, 시점 (영역은 그대로 남습니다)',
     hint: '힌트',
     hintTitle: '막혔을 때 도움을 줍니다',
     syntax: '문법',
