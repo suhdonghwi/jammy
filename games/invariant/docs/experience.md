@@ -121,7 +121,8 @@ behind many small decisions; keep them when changing or adding UI.
   joins each to the next, the same arc a hop draws. The trail grows with
   each hop and stays after the frog stops, so where it came from can still
   be read. One trail shows at a time: the frog the learner picked, or the
-  real frog Check staged. It goes when the frog does. A ghost frog is pale
+  real frog Check staged. It goes when the frog does, fading with it
+  rather than vanishing. A ghost frog is pale
   blue and has one dark dashed arc, its single hop: it has no past. The
   tutorial's ten tested frogs and the example's looping frogs leave no
   trail.

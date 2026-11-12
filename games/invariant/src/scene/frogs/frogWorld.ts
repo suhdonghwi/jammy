@@ -128,8 +128,10 @@ class FrogWorld {
   }
 }
 
-export function trailFrog(plane: string): FrogSim | undefined {
-  return frogWorld.frogs.filter((f) => f.kind === 'real' && f.trail && f.plane === plane).at(-1);
+export function trailFrogs(plane: string): FrogSim[] {
+  const trailed = frogWorld.frogs.filter((f) => f.kind === 'real' && f.trail && f.plane === plane);
+  const latest = trailed.filter((f) => !f.leave).at(-1);
+  return trailed.filter((f) => f.leave || f === latest);
 }
 
 export const frogWorld = new FrogWorld();

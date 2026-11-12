@@ -10,7 +10,7 @@ import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
 import { getBlobTexture } from '../shaders/common';
 import { placeBadge } from './badges';
-import { frogWorld, trailFrog, yawToward, type FrogSim } from './frogWorld';
+import { frogWorld, trailFrogs, yawToward, type FrogSim } from './frogWorld';
 import { pose } from './motion';
 import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
 
@@ -24,6 +24,7 @@ const ECHO_FADE = 0.6;
 const FLOAT = 0.12;
 const BOB = 0.035;
 
+const leftTiles = (f: FrogSim) => (f.hop ? f.trail! : f.trail!.slice(0, -1));
 const tileOf = (f: FrogSim) => (f.hop ? `${f.hop.tx},${f.hop.ty}` : `${f.x},${f.y}`);
 
 export function Frogs() {
@@ -70,10 +71,9 @@ export function Frogs() {
       if (g) g.push(f);
       else groups.set(key, [f]);
     }
-    const walker = trailFrog(plane);
-    const leftTiles = walker?.trail ? (walker.hop ? walker.trail : walker.trail.slice(0, -1)) : [];
+    const walkers = trailFrogs(plane);
     const taken = new Map([...groups].map(([k, g]) => [k, g.length]));
-    for (const [x, y] of leftTiles) taken.set(`${x},${y}`, (taken.get(`${x},${y}`) ?? 0) + 1);
+    for (const w of walkers) for (const [x, y] of leftTiles(w)) taken.set(`${x},${y}`, (taken.get(`${x},${y}`) ?? 0) + 1);
     let sig = '';
     for (const [k, count] of taken) if (occupancy.eggs.has(k)) sig += `${k}:${count}|`;
     if (sig !== occupancy.signature) {
@@ -143,10 +143,10 @@ export function Frogs() {
       sh.setMatrixAt(n, dummy.matrix);
       n++;
     }
-    if (walker?.trail) {
-      const trail = walker.trail;
+    for (const walker of walkers) {
+      const trail = walker.trail!;
       const fade = ECHO_FADE * (walker.leave ? 1 - Math.min(1, (t - walker.leave.t0) / walker.leave.dur) : 1);
-      leftTiles.forEach(([x, y], i) => {
+      leftTiles(walker).forEach(([x, y], i) => {
         if (nGhost >= MAX_FROGS) return;
         const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
         dummy.position.set(x, field.heightAt(x, y) * SLAB_H, -y);

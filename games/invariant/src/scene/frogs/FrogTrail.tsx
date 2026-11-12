@@ -10,9 +10,10 @@ import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { clamp01 } from '../easing';
 import { sceneNow } from '../sceneTime';
-import { trailFrog, type FrogSim } from './frogWorld';
+import { trailFrogs, type FrogSim } from './frogWorld';
 import { hopHeight } from './motion';
 
+const TRAILS = 4;
 const SEGMENTS = 16;
 const LIFT = 0.22;
 const curve = new THREE.QuadraticBezierCurve3();
@@ -37,7 +38,7 @@ function pathOf(f: FrogSim): number[] {
   return points;
 }
 
-export function FrogTrail() {
+function TrailLine({ index }: { index: number }) {
   const size = useThree((s) => s.size);
   const plane = useGame((s) => planeKey(s.inputs));
   const line = useMemo(() => {
@@ -66,7 +67,7 @@ export function FrogTrail() {
   );
 
   useFrame(() => {
-    const f = trailFrog(plane);
+    const f = trailFrogs(plane)[index];
     const points = f ? pathOf(f) : [];
     line.visible = !!f && points.length >= 6;
     if (!f || !line.visible) return;
@@ -82,4 +83,8 @@ export function FrogTrail() {
   });
 
   return <primitive object={line} />;
+}
+
+export function FrogTrail() {
+  return Array.from({ length: TRAILS }, (_, index) => <TrailLine key={index} index={index} />);
 }
