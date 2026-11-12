@@ -32,7 +32,9 @@ behind many small decisions; keep them when changing or adding UI.
 
 ## Motion in the scene
 
-- **Continuous motion.** A hop accelerates, flies and lands without any jerk;
+- **Continuous motion.** A hop starts the moment it is asked for, accelerates,
+  flies and lands without any jerk, and the frog's squash on landing eases
+  out after the hop is over;
   frogs sharing a tile glide into their slots and arrive exactly on landing;
   slabs rise and sink rather than appear. Prefer curves that are smooth in
   both position and speed.

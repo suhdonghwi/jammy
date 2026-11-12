@@ -25,6 +25,7 @@ export interface FrogSim {
   trail?: [number, number][];
   fade?: number;
   hatchT0?: number;
+  landT0?: number;
   stopped: boolean;
   phase: number;
   face: number;
@@ -116,6 +117,7 @@ class FrogWorld {
         f.x = tx;
         f.y = ty;
         f.hop = undefined;
+        f.landT0 = sceneNow();
         f.trail?.push([tx, ty]);
         f.face = facingFor(level, next, f.face);
         if (batch) landInBatch(batch);

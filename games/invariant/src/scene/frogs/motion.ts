@@ -25,9 +25,9 @@ const angleDelta = (a: number, b: number) => {
   return d;
 };
 
-const TAKEOFF = 0.22;
-const TOUCH = 0.84;
-const PUSH = 0.1;
+const TAKEOFF = 0.16;
+const TOUCH = 0.86;
+const LANDING = 1 - TOUCH;
 
 function keyed(u: number, keys: readonly (readonly [number, number])[]) {
   if (u <= keys[0][0]) return keys[0][1];
@@ -40,39 +40,40 @@ function keyed(u: number, keys: readonly (readonly [number, number])[]) {
   }
   return keys[keys.length - 1][1];
 }
+const LANDED_SQUASH = -0.07;
 const SQUASH_KEYS = [
   [0, 0],
-  [TAKEOFF - PUSH, -0.2],
-  [TAKEOFF, 0.14],
+  [TAKEOFF * 0.45, -0.16],
+  [TAKEOFF, 0.12],
   [0.5, 0],
   [TOUCH, 0.05],
-  [TOUCH + 0.06, -0.17],
+  [TOUCH + LANDING * 0.6, -0.15],
+  [1, LANDED_SQUASH],
+] as const;
+const SETTLE = 0.1;
+const SETTLE_KEYS = [
+  [0, LANDED_SQUASH],
+  [0.45, 0.03],
   [1, 0],
 ] as const;
 
 function hopAt(u: number, h0: number, h1: number, H: number) {
   const span = TOUCH - TAKEOFF;
-  const k = PUSH / (3 * span);
-  const vx = 1 / (span + (2 * PUSH) / 3);
-  const gx = (vx * PUSH) / 3;
-  let g: number;
-  if (u <= TAKEOFF - PUSH) g = 0;
-  else if (u < TAKEOFF) g = gx * Math.pow((u - (TAKEOFF - PUSH)) / PUSH, 3);
-  else if (u < TOUCH) g = gx + vx * (u - TAKEOFF);
-  else if (u < TOUCH + PUSH) g = 1 - gx * Math.pow(1 - (u - TOUCH) / PUSH, 3);
-  else g = 1;
-  const d = (h1 - h0) / (1 + 2 * k);
-  const e0 = k * (d + 4 * H);
-  const e1 = k * (4 * H - d);
-  let h: number;
-  if (u <= TAKEOFF - PUSH) h = h0;
-  else if (u < TAKEOFF) h = h0 + e0 * Math.pow((u - (TAKEOFF - PUSH)) / PUSH, 3);
-  else if (u < TOUCH) {
+  const vx = 1 / (span + (TAKEOFF + LANDING) / 3);
+  const up = TAKEOFF / (3 * span);
+  const down = LANDING / (3 * span);
+  const rise = (h1 - h0 + 4 * H * (down - up)) / (1 + up + down);
+  const e0 = up * (rise + 4 * H);
+  const e1 = down * (4 * H - rise);
+  const pushed = Math.pow(u / TAKEOFF, 3);
+  const settling = Math.pow(1 - (u - TOUCH) / LANDING, 3);
+  if (u < TAKEOFF) return { g: ((vx * TAKEOFF) / 3) * pushed, h: h0 + e0 * pushed };
+  if (u < TOUCH) {
     const f = (u - TAKEOFF) / span;
-    h = h0 + e0 + (h1 + e1 - h0 - e0) * f + 4 * H * f * (1 - f);
-  } else if (u < TOUCH + PUSH) h = h1 + e1 * Math.pow(1 - (u - TOUCH) / PUSH, 3);
-  else h = h1;
-  return { g, h };
+    return { g: (vx * TAKEOFF) / 3 + vx * (u - TAKEOFF), h: h0 + e0 + (h1 + e1 - h0 - e0) * f + 4 * H * f * (1 - f) };
+  }
+  if (u < 1) return { g: 1 - ((vx * LANDING) / 3) * settling, h: h1 + e1 * settling };
+  return { g: 1, h: h1 };
 }
 const CHEER_DUR = 0.62;
 const CHEER_KEYS = [
@@ -89,7 +90,7 @@ export const HATCH_GROW = 0.28;
 export const HATCH_CLEAR = 0.5;
 const HATCH_SMALL = 0.5;
 const HATCH_JUMP = 0.3;
-export const hopHeight = (dist: number) => 0.3 + 0.14 * dist;
+export const hopHeight = (dist: number) => 0.24 + 0.12 * dist;
 const RISE_DEPTH = 0.85;
 
 export function pose(f: FrogSim, t: number): Pose {
@@ -134,6 +135,11 @@ export function pose(f: FrogSim, t: number): Pose {
     squash = keyed(u, SQUASH_KEYS);
     const vy = (hopAt(Math.min(1, u + 0.01), h0, h1, H).h - hopAt(Math.max(0, u - 0.01), h0, h1, H).h) / 0.02;
     pitch = -Math.max(-0.35, Math.min(0.35, vy * 0.07)) * Math.min(1, dist);
+  }
+  if (f.landT0 !== undefined && !f.hop) {
+    const v = (t - f.landT0) / SETTLE;
+    if (v >= 1) f.landT0 = undefined;
+    else squash += keyed(v, SETTLE_KEYS);
   }
   if (f.cheerT0 !== undefined && !f.hop) {
     const u = (t - f.cheerT0) / CHEER_DUR;
