@@ -11,11 +11,13 @@ import { burstFx } from '../scene/frogs/Burst';
 import { clearTrace } from '../scene/frogs/codeTrace';
 import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
+import { HATCH_GROW } from '../scene/frogs/motion';
 import { occupancy } from '../scene/frogs/occupancy';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { eggRegion } from './regions';
 import { abandonCheck, begin, currentLevel, events } from './sequence';
 
+export const HATCH_MS = (HATCH_EMERGE + HATCH_GROW) * 1000;
 const TEST_EGGS = 10;
 const RUN_BEATS = 80;
 const EGG_POINT_REACH = 12;
@@ -116,7 +118,7 @@ export function resetFrogs() {
   useGame.setState({ running: false, failMark: null });
 }
 
-const FROG_LEAVE = 0.3;
+const FROG_LEAVE = 0.18;
 
 export async function dismissFrogs(kind?: FrogKind): Promise<void> {
   const going = frogWorld.frogs.filter((f) => !f.leave && (!kind || f.kind === kind));
@@ -273,10 +275,10 @@ export function loopFrogs(eggs: State[]) {
 
 async function sendHome(f: FrogSim) {
   f.leave = { t0: sceneNow(), dur: FROG_LEAVE };
+  const home = f.home;
+  if (home && !frogWorld.frogs.some((g) => !g.leave && g.home?.[0] === home[0] && g.home?.[1] === home[1])) frogWorld.returnEgg(...home);
   await sleep(FROG_LEAVE * 1000 + 50);
   frogWorld.remove(f);
-  const home = f.home;
-  if (home && !frogWorld.frogs.some((g) => g.home?.[0] === home[0] && g.home?.[1] === home[1])) frogWorld.returnEgg(...home);
 }
 
 export function sendFrogsHome() {

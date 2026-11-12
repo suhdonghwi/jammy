@@ -36,6 +36,11 @@ behind many small decisions; keep them when changing or adding UI.
   frogs sharing a tile glide into their slots and arrive exactly on landing;
   slabs rise and sink rather than appear. Prefer curves that are smooth in
   both position and speed.
+- **Quick where nothing is being shown.** A hop is the loop body running, so
+  it takes long enough to follow (about 0.4 s). Hatching, a frog going home,
+  an egg coming back or stepping aside carry no content, so they take about
+  a fifth of a second, and an egg starts coming back as its frog starts to
+  leave rather than after it has gone.
 - **Every movement means something.** A frog turns (with a tiny hop) only
   when its next hop goes another way; it cheers only when it lands on a goal.
   The code panel's cursor walks the lines a hop runs (in the tutorial's

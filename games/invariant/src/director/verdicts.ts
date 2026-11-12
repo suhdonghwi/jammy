@@ -11,7 +11,7 @@ import { EGG_REGROW } from '../scene/area/glsl';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { dismissFrogs, hatch } from './frogs';
+import { dismissFrogs, hatch, HATCH_MS } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
 import { GHOST_RISE, previewHop, raiseGhost } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
@@ -123,7 +123,7 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
   let f: FrogSim;
   if (run) {
     f = hatch(run[0]);
-    await sleep(450);
+    await sleep(HATCH_MS);
     const pace = Math.max(FASTEST_HOP, Math.min(0.36, REAL_RUN_SECONDS / run.length));
     for (const s of run.slice(1)) {
       if (!tok.alive) return;
