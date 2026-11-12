@@ -10,7 +10,7 @@ import { EGG_ALONE, EGG_ASIDE, occupancy, type Slot } from '../frogs/occupancy';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
 import { colorUniform, fadeUniforms, getBlobTexture, GLSL_COMMON, GLSL_FADE, updateFade } from '../shaders/common';
-import { field } from './field';
+import { areaMask } from './mask';
 import { GLSL_APPEAR, GLSL_BACK, GLSL_HEIGHT, GLSL_SLOT, instanced, SLOT_DUR } from './glsl';
 
 const eggVertex = /* glsl */ `
@@ -90,7 +90,7 @@ interface SlotAnim {
 
 const PER_FROG_ATTRS = ['aHide', 'aBack', 'aSlot', 'aSlotAnim'] as const;
 
-export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; inputs: Inputs; win: TileWindow; version: number }) {
+export function Eggs({ level, inputs, win }: { level: CompiledLevel; inputs: Inputs; win: TileWindow }) {
   const base = useMemo(() => eggGeometry(), []);
   const shadowBase = useMemo(() => new THREE.PlaneGeometry(0.66, 0.66).rotateX(-Math.PI / 2), []);
   const slots = useRef(new Map<string, SlotAnim>());
@@ -108,22 +108,16 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
   const { geom, shadowGeom } = useMemo(() => {
     const n = eggs.length;
     const tile = new Float32Array(n * 2);
-    const anim = new Float32Array(n * 3);
-    eggs.forEach(([x, y], i) => {
-      tile.set([x, y], i * 2);
-      const a = field.anims.get(`${x},${y}`);
-      anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
-    });
+    eggs.forEach(([x, y], i) => tile.set([x, y], i * 2));
     const attrs = {
       aTile: [tile, 2],
-      aAnim: [anim, 3],
       aHide: [new Float32Array(n), 1],
       aBack: [new Float32Array(n), 1],
       aSlot: [new Float32Array(n * 4), 4],
       aSlotAnim: [new Float32Array(n * 3), 3],
     } as const;
     return { geom: instanced(base, n, attrs), shadowGeom: instanced(shadowBase, n, attrs) };
-  }, [eggs, version, base, shadowBase]);
+  }, [eggs, base, shadowBase]);
   useEffect(() => () => (geom.dispose(), shadowGeom.dispose()), [geom, shadowGeom]);
 
   const syncFrogs = () => {
@@ -175,6 +169,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
           uAppearT0: { value: sceneNow() },
           uAppearCenter: { value: new THREE.Vector2(win.cx, win.cy) },
           ...fadeUniforms(),
+          ...areaMask.uniforms,
         },
       }),
     [],
@@ -186,7 +181,7 @@ export function Eggs({ level, inputs, win, version }: { level: CompiledLevel; in
         fragmentShader: shadowFragment,
         transparent: true,
         depthWrite: false,
-        uniforms: { uTime: material.uniforms.uTime, uMap: { value: getBlobTexture() }, uAppearT0: material.uniforms.uAppearT0, uAppearCenter: material.uniforms.uAppearCenter },
+        uniforms: { ...areaMask.uniforms, uTime: material.uniforms.uTime, uMap: { value: getBlobTexture() }, uAppearT0: material.uniforms.uAppearT0, uAppearCenter: material.uniforms.uAppearCenter },
       }),
     [material],
   );

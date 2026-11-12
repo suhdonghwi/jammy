@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useGame, type Region, type RegionTile } from '../../game/store';
 import { useExitFade, useLingering } from '../../hooks/presence';
 import { useTileWindow } from '../area/AreaLayer';
-import { field } from '../area/field';
+import { areaMask } from '../area/mask';
 import { GLSL_HEIGHT, instanced } from '../area/glsl';
 import { SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';
@@ -59,7 +59,7 @@ function regionMaterial(alpha: number) {
     fragmentShader: fragment,
     transparent: true,
     depthWrite: false,
-    uniforms: { uTime: { value: 0 }, uT0: { value: 0 }, uOut: { value: 1 }, uAlpha: { value: alpha }, ...fadeUniforms() },
+    uniforms: { uTime: { value: 0 }, uT0: { value: 0 }, uOut: { value: 1 }, uAlpha: { value: alpha }, ...fadeUniforms(), ...areaMask.uniforms },
   });
 }
 
@@ -142,19 +142,16 @@ export function OutlineRegion() {
     const { tiles } = plan;
     const n = tiles.length;
     const tile = new Float32Array(n * 2);
-    const anim = new Float32Array(n * 3);
     const color = new Float32Array(n * 3);
     const delay = new Float32Array(n);
     const delays = plan.sweep?.delays;
     tiles.forEach((t, i) => {
       tile.set([t.x, t.y], i * 2);
-      const a = field.anims.get(`${t.x},${t.y}`);
-      anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
       const c = COLOR[t.tone];
       color.set([c.r, c.g, c.b], i * 3);
       delay[i] = delays?.[i] ?? 0;
     });
-    const attrs = { aTile: [tile, 2], aAnim: [anim, 3], aColor: [color, 3], aDelay: [delay, 1] } as const;
+    const attrs = { aTile: [tile, 2], aColor: [color, 3], aDelay: [delay, 1] } as const;
     return { ring: instanced(ringGeometry, n, attrs), wash: instanced(washGeometry, n, attrs) };
   }, [plan]);
   useEffect(() => () => (geoms?.ring.dispose(), geoms?.wash.dispose()), [geoms]);

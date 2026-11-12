@@ -1,26 +1,26 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../audio/sfx';
-import type { FastFn } from '../../lang/eval';
-import { planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
+import type { CompiledLevel, Formula, Inputs } from '../../levels/level';
 import { tilesNear, type TileWindow } from '../../levels/tiles';
 import { cameraRig } from '../cameraRig';
-import { after } from '../sceneTime';
 import { Eggs } from './Eggs';
-import { field, RISE_DUR, type TileFlags } from './field';
+import { field } from './field';
 import { GoalColumns } from './GoalColumns';
+import { areaMask } from './mask';
 import { Slabs } from './Slabs';
 
 interface AreaLayerProps {
   level: CompiledLevel;
   inputs: Inputs;
-  inv: FastFn | null;
+  area: Formula | null;
   dim: boolean;
   showStop: boolean;
   showGoal: boolean;
   showEggs: boolean;
-  showArea: boolean;
 }
+
+const HEARD_WITHIN = 12;
 
 export function useTileWindow(): TileWindow {
   const [win, setWin] = useState<TileWindow>({ cx: 0, cy: 0, R: 18 });
@@ -36,40 +36,45 @@ export function useTileWindow(): TileWindow {
       ref.current = { cx, cy, R };
       setWin(ref.current);
     }
-    field.built = ref.current;
   });
   return win;
 }
 
-export function AreaLayer({ level, inputs, inv, dim, showStop, showGoal, showEggs, showArea }: AreaLayerProps) {
-  const win = useTileWindow();
-  const [version, setVersion] = useState(0);
-  const last = useRef<{ level: string; inv: FastFn | null; showArea: boolean } | null>(null);
-  const key = planeKey(inputs);
-
+export function useArea(level: CompiledLevel, inputs: Inputs, area: Formula | null) {
+  const gl = useThree((s) => s.gl);
+  const latest = useRef(inputs);
+  latest.current = inputs;
   useEffect(() => {
-    const prev = last.current;
-    const fresh = !prev || prev.level !== level.id;
-    if (fresh) field.reset();
-    const animate = fresh || prev.inv !== inv || prev.showArea !== showArea;
-    last.current = { level: level.id, inv, showArea };
-    const f = level.fast;
-    const tiles: TileFlags[] = !inv || !showArea ? [] : tilesNear(level, inputs, win, (s, x, y) => {
-      if (!f.planeReq(s) || inv(s) !== true) return;
-      const stop = f.guard(s) !== true;
-      return { x, y, stop, goal: stop && f.post(s) === true };
-    });
-    const moved = field.update(tiles, animate);
-    sfx.slabs(moved.rose, moved.sank);
-    setVersion((v) => v + 1);
-    return after(RISE_DUR * 1000 + 60, () => field.prune() && setVersion((v) => v + 1));
-  }, [level, key, inv, win, showArea]);
+    field.inputs = latest.current;
+    field.show(level, area);
+    areaMask.show(level, area?.expr ?? null, field.before?.expr ?? null);
+    const t = cameraRig.target();
+    const near = { cx: Math.round(t.x), cy: Math.round(-t.z), R: HEARD_WITHIN };
+    const moved = tilesNear(level, latest.current, near, (s) => (level.fast.planeReq(s) === true ? (area?.fast(s) === true ? 1 : 0) - (field.before?.fast(s) === true ? 1 : 0) : 0));
+    sfx.slabs(moved.filter((m) => m > 0).length, moved.filter((m) => m < 0).length);
+  }, [level, area]);
+  useEffect(
+    () => () => {
+      field.reset();
+      areaMask.clear();
+    },
+    [],
+  );
+  useFrame(() => {
+    field.inputs = inputs;
+    const t = cameraRig.target();
+    areaMask.draw(gl, t.x, -t.z, inputs, field.risen());
+  }, -1);
+}
 
+export function AreaLayer({ level, inputs, area, dim, showStop, showGoal, showEggs }: AreaLayerProps) {
+  const win = useTileWindow();
+  useArea(level, inputs, area);
   return (
     <group>
-      <Slabs level={level} version={version} dim={dim} showStop={showStop} showGoal={showGoal} />
-      {showEggs && <Eggs level={level} inputs={inputs} win={win} version={version} />}
-      {showGoal && <GoalColumns level={level} inputs={inputs} win={win} version={version} />}
+      <Slabs level={level} dim={dim} showStop={showStop} showGoal={showGoal} />
+      {showEggs && <Eggs level={level} inputs={inputs} win={win} />}
+      {showGoal && <GoalColumns level={level} inputs={inputs} win={win} />}
     </group>
   );
 }

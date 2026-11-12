@@ -67,7 +67,7 @@ which feeds:
   quantifiers. Z3's WebAssembly build has crashed on quantified *model
   finding* under a timeout, so bounded passes never send it a quantifier;
 - **GLSL** for the floor shader (32-bit ints: visual only), from the level's
-  formulas and, past the built slabs, the learner's area (see below). An integer input is a uniform,
+  formulas only; the area is drawn as slabs. An integer input is a uniform,
   an array input a uniform `int[MAX_LEN]` with its length's uniform; a
   quantifier becomes a loop of at most MAX_LEN + 1 steps. The inputs' part of
   the precondition is the same for every tile, so it is one uniform set from
@@ -98,9 +98,15 @@ backend agree. `pnpm validate` and the tests are the safety net.
   read in `useFrame`: the frogs (`frogWorld`), slab heights (`field`),
   hatching shells, tile occupancy, goal ripples. Never put
   per-frame data in zustand.
-- **Slab height has one source**: `field`. Slabs and eggs animate on the GPU
-  from `(from, to, t0)`, and `field.heightAt` gives the same height on the
-  CPU for everything else standing on the floor (frogs, tags, chips).
+- **Slab height has one source: the area's formula.** Nothing lists the
+  tiles of the area. On the GPU, `areaMask` (`scene/area/mask.ts`) evaluates
+  the area over the window around the camera into a small texture, one texel
+  per tile: on it now, on it before the last change, stop, goal. It is
+  redrawn only when the formula, the inputs or the window change. Slabs,
+  eggs, goal columns and outlines read their tile's texel in the vertex
+  shader, and rise or sink as one uniform blends "before" into "now". On the
+  CPU, `field.heightAt` evaluates the same two formulas for whatever else
+  stands on the floor (frogs, tags, trails, picking).
 
 ## Time
 
@@ -181,15 +187,15 @@ backend agree. `pnpm validate` and the tests are the safety net.
 
 - The floor is **one shader plane**: the level's precondition, guard and
   postcondition are evaluated per pixel, so the plane is truly infinite.
-- Slabs, eggs, goal columns, frogs and hatching shells are **instanced**;
-  only the tiles near the camera are built, in a window that moves in steps.
-- **Beyond that window the floor shader draws the slabs itself.** The
-  learner's area is compiled into the floor's fragment shader next to the
-  level's formulas, and for a tile outside the window (`field.built`) the
-  shader finds where the view ray meets that slab's top or side and shades
-  it as the slab mesh would. So the area has no edge however far the camera
-  pulls back. The shader is rebuilt 250 ms after the area last changed, and
-  an area with a number too large for a GLSL int is not drawn there.
+- **Slabs are one instanced grid centred on the camera**, sorted outward,
+  drawn as far as the floor is still visible. A cell with no slab collapses
+  in the vertex shader. So the area reaches the horizon at any zoom, and a
+  near slab and a far one are the same mesh and shader. Zoomed out past a
+  camera distance of 24 the grid uses a lighter slab shape (rounded in plan,
+  no bevel on the top edge), since there are tens of thousands of them.
+- Eggs, goal columns, frogs and hatching shells are **instanced**; eggs and
+  goal columns are built only near the camera, in a window that moves in
+  steps.
 - **Errors don't take the page down**: the WebGL 2 check (`scene/webgl.ts`),
   the error boundary around the game (`ui/ErrorBoundary.tsx`) and the 3D
   title's own boundary fall back to `ui/Trouble.tsx` or plain text.

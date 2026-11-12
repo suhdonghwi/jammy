@@ -1,7 +1,6 @@
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import type { Expr } from '../../lang/ast';
 import { planeExists, planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
 import { field } from '../area/field';
 import { cameraRig } from '../cameraRig';
@@ -11,9 +10,7 @@ import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
 import { axisNameUniforms, colorUniform, fadeUniforms, getDigitTexture, goalUniforms, setAxisNames, updateFade } from '../shaders/common';
 import { floorFragment, floorVertex } from './floorShader';
-import { fitsGlsl, inputUniforms, setInputUniforms } from './levelGlsl';
-
-const REPAINT_MS = 250;
+import { inputUniforms, setInputUniforms } from './levelGlsl';
 
 const _p = new THREE.Vector3();
 function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
@@ -38,24 +35,20 @@ interface FloorProps {
   showStop?: boolean;
   showGoal?: boolean;
   showAxes?: boolean;
-  area?: Expr | null;
-  areaDim?: boolean;
   onTile?: (x: number, y: number) => void;
   clickable?: (x: number, y: number) => boolean;
 }
 
-export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true, showGoal = true, showAxes = true, area = null, areaDim = false, onTile, clickable }: FloorProps) {
+export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true, showGoal = true, showAxes = true, onTile, clickable }: FloorProps) {
   const mesh = useRef<THREE.Mesh>(null);
   const canvas = useThree((s) => s.gl.domElement);
-  const [painted, setPainted] = useState(area);
-  useEffect(() => {
-    if (area === painted) return;
-    const timer = setTimeout(() => setPainted(area), REPAINT_MS);
-    return () => clearTimeout(timer);
-  }, [area, painted]);
-  const paint = painted && fitsGlsl(painted) ? painted : null;
-  const uniforms = useMemo(() => {
-    const made: Record<string, THREE.IUniform> = {
+  const material = useMemo(() => {
+    const m = new THREE.ShaderMaterial({
+      vertexShader: floorVertex,
+      fragmentShader: floorFragment(level),
+      transparent: true,
+      depthWrite: true,
+      uniforms: {
         ...inputUniforms(level),
         uHover: { value: new THREE.Vector2() },
         uHoverOn: { value: 0 },
@@ -77,25 +70,14 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
         uHoverCol: colorUniform('hover'),
         uCross: colorUniform('cross'),
         uLabel: colorUniform('label'),
-        uSlabTop: colorUniform('slabTop'),
-        uSlabStopTop: colorUniform('slabStopTop'),
-        uSlabSide: colorUniform('slabSide'),
-        uArea: { value: 0 },
-        uAreaDim: { value: 0 },
-        uBuilt: { value: new THREE.Vector3() },
-    };
-    setAxisNames(made, level);
-    return made;
+      },
+    });
+    setAxisNames(m.uniforms, level);
+    return m;
   }, [level]);
-  const material = useMemo(
-    () => new THREE.ShaderMaterial({ vertexShader: floorVertex, fragmentShader: floorFragment(level, paint), transparent: true, depthWrite: true, uniforms }),
-    [level, uniforms, paint],
-  );
   useEffect(() => () => material.dispose(), [material]);
 
-  const u = uniforms;
-  const shown = useRef({ paint: paint !== null, dim: areaDim });
-  shown.current = { paint: paint !== null, dim: areaDim };
+  const u = material.uniforms;
   const key = planeKey(inputs);
   const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
   shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
@@ -112,9 +94,6 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     u.uTime.value = sceneNow();
     setAxisNames(u, level);
     goalEvents.sync(key);
-    u.uArea.value = shown.current.paint ? 1 : 0;
-    u.uBuilt.value.set(field.built.cx, field.built.cy, field.built.R);
-    u.uAreaDim.value += ((shown.current.dim ? 0.55 : 0) - u.uAreaDim.value) * (1 - Math.exp(-dt * 8));
     const kr = 1 - Math.exp(-dt * 3.2);
     const towards = (cur: number, on: boolean) => {
       const v = cur + ((on ? 1 : 0) - cur) * kr;

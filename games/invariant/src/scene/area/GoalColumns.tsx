@@ -7,7 +7,7 @@ import { tilesNear, type TileWindow } from '../../levels/tiles';
 import { COLORS, SLAB_H } from '../constants';
 import { goalEvents, MAX_EVENTS } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
-import { field } from './field';
+import { areaMask } from './mask';
 import { GLSL_HEIGHT, instanced } from './glsl';
 
 const vertex = /* glsl */ `
@@ -65,12 +65,10 @@ export function GoalColumns({
   level,
   inputs,
   win,
-  version,
 }: {
   level: CompiledLevel;
   inputs: Inputs;
   win: TileWindow;
-  version: number;
 }) {
   const key = planeKey(inputs);
   const tiles = useMemo(() => {
@@ -82,14 +80,9 @@ export function GoalColumns({
   const geom = useMemo(() => {
     const n = tiles.length;
     const tile = new Float32Array(n * 2);
-    const anim = new Float32Array(n * 3);
-    tiles.forEach(([x, y], i) => {
-      tile.set([x, y], i * 2);
-      const a = field.anims.get(`${x},${y}`);
-      anim.set(a ? [a.from, a.to, a.t0] : [0, 0, 0], i * 3);
-    });
-    return instanced(base, n, { aTile: [tile, 2], aAnim: [anim, 3] });
-  }, [tiles, version, base]);
+    tiles.forEach(([x, y], i) => tile.set([x, y], i * 2));
+    return instanced(base, n, { aTile: [tile, 2] });
+  }, [tiles, base]);
   useEffect(() => () => geom.dispose(), [geom]);
 
   const material = useMemo(
@@ -105,6 +98,7 @@ export function GoalColumns({
           uColor: { value: new THREE.Color(COLORS.goal) },
           uAppearT0: { value: sceneNow() },
           uEvents: goalEvents.uniforms.uEvents,
+          ...areaMask.uniforms,
         },
       }),
     [],

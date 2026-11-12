@@ -1,6 +1,4 @@
-import type { Expr } from '../../lang/ast';
 import type { CompiledLevel } from '../../levels/level';
-import { SLAB_H, TILE } from '../constants';
 import { GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL } from '../shaders/common';
 import { GLSL_INT_HELPERS, levelGlsl } from './levelGlsl';
 
@@ -13,7 +11,7 @@ void main() {
 }
 `;
 
-export function floorFragment(level: CompiledLevel, area: Expr | null) {
+export function floorFragment(level: CompiledLevel) {
   return /* glsl */ `
 precision highp float;
 precision highp int;
@@ -26,63 +24,31 @@ uniform float uOpacity;
 uniform float uShowStop;
 uniform float uShowGoal;
 uniform float uShowAxes;
-uniform vec3 uGap, uVoid, uTile, uStop, uHatch, uEdge, uHoverCol, uCross, uLabel, uSlabTop, uSlabStopTop, uSlabSide;
-uniform float uArea;
-uniform float uAreaDim;
-uniform vec3 uBuilt;
+uniform vec3 uGap, uVoid, uTile, uStop, uHatch, uEdge, uHoverCol, uCross, uLabel;
 ${GLSL_COMMON}
 ${GLSL_DIGITS}
 ${GLSL_GOAL}
 ${GLSL_INT_HELPERS}
-${levelGlsl(level, area)}
+${levelGlsl(level)}
 
 bool existsAt(ivec2 t) { return uExists && L_exists(t); }
 bool stopAt(ivec2 t) { return uShowStop > 0.002 && existsAt(t) && L_stop(t); }
-const float HALF = ${(TILE / 2).toFixed(3)};
-bool paintedAt(ivec2 t) {
-  bool beyond = abs(float(t.x) - uBuilt.x) > uBuilt.z || abs(float(t.y) - uBuilt.y) > uBuilt.z;
-  return beyond && existsAt(t) && L_area(t);
-}
-float backTo(float from, float along) {
-  return along > 0.0 ? (from + HALF) / along : along < 0.0 ? (from - HALF) / along : 1e9;
-}
 bool edgeBetween(ivec2 a, ivec2 b) { return existsAt(a) && existsAt(b) && stopAt(a) != stopAt(b); }
 
 void main() {
   vec2 p = vec2(vWorld.x, -vWorld.z);
-  vec2 fw = fwidth(p);
-  float fwl = length(fw);
-
-  // beyond the built slabs, the same slabs are drawn here: where the view ray meets a slab's top or side
-  bool onTop = false;
-  bool onSide = false;
-  vec3 sideN = vec3(0.0);
-  if (uArea > 0.5) {
-    vec3 ray = normalize(vWorld - cameraPosition);
-    vec3 high = vWorld + ray * (${SLAB_H.toFixed(3)} / ray.y);
-    vec2 pt = vec2(high.x, -high.z);
-    vec2 ct = floor(pt + 0.5);
-    vec2 c0 = floor(p + 0.5);
-    if (paintedAt(ivec2(int(ct.x), int(ct.y))) && sdRoundBox(pt - ct, vec2(HALF), 0.1) < 0.0) {
-      onTop = true;
-      p = pt;
-    } else if (paintedAt(ivec2(int(c0.x), int(c0.y))) && sdRoundBox(p - c0, vec2(HALF), 0.1) < 0.0) {
-      onSide = true;
-      vec2 along = vec2(ray.x, -ray.z);
-      vec2 from = p - c0;
-      sideN = backTo(from.x, along.x) < backTo(from.y, along.y) ? vec3(-sign(along.x), 0.0, 0.0) : vec3(0.0, 0.0, sign(along.y));
-    }
-  }
   vec2 tc = floor(p + 0.5);
   vec2 f = p - tc;
   ivec2 t = ivec2(int(tc.x), int(tc.y));
   bool ex = existsAt(t);
 
-  float fwr = fwl;
+  // derivatives up front, outside branches (they need uniform control flow)
+  vec2 fw = fwidth(p);
+  float fwr = fwidth(length(f));
   float ringD = abs(sdRoundBox(f, vec2(0.47), 0.13)) - 0.035;
-  float fwRing = fwl;
-  float d = sdRoundBox(f, vec2(HALF), 0.1);
-  float aa = fwl;
+  float fwRing = fwidth(ringD);
+  float d = sdRoundBox(f, vec2(${(0.9 / 2).toFixed(3)}), 0.1);
+  float aa = fwidth(d);
   float inside = 1.0 - smoothstep(-aa, aa, d);
 
   bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
@@ -95,24 +61,14 @@ void main() {
       float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
       tcol = mix(uTile, mix(uStop, uHatch, hatch * 0.55), uShowStop);
     }
-    bool painted = onTop;
-    if (painted) {
-      tcol = uSlabTop;
-      if (st) {
-        float s = fract((f.x - f.y) * 4.0);
-        float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
-        tcol = mix(uSlabTop, mix(uSlabStopTop, uSlabStopTop * 0.9, hatch), uShowStop);
-      }
-      tcol = mix(shadeLit(tcol, vec3(0.0, 1.0, 0.0)), vec3(0.86, 0.88, 0.92), uAreaDim);
-    }
-    if (!painted && uShowAxes > 0.002 && (t.x == 0 || t.y == 0)) tcol = mix(tcol, uCross, (st ? 0.35 : 0.6) * uShowAxes);
+    if (uShowAxes > 0.002 && (t.x == 0 || t.y == 0)) tcol = mix(tcol, uCross, (st ? 0.35 : 0.6) * uShowAxes);
     if (onCross) tcol = st ? mix(tcol, uCross * vec3(0.9, 0.94, 1.0), 0.7) : mix(tcol, uCross, 0.9);
     if (st && uShowGoal > 0.002 && L_goal(t)) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
     if (uShowAxes > 0.002) {
       float m = axisLabelMask(f, t.xy);
-      tcol = mix(tcol, painted ? vec3(1.0) : uLabel, m * 0.9 * uShowAxes);
+      tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
     }
-    col = painted ? tcol : mix(uGap, tcol, inside);
+    col = mix(uGap, tcol, inside);
     if (uShowGoal > 0.002) col = mix(col, SPLASH, splashAt(p) * 0.45 * uShowGoal);
   } else {
     vec3 ghost = mix(uVoid, uTile, 0.3);
@@ -120,10 +76,7 @@ void main() {
     col = mix(uVoid, ghost, inside);
   }
 
-  if (onSide) col = mix(shadeLit(uSlabSide, sideN), vec3(0.86, 0.88, 0.92), uAreaDim);
-  if (uArea > 0.5 && !onTop && !onSide && paintedAt(t)) col = mix(col, uSlabSide * 0.5, 0.55 * (1.0 - uAreaDim));
-
-  if (uShowStop > 0.002 && !onTop && !onSide) {
+  if (uShowStop > 0.002) {
     float w = 0.045;
     float line = 0.0;
     // makes the boundary's corner arc concentric with the tile's rounded corner (half-size 0.45, radius 0.1)
