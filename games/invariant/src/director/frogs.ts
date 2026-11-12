@@ -1,5 +1,6 @@
 import { sfx } from '../audio/sfx';
 import { useGame } from '../game/store';
+import { t } from '../i18n/i18n';
 import type { State } from '../lang/ast';
 import { hop, inputsOf, planeKey, running, toBig, type CompiledLevel } from '../levels/level';
 import { eggsNear, tileState } from '../levels/tiles';
@@ -12,9 +13,12 @@ import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { occupancy } from '../scene/frogs/occupancy';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
+import { eggRegion } from './regions';
 import { abandonCheck, begin, currentLevel, events } from './sequence';
 
-const RUN_EGGS = 10;
+const TEST_EGGS = 10;
+const RUN_BEATS = 80;
+const EGG_POINT_REACH = 12;
 
 function eggStatesNear(maxCount: number, radius: number): State[] {
   const L = currentLevel();
@@ -123,16 +127,46 @@ export function placeFrog(s: State, opts: Partial<FrogSim> = {}): FrogSim {
   return f;
 }
 
+function currentFrog(): FrogSim | undefined {
+  const plane = planeKey(useGame.getState().inputs);
+  return frogWorld.frogs.filter((f) => f.kind === 'real' && !f.leave && f.plane === plane).at(-1);
+}
+
+async function hopOnce(f: FrogSim, dur = 0.42) {
+  const L = currentLevel();
+  const n = hop(L, f.state);
+  useGame.setState({ stepping: true });
+  try {
+    await frogWorld.hopTo(L, f, n, dur);
+    f.stopped = !running(L, n);
+  } finally {
+    useGame.setState({ stepping: false });
+  }
+}
+
+function nothingToHop(f: FrogSim | undefined) {
+  if (useGame.getState().mode !== 'level') return;
+  if (f) {
+    useGame.setState({ callouts: [{ x: f.x, y: f.y, frog: f.id, text: t().level.frogStopped, tone: 'info' }] });
+    cameraRig.include([[f.x, f.y]]);
+    return;
+  }
+  const egg = eggStatesNear(1, EGG_POINT_REACH)[0] ?? firstEggs(1)[0];
+  if (!egg) return;
+  const L = currentLevel();
+  const tile = [Number(egg[L.view.x]), Number(egg[L.view.y])] as const;
+  useGame.setState({ region: { ...eggRegion('info'), id: 'pick-egg' }, callouts: [{ x: tile[0], y: tile[1], text: t().level.pickEgg, tone: 'info' }] });
+  cameraRig.include([tile]);
+}
+
 export async function stepFrogs(scripted = false) {
   const g = useGame.getState();
   if (g.busy || g.running || g.stepping) return;
   if (!scripted && g.mode === 'tutorial' && !g.tutorial.allow.step) return;
-  if (movingFrogs().length === 0 && !frogWorld.frogs.some((f) => f.kind === 'real')) {
-    const eggs = eggStatesNear(1, 6);
-    if (eggs.length) hatch(eggs[0]);
-    return;
-  }
-  await hopAllOnce();
+  const f = currentFrog();
+  if (!f || !running(currentLevel(), f.state)) return nothingToHop(f);
+  useGame.setState({ failMark: null, callouts: g.mode === 'level' ? [] : g.callouts });
+  await hopOnce(f);
   events.emit('stepped');
 }
 
@@ -140,28 +174,44 @@ export async function runFrogs() {
   const g = useGame.getState();
   if (g.busy || g.running || g.stepping) return;
   if (g.mode === 'tutorial' && !g.tutorial.allow.run) return;
+  const L = currentLevel();
+  const f = currentFrog();
+  if (!f || !running(L, f.state)) return nothingToHop(f);
   const tok = begin();
   useGame.setState({ failMark: null, running: true });
   void dismissFrogs('test');
-  if (movingFrogs().length === 0) {
-    await dismissFrogs();
-    if (!tok.alive) return;
-    const L = currentLevel();
-    const eggs = firstEggs(RUN_EGGS);
-    if (eggs.length) {
-      await cameraRig.arrive({ focus: eggs.flatMap((s) => runTiles(L, s)) });
-      if (!tok.alive) return;
-    }
-    eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatch(s)));
-    await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
-  }
-  for (let beats = 0; tok.alive && useGame.getState().running && beats < 80; beats++) {
-    if ((await hopAllOnce(0.34)) === 0) break;
+  for (let beats = 0; tok.alive && useGame.getState().running && beats < RUN_BEATS && !f.leave && running(L, f.state); beats++) {
+    await hopOnce(f, 0.34);
     await sleep(90);
   }
   if (tok.alive) {
     useGame.setState({ running: false });
-    if (movingFrogs().length === 0) events.emit('runDone');
+    if (f.stopped) events.emit('runDone');
+  }
+}
+
+export async function testEggs() {
+  const g = useGame.getState();
+  if (g.busy || g.running || g.stepping) return;
+  const tok = begin();
+  useGame.setState({ failMark: null, busy: true });
+  await dismissFrogs();
+  if (!tok.alive) return;
+  const L = currentLevel();
+  const eggs = firstEggs(TEST_EGGS);
+  if (eggs.length) {
+    await cameraRig.arrive({ focus: eggs.flatMap((s) => runTiles(L, s)) });
+    if (!tok.alive) return;
+  }
+  eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatch(s)));
+  await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
+  for (let beats = 0; tok.alive && beats < RUN_BEATS; beats++) {
+    if ((await hopAllOnce(0.34)) === 0) break;
+    await sleep(90);
+  }
+  if (tok.alive) {
+    useGame.setState({ busy: false });
+    events.emit('runDone');
   }
 }
 
@@ -169,23 +219,14 @@ export function pauseRun() {
   useGame.setState({ running: false });
 }
 
-async function runEgg(s: State) {
+function pickEgg(s: State) {
   const g = useGame.getState();
-  if (g.busy || g.stepping) return;
-  const f = hatch(s);
-  if (g.running) return;
-  useGame.setState({ stepping: true });
-  try {
-    await sleep(350);
-    const L = currentLevel();
-    for (let k = 0; !f.stopped && !f.leave && k < 60 && frogWorld.frogs.includes(f); k++) {
-      const n = hop(L, f.state);
-      await frogWorld.hopTo(L, f, n, 0.36);
-      f.stopped = !running(L, n);
-    }
-  } finally {
-    useGame.setState({ stepping: false });
+  if (g.busy) return;
+  if (g.mode === 'level') {
+    void dismissFrogs('real');
+    useGame.setState({ running: false, failMark: null, callouts: [], region: null });
   }
+  hatch(s);
 }
 
 export function tileClickable(x: number, y: number): boolean {
@@ -199,7 +240,7 @@ export function tileClickable(x: number, y: number): boolean {
 export function clickTile(x: number, y: number) {
   if (!tileClickable(x, y)) return;
   const { level, inputs } = useGame.getState();
-  void runEgg(toBig(tileState(level!, x, y, inputs)));
+  pickEgg(toBig(tileState(level!, x, y, inputs)));
 }
 
 export function loopFrogs(eggs: State[]) {
