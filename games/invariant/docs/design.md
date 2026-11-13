@@ -17,11 +17,11 @@ plane — the loop invariant — and **Check** tests it against three rules:
 |---|---|---|
 | **Initialization** | `pre ⇒ Inv` (after the initialisation code) | Every egg is on the area. |
 | **Maintenance** | `Inv ∧ guard ⇒ Inv[body]` | Every hop lands on the area. |
-| **Termination** | `Inv ∧ ¬guard ⇒ post` | Every stop on the area is a goal. |
+| **Exit** | `Inv ∧ ¬guard ⇒ post` | Every stop on the area is a goal. |
 
 The area is a **claim**: every frog is always somewhere on it. Initialization
 and Maintenance make the claim true (frogs start on it and no hop leaves it,
-even from a tile no frog reaches); Termination makes it strong enough (the
+even from a tile no frog reaches); Exit makes it strong enough (the
 only stops it allows are goals). If all three hold, every frog, for every
 input, stops on a goal. That is the loop-invariant proof rule, presented as a
 game.
@@ -76,7 +76,7 @@ The game never leads with the rules; each is met as a picture first:
 5. **Induction, shown with one frog** — it starts on the area, every hop lands
    on it again, so it never leaves; when it stops, is that a goal? That
    question, asked over the outlined tiles a frog can stop on, opens
-   Termination.
+   Exit.
 
 ## Ghost frogs: why unreachable frogs matter
 
@@ -277,7 +277,7 @@ endless as the loop it stands in for. Both are real levels (`tutorialLevel`,
   or else by a demo of that stage's pitfall, after the learner predicts the
   outcome (yes or no; the caption says if they were right, nothing is
   counted). Initialization's and Maintenance's pitfalls fail on real frogs;
-  Termination's (`i >= 0`) on a ghost frog, which is where the objection
+  Exit's (`i >= 0`) on a ghost frog, which is where the objection
   above is answered.
 - **One hint per stage:** a sentence that names the fact that matters,
   without giving the formula.
@@ -287,7 +287,7 @@ endless as the loop it stands in for. Both are real levels (`tutorialLevel`,
 
 A learner should also leave having chosen a formula themselves three times,
 and knowing the two ways an area fails: Initialization or Maintenance
-failing leaves the claim unproved; Termination failing means the claim, true
+failing leaves the claim unproved; Exit failing means the claim, true
 or not, is too weak.
 
 ### Vocabulary
@@ -307,18 +307,19 @@ or not, is too weak.
 | A state placed to test the area's claim | a **ghost frog** | 유령 개구리 |
 | What an area says | a **claim**: every frog is always on it | 주장 |
 | Passes Initialization and Maintenance | an **invariant** | 불변식 |
-| Also passes Termination | **strong enough** to prove the postcondition | 사후 조건을 증명하기에 충분히 강한 |
-| Fails Termination | **too weak** | 너무 약한 |
+| Also passes Exit | **strong enough** to prove the postcondition | 사후 조건을 증명하기에 충분히 강한 |
+| Fails Exit | **too weak** | 너무 약한 |
 | States the precondition rules out | **not a possible state** / **input** | 불가능한 상태 / 입력 |
 | The button that proves | **Check** | 검사 |
 
 **Strengthening** (shrinking the area) is these docs' word; the game shows it
 rather than naming it.
 
-Rule names are the textbook ones (CLRS): **Initialization**, **Maintenance**,
-**Termination**, in Korean 초기화, 유지, 종료. One name each, everywhere,
-with no short forms. Termination means *when the loop terminates*, not a
-termination proof; the rule's own sentence carries that.
+Rule names are **Initialization**, **Maintenance** and **Exit**, in Korean
+초기화, 유지, 탈출. The first two are the textbook ones (CLRS). CLRS calls
+the third Termination, but in verification termination means proving that
+the loop halts, so the game names it for the moment the loop exits. One name
+each, everywhere, with no short forms.
 
 Not used: "run" for a frog, "input" for eggs, and "watching" for testing or
 for proving: the point of a proof is that it covers infinitely many inputs

@@ -1,7 +1,7 @@
 import type { State } from '../lang/ast';
 
-export type Rule = 'initialization' | 'maintenance' | 'termination';
-export const RULES: Rule[] = ['initialization', 'maintenance', 'termination'];
+export type Rule = 'initialization' | 'maintenance' | 'exit';
+export const RULES: Rule[] = ['initialization', 'maintenance', 'exit'];
 
 export interface Counterexample {
   rule: Rule;

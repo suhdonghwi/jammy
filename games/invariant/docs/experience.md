@@ -71,7 +71,7 @@ behind many small decisions; keep them when changing or adding UI.
   rings the eggs in view in one sweep along their line, with rising ticks,
   the last tick on the last ring; Maintenance raises ghost frogs together,
   spread apart and fading with distance, each drawing its dashed hop and
-  ringing its landing tile; Termination sweeps every stop on the area like
+  ringing its landing tile; Exit sweeps every stop on the area like
   the eggs. Then the light turns, the picture clears, and a short pause
   separates it from the next rule. A rule that holds gets a green tag near
   the middle of the view, as a failure gets its red one. The first failing

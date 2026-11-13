@@ -87,7 +87,7 @@ export function ArtMaintenance() {
     </svg>
   );
 }
-export function ArtTermination() {
+export function ArtExit() {
   const p = top(0, 0);
   return (
     <svg viewBox="0 0 120 70" width="120" height="70">

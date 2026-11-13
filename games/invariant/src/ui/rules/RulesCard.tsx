@@ -1,6 +1,6 @@
 import { useT } from '../../i18n/i18n';
 import { Dialog } from '../Dialog';
-import { ArtTermination, ArtInitialization, ArtMaintenance } from './RuleArt';
+import { ArtExit, ArtInitialization, ArtMaintenance } from './RuleArt';
 
 export function RulesCard() {
   const tr = useT();
@@ -12,7 +12,7 @@ export function RulesCard() {
       <div className="my-4.5 grid grid-cols-3 gap-3 max-sm:my-3.5 max-sm:grid-cols-1 max-sm:gap-2">
         <Rule n={1} name={tr.rules.initialization} text={card.initialization} art={<ArtInitialization />} />
         <Rule n={2} name={tr.rules.maintenance} text={card.maintenance} art={<ArtMaintenance />} />
-        <Rule n={3} name={tr.rules.termination} text={card.termination} art={<ArtTermination />} />
+        <Rule n={3} name={tr.rules.exit} text={card.exit} art={<ArtExit />} />
       </div>
     </Dialog>
   );
