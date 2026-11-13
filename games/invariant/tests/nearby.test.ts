@@ -18,7 +18,7 @@ const smallest = (id: string, text: string) => {
   return {
     initialization: smallestOnPlane(lvl, f, 'initialization', inputs),
     maintenance: smallestOnPlane(lvl, f, 'maintenance', inputs),
-    termination: smallestOnPlane(lvl, f, 'termination', inputs),
+    exit: smallestOnPlane(lvl, f, 'exit', inputs),
   };
 };
 const real = (id: string, text: string, inputs?: Inputs) => {
@@ -37,13 +37,13 @@ describe('tutorial counterexamples match the design', () => {
     expect(c.run).toHaveLength(1);
     const s = smallest('tutorial', 'i == 0 || i == n');
     expect(s.initialization).toBeUndefined();
-    expect(s.termination).toBeUndefined();
+    expect(s.exit).toBeUndefined();
   });
-  it('C: i >= 0 fails termination at i = 1, n = 0', () => {
+  it('C: i >= 0 fails exit at i = 1, n = 0', () => {
     const c = smallest('tutorial', 'i >= 0');
     expect(c.initialization).toBeUndefined();
     expect(c.maintenance).toBeUndefined();
-    expect(toNum(c.termination!.state)).toEqual({ n: 0, i: 1 });
+    expect(toNum(c.exit!.state)).toEqual({ n: 0, i: 1 });
   });
   it('D passes nearby', () => {
     expect(smallest('tutorial', '0 <= i <= n')).toEqual({});
@@ -91,7 +91,7 @@ describe('real or ghost', () => {
 
 describe('levels', () => {
   it('parity: the smallest tile is (-1, 1)', () => {
-    expect(toNum(smallest('parity', '(x + y) % 2 == 0').termination!.state)).toEqual({ x: -1, y: 1 });
+    expect(toNum(smallest('parity', '(x + y) % 2 == 0').exit!.state)).toEqual({ x: -1, y: 1 });
   });
   it('even out: names the broken conjunct', () => {
     const c = smallest('even-out', 'x >= 0 && x == x');
@@ -119,7 +119,7 @@ describe('check', () => {
   it('a failure only Z3 finds is far, and a ghost frog', async () => {
     const v = await check('sum-to-n', '2 * s == i * (i + 1)');
     expect(v.maintenance!.status).toBe('pass');
-    const t = v.termination!;
+    const t = v.exit!;
     expect(t.status === 'fail' && t.cex.far).toBe(true);
     expect(t.status === 'fail' && t.cex.run).toBeUndefined();
   });

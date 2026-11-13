@@ -73,7 +73,7 @@ export function loopExampleFrogs() {
 }
 
 async function passed(gen: number, rule: Rule) {
-  const text = { initialization: T().passedInitialization, maintenance: T().passedMaintenance, termination: T().passedTermination }[rule];
+  const text = { initialization: T().passedInitialization, maintenance: T().passedMaintenance, exit: T().passedExit }[rule];
   await beat(gen, text, { spot: 'lights', tone: 'success', keep: true });
   void dismissFrogs('test');
 }
@@ -246,7 +246,7 @@ export const STEPS: Step[] = [
         label: T().backToOurs,
         callouts: [
           { x: 0, y: 2, text: holds().initialization, tone: 'good' },
-          { x: 4, y: 3, text: holds().termination, tone: 'good' },
+          { x: 4, y: 3, text: holds().exit, tone: 'good' },
         ],
         prepare: async () => {
           await sleep(400);
@@ -344,33 +344,33 @@ export const STEPS: Step[] = [
   {
     scene: { reveal: { ...DRAW, awake: ['initialization', 'maintenance'] }, formula: 'learner', focus: BOARD },
     run: async (gen) => {
-      await beat(gen, T().leadTermination, {
+      await beat(gen, T().leadExit, {
         region: endingsRegion(() => 'info'),
         prepare: resetFrogs,
       });
       useGame.getState().setReveal({ awake: RULES });
       weakArea = '';
       await stage(gen, {
-        ask: T().askTermination,
+        ask: T().askExit,
         rules: RULES,
-        nudge: T().nudgeTermination,
-        ghost: { maintenance: T().ghostMaintenance, termination: T().objection },
+        nudge: T().nudgeExit,
+        ghost: { maintenance: T().ghostMaintenance, exit: T().objection },
         onFail: (r) => {
           witnessed.add(r);
-          if (r === 'termination' && !weakArea) weakArea = mine();
+          if (r === 'exit' && !weakArea) weakArea = mine();
         },
       });
       learnerFormula = useGame.getState().formulaText;
-      await passed(gen, 'termination');
+      await passed(gen, 'exit');
     },
   },
   {
     scene: { reveal: DRAW, formula: 'learner', focus: BOARD },
     run: (gen) =>
-      witness(gen, 'termination', 'i >= 0', {
-        question: T().questionTermination,
-        afterDemo: T().afterDemoTermination(mine()),
-        afterOwn: T().afterOwnTermination(weakArea, mine()),
+      witness(gen, 'exit', 'i >= 0', {
+        question: T().questionExit,
+        afterDemo: T().afterDemoExit(mine()),
+        afterOwn: T().afterOwnExit(weakArea, mine()),
         ghost: T().objectionDemo,
       }),
   },
