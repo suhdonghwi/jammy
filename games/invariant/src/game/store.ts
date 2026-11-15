@@ -195,7 +195,7 @@ export const useGame = create<Game>((set, get) => ({
     });
   },
   backToMenu(view = 'home') {
-    set({ mode: 'menu', menuView: view, level: null, caption: null, running: false, busy: false });
+    set({ mode: 'menu', menuView: view, level: null, inputs: {}, caption: null, running: false, busy: false });
   },
   setFormula(text) {
     const { level } = get();
