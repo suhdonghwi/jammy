@@ -21,7 +21,8 @@ src/
   levels/      the level format (level.ts), the inputs that pick a plane (inputs.ts), every level (catalog.ts), its Korean text (catalog.ko.ts, localize.ts), the plane's tiles
   i18n/        the language switch, and every other line the game says (en.ts, ko.ts)
   game/        the zustand store, cleared levels (progress.ts), what the app's buttons do (actions.ts)
-  director/    scripted sequences: Step/Run, looping frogs, ghost frogs, check playback; a hop's sound and code cursor
+  director/    scripted sequences and the scopes that cancel them (sequence.ts); frogs, the player's Step/Run/egg controls, resets;
+               solver runs, counterexamples, rule-by-rule verification, ghost frogs and the proof wave; a hop's sound and code cursor
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
   audio/       sound clips and the synthesised ghost siren
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
@@ -134,7 +135,9 @@ backend agree. `pnpm validate` and the tests are the safety net.
 - Anything scripted — counterexamples, Run, the ghost wave, looping frogs —
   is a `director/` function. Each starts with `begin()`, which cancels
   whatever was playing; after every `await` it checks `tok.alive` and stops
-  if it was superseded. `busy` locks the learner's input while one plays.
+  if it was superseded. `busy` locks the learner's input while one plays
+  (`busyWhile(body)`). Sequences, checks and tutorial generations are
+  three scopes made by `createScope()` (`sequence.ts`).
 - **A check can't be stopped, only abandoned.** `runChecker` takes its own
   token (`beginCheck()`); `interrupt()` (a new level, the menu, a tutorial
   rewind) abandons it, and a result for another level, mode or formula is
@@ -169,8 +172,8 @@ backend agree. `pnpm validate` and the tests are the safety net.
   formula) and the view they show (`camera`, `focus`, `labels`; default
   `VIEW`), so Back and skip-ahead can rebuild any step instantly and frame
   its view. Steps don't move the camera themselves, except through a played
-  proof (the wrap-up). A step runs under a generation number and calls
-  `guard(gen)` after every `await`, inside a beat's `prepare` too (a fast
+  proof (the wrap-up). A step runs under a generation token and calls
+  `gen.guard()` after every `await`, inside a beat's `prepare` too (a fast
   Next can skip ahead mid-glide, and what the old step does after it would
   land on the new step); stopping or rewinding aborts the old generation.
 - The tutorial reacts to the learner through events (`stepped`, `runDone`),

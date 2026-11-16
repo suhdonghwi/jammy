@@ -1,8 +1,9 @@
 import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
+import { runChecker } from '../director/checkRun';
 import { sendFrogsHome } from '../director/frogs';
 import { resetFrogs, resetLevel } from '../director/reset';
-import { playVerification, runChecker, showUndecided } from '../director/verdicts';
+import { playVerification, showUndecided } from '../director/verification';
 import { t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
 import { startInputs } from '../levels/inputs';

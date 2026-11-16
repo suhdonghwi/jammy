@@ -1,5 +1,5 @@
 import { CircleCheck, CircleDashed, CircleHelp, CircleX, LoaderCircle } from 'lucide-react';
-import { playCounterexample } from '../../director/verdicts';
+import { playCounterexample } from '../../director/counterexample';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { RULES } from '../../checker/types';

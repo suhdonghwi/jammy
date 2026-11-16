@@ -1,7 +1,8 @@
 import type { Rule } from '../checker/types';
+import { runChecker } from '../director/checkRun';
 import { sendFrogsHome } from '../director/frogs';
 import { Aborted, createScope, events, type Token } from '../director/sequence';
-import { playVerification, revealAll, runChecker, showUndecided } from '../director/verdicts';
+import { playVerification, revealAll, showUndecided } from '../director/verification';
 import { ALLOW_NONE, setTutorial, useGame, type CaptionTone, type Game, type TutorialState } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import { cameraRig } from '../scene/cameraRig';
