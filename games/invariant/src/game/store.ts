@@ -56,7 +56,7 @@ export interface Caption {
   text: string;
   tone: CaptionTone;
   action?: { label: string; onClick: () => void; disabled?: boolean };
-  secondary?: { label: string; onClick: () => void };
+  replay?: () => void;
   close?: () => void;
   choices?: { label: string; onClick: () => void; tone?: 'yes' | 'no' }[];
 }

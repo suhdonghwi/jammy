@@ -70,8 +70,8 @@ function next(gen: Token, text: string, label = messages().caption.next, spot: S
       settle();
     };
     const action = { label, onClick: () => pendingNext?.() };
-    const secondary = shown?.text === text ? shown.secondary : undefined;
-    useGame.setState({ caption: { text, tone, action, secondary } });
+    const replay = shown?.text === text ? shown.replay : undefined;
+    useGame.setState({ caption: { text, tone, action, replay } });
     setTutorial({ spotlight: spot, nextAction: action });
   });
 }

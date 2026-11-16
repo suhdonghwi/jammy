@@ -18,7 +18,6 @@ export function CaptionBar() {
   const replayLocked = useGame((s) => s.busy || s.checking);
   const tr = useT();
   if (!caption) return null;
-  const replay = caption.action?.label === tr.caption.replay;
   return (
     <div
       key={caption.text}
@@ -28,7 +27,7 @@ export function CaptionBar() {
       <div className="min-h-0 overflow-y-auto">
         <Markdown text={caption.text} />
       </div>
-      {(caption.secondary || caption.action || caption.choices || caption.close || back) && (
+      {(caption.action || caption.replay || caption.choices || caption.close || back) && (
         <div className="flex min-h-8.5 flex-wrap items-center justify-end gap-1.5">
           {back && (
             <button className={button('quiet', 'sm')} onClick={back}>
@@ -49,17 +48,16 @@ export function CaptionBar() {
               {tr.caption.close}
             </button>
           )}
-          {caption.secondary && (
-            <button className={button('quiet', 'sm')} disabled={replayLocked} onClick={caption.secondary.onClick}>
+          {caption.replay && (
+            <button className={button(caption.action ? 'quiet' : 'primary', 'sm')} disabled={replayLocked} onClick={caption.replay}>
               <RotateCcw size={15} strokeWidth={2.4} />
-              {caption.secondary.label}
+              {tr.caption.replay}
             </button>
           )}
           {caption.action && (
-            <button className={button('primary', 'sm')} disabled={caption.action.disabled || (replay && replayLocked)} onClick={() => caption.action!.onClick()}>
-              {replay ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
+            <button className={button('primary', 'sm')} disabled={caption.action.disabled} onClick={() => caption.action!.onClick()}>
               {caption.action.label}
-              {!replay ? <ArrowRight size={15} strokeWidth={2.4} /> : null}
+              <ArrowRight size={15} strokeWidth={2.4} />
             </button>
           )}
         </div>
