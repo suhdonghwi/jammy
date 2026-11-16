@@ -12,7 +12,7 @@ import { EGG_REGROW } from '../scene/area/glsl';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, HOP, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { dismissFrogs, hatch, HATCH_MS, hopFrog } from './frogs';
+import { hatch, HATCH_MS, hopFrog, sendFrogsHome } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
 import { GHOST_RISE, previewHop, raiseGhost } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
@@ -104,7 +104,7 @@ const BETWEEN_MS = 300;
 async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
   const L = currentLevel();
   useGame.setState({ failMark: null, region: null });
-  await dismissFrogs();
+  await sendFrogsHome();
   if (!tok.alive) return;
   const [x, y] = tileOf(L, cex.state);
   await focusOn(cex);
@@ -175,7 +175,7 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
   const order = RULES.filter((r) => rules.includes(r));
   let undecided = false;
   if (frogWorld.frogs.length) {
-    await dismissFrogs();
+    await sendFrogsHome();
     await sleep(EGG_REGROW * 1000);
     if (!tok.alive) return null;
   }
@@ -203,7 +203,7 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
       await sleep(HOLD_MS);
       if (!tok.alive) return null;
       useGame.setState({ region: null, callouts: [] });
-      void dismissFrogs('test');
+      void sendFrogsHome('test');
       await sleep(BETWEEN_MS);
       if (!tok.alive) return null;
     }
@@ -271,7 +271,7 @@ function spreadHops(hops: ProofHop[]): ProofHop[] {
 
 export function playProof() {
   return busyWhile(async (tok) => {
-    void dismissFrogs();
+    void sendFrogsHome();
     await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
     if (tok.alive) await proofWave();
   });

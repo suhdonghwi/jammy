@@ -1,5 +1,5 @@
 import type { Rule } from '../checker/types';
-import { dismissFrogs } from '../director/frogs';
+import { sendFrogsHome } from '../director/frogs';
 import { Aborted, createScope, events, type Token } from '../director/sequence';
 import { playVerification, revealAll, runChecker, showUndecided } from '../director/verdicts';
 import { ALLOW_NONE, setTutorial, useGame, type CaptionTone, type Game, type TutorialState } from '../game/store';
@@ -208,7 +208,7 @@ export async function stage(gen: Token, o: StageOptions): Promise<void> {
     await waitCheck(gen);
     useGame.setState({ region: null });
     setTutorial({ spotlight: null });
-    void dismissFrogs('test');
+    void sendFrogsHome('test');
     const res = await runChecker(o.rules);
     gen.guard();
     if (!res) continue;
@@ -244,7 +244,7 @@ export async function demo(
   const g = useGame.getState();
   const mine = opts.restore ?? g.formulaText;
   useGame.setState({ busy: true, callouts: [], region: null });
-  void dismissFrogs('test');
+  void sendFrogsHome('test');
   say(messages().tutorial.trying(formula), null, 'muted');
   if (g.formulaText.trim() !== formula) {
     setTutorial({ spotlight: 'formula' });
@@ -269,7 +269,7 @@ export async function demo(
     gen.guard();
     if (out?.failing) await holdCaption(gen);
   }
-  void dismissFrogs();
+  void sendFrogsHome();
   useGame.setState({ failMark: null, region: null });
   g.setFormula(mine);
   const back = await runChecker(rules);

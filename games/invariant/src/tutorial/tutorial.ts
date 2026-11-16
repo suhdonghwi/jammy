@@ -1,4 +1,5 @@
-import { interrupt, placeFrog, resetLevel } from '../director/frogs';
+import { placeFrog } from '../director/frogs';
+import { interrupt, resetLevel } from '../director/reset';
 import { Aborted, type Token } from '../director/sequence';
 import { EMPTY_REVEAL, NO_TUTORIAL, setTutorial, useGame, type Game } from '../game/store';
 import { exampleLevel, tutorialLevel } from '../levels/catalog';

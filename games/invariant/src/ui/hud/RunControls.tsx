@@ -1,5 +1,5 @@
 import { BookOpen, Braces, Lightbulb, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
-import { pauseRun, runFrogs, stepFrogs } from '../../director/frogs';
+import { pauseRun, runFrogs, stepFrogs } from '../../director/controls';
 import { resetScreen, showLevelHint } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';

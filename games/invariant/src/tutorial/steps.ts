@@ -1,8 +1,10 @@
 import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
-import { dismissFrogs, hatch, HATCH_MS, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs, testEggs } from '../director/frogs';
+import { stepFrogs } from '../director/controls';
+import { hatch, HATCH_MS, loopFrogs, placeFrog, sendFrogsHome, testEggs } from '../director/frogs';
 import { previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
+import { resetFrogs } from '../director/reset';
 import type { Token } from '../director/sequence';
 import { playProof } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
@@ -87,7 +89,7 @@ export function loopExampleFrogs() {
 async function passed(gen: Token, rule: Rule) {
   const text = { initialization: T().passedInitialization, maintenance: T().passedMaintenance, exit: T().passedExit }[rule];
   await beat(gen, text, { spot: 'lights', tone: 'success', keep: true });
-  void dismissFrogs('test');
+  void sendFrogsHome('test');
 }
 
 async function witness(gen: Token, rule: Rule, pitfall: string, o: { question: string; afterDemo?: string; afterOwn?: string; ghost?: string }) {
@@ -240,7 +242,7 @@ export const STEPS: Step[] = [
           { x: 6, y: 3, text: T().exBadTag, tone: 'fail' },
           { x: 6, y: 0, text: T().exBadTag, tone: 'fail' },
         ],
-        prepare: sendFrogsHome,
+        prepare: resetFrogs,
       }),
   },
   {

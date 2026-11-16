@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { clickTile, tileClickable } from '../../director/frogs';
+import { clickTile, tileClickable } from '../../director/controls';
 import { useGame } from '../../game/store';
 import { AreaLayer } from '../area/AreaLayer';
 import { cameraRig } from '../cameraRig';
