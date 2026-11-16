@@ -1,9 +1,6 @@
 import { field } from '../area/field';
-import { SLAB_H } from '../constants';
 import { bump, clamp01, popIn, smoothstep } from '../easing';
 import type { FrogSim } from './frogWorld';
-
-const baseAt = (x: number, y: number) => field.heightAt(x, y) * SLAB_H;
 
 interface Pose {
   x: number;
@@ -97,7 +94,7 @@ export function pose(f: FrogSim, t: number): Pose {
   f.lastT = t;
   let x = f.x;
   let ty = f.y;
-  let h = baseAt(x, ty);
+  let h = field.groundAt(x, ty);
   let ground = h;
   let squash = 0;
   let pitch = 0;
@@ -121,15 +118,15 @@ export function pose(f: FrogSim, t: number): Pose {
 
   if (f.hop) {
     const u = clamp01((t - f.hop.t0) / f.hop.dur);
-    const h0 = baseAt(f.hop.fx, f.hop.fy);
-    const h1 = baseAt(f.hop.tx, f.hop.ty);
+    const h0 = field.groundAt(f.hop.fx, f.hop.fy);
+    const h1 = field.groundAt(f.hop.tx, f.hop.ty);
     const dist = Math.hypot(f.hop.tx - f.hop.fx, f.hop.ty - f.hop.fy);
     const H = hopHeight(dist);
     const { g, h: hh } = hopAt(u, h0, h1, H);
     x = f.hop.fx + (f.hop.tx - f.hop.fx) * g;
     ty = f.hop.fy + (f.hop.ty - f.hop.fy) * g;
     h = hh;
-    ground = baseAt(x, ty);
+    ground = field.groundAt(x, ty);
     squash = keyed(u, SQUASH_KEYS);
     const vy = (hopAt(Math.min(1, u + 0.01), h0, h1, H).h - hopAt(Math.max(0, u - 0.01), h0, h1, H).h) / 0.02;
     pitch = -Math.max(-0.35, Math.min(0.35, vy * 0.07)) * Math.min(1, dist);

@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { hopFrom, tileState } from '../../levels/tiles';
 import { field } from '../area/field';
-import { SLAB_H } from '../constants';
 import { HopLine } from '../frogs/HopLine';
 import { useHover } from '../hover';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
@@ -34,7 +33,7 @@ export function HoverPreview() {
   useFrame(() => {
     const g = ghost.current;
     if (!g || !hop) return;
-    const h = field.heightAt(hop.to[0], hop.to[1]) * SLAB_H;
+    const h = field.groundAt(hop.to[0], hop.to[1]);
     g.position.set(hop.to[0], h, -hop.to[1]);
     g.rotation.y = Math.atan2(hop.to[0] - hop.from[0], -(hop.to[1] - hop.from[1]));
   });
@@ -44,8 +43,8 @@ export function HoverPreview() {
     <group>
       <HopLine
         path={() => ({
-          from: [hop.from[0], hop.from[1], field.heightAt(hop.from[0], hop.from[1]) * SLAB_H],
-          to: [hop.to[0], hop.to[1], field.heightAt(hop.to[0], hop.to[1]) * SLAB_H],
+          from: [hop.from[0], hop.from[1], field.groundAt(hop.from[0], hop.from[1])],
+          to: [hop.to[0], hop.to[1], field.groundAt(hop.to[0], hop.to[1])],
           drawn: 1,
           opacity: 1,
         })}

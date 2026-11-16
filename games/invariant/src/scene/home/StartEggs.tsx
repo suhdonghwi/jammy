@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
-import { COLORS, SLAB_H } from '../constants';
+import { COLORS } from '../constants';
 import { popIn } from '../easing';
 import { uploadInstances } from '../instances';
 import { eggGeometry } from '../models';
@@ -31,7 +31,7 @@ export function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
     let n = 0;
     for (const e of eggs.current) {
       if (t < e.appear || t >= e.hatch || n >= MAX) continue;
-      dummy.position.set(e.x, field.heightAt(e.x, e.y) * SLAB_H, -e.y);
+      dummy.position.set(e.x, field.groundAt(e.x, e.y), -e.y);
       dummy.scale.setScalar(popIn((t - e.appear) / 0.32));
       dummy.updateMatrix();
       mesh.setMatrixAt(n++, dummy.matrix);

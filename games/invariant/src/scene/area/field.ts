@@ -2,6 +2,7 @@ import type { FastFn } from '../../lang/eval';
 import type { Inputs } from '../../levels/inputs';
 import type { CompiledLevel, Formula } from '../../levels/level';
 import { tileState } from '../../levels/tiles';
+import { SLAB_H } from '../constants';
 import { clamp01, smoothstep } from '../easing';
 import { sceneNow } from '../sceneTime';
 
@@ -43,6 +44,10 @@ class AreaField {
     if (risen >= 1) return to;
     const from = covers(this.before?.fast);
     return from + (to - from) * risen;
+  }
+
+  groundAt(x: number, y: number): number {
+    return this.heightAt(x, y) * SLAB_H;
   }
 }
 

@@ -3,6 +3,7 @@ import { holds } from '../../lang/eval';
 import { inputsOf, planeKey } from '../../levels/inputs';
 import { hop, running, type CompiledLevel } from '../../levels/level';
 import { tileOf } from '../../levels/tiles';
+import { clamp01 } from '../easing';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
 
@@ -38,6 +39,8 @@ export interface FrogSim {
   os?: number;
   drawn?: { x: number; y: number; ground: number; z: number; scale: number };
 }
+
+export const leaveFade = (f: FrogSim | undefined, t: number) => (f?.leave ? 1 - clamp01((t - f.leave.t0) / f.leave.dur) : 1);
 
 export const yawToward = (fx: number, fy: number, tx: number, ty: number) => Math.atan2(tx - fx, -(ty - fy));
 

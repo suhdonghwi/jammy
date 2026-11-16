@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
-import { SLAB_H } from '../constants';
 import { uploadInstances } from '../instances';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
@@ -117,7 +116,7 @@ export function HatchShells() {
     for (const fx of active) {
       if (fx.plane !== plane) continue;
       const u = t - fx.t0;
-      const base = field.heightAt(fx.x, fx.y) * SLAB_H;
+      const base = field.groundAt(fx.x, fx.y);
       const bx = fx.x + fx.dx;
       const bz = -fx.y - fx.dy;
       if (u < HATCH_WOBBLE) {

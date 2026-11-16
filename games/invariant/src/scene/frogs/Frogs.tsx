@@ -4,13 +4,13 @@ import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
-import { COLORS, SLAB_H } from '../constants';
+import { COLORS } from '../constants';
 import { uploadInstances } from '../instances';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
 import { getBlobTexture } from '../shaders/common';
 import { placeBadge } from './badges';
-import { frogWorld, trailFrogs, yawToward, type FrogSim } from './frogWorld';
+import { frogWorld, leaveFade, trailFrogs, yawToward, type FrogSim } from './frogWorld';
 import { pose } from './motion';
 import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
 
@@ -128,7 +128,7 @@ export function Frogs() {
       if (ghost) {
         gd.setMatrixAt(nGhost, dummy.matrix);
         gh.setMatrixAt(nGhost, dummy.matrix);
-        fades.setX(nGhost, (f.fade ?? 1) * (f.leave ? 1 - Math.min(1, (t - f.leave.t0) / f.leave.dur) : 1));
+        fades.setX(nGhost, (f.fade ?? 1) * leaveFade(f, t));
         gh.setColorAt(nGhost++, GHOST);
       } else b.setMatrixAt(nReal++, dummy.matrix);
       const air = Math.max(0, py - p.ground);
@@ -142,11 +142,11 @@ export function Frogs() {
     }
     for (const walker of walkers) {
       const trail = walker.trail!;
-      const fade = ECHO_FADE * (walker.leave ? 1 - Math.min(1, (t - walker.leave.t0) / walker.leave.dur) : 1);
+      const fade = ECHO_FADE * leaveFade(walker, t);
       leftTiles(walker).forEach(([x, y], i) => {
         if (nGhost >= MAX_FROGS) return;
         const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
-        dummy.position.set(x, field.heightAt(x, y) * SLAB_H, -y);
+        dummy.position.set(x, field.groundAt(x, y), -y);
         dummy.rotation.set(0, yawToward(x, y, tx, ty), 0);
         dummy.scale.setScalar(1);
         dummy.updateMatrix();

@@ -6,12 +6,11 @@ import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
 import { clamp01 } from '../easing';
-import { SLAB_H } from '../constants';
 import { uploadInstances } from '../instances';
 import { APPEAR, ringPop } from '../labels/Region';
 import { ringGeometry, TONE_COLORS, washGeometry } from '../labels/TileTag';
 import { sceneNow } from '../sceneTime';
-import { frogWorld, type FrogSim } from './frogWorld';
+import { frogWorld, leaveFade } from './frogWorld';
 import { HopLine } from './HopLine';
 
 export const ARC_DRAW = 0.45;
@@ -75,8 +74,6 @@ const pos = new THREE.Vector3();
 const scl = new THREE.Vector3();
 const RING = new THREE.Color(TONE_COLORS.good);
 
-const fading = (frog: FrogSim | undefined, t: number) => (frog?.leave ? 1 - clamp01((t - frog.leave.t0) / frog.leave.dur) : 1);
-
 function GhostHop({ arc, plane }: { arc: Arc; plane: string }) {
   return (
     <HopLine
@@ -88,10 +85,10 @@ function GhostHop({ arc, plane }: { arc: Arc; plane: string }) {
         const fx = frog.drawn ? frog.drawn.x : arc.fx;
         const fy = frog.drawn ? -frog.drawn.z : arc.fy;
         return {
-          from: [fx, fy, field.heightAt(arc.fx, arc.fy) * SLAB_H],
-          to: [arc.tx, arc.ty, field.heightAt(arc.tx, arc.ty) * SLAB_H],
+          from: [fx, fy, field.groundAt(arc.fx, arc.fy)],
+          to: [arc.tx, arc.ty, field.groundAt(arc.tx, arc.ty)],
           drawn: (t - arc.t0) / ARC_DRAW,
-          opacity: arc.fade * fading(frog, t),
+          opacity: arc.fade * leaveFade(frog, t),
         };
       }}
     />
@@ -123,9 +120,9 @@ export function HopArcs() {
       const shown = clamp01((t - a.t0 - ARC_DRAW) / APPEAR);
       if (shown <= 0) continue;
       const { scale, alpha } = ringPop(shown);
-      const h1 = field.heightAt(a.tx, a.ty) * SLAB_H;
+      const h1 = field.groundAt(a.tx, a.ty);
       m.compose(pos.set(a.tx, h1 + 0.012, -a.ty), q, scl.set(scale, 1, scale));
-      const fade = alpha * a.fade * fading(ghosts.get(a.frog), t);
+      const fade = alpha * a.fade * leaveFade(ghosts.get(a.frog), t);
       for (const [mesh, p, opacity] of [
         [r, parts.ring, 0.85],
         [w, parts.wash, 0.3],
