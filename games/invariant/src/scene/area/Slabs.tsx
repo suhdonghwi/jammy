@@ -67,7 +67,7 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
-uniform vec3 uTop, uSide, uStopTop;
+uniform vec3 uTop, uSide, uHatch;
 uniform vec2 uHover;
 uniform float uHoverOn;
 uniform float uDim;
@@ -79,6 +79,8 @@ ${GLSL_GOAL}
 ${GLSL_FADE}
 void main() {
   vec2 fw = fwidth(vF);
+  float hatchV = (vF.x - vF.y) * STOP_HATCH_FREQ;
+  float hatchFw = fwidth(hatchV);
   float fwr = fwidth(length(vF));
   float ringD = abs(sdRoundBox(vF, vec2(0.372), 0.1)) - 0.026;
   float fwRing = fwidth(ringD);
@@ -89,9 +91,7 @@ void main() {
   if (top > 0.5) {
     col = uTop;
     if (stop) {
-      float s = fract((vF.x - vF.y) * 4.0);
-      float hatch = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.42, 0.5, s));
-      col = mix(uTop, mix(uStopTop, uStopTop * 0.9, hatch), uStopAmt);
+      col = mix(uTop, uHatch, stopHatch(hatchV, hatchFw) * uStopAmt);
     }
     if (stop && vFlags.y > 0.5 && uGoalAmt > 0.002) col = mix(col, drawGoal(col, vF, fwr, vTile), uGoalAmt);
     if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.45 * uGoalAmt);
@@ -221,7 +221,7 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
           uTime: { value: 0 },
           uTop: colorUniform('slabTop'),
           uSide: colorUniform('slabSide'),
-          uStopTop: colorUniform('slabStopTop'),
+          uHatch: colorUniform('slabHatch'),
           ...goalUniforms(),
           uHover: { value: new THREE.Vector2() },
           uHoverOn: { value: 0 },
