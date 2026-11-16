@@ -6,6 +6,7 @@ import { EGG_REGROW } from '../scene/area/glsl';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sleep } from '../scene/sceneTime';
+import { runChecker } from './checkRun';
 import { counterexample, type CounterexampleOptions } from './counterexample';
 import { sendFrogsHome } from './frogs';
 import { proofWave } from './ghosts';
@@ -31,7 +32,14 @@ interface Outcome {
   undecided: boolean;
 }
 
-export function playVerification(res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions = () => ({})): Promise<Outcome | null> {
+export async function checkAndPlay(rules: Rule[], onFail?: (rule: Rule) => CounterexampleOptions, owner?: Token): Promise<Outcome | null> {
+  void sendFrogsHome('test');
+  const res = await runChecker(rules);
+  owner?.guard();
+  return res && playVerification(res, rules, onFail);
+}
+
+function playVerification(res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions = () => ({})): Promise<Outcome | null> {
   return busyWhile(async (tok) => {
     useGame.setState({ failMark: null, region: null, callouts: [] });
     try {

@@ -1,9 +1,7 @@
 import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
-import { runChecker } from '../director/checkRun';
-import { sendFrogsHome } from '../director/frogs';
 import { resetFrogs, resetLevel } from '../director/reset';
-import { playVerification, showUndecided } from '../director/verification';
+import { checkAndPlay, showUndecided } from '../director/verification';
 import { t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
 import { startInputs } from '../levels/inputs';
@@ -76,10 +74,7 @@ export async function check(): Promise<'refused' | void> {
   if (g.busy || g.checking || !g.level) return;
   if (g.mode === 'tutorial') return tutorialCheck();
   if (!g.formula || !g.formula.ok) return 'refused';
-  void sendFrogsHome('test');
-  const res = await runChecker(RULES);
-  if (!res) return;
-  const out = await playVerification(res, RULES);
+  const out = await checkAndPlay(RULES);
   if (!out || out.failing) return;
   const now = useGame.getState();
   if (now.level !== g.level || now.valid !== g.valid) return;

@@ -1,12 +1,14 @@
-import { placeFrog } from '../director/frogs';
+import { loopFrogs, placeFrog } from '../director/frogs';
 import { interrupt, resetLevel } from '../director/reset';
 import { Aborted, type Token } from '../director/sequence';
 import { EMPTY_REVEAL, NO_TUTORIAL, setTutorial, useGame, type Game } from '../game/store';
 import { exampleLevel, tutorialLevel } from '../levels/catalog';
+import { toBig } from '../levels/level';
+import { eggsNear, tileState } from '../levels/tiles';
 import { cameraRig, type Shot } from '../scene/cameraRig';
 import { sleep, switchScene } from '../scene/sceneTime';
 import { newGeneration, setSkipStep, settled } from './script';
-import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
+import { learnerFormula, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
 
 export { tutorialCheck } from './script';
 
@@ -17,6 +19,13 @@ let onFinish: () => void = () => {};
 
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
 const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? VIEW, focus: scene.focus, labels: scene.labels });
+
+function loopExampleFrogs() {
+  const L = useGame.getState().level!;
+  const { inputs } = useGame.getState();
+  const eggs = eggsNear(L, inputs, 0, 2, 2).sort((a, b) => [2, 0, 4, 1, 3].indexOf(a[1]) - [2, 0, 4, 1, 3].indexOf(b[1]));
+  loopFrogs(eggs.map(([x, y]) => toBig(tileState(L, x, y, inputs))));
+}
 
 function restore(scene: Scene) {
   const level = levelOf(scene);

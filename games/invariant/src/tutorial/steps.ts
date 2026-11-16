@@ -1,7 +1,7 @@
 import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
 import { stepFrogs } from '../director/controls';
-import { hatch, HATCH_MS, loopFrogs, placeFrog, sendFrogsHome, testEggs } from '../director/frogs';
+import { hatch, HATCH_MS, placeFrog, sendFrogsHome, testEggs } from '../director/frogs';
 import { playProof, previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
 import { resetFrogs } from '../director/reset';
@@ -9,12 +9,10 @@ import type { Token } from '../director/sequence';
 import { useGame, type Reveal } from '../game/store';
 import { EXIT_MS } from '../ui/timing';
 import { t } from '../i18n/i18n';
-import { toBig } from '../levels/level';
-import { eggsNear, tileState } from '../levels/tiles';
 import type { Tile, View } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { allow, ask, beat, demo, say, sayWaiting, stage, waitEvent, waitStore } from './script';
+import { allow, ask, beat, demo, say, sayWaiting, stage, waitEvent, waitStore, type StageOptions } from './script';
 
 export const st = (i: number, n: number) => ({ i: BigInt(i), n: BigInt(n) });
 const realFrogsStopped = () => frogWorld.frogs.filter((f) => f.kind === 'real').every((f) => f.stopped);
@@ -77,15 +75,16 @@ const holds = () => t().verdicts.holdsTag;
 
 const mine = () => `\`${useGame.getState().formulaText.trim()}\``;
 
-
-export function loopExampleFrogs() {
-  const L = useGame.getState().level!;
-  const { inputs } = useGame.getState();
-  const eggs = eggsNear(L, inputs, 0, 2, 2).sort((a, b) => [2, 0, 4, 1, 3].indexOf(a[1]) - [2, 0, 4, 1, 3].indexOf(b[1]));
-  loopFrogs(eggs.map(([x, y]) => toBig(tileState(L, x, y, inputs))));
-}
-
-async function passed(gen: Token, rule: Rule) {
+async function passStage(gen: Token, rule: Rule, o: Omit<StageOptions, 'rules'>) {
+  await stage(gen, {
+    ...o,
+    rules: upTo(rule),
+    onFail: (r) => {
+      witnessed.add(r);
+      o.onFail?.(r);
+    },
+  });
+  learnerFormula = useGame.getState().formulaText;
   const text = { initialization: T().passedInitialization, maintenance: T().passedMaintenance, exit: T().passedExit }[rule];
   await beat(gen, text, { spot: 'lights', tone: 'success', keep: true });
   void sendFrogsHome('test');
@@ -290,15 +289,11 @@ export const STEPS: Step[] = [
     scene: { reveal: DRAW, formula: 'learner', focus: BOARD },
     run: async (gen) => {
       useGame.getState().setReveal(AWAKE_INITIALIZATION);
-      await stage(gen, {
+      await passStage(gen, 'initialization', {
         ask: T().askInitialization,
         region: eggRegion('info'),
-        rules: ['initialization'],
         nudge: T().nudgeInitialization,
-        onFail: (r) => witnessed.add(r),
       });
-      learnerFormula = useGame.getState().formulaText;
-      await passed(gen, 'initialization');
     },
   },
   {
@@ -315,15 +310,11 @@ export const STEPS: Step[] = [
     run: async (gen) => {
       useGame.getState().setReveal(AWAKE_MAINTENANCE);
       await beat(gen, T().ruleMaintenance);
-      await stage(gen, {
+      await passStage(gen, 'maintenance', {
         ask: T().askMaintenance,
-        rules: ['initialization', 'maintenance'],
         nudge: T().nudgeMaintenance,
         ghost: { maintenance: T().ghostMaintenance },
-        onFail: (r) => witnessed.add(r),
       });
-      learnerFormula = useGame.getState().formulaText;
-      await passed(gen, 'maintenance');
     },
   },
   {
@@ -363,18 +354,14 @@ export const STEPS: Step[] = [
       });
       useGame.getState().setReveal(AWAKE_ALL);
       weakArea = '';
-      await stage(gen, {
+      await passStage(gen, 'exit', {
         ask: T().askExit,
-        rules: RULES,
         nudge: T().nudgeExit,
         ghost: { maintenance: T().ghostMaintenance, exit: T().objection },
         onFail: (r) => {
-          witnessed.add(r);
           if (r === 'exit' && !weakArea) weakArea = mine();
         },
       });
-      learnerFormula = useGame.getState().formulaText;
-      await passed(gen, 'exit');
     },
   },
   {

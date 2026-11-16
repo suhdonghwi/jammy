@@ -2,7 +2,7 @@ import type { Rule } from '../checker/types';
 import { runChecker } from '../director/checkRun';
 import { sendFrogsHome } from '../director/frogs';
 import { Aborted, createScope, events, type Token } from '../director/sequence';
-import { playVerification, revealAll, showUndecided } from '../director/verification';
+import { checkAndPlay, revealAll, showUndecided } from '../director/verification';
 import { ALLOW_NONE, setTutorial, useGame, type CaptionTone, type Game, type TutorialState } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import { cameraRig } from '../scene/cameraRig';
@@ -195,7 +195,7 @@ export function showHint() {
   setTutorial({ hint: { ...h, shown: true }, spotlight: null });
 }
 
-interface StageOptions {
+export interface StageOptions {
   ask: string;
   rules: Rule[];
   nudge: string;
@@ -212,16 +212,16 @@ export async function stage(gen: Token, o: StageOptions): Promise<void> {
     await waitCheck(gen);
     useGame.setState({ region: null });
     setTutorial({ spotlight: null });
-    void sendFrogsHome('test');
-    const res = await runChecker(o.rules);
-    gen.guard();
-    if (!res) continue;
     const stageRule = o.rules[o.rules.length - 1];
-    const out = await playVerification(res, o.rules, (failing) => ({
-      prefix: failing !== stageRule ? messages().tutorial.lostRule(messages().rules[failing]) : undefined,
-      extra: messages().tutorial.fixAndCheck,
-      ghostExtra: o.ghost?.[failing],
-    }));
+    const out = await checkAndPlay(
+      o.rules,
+      (failing) => ({
+        prefix: failing !== stageRule ? messages().tutorial.lostRule(messages().rules[failing]) : undefined,
+        extra: messages().tutorial.fixAndCheck,
+        ghostExtra: o.ghost?.[failing],
+      }),
+      gen,
+    );
     gen.guard();
     if (!out) continue;
     if (out.failing) {
@@ -262,15 +262,11 @@ export async function demo(
   await sleep(550);
   gen.guard();
   useGame.setState({ busy: false });
-  const res = await runChecker(rules);
+  const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? messages().tutorial.guessedRight : messages().tutorial.guessedWrong;
+  const tone = opts.guessedRight ? 'success' : 'fail';
+  const out = await checkAndPlay(rules, () => ({ prefix: verdict, tone, ghostExtra: opts.ghostExtra, area: messages().verdicts.theArea, action: nextAfterCounterexample }), gen);
   gen.guard();
-  if (res) {
-    const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? messages().tutorial.guessedRight : messages().tutorial.guessedWrong;
-    const tone = opts.guessedRight ? 'success' : 'fail';
-    const out = await playVerification(res, rules, () => ({ prefix: verdict, tone, ghostExtra: opts.ghostExtra, area: messages().verdicts.theArea, action: nextAfterCounterexample }));
-    gen.guard();
-    if (out?.failing) await holdCaption(gen);
-  }
+  if (out?.failing) await holdCaption(gen);
   void sendFrogsHome();
   useGame.setState({ failMark: null, region: null });
   g.setFormula(mine);
