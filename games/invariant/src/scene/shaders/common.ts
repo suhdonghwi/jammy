@@ -5,6 +5,14 @@ import { COLORS } from '../constants';
 import { goalEvents, MAX_EVENTS } from '../goalEvents';
 
 export const GLSL_COMMON = /* glsl */ `
+// The stop region's stripes: one pattern for the floor and for slab tops.
+const float STOP_HATCH_FREQ = 3.0;
+float stopHatch(float v, float fw) {
+  float s = fract(v);
+  float e = clamp(fw, 0.02, 0.25);
+  float h = smoothstep(0.0, e, s) * (1.0 - smoothstep(0.5 - e, 0.5, s));
+  return mix(h, 0.45, smoothstep(0.3, 0.7, fw));
+}
 float sdRoundBox(vec2 p, vec2 b, float r) {
   vec2 q = abs(p) - b + r;
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;

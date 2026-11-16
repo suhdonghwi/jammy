@@ -41,7 +41,7 @@ bound*.
 |---|---|
 | Program state | A tile |
 | One loop iteration | One frog hop (never per statement — the invariant only matters at the loop head) |
-| Loop guard false | The **stop** region: striped tiles, with a line along its boundary |
+| Loop guard false | The **stop** region: striped tiles |
 | States the precondition allows (after init code) | **Eggs**; real frogs hatch from them |
 | States the precondition rules out | Faint ghost tiles — not possible states |
 | Postcondition | **Goal** pools, shown only in the stop region |
@@ -52,6 +52,15 @@ bound*.
 learner's area is the only saturated surface (blue slabs, height). Other
 colours are reserved: real frogs green, ghost frogs pale and see-through,
 goals amber, and **red only for failures** (and Reset's confirmation).
+
+Each idea has one channel, and the channels stack without changing each
+other. The area is height and blue, the same blue on every tile. The stop
+region is a surface pattern: a light tint and stripes on the floor, the same
+stripes, a shade darker than the slab, on a slab's top. A goal is its amber
+pool, on the floor or on a slab. So a stop on the area that is not a goal is
+a striped blue slab with no pool, as heavy as any other slab. Nothing is
+drawn as a line: the stop region has no outline, and the axes are only their
+labels.
 
 **Real frogs and ghost frogs.** Real frogs are actual runs: they hatch from
 eggs. **Ghost frogs** (유령 개구리) are hypothetical states placed to test the
