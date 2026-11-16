@@ -4,33 +4,23 @@ import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/inputs';
 import { COLORS, SLAB_H } from '../constants';
-import { goalEvents, MAX_EVENTS } from '../goalEvents';
+import { goalEvents } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
+import { GLSL_GOAL_PULSE } from '../shaders/goal';
 import { areaMask, GOAL } from './mask';
 import { useMaskTiles } from './maskTiles';
 import { GLSL_HEIGHT, instanced } from './glsl';
 
 const vertex = /* glsl */ `
 ${GLSL_HEIGHT}
-uniform vec3 uEvents[${MAX_EVENTS}];
+${GLSL_GOAL_PULSE}
 varying float vV;
 varying float vBurst;
 varying vec3 vN;
 varying vec3 vWorld;
-float burstNow() {
-  float b = 0.0;
-  for (int i = 0; i < ${MAX_EVENTS}; i++) {
-    vec3 e = uEvents[i];
-    float age = uTime - e.z;
-    if (age < 0.0 || age > 1.0) continue;
-    if (abs(e.x - aTile.x) > 0.5 || abs(e.y - aTile.y) > 0.5) continue;
-    b = max(b, smoothstep(0.0, 0.06, age) * pow(1.0 - age, 1.6));
-  }
-  return b;
-}
 void main() {
   vV = uv.y;
-  float burst = burstNow();
+  float burst = tilePulse(aTile, 1.0, 0.06, 1.6);
   vBurst = burst;
   vec3 pos = position * vec3(1.0 + 0.25 * burst, 1.0 + 2.2 * burst, 1.0 + 0.25 * burst);
   vec4 w = modelMatrix * vec4(pos + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.004, -aTile.y), 1.0);

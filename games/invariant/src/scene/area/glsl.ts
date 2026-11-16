@@ -43,16 +43,19 @@ float backNow() {
 }
 `;
 
+const APPEAR_OVERSHOOT = 1.70158;
 export const GLSL_APPEAR = /* glsl */ `
 uniform float uAppearT0;
 uniform vec2 uAppearCenter;
+float easeOutBack(float a) {
+  float c1 = ${APPEAR_OVERSHOOT};
+  float c3 = c1 + 1.0;
+  return a <= 0.0 ? 0.0 : 1.0 + c3 * pow(a - 1.0, 3.0) + c1 * pow(a - 1.0, 2.0);
+}
 float appearNow() {
   float delay = min(length(aTile - uAppearCenter) * 0.035, 0.7);
   float a = clamp((uTime - uAppearT0 - delay) / 0.38, 0.0, 1.0);
-  // easeOutBack
-  float c1 = 1.70158;
-  float c3 = c1 + 1.0;
-  return a <= 0.0 ? 0.0 : 1.0 + c3 * pow(a - 1.0, 3.0) + c1 * pow(a - 1.0, 2.0);
+  return easeOutBack(a);
 }
 `;
 

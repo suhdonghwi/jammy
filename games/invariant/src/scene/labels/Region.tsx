@@ -9,18 +9,32 @@ import { GLSL_HEIGHT, instanced } from '../area/glsl';
 import { SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';
 import { sfx } from '../../audio/sfx';
-import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/common';
+import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/fade';
 import { ringGeometry, TONE_COLORS, washGeometry } from './TileTag';
 
 export const APPEAR = 0.18;
 
+const RING_POP = { from: 0.6, cubic: 2.2, square: 1.2 };
+
 export function ringPop(a: number): { scale: number; alpha: number } {
-  const s = a <= 0 ? 0.6 : 1 + 2.2 * (a - 1) ** 3 + 1.2 * (a - 1) ** 2;
-  return { scale: 0.6 + 0.4 * s, alpha: a * (2 - a) };
+  const s = a <= 0 ? RING_POP.from : 1 + RING_POP.cubic * (a - 1) ** 3 + RING_POP.square * (a - 1) ** 2;
+  return { scale: RING_POP.from + (1 - RING_POP.from) * s, alpha: a * (2 - a) };
 }
+
+const glslFloat = (v: number) => v.toFixed(2);
+const GLSL_RING_POP = /* glsl */ `
+float ringPopScale(float a) {
+  float s = a <= 0.0 ? ${glslFloat(RING_POP.from)} : 1.0 + ${glslFloat(RING_POP.cubic)} * pow(a - 1.0, 3.0) + ${glslFloat(RING_POP.square)} * pow(a - 1.0, 2.0);
+  return ${glslFloat(RING_POP.from)} + ${glslFloat(1 - RING_POP.from)} * s;
+}
+float ringPopAlpha(float a) {
+  return a * (2.0 - a);
+}
+`;
 
 const vertex = /* glsl */ `
 ${GLSL_HEIGHT}
+${GLSL_RING_POP}
 attribute vec3 aColor;
 attribute float aDelay;
 uniform float uT0;
@@ -29,12 +43,11 @@ varying vec3 vWorld;
 varying float vA;
 void main() {
   float a = clamp((uTime - uT0 - aDelay) / ${APPEAR.toFixed(2)}, 0.0, 1.0);
-  float s = a <= 0.0 ? 0.6 : 1.0 + 2.2 * pow(a - 1.0, 3.0) + 1.2 * pow(a - 1.0, 2.0);
-  s = 0.6 + 0.4 * s;
+  float s = ringPopScale(a);
   vec4 w = modelMatrix * vec4(position * vec3(s, 1.0, s) + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.012, -aTile.y), 1.0);
   vWorld = w.xyz;
   vColor = aColor;
-  vA = a * (2.0 - a);
+  vA = ringPopAlpha(a);
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;

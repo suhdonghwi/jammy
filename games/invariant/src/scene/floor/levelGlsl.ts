@@ -62,7 +62,7 @@ class Compiler {
   }
 }
 
-export const GLSL_INT_HELPERS = /* glsl */ `
+const GLSL_INT_HELPERS = /* glsl */ `
 int fdiv(int a, int k) { return int(floor(float(a) / float(k))); }
 int emod(int a, int k) { return a - k * fdiv(a, k); }
 `;
@@ -82,6 +82,7 @@ export function levelGlsl(level: CompiledLevel, areas?: { area: Expr | null; bef
   const before = areas?.before ? c.expr(areas.before) : 'false';
   const decls = [`int ${ident(level.view.x)} = t.x;`, `int ${ident(level.view.y)} = t.y;`, ...level.offAxis.filter((n) => !level.arrays[n]).map((n) => `int ${ident(n)} = ${inputUniform(n)};`)].join(' ');
   return `
+${GLSL_INT_HELPERS}
 uniform bool uExists;
 ${uniforms}
 ${cells}

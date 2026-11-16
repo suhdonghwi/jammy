@@ -1,6 +1,8 @@
 import type { CompiledLevel } from '../../levels/level';
-import { GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL } from '../shaders/common';
-import { GLSL_INT_HELPERS, levelGlsl } from './levelGlsl';
+import { GLSL_AXIS_LABELS } from '../shaders/axisLabels';
+import { GLSL_COMMON } from '../shaders/common';
+import { GLSL_GOAL } from '../shaders/goal';
+import { levelGlsl } from './levelGlsl';
 
 export const floorVertex = /* glsl */ `
 varying vec3 vWorld;
@@ -26,9 +28,8 @@ uniform float uShowGoal;
 uniform float uShowAxes;
 uniform vec3 uGap, uVoid, uTile, uStop, uHatch, uHoverCol, uCross, uLabel;
 ${GLSL_COMMON}
-${GLSL_DIGITS}
+${GLSL_AXIS_LABELS}
 ${GLSL_GOAL}
-${GLSL_INT_HELPERS}
 ${levelGlsl(level)}
 
 bool existsAt(ivec2 t) { return uExists && L_exists(t); }

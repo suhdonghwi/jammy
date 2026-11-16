@@ -9,7 +9,10 @@ import { SLAB_H } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
-import { axisNameUniforms, colorUniform, fadeUniforms, getDigitTexture, goalUniforms, setAxisNames, updateFade } from '../shaders/common';
+import { axisNameUniforms, getDigitTexture, setAxisNames } from '../shaders/axisLabels';
+import { colorUniform } from '../shaders/common';
+import { fadeUniforms, updateFade } from '../shaders/fade';
+import { goalUniforms } from '../shaders/goal';
 import { floorFragment, floorVertex } from './floorShader';
 import { inputUniforms, setInputUniforms } from './levelGlsl';
 
@@ -92,7 +95,6 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     m.position.set(Math.round(t.x), 0, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
     u.uTime.value = sceneNow();
-    setAxisNames(u, level);
     goalEvents.sync(key);
     const kr = 1 - Math.exp(-dt * 3.2);
     const towards = (cur: number, on: boolean) => {
