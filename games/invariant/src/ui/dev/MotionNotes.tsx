@@ -55,8 +55,8 @@ const CHANGES: { group: string; rows: Change[] }[] = [
     rows: [
       { what: '판 자체', before: '즉시 교체', after: '즉시 교체 그대로 (애니메이션은 써 보고 뺐음: 같은 판이 바뀌는 wave도, 판이 빠지고 들어오는 교체도 어색했음)' },
       { what: '소리', before: '없음', after: '판이 바뀌는 순간, 근처에서 오르고 내리는 슬랩 수만큼 slabs 효과음' },
-      { what: '입력 패널', before: 'busy 동안 패널 전체 흐림, 바뀐 값은 pop만', after: '흐리지 않음. 바뀔 행은 미리 깜빡이는 링으로 예고, 바뀐 뒤 파란 링이 1.2s 동안 빠짐' },
-      { what: '다른 판의 counterexample', before: '개구리 귀가 대기 → 아무 말 없이 즉시 교체 → 250ms → 카메라 대기 250ms → 0.16s SmoothDamp', after: `먼저 캡션 "이번 경우는 다른 판에 있습니다. n = 4 → n = 5로 바꿉니다."와 입력 행 예고 (${s(LONG + BEAT)}) → 판 교체 + 소리 → 카메라는 제자리에서 새 판을 ${s(LONG)} 보여 줌 → 이동 → 착지 0.12s 전에 ghost/frog` },
+      { what: '입력 패널', before: 'busy 동안 패널 전체 흐림, 바뀐 값은 pop만', after: '흐리지 않음. 조정 중인 입력 컴포넌트 자체에 링, 바뀐 뒤 그 링이 1.2s 동안 빠짐' },
+      { what: '다른 판의 counterexample', before: '개구리 귀가 대기 → 아무 표시 없이 즉시 교체 → 250ms → 카메라 대기 250ms → 0.16s SmoothDamp', after: `가상 커서가 입력 근처에 나타나(${s(SHORT)}) 다가가(${s(BASE)}) 직접 조정: 차이가 3 이하인 정수는 +/− 클릭, 그 밖에는 필드를 눌러 새 값을 타이핑. 입력이 여럿이면 하나씩. 바뀌는 순간 판 교체 + 소리 → 커서가 사라지고 카메라는 제자리에서 새 판을 ${s(LONG)} 보여 줌 → 이동 → 착지 0.12s 전에 ghost/frog` },
     ],
   },
   {
@@ -242,14 +242,15 @@ function cexTimelines(): { before: Bar[]; after: Bar[] } {
     { label: 'hop → 실패 표시', from: oldArrive + GHOST_RISE + 0.25, to: oldArrive + GHOST_RISE + 0.25 + BASE, kind: 'motion' },
   ];
   const flight = plan(pose(0), pose(12)).dur;
-  const switchAt = LONG + BEAT;
-  const glideAt = switchAt + LONG + 0.06;
+  const switchAt = SHORT + BASE + MICRO;
+  const glideAt = switchAt + BEAT + LONG + 0.06;
   const land = glideAt + flight;
   const after: Bar[] = [
     { label: '개구리 귀가', from: 0, to: SHORT, kind: 'motion' },
-    { label: '캡션 예고 + 입력 행 링', from: 0, to: switchAt, kind: 'motion' },
+    { label: '커서 등장 → n의 + 로', from: 0, to: SHORT + BASE, kind: 'motion' },
+    { label: '클릭', from: SHORT + BASE, to: switchAt, kind: 'motion' },
     { label: '판 즉시 교체 + 소리', from: switchAt, to: switchAt, kind: 'mark' },
-    { label: '새 판 보여 주기 (정지)', from: switchAt, to: switchAt + LONG, kind: 'wait' },
+    { label: '커서 퇴장 · 새 판 보여 주기', from: switchAt, to: switchAt + BEAT + LONG, kind: 'wait' },
     { label: `flight 12타일 ${s(flight)}`, from: glideAt, to: land, kind: 'motion' },
     { label: 'ghost 등장 (착지 0.12s 전)', from: land - 0.12, to: land - 0.12 + GHOST_RISE, kind: 'motion' },
     { label: 'hop → 실패 표시', from: land - 0.12 + GHOST_RISE + BEAT, to: land - 0.12 + GHOST_RISE + BEAT + BASE, kind: 'motion' },
@@ -425,7 +426,7 @@ export function MotionNotes() {
           <div className="mt-4">
             <div className={CARD_LABEL}>순서 규칙</div>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-ink">
-              <li>원인을 먼저 보여 주고 결과를 보여 줍니다 (캡션과 입력 예고 → 판 교체 → 카메라).</li>
+              <li>원인을 먼저 보여 주고 결과를 보여 줍니다 (커서가 입력을 바꾸고 → 판이 바뀌고 → 카메라가 감).</li>
               <li>대기를 직렬로 잇지 않고 겹칩니다 (다음 동작은 앞 동작의 약 60–70% 지점에서).</li>
               <li>카메라가 움직이는 동안 주인공은 기다리고, 착지 직전에 출발합니다.</li>
               <li>멀수록 오래 걸리되 상한이 있고, 멀수록 더 높이 물러나서 화면 속 속도는 비슷하게 유지됩니다.</li>

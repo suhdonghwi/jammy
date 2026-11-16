@@ -3,13 +3,14 @@ import type { Counterexample } from '../checker/types';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
-import { inputsOf, type Inputs } from '../levels/inputs';
+import { inputsOf } from '../levels/inputs';
 import { showState } from '../levels/level';
 import { tileOf } from '../levels/tiles';
 import { BEAT, LONG, ms } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
 import { HOP, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
+import { adjustInputs } from './adjustInputs';
 import { hatch, HATCH_MS, hopFrog, sendFrogsHome } from './frogs';
 import { GHOST_RISE, raiseGhost } from './ghosts';
 import { busyWhile, currentLevel, type Token } from './sequence';
@@ -30,38 +31,11 @@ function markFailure(x: number, y: number, label: string) {
   sfx.fail();
 }
 
-const ANNOUNCE = LONG + BEAT;
 const LOOK = LONG;
-
-function changedInputs(from: Inputs, to: Inputs): string[] {
-  const lengths = new Set(Object.values(currentLevel().arrays));
-  return Object.keys(to).filter((n) => !lengths.has(n) && String(from[n]) !== String(to[n]));
-}
-
-function showInputs(inputs: Inputs, names: string[]): string {
-  const value = (v: Inputs[string]) => (Array.isArray(v) ? `[${v.join(', ')}]` : String(v));
-  return '`' + names.map((n) => `${n} = ${value(inputs[n])}`).join(', ') + '`';
-}
-
-async function changeBoard(tok: Token, inputs: Inputs) {
-  const now = useGame.getState().inputs;
-  const changed = changedInputs(now, inputs);
-  if (!changed.length) return;
-  const say = messages().verdicts.otherBoard(showInputs(now, changed), showInputs(inputs, changed));
-  useGame.setState({ caption: { text: say, tone: 'muted' }, cuedInputs: changed });
-  try {
-    await sleep(ms(ANNOUNCE));
-    if (!tok.alive) return;
-    useGame.setState({ inputs, cuedInputs: [] });
-    await sleep(ms(LOOK));
-  } finally {
-    useGame.setState({ cuedInputs: [] });
-  }
-}
 
 async function focusOn(tok: Token, cex: Counterexample, leaving: Promise<void>) {
   const L = currentLevel();
-  await changeBoard(tok, inputsOf(L, cex.state));
+  if (await adjustInputs(tok, inputsOf(L, cex.state))) await sleep(ms(LOOK));
   if (!tok.alive) return;
   const tile = (s: State) => tileOf(L, s);
   const labels = [cex.state, cex.next].flatMap((s) => (s ? [tile(s)] : []));

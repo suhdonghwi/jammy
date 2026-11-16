@@ -67,6 +67,13 @@ interface Hint {
   shown: boolean;
 }
 
+export interface Ghost {
+  x: number;
+  y: number;
+  target: string | null;
+  down: boolean;
+}
+
 export interface Game {
   mode: 'menu' | 'level' | 'tutorial';
   menuView: 'home' | 'levels';
@@ -91,7 +98,9 @@ export interface Game {
   frogTags: boolean;
   tutorial: TutorialState;
   inputHover: string | null;
-  cuedInputs: string[];
+  inputCue: string | null;
+  inputDraft: { name: string; text: string } | null;
+  ghost: Ghost | null;
   callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];
   region: Region | null;
   failMark: { x: number; y: number; label: string; t0: number } | null;
@@ -163,7 +172,9 @@ const FRESH = {
   frogTags: false,
   tutorial: NO_TUTORIAL,
   inputHover: null,
-  cuedInputs: [],
+  inputCue: null,
+  inputDraft: null,
+  ghost: null,
 } satisfies Partial<Game>;
 
 export function openingCaption(level: CompiledLevel): Caption | null {

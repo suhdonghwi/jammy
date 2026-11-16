@@ -126,7 +126,6 @@ export const en = {
   verdicts: {
     solverFailed: (why: string) => `The solver could not start: ${why}`,
     far: 'Everything nearby looked fine — but far away: ',
-    otherBoard: (from: string, to: string) => `This case is on another board. Switching ${from} → ${to}.`,
     yourArea: 'your area',
     theArea: 'the area',
     noLongerHolds: (part: string) => ` \`${part}\` no longer holds.`,

@@ -3,6 +3,7 @@ import { RevealSlot } from '../RevealSlot';
 import { CaptionBar } from './CaptionBar';
 import { CodePanel } from './CodePanel';
 import { FormulaBox } from './FormulaBox';
+import { GhostCursor } from './GhostCursor';
 import { HoverReadout } from './HoverReadout';
 import { RunControls } from './RunControls';
 import { TopBar } from './TopBar';
@@ -30,6 +31,7 @@ export function Hud() {
           <RunControls />
         </RevealSlot>
       </div>
+      <GhostCursor />
     </div>
   );
 }

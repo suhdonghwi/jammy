@@ -35,7 +35,6 @@ export function InputsSection({ folded }: { folded: boolean }) {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
   const busy = useGame((s) => s.busy);
-  const cued = useGame((s) => s.cuedInputs);
   const tr = useT();
   const rows = inputRows(level);
   const exists = planeExists(level, inputs);
@@ -63,7 +62,7 @@ export function InputsSection({ folded }: { folded: boolean }) {
         {rows.map((name) => (
           <div
             key={name}
-            className={`-mx-1.5 flex items-center gap-2 rounded-lg px-1.5 ${cued.includes(name) ? 'spotlight spotlight-soft' : ''}`}
+            className="flex items-center gap-2"
             onPointerEnter={() => useGame.setState({ inputHover: name })}
             onPointerLeave={() => useGame.setState((s) => (s.inputHover === name ? { inputHover: null } : {}))}
           >
@@ -96,7 +95,12 @@ export function InputsSection({ folded }: { folded: boolean }) {
   );
 }
 
-const changed = (pops: number) => (pops > 0 ? 'animate-input-changed' : 'animate-pop');
+function useInputLook(name: string, pops: number): string {
+  const cued = useGame((s) => s.inputCue === name);
+  return `${pops > 0 ? 'animate-input-changed' : 'animate-pop'} transition-[box-shadow,background-color] duration-(--duration-short) ${cued ? 'input-cued' : ''}`;
+}
+
+const useScripted = (name: string) => useGame((s) => (s.inputDraft?.name === name ? s.inputDraft.text : null));
 
 function usePop(value: string): [number, () => void] {
   const [seen, setSeen] = useState(value);
@@ -128,6 +132,8 @@ function useDraft(shown: string) {
 function IntRow({ name, value, disabled, onChange, labels }: { name: string; value: number; disabled: boolean; onChange: (v: number) => void; labels: [string, string] }) {
   const { draft, setDraft, field } = useDraft(String(value));
   const [pops, own] = usePop(String(value));
+  const look = useInputLook(name, pops);
+  const scripted = useScripted(name);
   const commit = (v: number) => {
     own();
     onChange(v);
@@ -144,29 +150,39 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
   };
   const bad = draft !== null && !INT.test(draft.trim());
   return (
-    <div key={pops} className={`flex items-center rounded-md ${changed(pops)}`}>
-      <SmallButton onClick={() => commit(value - 1)} disabled={disabled} label={labels[0]} className="rounded-r-none">
+    <div key={pops} className={`flex items-center rounded-md ${look}`}>
+      <SmallButton ghost={`${name}:dec`} onClick={() => commit(value - 1)} disabled={disabled} label={labels[0]} className="rounded-r-none">
         <Minus size={12} strokeWidth={2.6} />
       </SmallButton>
       <input
-        className={`${FIELD} w-10 rounded-none border-x-0 text-center ${bad ? 'text-fail' : ''}`}
+        className={`${FIELD} w-10 rounded-none border-x-0 text-center ${bad ? 'text-fail' : ''} ${scripted !== null ? 'border-brand/60 disabled:opacity-100' : ''}`}
         {...field}
+        {...(scripted !== null && { value: scripted })}
+        data-ghost={`${name}:field`}
         inputMode="numeric"
         disabled={disabled}
         aria-label={name}
         onChange={(e) => type(e.target.value)}
         onKeyDown={onKeyDown}
       />
-      <SmallButton onClick={() => commit(value + 1)} disabled={disabled} label={labels[1]} className="rounded-l-none">
+      <SmallButton ghost={`${name}:inc`} onClick={() => commit(value + 1)} disabled={disabled} label={labels[1]} className="rounded-l-none">
         <Plus size={12} strokeWidth={2.6} />
       </SmallButton>
     </div>
   );
 }
 
-function SmallButton({ onClick, disabled, label, className = '', children }: { onClick: () => void; disabled: boolean; label: string; className?: string; children: ReactNode }) {
+function SmallButton({ ghost, onClick, disabled, label, className = '', children }: { ghost?: string; onClick: () => void; disabled: boolean; label: string; className?: string; children: ReactNode }) {
+  const pressed = useGame((s) => !!ghost && s.ghost?.down === true && s.ghost.target === ghost);
   return (
-    <button className={`${SMALL_BUTTON} ${className}`} disabled={disabled} aria-label={label} title={label} onClick={onClick}>
+    <button
+      className={`${SMALL_BUTTON} ${pressed ? 'translate-y-px bg-horizon text-ink' : ''} ${className}`}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      data-ghost={ghost}
+    >
       {children}
     </button>
   );
@@ -176,6 +192,8 @@ function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: C
   const value = inputs[name] as number[];
   const { draft, setDraft, field } = useDraft(showArray(value));
   const [pops, own] = usePop(planeKey({ [name]: value }));
+  const look = useInputLook(name, pops);
+  const scripted = useScripted(name);
   const type = (t: string) => {
     setDraft(t);
     const arr = parseArray(t);
@@ -186,10 +204,12 @@ function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: C
   };
   const bad = draft !== null && !incomplete(draft) && parseArray(draft) === null;
   return (
-    <div key={pops} className={`flex min-w-0 flex-1 items-center gap-1.5 rounded-md ${changed(pops)}`}>
+    <div key={pops} className={`flex min-w-0 flex-1 items-center gap-1.5 rounded-md ${look}`}>
       <input
-        className={`${FIELD} flex-1 ${bad ? 'border-fail/50 text-fail' : ''}`}
+        className={`${FIELD} flex-1 ${bad ? 'border-fail/50 text-fail' : ''} ${scripted !== null ? 'border-brand/60 disabled:opacity-100' : ''}`}
         {...field}
+        {...(scripted !== null && { value: scripted })}
+        data-ghost={`${name}:field`}
         disabled={disabled}
         aria-label={name}
         spellCheck={false}
