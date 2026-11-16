@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { useGame, type Region, type RegionTile } from '../../game/store';
 import { useExitFade, useLingering } from '../../hooks/presence';
-import { useTileWindow } from '../area/AreaLayer';
 import { areaMask } from '../area/mask';
 import { GLSL_HEIGHT, instanced } from '../area/glsl';
 import { SLAB_H } from '../constants';
@@ -11,6 +10,7 @@ import { sceneNow } from '../sceneTime';
 import { sfx } from '../../audio/sfx';
 import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/fade';
 import { ringGeometry, TONE_COLORS, washGeometry } from './TileTag';
+import { useTileWindow } from './useTileWindow';
 
 export const APPEAR = 0.18;
 

@@ -1,9 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Inputs } from '../../levels/inputs';
 import { compileFormula, compileLevel, type Formula } from '../../levels/level';
-import { useArea } from '../area/AreaLayer';
-import { GoalColumns } from '../area/GoalColumns';
-import { Slabs } from '../area/Slabs';
+import { AreaLayer } from '../area/AreaLayer';
 import { Floor } from '../floor/Floor';
 import { Frogs } from '../frogs/Frogs';
 import { frogWorld, yawToward } from '../frogs/frogWorld';
@@ -54,8 +52,6 @@ const NO_INPUTS: Inputs = {};
 export function HomeScene() {
   useHomeCamera();
 
-  useArea(DIAGONAL, NO_INPUTS, AREA);
-
   const eggs = useRef<StartEgg[]>([]);
   useEffect(() => {
     frogWorld.clear();
@@ -99,8 +95,7 @@ export function HomeScene() {
   return (
     <group>
       <Floor level={DIAGONAL} inputs={NO_INPUTS} fadeIn={2.6} showAxes={false} />
-      <Slabs level={DIAGONAL} dim={false} showStop showGoal />
-      <GoalColumns />
+      <AreaLayer level={DIAGONAL} inputs={NO_INPUTS} area={AREA} dim={false} showStop showGoal showEggs={false} />
       <StartEggs eggs={eggs} />
       <Frogs />
       <HatchShells />
