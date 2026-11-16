@@ -23,7 +23,7 @@ interface Rect {
 let controls: CameraControls | null = null;
 let size = { width: 1, height: 1 };
 let current: Shot | null = null;
-let reach = 60;
+let base: number | null = null;
 let layout = { key: '', changed: 0, settled: true };
 let pending: { shot: Shot; since: number; done: () => void } | null = null;
 
@@ -42,30 +42,41 @@ const TAG_HALF = 64;
 const TILE_RADIUS = 0.5;
 const MAX_DISTANCE = 60;
 const ZOOM_OUT = 1.6;
-const MIN_FREE = 150;
-const ARRIVING_MS = 450;
+const ARRIVING_MS = 1500;
 const SWIFT_SMOOTH_TIME = 0.16;
 const SETTLE_MS = EXIT_MS + 100;
 
 const area = (r: Rect) => Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
 
+const overlaps = (a: Rect, b: Rect) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+function edges(view: Rect, blocks: Rect[], lo: 'left' | 'top', hi: 'right' | 'bottom'): number[] {
+  const all = [view[lo], view[hi], ...blocks.flatMap((b) => [b[lo], b[hi]])];
+  return [...new Set(all.filter((v) => v >= view[lo] && v <= view[hi]))].sort((a, b) => a - b);
+}
+
 function safeRect(): Rect {
-  let r: Rect = { left: 0, top: 0, right: size.width, bottom: size.height };
+  const view: Rect = { left: 0, top: 0, right: size.width, bottom: Math.min(size.height, window.innerHeight) };
+  const blocks: Rect[] = [];
   for (const el of document.querySelectorAll('[data-frame]')) {
     const b = el.getBoundingClientRect();
-    if (!b.width || !b.height || b.right <= r.left || b.left >= r.right || b.bottom <= r.top || b.top >= r.bottom) continue;
-    const cuts: Rect[] = [
-      { ...r, bottom: Math.min(r.bottom, b.top) },
-      { ...r, top: Math.max(r.top, b.bottom) },
-      { ...r, right: Math.min(r.right, b.left) },
-      { ...r, left: Math.max(r.left, b.right) },
-    ];
-    r = cuts.reduce((best, c) => (area(c) > area(best) ? c : best));
+    if (b.width && b.height && overlaps(b, view)) blocks.push(b);
   }
-  const free = { left: r.left + MARGIN, top: r.top + MARGIN, right: r.right - MARGIN, bottom: r.bottom - MARGIN };
-  free.bottom = Math.max(free.bottom, Math.min(size.height, free.top + MIN_FREE));
-  free.right = Math.max(free.right, Math.min(size.width, free.left + MIN_FREE));
-  return free;
+  const xs = edges(view, blocks, 'left', 'right');
+  const ys = edges(view, blocks, 'top', 'bottom');
+  let best = view;
+  let bestArea = blocks.length ? 0 : area(view);
+  for (const [i, left] of xs.entries())
+    for (const right of xs.slice(i + 1))
+      for (const [j, top] of ys.entries())
+        for (const bottom of ys.slice(j + 1)) {
+          const r = { left, top, right, bottom };
+          const a = area(r);
+          if (a <= bestArea || blocks.some((b) => overlaps(b, r))) continue;
+          best = r;
+          bestArea = a;
+        }
+  return { left: best.left + MARGIN, top: best.top + MARGIN, right: best.right - MARGIN, bottom: best.bottom - MARGIN };
 }
 
 function endView(): { x: number; y: number; d: number } {
@@ -130,7 +141,7 @@ function fits(x: number, y: number, d: number, shot: Shot, r: Rect): boolean {
 }
 
 function solve(x: number, y: number, d: number, shot: Shot, r: Rect): { x: number; y: number; d: number } {
-  const far = Math.max(d, reach);
+  const far = Math.min(MAX_DISTANCE, d * ZOOM_OUT);
   for (let i = 0; i < 8; i++) {
     place(x, y, d);
     let b = bounds(shot);
@@ -158,10 +169,11 @@ async function glide(x: number, y: number, d: number, smooth: boolean) {
 
 function apply(shot: Shot, smooth: boolean): Promise<void> {
   const r = safeRect();
-  const from = shot.at ? { x: shot.at[0], y: shot.at[1], d: shot.at[2] } : endView();
-  reach = Math.min(MAX_DISTANCE, from.d * ZOOM_OUT);
-  if (!shot.at && fits(from.x, from.y, from.d, shot, r)) return Promise.resolve();
-  const to = solve(from.x, from.y, from.d, shot, r);
+  if (shot.at) base = shot.at[2];
+  const view = endView();
+  if (!shot.at && fits(view.x, view.y, view.d, shot, r)) return Promise.resolve();
+  const from = shot.at ? { x: shot.at[0], y: shot.at[1] } : view;
+  const to = solve(from.x, from.y, base ?? view.d, shot, r);
   return glide(to.x, to.y, to.d, smooth);
 }
 
@@ -213,7 +225,7 @@ export const cameraRig = {
     return new Promise((done) => (pending = { shot, since: performance.now(), done }));
   },
   async arrive(shot: Shot) {
-    await Promise.race([cameraRig.frame(shot), sleep(ARRIVING_MS)]);
+    await Promise.race([swiftly(() => cameraRig.frame(shot)), sleep(ARRIVING_MS)]);
   },
   include(labels: readonly Tile[]) {
     if (!labels.length) return;
