@@ -113,7 +113,7 @@ export function HatchShells() {
     let na = 0;
     let nb = 0;
     for (const fx of active) {
-      const shown = fx.plane === '' ? 1 : planeShift.visibility(fx.plane, fx.x, fx.y, t);
+      const shown = fx.plane === '' ? 1 : planeShift.visibility(fx.plane, t);
       if (shown <= 0) continue;
       const u = t - fx.t0;
       const base = field.groundAt(fx.x, fx.y);

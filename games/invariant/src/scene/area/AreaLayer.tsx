@@ -50,7 +50,7 @@ function useArea(level: CompiledLevel, inputs: Inputs, area: Formula | null) {
     goalEvents.sync(planeKey(inputs));
     const t = cameraRig.target();
     const now = sceneNow();
-    if (planeShift.track(level, inputs, now, () => cameraRig.viewCenter())) {
+    if (planeShift.track(level, inputs, now)) {
       areaMask.shiftPlane();
       if (planeShift.before) {
         const { rising, sinking } = field.planeMovedNear({ cx: Math.round(t.x), cy: Math.round(-t.z), R: HEARD_WITHIN }, planeShift.before);

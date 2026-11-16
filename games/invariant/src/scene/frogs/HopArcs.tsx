@@ -80,7 +80,7 @@ function GhostHop({ arc }: { arc: Arc }) {
         const frog = frogWorld.frogs.find((f) => f.id === arc.frog);
         if (!frog) return null;
         const t = sceneNow();
-        const shown = planeShift.visibility(arc.plane, arc.fx, arc.fy, t);
+        const shown = planeShift.visibility(arc.plane, t);
         if (shown <= 0) return null;
         const fx = frog.drawn ? frog.drawn.x : arc.fx;
         const fy = frog.drawn ? -frog.drawn.z : arc.fy;
@@ -115,7 +115,7 @@ export function HopArcs() {
     }
     let nr = 0;
     for (const a of arcs) {
-      const onPlane = planeShift.visibility(a.plane, a.tx, a.ty, t);
+      const onPlane = planeShift.visibility(a.plane, t);
       if (onPlane <= 0) continue;
       const shown = clamp01((t - a.t0 - ARC_DRAW) / APPEAR);
       if (shown <= 0) continue;

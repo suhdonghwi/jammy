@@ -22,8 +22,8 @@ void main() {
   vShown = goalNow();
   float burst = tilePulse(aTile, 1.0, 0.06, 1.6);
   vBurst = burst;
-  vec3 pos = position * vec3(1.0 + 0.25 * burst, (1.0 + 2.2 * burst) * vShown, 1.0 + 0.25 * burst);
-  vec4 w = modelMatrix * vec4(pos + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.004, -aTile.y), 1.0);
+  vec3 pos = position * vec3(1.0 + 0.25 * burst, 1.0 + 2.2 * burst, 1.0 + 0.25 * burst);
+  vec4 w = modelMatrix * vec4(pos + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.004 + uBoardY, -aTile.y), 1.0);
   vWorld = w.xyz;
   vN = normalize(mat3(modelMatrix) * normal);
   gl_Position = projectionMatrix * viewMatrix * w;
@@ -34,6 +34,7 @@ const fragment = /* glsl */ `
 uniform float uTime;
 uniform vec3 uColor;
 uniform float uAppearT0;
+uniform float uBoardFade;
 varying float vV;
 varying float vBurst;
 varying float vShown;
@@ -45,7 +46,7 @@ void main() {
   float fall = pow(1.0 - vV, 1.6);
   float a = fall * (0.2 + 0.32 * edge);
   a += (0.25 + 0.45 * edge) * vBurst * pow(1.0 - vV, 0.8);
-  a *= smoothstep(0.0, 0.7, uTime - uAppearT0) * vShown;
+  a *= smoothstep(0.0, 0.7, uTime - uAppearT0) * vShown * (1.0 - uBoardFade);
   vec3 col = mix(uColor, vec3(1.0, 0.93, 0.72), 0.25 + 0.4 * vBurst);
   gl_FragColor = vec4(col, min(a, 0.92));
   #include <colorspace_fragment>

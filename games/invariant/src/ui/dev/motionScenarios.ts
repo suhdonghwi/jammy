@@ -43,13 +43,13 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'cex-plane',
     title: '다른 plane의 counterexample',
-    what: 'Tag Along에서 i <= 4를 Check. 개구리가 들어가고, n 입력이 강조되며, 화면 중심부터 plane wave가 퍼진 뒤 카메라가 출발합니다.',
+    what: 'Tag Along에서 i <= 4를 Check. 개구리가 들어가고, n 입력이 강조되며, 판이 바뀐 뒤 카메라가 출발합니다.',
     run: () => tryFormula('tag-along', 'i <= 4'),
   },
   {
     id: 'wave',
     title: '입력 바꾸기 (+/−)',
-    what: 'n을 6 → 2 → 9로 바꿉니다. 슬랩·바닥·알·goal column이 물결처럼 넘어가고 개구리는 줄어들며 사라집니다.',
+    what: 'n을 6 → 2 → 9로 바꿉니다. 판이 통째로 빠지고 새 판이 들어옵니다. n이 줄 때는 방향이 반대입니다.',
     run: async () => {
       await open('tag-along');
       useGame.getState().setFormula('i <= n');
@@ -62,7 +62,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'glide',
     title: '카메라 이동 세 가지',
-    what: '가까운 이동(짧고 부드럽게), 먼 이동(조금 물러났다가 다가감), 아주 먼 이동(안개로 흐려졌다가 넘어감)을 차례로.',
+    what: '가까운 이동(짧고 부드럽게), 먼 이동(조금 물러났다가 다가감), 아주 먼 이동(높이 물러났다가 내려옴)을 차례로.',
     run: async () => {
       await open('tag-along');
       const go = (x: number, y: number) => cameraRig.frame({ at: [x, y, 15], focus: [[x, y]] });
@@ -76,6 +76,19 @@ export const SCENARIOS: Scenario[] = [
     },
   },
   {
+    id: 'behind',
+    title: '화면 뒤쪽의 counterexample',
+    what: '카운트다운에서 카메라를 (77, 76)으로 옮긴 뒤 i <= n을 Check. 탈출 counterexample (-1, 0)이 카메라 뒤쪽에 있어도 그곳으로 날아갑니다.',
+    run: async () => {
+      await open('countdown');
+      await cameraRig.frame({ at: [77, 76, 18], focus: [[77, 76]] });
+      await wait(400);
+      useGame.getState().setFormula('i <= n');
+      await wait(400);
+      await check();
+    },
+  },
+  {
     id: 'proof',
     title: '통과하는 Check',
     what: 'Tag Along의 정답 i <= n. 규칙마다 그림 → 불 → 정리 → beat 순서가 같은 토큰으로 이어집니다.',
@@ -84,7 +97,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'reset',
     title: 'Reset',
-    what: 'n을 바꾸고 카메라를 옮긴 뒤 Reset. 입력이 wave로 돌아가고 카메라는 한 번의 flight(각도 포함)로 처음 view로 갑니다.',
+    what: 'n을 바꾸고 카메라를 옮긴 뒤 Reset. 판이 처음 입력으로 바뀌고 카메라는 한 번의 flight(각도 포함)로 처음 view로 갑니다.',
     run: async () => {
       await open('tag-along');
       useGame.setState({ inputs: { n: 8 } });

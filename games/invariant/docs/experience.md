@@ -39,22 +39,23 @@ behind many small decisions; keep them when changing or adding UI.
   between the steps of a sequence) or a hold (1 s, to read a result). Pick
   the token for the job; don't invent a length.
 - **Four curves**: smootherstep for anything that travels or crossfades
-  (the camera, the plane wave, layers turning on), ease-out for entrances,
-  ease-in for exits, and an overshoot only for accents (a hatch, a ring).
+  (the camera, layers turning on), ease-out for entrances (the new board),
+  ease-in for exits (the old board), and an overshoot only for accents (a
+  hatch, a ring).
 - **Cause, then effect.** What changed is shown before what follows from it:
-  the input that changes lights up, the world changes, then the camera goes.
+  the input that changes lights up, the board changes, then the camera goes.
 - **Overlap, don't queue.** The next move starts while the last one is
-  finishing (the plane wave is two thirds done when the camera sets off;
-  frogs go home while the world starts changing). A sequence never waits
-  on nothing.
+  finishing (the new board is still coming in when the camera sets off;
+  frogs go home while the old board leaves). A sequence never waits on
+  nothing.
 - **The camera's time follows the distance.** A short move is short, a long
   one is longer but never more than about a second, and it never jumps in
-  speed: it eases out of rest and into it. A long move pulls back a little
-  on the way; a very long one fades through the fog rather than racing
-  across the board. A new target mid-move bends the path instead of
-  kinking it.
-- **Reduced motion is respected**: long camera moves fade through the fog
-  and the plane wave becomes one crossfade.
+  speed: it eases out of rest and into it. A long move pulls back on the
+  way, further the further it goes, so the ground never streaks past. A
+  target behind the view is reached like any other. A new target mid-move
+  bends the path instead of kinking it.
+- **Reduced motion is respected**: the camera doesn't pull back, and the
+  board swap only fades.
 
 ## Motion in the scene
 
@@ -80,12 +81,12 @@ behind many small decisions; keep them when changing or adding UI.
   it stops, and drops to cover the `ensures` lines when the loop ends.
 - **Visible, not loud.** A goal landing should be noticed (a ripple, a flash,
   the pool's light column brightening) without becoming a splash.
-- **Changing an input changes the world in a wave.** When an input like `n`
+- **Changing an input swaps the whole board.** When an input like `n`
   changes (the learner's +/−, Reset, or a counterexample on another plane),
-  the slabs, floor, eggs and goal columns of the old plane turn into the new
-  one tile by tile, outwards from where the learner is looking, in about
-  0.6 s; frogs of the old plane shrink away as the wave passes them. An
-  input the game changes lights up in the inputs panel.
+  the board on show sinks away and fades, and the new one comes down into
+  place, in about half a second; raising `n` moves down the stack of
+  boards, lowering it moves up. Frogs, trails and tags go with their board.
+  An input the game changes lights up in the inputs panel.
 - **Things come from somewhere.** Frogs climb out of their egg; a frog that
   is done goes back into it, and the egg grows back. Ghost frogs break up
   through the slab of the tile they test (chips fly off), spinning as they
@@ -110,7 +111,7 @@ behind many small decisions; keep them when changing or adding UI.
   rule ends the check; an undecided one gets an amber light with a question
   mark.
 - **A failure is reached, not cut to.** If the failing case is on another
-  plane, the input lights up and the world changes first; then, if it is off
+  plane, the input lights up and the board changes first; then, if it is off
   screen, the camera flies to it and the frog sets off just before it
   lands; if it is on screen the camera stays put. The light turns red as the caption arrives.
   The last picture stays under the result caption, and clear of it: a taller

@@ -1,49 +1,50 @@
-import * as THREE from 'three';
 import { planeKey, type Inputs } from '../levels/inputs';
-import { BASE, reducedMotion } from '../motion';
-import { clamp01, smootherstep } from './easing';
+import { BASE, EXIT, reducedMotion } from '../motion';
+import { clamp01, easeIn, easeOut } from './easing';
 
-export const PLANE_TILE = BASE;
-const WAVE_PER_TILE = 0.035;
-const WAVE_SPREAD = 0.3;
+export const BOARD_OUT = EXIT;
+export const BOARD_IN = BASE;
+export const PLANE_SHIFT = BOARD_OUT + BOARD_IN;
+const DROP = 1.6;
 
-export interface Wave {
-  perTile: number;
-  spread: number;
-  tile: number;
+export interface Board {
+  prev: boolean;
+  y: number;
+  fade: number;
 }
 
-export const planeWave = (reduced: boolean): Wave => (reduced ? { perTile: 0, spread: 0, tile: BASE } : { perTile: WAVE_PER_TILE, spread: WAVE_SPREAD, tile: PLANE_TILE });
+const SETTLED: Board = { prev: false, y: 0, fade: 0 };
 
-export const waveLength = (w: Wave) => w.spread + w.tile;
-
-export function waveMix(w: Wave, age: number, distance: number): number {
-  if (age >= waveLength(w)) return 1;
-  const delay = Math.min(distance * w.perTile, w.spread);
-  return smootherstep(clamp01((age - delay) / w.tile));
+export function boardAt(age: number, dir: number, drop = DROP): Board {
+  if (age >= PLANE_SHIFT || age < 0) return SETTLED;
+  if (age < BOARD_OUT) {
+    const k = easeIn(clamp01(age / BOARD_OUT));
+    return { prev: true, y: -dir * drop * k, fade: k };
+  }
+  const k = 1 - easeOut(clamp01((age - BOARD_OUT) / BOARD_IN));
+  return { prev: false, y: dir * drop * k, fade: k };
 }
 
-export const PLANE_SHIFT = waveLength(planeWave(false));
-
-export const GLSL_PLANE_WAVE = /* glsl */ `
-uniform float uPlaneAge;
-uniform vec2 uPlaneCenter;
-uniform vec3 uPlaneWave;
-float planeMix(vec2 tile) {
-  float delay = min(length(tile - uPlaneCenter) * uPlaneWave.x, uPlaneWave.y);
-  float u = clamp((uPlaneAge - delay) / uPlaneWave.z, 0.0, 1.0);
-  return u * u * u * (u * (u * 6.0 - 15.0) + 10.0);
-}
-bool planeShifting() {
-  return uPlaneAge < uPlaneWave.y + uPlaneWave.z;
-}
+export const GLSL_BOARD = /* glsl */ `
+uniform float uBoardY;
+uniform float uBoardFade;
+uniform float uBoardPrev;
 `;
+
+export function direction(before: Inputs, after: Inputs): number {
+  let sum = 0;
+  for (const [k, v] of Object.entries(after)) {
+    const was = before[k];
+    if (typeof v === 'number' && typeof was === 'number') sum += Math.sign(v - was);
+  }
+  return sum < 0 ? -1 : 1;
+}
 
 class PlaneShift {
   readonly uniforms = {
-    uPlaneAge: { value: 1e6 },
-    uPlaneCenter: { value: new THREE.Vector2() },
-    uPlaneWave: { value: new THREE.Vector3() },
+    uBoardY: { value: 0 },
+    uBoardFade: { value: 0 },
+    uBoardPrev: { value: 0 },
   };
   key: string | null = null;
   prevKey: string | null = null;
@@ -51,15 +52,10 @@ class PlaneShift {
   private owner: object | null = null;
   private last: Inputs | null = null;
   private t0 = -Infinity;
-  private center = { x: 0, y: 0 };
-  private aim: { x: number; y: number } | null = null;
-  private wave = planeWave(false);
+  private dir = 1;
+  private drop = DROP;
 
-  aimAt(x: number, y: number) {
-    this.aim = { x, y };
-  }
-
-  track(owner: object, inputs: Inputs, t: number, view: () => { x: number; y: number }): boolean {
+  track(owner: object, inputs: Inputs, t: number): boolean {
     if (owner !== this.owner) {
       this.reset();
       this.owner = owner;
@@ -72,36 +68,35 @@ class PlaneShift {
       this.prevKey = this.key;
       this.key = key;
       this.t0 = t;
-      this.center = this.aim ?? view();
-      this.wave = planeWave(reducedMotion());
+      this.dir = this.before ? direction(this.before, inputs) : 1;
+      this.drop = reducedMotion() ? 0 : DROP;
       changed = true;
     }
-    if (changed || !this.shifting(t)) this.aim = null;
     if (!this.shifting(t)) this.prevKey = null;
     this.last = inputs;
-    this.uniforms.uPlaneAge.value = Math.min(1e6, t - this.t0);
-    this.uniforms.uPlaneCenter.value.set(this.center.x, this.center.y);
-    this.uniforms.uPlaneWave.value.set(this.wave.perTile, this.wave.spread, this.wave.tile);
+    const b = this.board(t);
+    this.uniforms.uBoardY.value = b.y;
+    this.uniforms.uBoardFade.value = b.fade;
+    this.uniforms.uBoardPrev.value = b.prev ? 1 : 0;
     return changed;
   }
 
-  planes(): string[] {
-    return [this.key, this.prevKey].filter((k): k is string => k !== null);
+  board(t: number): Board {
+    return boardAt(t - this.t0, this.dir, this.drop);
   }
 
   shifting(t: number): boolean {
-    return t - this.t0 < waveLength(this.wave);
+    return t - this.t0 < PLANE_SHIFT;
   }
 
-  mixAt(x: number, y: number, t: number): number {
-    return waveMix(this.wave, t - this.t0, Math.hypot(x - this.center.x, y - this.center.y));
+  showingPrev(t: number): boolean {
+    return this.prevKey !== null && this.board(t).prev;
   }
 
-  visibility(plane: string, x: number, y: number, t: number): number {
+  visibility(plane: string, t: number): number {
     if (this.key === null) return 1;
-    if (plane === this.key) return this.prevKey === null ? 1 : this.mixAt(x, y, t);
-    if (plane === this.prevKey) return 1 - this.mixAt(x, y, t);
-    return 0;
+    const shown = this.showingPrev(t) ? this.prevKey : this.key;
+    return plane === shown ? 1 - this.board(t).fade : 0;
   }
 
   reset() {
@@ -111,8 +106,9 @@ class PlaneShift {
     this.prevKey = null;
     this.before = null;
     this.t0 = -Infinity;
-    this.aim = null;
-    this.uniforms.uPlaneAge.value = 1e6;
+    this.uniforms.uBoardY.value = 0;
+    this.uniforms.uBoardFade.value = 0;
+    this.uniforms.uBoardPrev.value = 0;
   }
 }
 

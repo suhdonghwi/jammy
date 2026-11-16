@@ -3,7 +3,7 @@ import { TILE } from '../constants';
 import { GLSL_AXIS_LABELS } from '../shaders/axisLabels';
 import { GLSL_COMMON } from '../shaders/common';
 import { GLSL_GOAL } from '../shaders/goal';
-import { GLSL_PLANE_WAVE } from '../planeShift';
+import { GLSL_BOARD } from '../planeShift';
 import { levelGlsl, PREV } from './levelGlsl';
 
 export const floorVertex = /* glsl */ `
@@ -34,7 +34,7 @@ ${GLSL_AXIS_LABELS}
 ${GLSL_GOAL}
 ${levelGlsl(level)}
 ${levelGlsl(level, undefined, PREV)}
-${GLSL_PLANE_WAVE}
+${GLSL_BOARD}
 
 vec3 cellColor(bool ex, bool st, bool goal, bool onCross, vec2 f, vec2 tc, ivec2 t, vec2 p, float inside, float hatch, float fwr) {
   if (!ex) {
@@ -75,17 +75,11 @@ void main() {
   bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
   bool showStop = uShowStop > 0.002;
   bool showGoal = uShowGoal > 0.002;
-  bool ex = uExists && L_exists(t);
-  bool st = showStop && ex && L_stop(t);
-  vec3 col = cellColor(ex, st, st && showGoal && L_goal(t), onCross, f, tc, t, p, inside, hatch, fwr);
-  if (planeShifting()) {
-    float k = planeMix(tc);
-    if (k < 1.0) {
-      bool pex = uExists${PREV} && L${PREV}_exists(t);
-      bool pst = showStop && pex && L${PREV}_stop(t);
-      col = mix(cellColor(pex, pst, pst && showGoal && L${PREV}_goal(t), onCross, f, tc, t, p, inside, hatch, fwr), col, k);
-    }
-  }
+  bool prev = uBoardPrev > 0.5;
+  bool ex = prev ? uExists${PREV} && L${PREV}_exists(t) : uExists && L_exists(t);
+  bool st = showStop && ex && (prev ? L${PREV}_stop(t) : L_stop(t));
+  bool goal = st && showGoal && (prev ? L${PREV}_goal(t) : L_goal(t));
+  vec3 col = cellColor(ex, st, goal, onCross, f, tc, t, p, inside, hatch, fwr);
 
   if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
     float a = 1.0 - smoothstep(-fwRing, fwRing, ringD);
@@ -93,7 +87,7 @@ void main() {
   }
 
   float r = length(vWorld.xz - uCenter);
-  float alpha = (1.0 - smoothstep(uFade.x, uFade.y, r)) * uOpacity;
+  float alpha = (1.0 - smoothstep(uFade.x, uFade.y, r)) * uOpacity * (1.0 - uBoardFade);
   if (alpha < 0.003) discard;
   gl_FragColor = vec4(col, alpha);
   #include <colorspace_fragment>

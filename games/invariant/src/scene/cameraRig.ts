@@ -2,7 +2,7 @@ import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
 import { EXIT_MS, reducedMotion } from '../motion';
-import { plan, sample, STILL, travel, velocity, type Flight, type Pose } from './flight';
+import { HIGHEST, plan, sample, STILL, travel, velocity, type Flight, type Pose } from './flight';
 import { freeRect, type Rect } from './freeRect';
 import { sceneNow, sceneStarted, sleep } from './sceneTime';
 
@@ -22,7 +22,6 @@ let base: number | null = null;
 let layout = { key: '', changed: 0, settled: true };
 let pending: { shot: Shot; since: number; lead: number; done: () => void; settled: Promise<void> } | null = null;
 let flight: { plan: Flight; t0: number; waiters: { at: number; done: () => void }[] } | null = null;
-let fog = 1;
 
 const tmp = new THREE.Vector3();
 const point = new THREE.Vector3();
@@ -38,7 +37,7 @@ const TAG_ROOM = 46;
 const TAG_HALF = 64;
 const TILE_RADIUS = 0.5;
 export const FOV = 36;
-export const MAX_DISTANCE = 60;
+export const MAX_DISTANCE = HIGHEST;
 const DEFAULT_DISTANCE = 14;
 const ZOOM_OUT = 1.6;
 const ARRIVE_LEAD = 0.12;
@@ -114,8 +113,17 @@ function fits(x: number, y: number, d: number, shot: Shot, r: Rect): boolean {
   return inside(bounds(shot), r);
 }
 
+function middle(shot: Shot): { x: number; y: number } | null {
+  const tiles = tilesOf(shot);
+  if (!tiles.length) return null;
+  return { x: tiles.reduce((s, t) => s + t[0], 0) / tiles.length, y: tiles.reduce((s, t) => s + t[1], 0) / tiles.length };
+}
+
 function solve(x: number, y: number, d: number, shot: Shot, r: Rect): { x: number; y: number; d: number } {
   const far = Math.min(MAX_DISTANCE, d * ZOOM_OUT);
+  place(x, y, d);
+  const mid = middle(shot);
+  if (!bounds(shot) && mid) [x, y] = [mid.x, mid.y];
   for (let i = 0; i < 8; i++) {
     place(x, y, d);
     let b = bounds(shot);
@@ -151,7 +159,6 @@ function put(c: CameraControls, p: Pose) {
 function land() {
   const f = flight;
   flight = null;
-  fog = 1;
   f?.waiters.forEach((w) => w.done());
 }
 
@@ -178,7 +185,6 @@ function steer() {
   const elapsed = sceneNow() - flight.t0;
   const s = sample(flight.plan, elapsed);
   put(c, s.pose);
-  fog = s.fog;
   const ready = flight.waiters.filter((w) => elapsed >= w.at);
   flight.waiters = flight.waiters.filter((w) => elapsed < w.at);
   ready.forEach((w) => w.done());
@@ -230,8 +236,6 @@ function startView(level: CompiledLevel): { x: number; y: number; distance: numb
 }
 
 const stopFlying = () => land();
-
-export const cameraFog = () => fog;
 
 export const cameraRig = {
   attach(c: CameraControls | null) {

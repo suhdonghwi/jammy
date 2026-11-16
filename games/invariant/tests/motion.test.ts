@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DIP, FLIGHT_MAX, FLIGHT_MIN, plan, sample, STILL, velocity, type Pose } from '../src/scene/flight';
-import { planeWave, waveLength, waveMix } from '../src/scene/planeShift';
+import { FLIGHT_MAX, FLIGHT_MIN, HIGHEST, plan, sample, STILL, velocity, type Pose } from '../src/scene/flight';
+import { BOARD_OUT, boardAt, direction, PLANE_SHIFT } from '../src/scene/planeShift';
 
 const at = (x: number, y: number, d = 14): Pose => ({ x, y, d, az: 0.26, po: 0.8 });
 
@@ -54,33 +54,38 @@ describe('camera flights', () => {
     expect(velocity(second, 0.001).x).toBeCloseTo(v0.x, 0);
   });
 
-  it('fade through fog for trips past the fog', () => {
-    const f = plan(at(0, 0), at(400, 0));
-    expect(f.dip).toBe(true);
-    expect(f.dur).toBe(DIP);
-    expect(sample(f, DIP * 0.39).fog).toBeLessThan(0.1);
-    expect(sample(f, DIP * 0.39).pose.x).toBe(0);
-    expect(sample(f, DIP * 0.41).pose.x).toBe(400);
-    expect(sample(f, DIP).fog).toBe(1);
+  it('pull back further the further they go, never past the highest view', () => {
+    const lift = (x: number) => plan(at(0, 0), at(x, 0)).lift;
+    expect(lift(10)).toBe(0);
+    expect(lift(100)).toBeGreaterThan(lift(40));
+    const far = plan(at(0, 0), at(1000, 0));
+    expect(sample(far, far.dur / 2).pose.d).toBeCloseTo(HIGHEST);
   });
 
-  it('dip sooner when motion is reduced', () => {
-    expect(plan(at(0, 0), at(20, 0), STILL, true).dip).toBe(true);
-    expect(plan(at(0, 0), at(20, 0), STILL, false).dip).toBe(false);
+  it('do not pull back when motion is reduced', () => {
+    expect(plan(at(0, 0), at(100, 0), STILL, true).lift).toBe(0);
   });
 });
 
-describe('plane wave', () => {
-  const w = planeWave(false);
-
-  it('reaches the centre first and everything by its end', () => {
-    expect(waveMix(w, 0.2, 0)).toBeGreaterThan(waveMix(w, 0.2, 6));
-    expect(waveMix(w, waveLength(w), 100)).toBe(1);
-    expect(waveMix(w, 0, 0)).toBe(0);
+describe('board swap', () => {
+  it('drops the old board, then brings the new one in from the other side', () => {
+    const early = boardAt(BOARD_OUT * 0.5, 1);
+    expect(early.prev).toBe(true);
+    expect(early.y).toBeLessThan(0);
+    const late = boardAt(BOARD_OUT + 0.01, 1);
+    expect(late.prev).toBe(false);
+    expect(late.y).toBeGreaterThan(0);
+    expect(late.fade).toBeGreaterThan(0.9);
+    expect(boardAt(PLANE_SHIFT, 1)).toEqual({ prev: false, y: 0, fade: 0 });
   });
 
-  it('is one crossfade when motion is reduced', () => {
-    const r = planeWave(true);
-    expect(waveMix(r, 0.1, 0)).toBe(waveMix(r, 0.1, 50));
+  it('goes the other way when the input goes down', () => {
+    expect(boardAt(BOARD_OUT * 0.5, -1).y).toBeGreaterThan(0);
+    expect(direction({ n: 4 }, { n: 2 })).toBe(-1);
+    expect(direction({ n: 4 }, { n: 9 })).toBe(1);
+  });
+
+  it('only fades when motion is reduced', () => {
+    expect(boardAt(BOARD_OUT * 0.5, 1, 0).y).toBe(-0);
   });
 });

@@ -38,14 +38,9 @@ class AreaField {
   heightAt(x: number, y: number): number {
     const level = this.level;
     if (!level) return 0;
-    const tx = Math.round(x);
-    const ty = Math.round(y);
-    const h = this.heightOn(level, this.inputs, tx, ty);
-    const t = sceneNow();
     const before = planeShift.before;
-    if (!before || !planeShift.shifting(t)) return h;
-    const k = planeShift.mixAt(tx, ty, t);
-    return k >= 1 ? h : this.heightOn(level, before, tx, ty) * (1 - k) + h * k;
+    const inputs = before && planeShift.showingPrev(sceneNow()) ? before : this.inputs;
+    return this.heightOn(level, inputs, Math.round(x), Math.round(y));
   }
 
   private heightOn(level: CompiledLevel, inputs: Inputs, x: number, y: number): number {
@@ -69,7 +64,7 @@ class AreaField {
   }
 
   groundAt(x: number, y: number): number {
-    return this.heightAt(x, y) * SLAB_H;
+    return this.heightAt(x, y) * SLAB_H + planeShift.board(sceneNow()).y;
   }
 
   movedNear(near: TileWindow): { rising: number; sinking: number } {

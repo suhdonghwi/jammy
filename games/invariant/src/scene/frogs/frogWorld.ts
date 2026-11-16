@@ -131,7 +131,7 @@ class FrogWorld {
 }
 
 export function shownTrails(): FrogSim[] {
-  return planeShift.planes().flatMap(trailFrogs);
+  return [planeShift.key, planeShift.prevKey].filter((k): k is string => k !== null).flatMap(trailFrogs);
 }
 
 export function trailFrogs(plane: string): FrogSim[] {

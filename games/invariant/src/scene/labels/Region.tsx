@@ -25,7 +25,7 @@ export function ringPop(a: number): { scale: number; alpha: number } {
 const glslFloat = (v: number) => v.toFixed(2);
 const GLSL_RING_POP = /* glsl */ `
 float ringPopScale(float a) {
-  float s = a <= 0.0 ? ${glslFloat(RING_POP.from)} : 1.0 + ${glslFloat(RING_POP.cubic)} * pow(a - 1.0, 3.0) + ${glslFloat(RING_POP.square)} * pow(a - 1.0, 2.0);
+  float s = a <= 0.0 ? ${glslFloat(RING_POP.from)} : 1.0 + ${glslFloat(RING_POP.cubic)} * (a - 1.0) * (a - 1.0) * (a - 1.0) + ${glslFloat(RING_POP.square)} * (a - 1.0) * (a - 1.0);
   return ${glslFloat(RING_POP.from)} + ${glslFloat(1 - RING_POP.from)} * s;
 }
 float ringPopAlpha(float a) {
@@ -45,7 +45,7 @@ varying float vA;
 void main() {
   float a = clamp((uTime - uT0 - aDelay) / ${APPEAR.toFixed(2)}, 0.0, 1.0);
   float s = ringPopScale(a);
-  vec4 w = modelMatrix * vec4(position * vec3(s, 1.0, s) + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.012, -aTile.y), 1.0);
+  vec4 w = modelMatrix * vec4(position * vec3(s, 1.0, s) + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.012 + uBoardY, -aTile.y), 1.0);
   vWorld = w.xyz;
   vColor = aColor;
   vA = ringPopAlpha(a);
@@ -62,7 +62,7 @@ varying float vA;
 ${GLSL_FADE}
 void main() {
   float far = smoothstep(uFade.x, uFade.y, length(vWorld.xz - uCenter));
-  gl_FragColor = vec4(applyFade(vColor, vWorld), uAlpha * vA * uOut * (1.0 - far));
+  gl_FragColor = vec4(applyFade(vColor, vWorld), uAlpha * vA * uOut * (1.0 - far) * (1.0 - uBoardFade));
   #include <colorspace_fragment>
 }
 `;

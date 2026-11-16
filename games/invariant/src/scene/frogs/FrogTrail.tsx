@@ -43,7 +43,7 @@ function TrailLine({ index }: { index: number }) {
       line.computeLineDistances();
     }
     const t = sceneNow();
-    line.material.opacity = 0.9 * leaveFade(f, t) * planeShift.visibility(f.plane, f.x, f.y, t);
+    line.material.opacity = 0.9 * leaveFade(f, t) * planeShift.visibility(f.plane, t);
     line.material.resolution.set(size.width, size.height);
   });
 

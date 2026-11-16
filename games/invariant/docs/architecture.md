@@ -184,15 +184,18 @@ backend agree. `pnpm validate` and the tests are the safety net.
   (so far moves were fast) and starts with its hardest acceleration. A
   flight's length grows with the log of the trip (screens panned, zoom
   doublings, turn) from `FLIGHT_MIN` to `FLIGHT_MAX`, it eases with
-  smootherstep (no jolt at either end), pulls back a little on trips over
-  about a screen, and past seven screens it dips through the fog
-  (`cameraFog()` shrinks the fade radius) instead of crossing the world. A
+  smootherstep (no jolt at either end), and on trips over about a screen it
+  pulls back on the way, high enough that about two and a half screens show
+  at its peak (up to `HIGHEST`), so the ground crosses the screen at a
+  similar speed however far the trip. A
   new move mid-flight starts from where the camera is with the speed it has
   (quintic Hermite), so it bends rather than kinks. Position, zoom and angle
   share one flight (`opening` turns and moves at once). The player's drag or
   wheel stops a flight. camera-controls' own smoothing is left for the
   player's moves. `arrive()` resolves `ARRIVE_LEAD` before the flight lands,
-  so a counterexample's frog sets off as the camera gets there.
+  so a counterexample's frog sets off as the camera gets there. Fitting
+  starts from the tiles' middle when they don't project (behind the camera),
+  so a far target behind the view is still reached.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
   formula) and the view they show (`camera`, `focus`, `labels`; default
   `VIEW`), so Back and skip-ahead can rebuild any step instantly and frame
@@ -221,19 +224,18 @@ backend agree. `pnpm validate` and the tests are the safety net.
 
 - The floor is **one shader plane**: the level's precondition, guard and
   postcondition are evaluated per pixel, so the plane is truly infinite.
-- **Changing an input is a wave, not a cut** (`scene/planeShift.ts`). When
-  the plane changes, the mask keeps the old plane's texture
-  (`areaMask.shiftPlane`), and every layer blends old into new per tile with
-  `planeMix`: the slab heights and tops, the eggs, the goal columns, and the
-  floor, whose shader carries a second copy of the level's formulas on the
-  old inputs (`levelGlsl(level, areas, PREV)`) and evaluates it only while
-  the wave runs. The wave starts where the learner is looking (or at
-  `planeShift.aimAt`) and spreads outwards: each tile takes `PLANE_TILE`,
-  starting `0.035 s` per tile from the centre, at most `0.3 s` late. Frogs,
-  trails, hop arcs and hatching shells of either plane fade by
-  `planeShift.visibility` on their own tile, and `field.heightAt` blends the
-  same way, so a frog on the new plane lands on the right height. Reduced
-  motion makes it one crossfade.
+- **Changing an input swaps the board** (`scene/planeShift.ts`). When the
+  plane changes, the mask keeps the old plane's texture
+  (`areaMask.shiftPlane`) and the floor's shader carries a second copy of
+  the level's formulas on the old inputs (`levelGlsl(level, areas, PREV)`).
+  For `BOARD_OUT` the old board is shown (`uBoardPrev`) and sinks
+  (`uBoardY`) while fading to the horizon colour (`uBoardFade`, folded into
+  `applyFade`); then the new board comes in from the other side for
+  `BOARD_IN`. It goes down when the input goes up and up when it goes down,
+  as if the planes were stacked. `field.groundAt` adds the same offset and
+  `field.heightAt` reads the board on show, so frogs, trails, arcs and tags
+  ride with their board, and `planeShift.visibility` fades the frogs of the
+  board on show. Reduced motion keeps the fade and drops the movement.
 - **Slabs are one instanced grid centred on the camera**, sorted outward,
   drawn as far as the floor is still visible. A cell with no slab collapses
   in the vertex shader. So the area reaches the horizon at any zoom, and a

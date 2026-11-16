@@ -40,7 +40,7 @@ function placeEchoes(walkers: FrogSim[], t: number, from: number, depth: THREE.I
     const fade = ECHO_FADE * leaveFade(walker, t);
     leftTiles(walker).forEach(([x, y], i) => {
       if (n >= MAX_FROGS) return;
-      const shown = planeShift.visibility(walker.plane, x, y, t);
+      const shown = planeShift.visibility(walker.plane, t);
       if (shown <= 0) return;
       const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
       dummy.position.set(x, field.groundAt(x, y), -y);
@@ -95,7 +95,7 @@ export function Frogs() {
     const sh = shadows.current;
     if (!b || !gh || !gd || !sh) return;
     const t = sceneNow();
-    const shown = new Map(frogWorld.frogs.map((f) => [f, planeShift.visibility(f.plane, f.x, f.y, t)]));
+    const shown = new Map(frogWorld.frogs.map((f) => [f, planeShift.visibility(f.plane, t)]));
     const visible = frogWorld.frogs.filter((f) => shown.get(f)! > 0);
     const walkers = shownTrails();
     occupancy.update(visible, walkers);

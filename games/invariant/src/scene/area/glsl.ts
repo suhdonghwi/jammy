@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { SHORT } from '../../motion';
-import { GLSL_PLANE_WAVE } from '../planeShift';
+import { GLSL_BOARD } from '../planeShift';
 import { MASK_SIZE } from './mask';
 
 export const GLSL_MASK = /* glsl */ `
@@ -9,7 +9,7 @@ uniform vec2 uMaskOrigin;
 uniform highp sampler2D uMaskPrev;
 uniform vec2 uMaskPrevOrigin;
 uniform float uRise;
-${GLSL_PLANE_WAVE}
+${GLSL_BOARD}
 vec4 fetchMask(highp sampler2D mask, vec2 origin, vec2 tile) {
   ivec2 at = ivec2(floor(tile - origin + 0.5));
   if (at.x < 0 || at.y < 0 || at.x >= ${MASK_SIZE} || at.y >= ${MASK_SIZE}) return vec4(0.0);
@@ -33,14 +33,11 @@ float goalOf(vec4 m) {
 float eggOf(vec4 m) {
   return step(1.5, maskBits(m));
 }
-float heightAt(vec2 tile) {
-  float h = heightOf(maskAt(tile));
-  if (!planeShifting()) return h;
-  return mix(maskPrevAt(tile).r, h, planeMix(tile));
+vec4 maskShown(vec2 tile) {
+  return uBoardPrev > 0.5 ? maskPrevAt(tile) : maskAt(tile);
 }
-float shiftedBit(vec2 tile, float now, float before) {
-  if (!planeShifting()) return now;
-  return mix(before, now, planeMix(tile));
+float heightAt(vec2 tile) {
+  return uBoardPrev > 0.5 ? maskPrevAt(tile).r : heightOf(maskAt(tile));
 }
 `;
 
@@ -52,10 +49,10 @@ float heightNow() {
   return heightAt(aTile);
 }
 float eggNow() {
-  return shiftedBit(aTile, eggOf(maskAt(aTile)), eggOf(maskPrevAt(aTile)));
+  return eggOf(maskShown(aTile));
 }
 float goalNow() {
-  return shiftedBit(aTile, goalOf(maskAt(aTile)) * maskAt(aTile).b, goalOf(maskPrevAt(aTile)) * maskPrevAt(aTile).b);
+  return goalOf(maskShown(aTile));
 }
 `;
 
@@ -85,7 +82,7 @@ uniform vec2 uAppearCenter;
 float easeOutBack(float a) {
   float c1 = ${APPEAR_OVERSHOOT};
   float c3 = c1 + 1.0;
-  return a <= 0.0 ? 0.0 : 1.0 + c3 * pow(a - 1.0, 3.0) + c1 * pow(a - 1.0, 2.0);
+  return a <= 0.0 ? 0.0 : 1.0 + c3 * (a - 1.0) * (a - 1.0) * (a - 1.0) + c1 * (a - 1.0) * (a - 1.0);
 }
 float appearNow() {
   float delay = min(length(aTile - uAppearCenter) * 0.035, 0.7);

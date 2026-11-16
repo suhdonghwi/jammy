@@ -100,7 +100,7 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     if (before) setInputUniforms(u, level, before, planeExists(level, before), PREV);
     const R = updateFade(u);
     const t = cameraRig.target();
-    m.position.set(Math.round(t.x), 0, Math.round(t.z));
+    m.position.set(Math.round(t.x), planeShift.board(now).y, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
     u.uTime.value = now;
     u.uShowStop.value = amounts.stop.at(showStop ? 1 : 0, now);

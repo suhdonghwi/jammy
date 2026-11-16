@@ -27,12 +27,11 @@ uniform vec2 uGrid;
 varying vec3 vN;
 varying vec3 vWorld;
 varying vec2 vF;
-varying vec4 vFlags;
-varying float vShift;
+varying vec2 vFlags;
 varying vec2 vTile;
 void main() {
   vec2 tile = uGrid + aOffset;
-  vec4 m = maskAt(tile);
+  vec4 m = maskShown(tile);
   float h = heightAt(tile);
   if (h < 0.002) {
     gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
@@ -40,13 +39,11 @@ void main() {
   }
   vec3 p = position;
   p.y += (h - 1.0) * ${SLAB_H.toFixed(3)} - (1.0 - h) * 0.04;
-  vec4 w = modelMatrix * vec4(p + vec3(tile.x, 0.0, -tile.y), 1.0);
+  vec4 w = modelMatrix * vec4(p + vec3(tile.x, uBoardY, -tile.y), 1.0);
   vWorld = w.xyz;
   vN = normalize(mat3(modelMatrix) * normal);
   vF = vec2(position.x, -position.z);
-  vec4 p0 = planeShifting() ? maskPrevAt(tile) : m;
-  vFlags = vec4(m.b, goalOf(m), p0.b, goalOf(p0));
-  vShift = planeShifting() ? planeMix(tile) : 1.0;
+  vFlags = vec2(m.b, goalOf(m));
   vTile = tile;
   gl_Position = projectionMatrix * viewMatrix * w;
 }
@@ -58,8 +55,7 @@ precision highp int;
 varying vec3 vN;
 varying vec3 vWorld;
 varying vec2 vF;
-varying vec4 vFlags;
-varying float vShift;
+varying vec2 vFlags;
 varying vec2 vTile;
 uniform vec3 uTop, uSide, uHatch;
 uniform vec2 uHover;
@@ -90,7 +86,6 @@ void main() {
   vec3 col;
   if (top > 0.5) {
     col = topColor(vFlags.x, vFlags.y, hatch, fwr);
-    if (vShift < 0.999) col = mix(topColor(vFlags.z, vFlags.w, hatch, fwr), col, vShift);
     if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.45 * uGoalAmt);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
     col = mix(col, vec3(1.0), axisLabelMask(vF, t) * 0.85);
@@ -122,7 +117,7 @@ void main() {
     gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
     return;
   }
-  vec4 w = modelMatrix * vec4(position + vec3(tile.x, 0.003, -tile.y), 1.0);
+  vec4 w = modelMatrix * vec4(position + vec3(tile.x, 0.003 + uBoardY, -tile.y), 1.0);
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;
@@ -130,9 +125,10 @@ const shadowFragment = /* glsl */ `
 varying vec2 vUv;
 varying float vH;
 uniform sampler2D uMap;
+uniform float uBoardFade;
 void main() {
   vec4 c = texture2D(uMap, vUv);
-  gl_FragColor = vec4(c.rgb, c.a * vH * 0.75);
+  gl_FragColor = vec4(c.rgb, c.a * vH * 0.75 * (1.0 - uBoardFade));
 }
 `;
 
