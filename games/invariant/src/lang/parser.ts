@@ -3,6 +3,8 @@ import { BUILTIN_ARITY, COMPARISON_OPS, NO_SPAN, spanOf, type BinOp, type Builti
 
 const tr = () => t().langErrors;
 
+const ONE_LOOP = 'Only one loop is supported';
+
 export class LangError extends Error {
   constructor(message: string, public span: Span) {
     super(message);
@@ -265,7 +267,7 @@ class Parser {
       }
       return { kind: 'if', cond, then, else: els, span: { from: start, to: this.toks[this.pos - 1].span.to } };
     }
-    if (this.isKw('while')) throw new LangError('Only one loop is supported', this.peek().span);
+    if (this.isKw('while')) throw new LangError(ONE_LOOP, this.peek().span);
     const name = this.ident();
     const v: Expr = { kind: 'var', name: name.text, span: name.span };
     const one: Expr = { kind: 'num', value: 1n, span: name.span };
@@ -335,7 +337,7 @@ class Parser {
         ensures.push(this.expr());
         this.expectOp(';');
       } else if (this.isKw('while')) {
-        if (loop) throw new LangError('Only one loop is supported', this.peek().span);
+        if (loop) throw new LangError(ONE_LOOP, this.peek().span);
         const w = this.next();
         this.expectOp('(');
         const guard = this.expr();
@@ -343,7 +345,7 @@ class Parser {
         const body = this.block();
         loop = { guard, body, headerSpan: { from: w.span.from, to: close.span.to } };
       } else {
-        throw new LangError(`Unexpected '${this.peek().text}'`, this.peek().span);
+        throw new LangError(tr().unexpected(this.peek().text), this.peek().span);
       }
     }
     if (!loop) throw new LangError('The program needs a while loop', NO_SPAN);

@@ -10,7 +10,7 @@ export function euclidMod(a: bigint, k: bigint): bigint {
   return r < 0n ? r + k : r;
 }
 
-export const EVAL_BUDGET = 4096;
+const EVAL_BUDGET = 4096;
 
 export class OverBudget extends Error {
   constructor() {
@@ -96,10 +96,11 @@ export function holds(e: Expr, s: State): boolean {
   return evaluate(e, s) === true;
 }
 
-export function step(body: Stmt[], s: State): State {
+export function step(body: Stmt[], s: State, visit?: (st: Stmt) => void): State {
   const out: State = { ...s };
   const run = (stmts: Stmt[]) => {
     for (const st of stmts) {
+      visit?.(st);
       if (st.kind === 'assign') out[st.name] = evaluate(st.value, out) as bigint;
       else run(evaluate(st.cond, out) ? st.then : st.else);
     }
@@ -109,16 +110,8 @@ export function step(body: Stmt[], s: State): State {
 }
 
 export function trace(body: Stmt[], s: State): Span[] {
-  const out: State = { ...s };
   const ran: Span[] = [];
-  const run = (stmts: Stmt[]) => {
-    for (const st of stmts) {
-      ran.push(st.span);
-      if (st.kind === 'assign') out[st.name] = evaluate(st.value, out) as bigint;
-      else run(evaluate(st.cond, out) ? st.then : st.else);
-    }
-  };
-  run(body);
+  step(body, s, (st) => ran.push(st.span));
   return ran;
 }
 

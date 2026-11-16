@@ -1,4 +1,3 @@
-// Z3 is served from public/, not bundled: its Emscripten thread workers re-load z3-built.js by URL.
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
