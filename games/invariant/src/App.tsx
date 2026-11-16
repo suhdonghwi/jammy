@@ -13,6 +13,9 @@ import { Trouble } from './ui/Trouble';
 const Poster =
   import.meta.env.DEV && new URLSearchParams(location.search).has('poster') ? lazy(() => import('./ui/dev/Poster').then((m) => ({ default: m.Poster }))) : null;
 
+const Motion =
+  import.meta.env.DEV && new URLSearchParams(location.search).has('motion') ? lazy(() => import('./ui/dev/MotionNotes').then((m) => ({ default: m.MotionNotes }))) : null;
+
 export function App() {
   if (!hasWebGL2) return <Trouble reason="webgl" />;
   return (
@@ -42,6 +45,11 @@ function Game() {
         <RulesCard />
         <SyntaxCard />
       </div>
+      {Motion && (
+        <Suspense fallback={null}>
+          <Motion />
+        </Suspense>
+      )}
       <Analytics scriptSrc="/ribbit/script.js" endpoint="/ribbit" />
     </div>
   );
