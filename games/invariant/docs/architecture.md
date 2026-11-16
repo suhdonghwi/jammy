@@ -146,10 +146,15 @@ backend agree. `pnpm validate` and the tests are the safety net.
 - **The camera moves through one call.** `cameraRig.frame({ at, focus })`
   takes the tiles a moment is about (`focus`, plus `labels` for tiles that
   carry a tag) and, optionally, a preferred view (`at`), and fits them into
-  the screen left free by every element marked `data-frame` (top bar, code
-  panel, caption column). With `at` it always goes there, zoomed out and
-  shifted only as far as the tiles need; without it, it moves only when the
-  tiles don't fit. Tutorial steps, counterexamples, Run and a level's start
+  the largest rectangle of the visible screen that no element marked
+  `data-frame` (top bar, code panel, caption column) covers. The visible
+  screen ends at `innerHeight`: the canvas is `h-lvh`, so on iOS Safari its
+  bottom sits behind the toolbar. With `at` it always goes there, zoomed out
+  and shifted only as far as the tiles need; without it, it moves only when
+  the tiles don't fit. A move starts from the zoom of the last `at` (the
+  level's or the tutorial step's) and zooms out at most `ZOOM_OUT` beyond it,
+  so repeated checks don't drift outward and the player's zoom stays while
+  the tiles fit. Tutorial steps, counterexamples, Run and a level's start
   all frame this way; don't call `moveTo`/`dollyTo` directly. The other
   entries are narrow: `include(labels)` (callouts), `zoomTo` (the proof's
   wide view), `resetAngle`; the home screen drives its own camera.
@@ -157,8 +162,9 @@ backend agree. `pnpm validate` and the tests are the safety net.
   measured against the new caption, and requests made meanwhile merge; the
   last shot is re-fitted (without its `at`) when the panels settle at a new
   size. Before a screen shows, placements snap; after, they glide. Use
-  `arrive()` when something should start as the camera gets there (a hatch,
-  a counterexample's frog) rather than after it comes to rest.
+  `arrive()` when something should start once the camera is there (a hatch,
+  a counterexample's frog): it glides quickly and waits for the camera, up
+  to `ARRIVING_MS`.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
   formula) and the view they show (`camera`, `focus`, `labels`; default
   `VIEW`), so Back and skip-ahead can rebuild any step instantly and frame
