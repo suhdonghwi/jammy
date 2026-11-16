@@ -16,7 +16,7 @@ import { dismissFrogs, hatch, HATCH_MS, hopFrog } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
 import { GHOST_RISE, previewHop, raiseGhost } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
-import { begin, beginCheck, caption, currentLevel, type Token } from './sequence';
+import { beginCheck, busyWhile, caption, currentLevel, type Token } from './sequence';
 
 
 const fmt = (s: State) => '`' + showState(currentLevel(), s) + '`';
@@ -91,14 +91,8 @@ function reveal(rule: Rule, res: CheckResult) {
   useGame.setState((g) => ({ verdicts: { ...g.verdicts, [rule]: v }, pending: g.pending.filter((r) => r !== rule) }));
 }
 
-export async function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
-  const tok = begin();
-  useGame.setState({ busy: true, running: false });
-  try {
-    await counterexample(tok, cex, opts);
-  } finally {
-    if (tok.alive) useGame.setState({ busy: false });
-  }
+export function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
+  return busyWhile((tok) => counterexample(tok, cex, opts));
 }
 
 const REAL_RUN_SECONDS = 6;
@@ -166,50 +160,55 @@ interface Outcome {
   undecided: boolean;
 }
 
-export async function playVerification(res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions = () => ({})): Promise<Outcome | null> {
-  const tok = begin();
-  useGame.setState({ busy: true, running: false, failMark: null, region: null, callouts: [] });
+export function playVerification(res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions = () => ({})): Promise<Outcome | null> {
+  return busyWhile(async (tok) => {
+    useGame.setState({ failMark: null, region: null, callouts: [] });
+    try {
+      return await verifyRules(tok, res, rules, onFail);
+    } finally {
+      useGame.setState((g) => ({ pending: g.pending.filter((r) => !rules.includes(r)) }));
+    }
+  });
+}
+
+async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: (rule: Rule) => CounterexampleOptions): Promise<Outcome | null> {
   const order = RULES.filter((r) => rules.includes(r));
   let undecided = false;
-  try {
-    if (frogWorld.frogs.length) {
-      await dismissFrogs();
-      await sleep(EGG_REGROW * 1000);
-      if (!tok.alive) return null;
-    }
-    for (const [i, rule] of order.entries()) {
-      const v = res.verdicts[rule];
-      if (!v) continue;
-      if (v.status === 'fail') {
-        await counterexample(tok, v.cex, onFail(rule));
-        if (!tok.alive) return null;
-        reveal(rule, res);
-        return { failing: rule, undecided };
-      }
-      if (v.status === 'undecided') {
-        reveal(rule, res);
-        undecided = true;
-        await sleep(HOLD_MS);
-        if (!tok.alive) return null;
-        continue;
-      }
-      const tag = await showHolds(rule);
+  if (frogWorld.frogs.length) {
+    await dismissFrogs();
+    await sleep(EGG_REGROW * 1000);
+    if (!tok.alive) return null;
+  }
+  for (const [i, rule] of order.entries()) {
+    const v = res.verdicts[rule];
+    if (!v) continue;
+    if (v.status === 'fail') {
+      await counterexample(tok, v.cex, onFail(rule));
       if (!tok.alive) return null;
       reveal(rule, res);
-      if (tag) useGame.setState({ callouts: [tag] });
-      if (i < order.length - 1) {
-        await sleep(HOLD_MS);
-        if (!tok.alive) return null;
-        useGame.setState({ region: null, callouts: [] });
-        void dismissFrogs('test');
-        await sleep(BETWEEN_MS);
-        if (!tok.alive) return null;
-      }
+      return { failing: rule, undecided };
     }
-    return { undecided };
-  } finally {
-    useGame.setState((g) => ({ ...(tok.alive ? { busy: false } : {}), pending: g.pending.filter((r) => !rules.includes(r)) }));
+    if (v.status === 'undecided') {
+      reveal(rule, res);
+      undecided = true;
+      await sleep(HOLD_MS);
+      if (!tok.alive) return null;
+      continue;
+    }
+    const tag = await showHolds(rule);
+    if (!tok.alive) return null;
+    reveal(rule, res);
+    if (tag) useGame.setState({ callouts: [tag] });
+    if (i < order.length - 1) {
+      await sleep(HOLD_MS);
+      if (!tok.alive) return null;
+      useGame.setState({ region: null, callouts: [] });
+      void dismissFrogs('test');
+      await sleep(BETWEEN_MS);
+      if (!tok.alive) return null;
+    }
   }
+  return { undecided };
 }
 
 type Callout = Game['callouts'][number];
@@ -270,16 +269,12 @@ function spreadHops(hops: ProofHop[]): ProofHop[] {
   return picked;
 }
 
-export async function playProof() {
-  const tok = begin();
-  useGame.setState({ busy: true, running: false });
-  void dismissFrogs();
-  try {
+export function playProof() {
+  return busyWhile(async (tok) => {
+    void dismissFrogs();
     await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
     if (tok.alive) await proofWave();
-  } finally {
-    if (tok.alive) useGame.setState({ busy: false });
-  }
+  });
 }
 
 async function proofWave(): Promise<FrogSim | null> {

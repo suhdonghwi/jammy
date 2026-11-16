@@ -3,6 +3,7 @@ import { RULES, type Rule } from '../checker/types';
 import { dismissFrogs, hatch, HATCH_MS, loopFrogs, placeFrog, resetFrogs, sendFrogsHome, stepFrogs, testEggs } from '../director/frogs';
 import { previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
+import type { Token } from '../director/sequence';
 import { playProof } from '../director/verdicts';
 import { useGame, type Reveal } from '../game/store';
 import { EXIT_MS } from '../ui/timing';
@@ -12,7 +13,7 @@ import { eggsNear, tileState } from '../levels/tiles';
 import type { Tile, View } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { allow, ask, beat, demo, guard, say, sayWaiting, stage, waitEvent, waitStore } from './script';
+import { allow, ask, beat, demo, say, sayWaiting, stage, waitEvent, waitStore } from './script';
 
 export const st = (i: number, n: number) => ({ i: BigInt(i), n: BigInt(n) });
 const realFrogsStopped = () => frogWorld.frogs.filter((f) => f.kind === 'real').every((f) => f.stopped);
@@ -31,7 +32,7 @@ export interface Scene {
 
 interface Step {
   scene: Scene;
-  run: (gen: number) => Promise<void>;
+  run: (gen: Token) => Promise<void>;
 }
 
 export let learnerFormula = '';
@@ -83,20 +84,20 @@ export function loopExampleFrogs() {
   loopFrogs(eggs.map(([x, y]) => toBig(tileState(L, x, y, inputs))));
 }
 
-async function passed(gen: number, rule: Rule) {
+async function passed(gen: Token, rule: Rule) {
   const text = { initialization: T().passedInitialization, maintenance: T().passedMaintenance, exit: T().passedExit }[rule];
   await beat(gen, text, { spot: 'lights', tone: 'success', keep: true });
   void dismissFrogs('test');
 }
 
-async function witness(gen: number, rule: Rule, pitfall: string, o: { question: string; afterDemo?: string; afterOwn?: string; ghost?: string }) {
+async function witness(gen: Token, rule: Rule, pitfall: string, o: { question: string; afterDemo?: string; afterOwn?: string; ghost?: string }) {
   if (!witnessed.has(rule)) {
     const mine = useGame.getState().formulaText;
     useGame.getState().setFormula(pitfall);
     const yes = await ask(gen, T().whatIf(pitfall, o.question));
-    guard(gen);
+    gen.guard();
     await demo(gen, pitfall, upTo(rule), { ghostExtra: o.ghost, restore: mine, guessedRight: !yes });
-    guard(gen);
+    gen.guard();
     if (o.afterDemo) await beat(gen, o.afterDemo, { spot: 'lights' });
   } else if (o.afterOwn) {
     await beat(gen, o.afterOwn, { spot: 'lights' });
@@ -261,7 +262,7 @@ export const STEPS: Step[] = [
         ],
         prepare: async () => {
           await sleep(400);
-          guard(gen);
+          gen.guard();
           sfx.ghost();
           const f = previewHop({ x: 1n, y: 0n });
           useGame.setState((g) => ({ callouts: [...g.callouts, { x: f.x, y: f.y, frog: f.id, text: holds().maintenance, tone: 'good' }] }));
@@ -277,7 +278,7 @@ export const STEPS: Step[] = [
       sayWaiting(T().draw, 'formula');
       await waitStore(gen, (g) => g.valid !== null && g.formulaText.trim() !== '');
       await sleep(900);
-      guard(gen);
+      gen.guard();
       await beat(gen, T().draw, { spot: 'formula' });
       allow({});
       learnerFormula = useGame.getState().formulaText;
@@ -339,13 +340,13 @@ export const STEPS: Step[] = [
           resetFrogs();
           const f = hatch(st(0, 3));
           await sleep(HATCH_MS + 200);
-          guard(gen);
+          gen.guard();
           useGame.setState({ callouts: [{ x: f.x, y: f.y, frog: f.id, text: T().stillOnTag, tone: 'good' }] });
           for (let k = 0; k < 6 && !f.stopped; k++) {
             await stepFrogs(true);
-            guard(gen);
+            gen.guard();
             await sleep(450);
-            guard(gen);
+            gen.guard();
           }
         },
         settle: 200,

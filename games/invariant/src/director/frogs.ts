@@ -16,7 +16,7 @@ import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { clearTrace, traceHop } from './codeTrace';
 import { joinHopBatch, landInBatch } from './hopBatch';
 import { eggRegion } from './regions';
-import { abandonCheck, begin, currentLevel, events } from './sequence';
+import { abandonCheck, begin, busyWhile, currentLevel, events } from './sequence';
 
 export const HATCH_MS = (HATCH_EMERGE + HATCH_GROW) * 1000;
 const TEST_EGGS = 10;
@@ -202,26 +202,25 @@ export async function runFrogs() {
 export async function testEggs() {
   const g = useGame.getState();
   if (g.busy || g.running || g.stepping) return;
-  const tok = begin();
-  useGame.setState({ failMark: null, busy: true });
-  await dismissFrogs();
-  if (!tok.alive) return;
-  const L = currentLevel();
-  const eggs = firstEggs(TEST_EGGS);
-  if (eggs.length) {
-    await cameraRig.arrive({ focus: eggs.flatMap((s) => runTiles(L, s)) });
-    if (!tok.alive) return;
-  }
-  eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatchUntrailed(s)));
-  await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
-  for (let beats = 0; tok.alive && beats < RUN_BEATS; beats++) {
-    if ((await hopAllOnce()) === 0) break;
-    await sleep(HOP_GAP_MS);
-  }
-  if (tok.alive) {
-    useGame.setState({ busy: false });
-    events.emit('runDone');
-  }
+  const finished = await busyWhile(async (tok) => {
+    useGame.setState({ failMark: null });
+    await dismissFrogs();
+    if (!tok.alive) return false;
+    const L = currentLevel();
+    const eggs = firstEggs(TEST_EGGS);
+    if (eggs.length) {
+      await cameraRig.arrive({ focus: eggs.flatMap((s) => runTiles(L, s)) });
+      if (!tok.alive) return false;
+    }
+    eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatchUntrailed(s)));
+    await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
+    for (let beats = 0; tok.alive && beats < RUN_BEATS; beats++) {
+      if ((await hopAllOnce()) === 0) break;
+      await sleep(HOP_GAP_MS);
+    }
+    return tok.alive;
+  });
+  if (finished) events.emit('runDone');
 }
 
 export function pauseRun() {
