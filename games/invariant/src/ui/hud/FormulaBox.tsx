@@ -4,7 +4,7 @@ import { check } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { displayNames } from '../../levels/level';
-import { button } from '../classes';
+import { BUTTON } from '../classes';
 import { colorRuns } from '../codeColors';
 import { RuleLights } from './RuleLights';
 
@@ -32,6 +32,8 @@ function colored(text: string, error: { from: number; to: number } | null): Reac
 }
 
 const SHAKE: Keyframe[] = [{ transform: 'none' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(-2px)' }, { transform: 'none' }];
+
+const CHECK = `${BUTTON} relative -top-[1.5px] bg-brand pl-4.5 pr-5 py-2 compact:pl-3.5 compact:pr-4 text-md compact:text-sm font-semibold text-white shadow-[0_3px_0_var(--color-brand-deep)] enabled:hover:bg-brand-light enabled:active:translate-y-px`;
 
 const TEXT = 'col-start-1 row-start-1 m-0 min-w-0 px-1 py-2.5 font-mono text-(length:--formula-size) leading-[1.4] whitespace-pre-wrap [overflow-wrap:anywhere]';
 
@@ -113,7 +115,7 @@ export function FormulaBox() {
           <RuleLights />
         </div>
         <button
-          className={`${button('check', 'none')} ${spot === 'check' ? 'spotlight spotlight-glow' : ''}`}
+          className={`${CHECK} ${spot === 'check' ? 'spotlight spotlight-glow' : ''}`}
           disabled={!canCheck}
           onClick={submit}
         >

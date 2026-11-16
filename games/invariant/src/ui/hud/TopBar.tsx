@@ -3,7 +3,7 @@ import { goMenu } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { levelNumber } from '../../levels/catalog';
-import { button } from '../classes';
+import { button, PILL } from '../classes';
 
 export function TopBar() {
   const level = useGame((s) => s.level);
@@ -12,7 +12,7 @@ export function TopBar() {
   if (!level) return null;
   return (
     <div className="pointer-events-none! flex animate-slide-in items-center" data-frame data-topbar>
-      <div className={PILLS} data-pill>
+      <div className={`${PILL} pointer-events-auto min-w-0 gap-1`} data-pill>
         <button
           className={`${button('quiet', 'none')} size-7.5`}
           title={mode === 'tutorial' ? tr.topBar.home : tr.topBar.allLevels}
@@ -29,5 +29,3 @@ export function TopBar() {
     </div>
   );
 }
-
-const PILLS = 'pointer-events-auto flex min-w-0 items-center gap-1 rounded-full border border-line bg-card p-1 shadow-card backdrop-blur-md';

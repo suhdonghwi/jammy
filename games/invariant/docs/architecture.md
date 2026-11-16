@@ -226,10 +226,11 @@ backend agree. `pnpm validate` and the tests are the safety net.
   Korean `@font-face`s, keyframes, the page base, the screen start/leave
   rules, and the tutorial's spotlight.
 - Class lists used in many places live in `ui/classes.ts`: `CARD`,
-  `CARD_LABEL`, `FOLD` (the code panel's fold transition, with `FOLD_MS`
-  and `FOLD_EASE` for `element.animate()`), and `button(variant, size)`.
-  Variants are complete and never override each other — don't append
-  utilities that conflict with a variant's.
+  `CARD_LABEL`, `PILL`, `FOLD` (the code panel's fold transition, with
+  `FOLD_MS` and `FOLD_EASE` for `element.animate()`), and
+  `button(variant, size)`, whose shared base is `BUTTON` (for a one-off
+  button such as Check). Variants are complete and never override each
+  other — don't append utilities that conflict with a variant's.
 - Use the theme's tokens (colours, `text-md`, shadows, eases, animations,
   the `xs` breakpoint) and Tailwind's scales before arbitrary values.
 
