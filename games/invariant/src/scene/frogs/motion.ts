@@ -14,7 +14,6 @@ interface Pose {
   sy: number;
   yaw: number;
   pitch: number;
-  landed: boolean;
   emerged: number;
 }
 
@@ -102,7 +101,6 @@ export function pose(f: FrogSim, t: number): Pose {
   let ground = h;
   let squash = 0;
   let pitch = 0;
-  let landed = false;
 
   const off = angleDelta(f.yaw, f.face);
   if (!f.turn && !f.hop && !f.rise && Math.abs(off) > 0.35) {
@@ -161,10 +159,6 @@ export function pose(f: FrogSim, t: number): Pose {
     f.yaw = f.face - f.rise.turns * Math.PI * 2 * Math.pow(1 - u, 3);
     squash += 0.22 * bump(u) - 0.18 * bump(clamp01((raw - 1) / 0.3));
     emerged = smoothstep(clamp01(u * 1.6 - 0.2));
-    if (raw >= 1 && !f.touched) {
-      f.touched = true;
-      landed = true;
-    }
     if (raw >= 1.3) f.rise = undefined;
   }
   const breath = 0.022 * Math.sin(t * 2.4 + f.phase);
@@ -184,5 +178,5 @@ export function pose(f: FrogSim, t: number): Pose {
   }
   const sy = (1 + squash + breath) * s;
   const sx = (1 - squash * 0.45 - breath * 0.5) * s;
-  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, landed, emerged };
+  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, emerged };
 }

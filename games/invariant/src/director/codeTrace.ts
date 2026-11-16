@@ -1,8 +1,8 @@
-import { useGame } from '../../game/store';
-import type { State } from '../../lang/ast';
-import { holds, trace } from '../../lang/eval';
-import type { CompiledLevel } from '../../levels/level';
-import { after } from '../sceneTime';
+import { useGame } from '../game/store';
+import type { State } from '../lang/ast';
+import { holds, trace } from '../lang/eval';
+import type { CompiledLevel } from '../levels/level';
+import { after } from '../scene/sceneTime';
 
 const EXIT_PAUSE_MS = 450;
 

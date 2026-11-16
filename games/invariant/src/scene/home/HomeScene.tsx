@@ -6,7 +6,7 @@ import { GoalColumns } from '../area/GoalColumns';
 import { Slabs } from '../area/Slabs';
 import { Floor } from '../floor/Floor';
 import { Frogs } from '../frogs/Frogs';
-import { frogWorld, HOP, yawToward } from '../frogs/frogWorld';
+import { frogWorld, yawToward } from '../frogs/frogWorld';
 import { HATCH_EMERGE, HatchShells, hatchFx } from '../frogs/Hatch';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
@@ -80,7 +80,7 @@ export function HomeScene() {
       frogs.forEach((f, j) => {
         pos[j] = (pos[j] + 1) % PATH.length;
         const [x, y] = PATH[pos[j]];
-        void frogWorld.hopTo(DIAGONAL, f, { x: BigInt(x), y: BigInt(y) }, HOP, true).then(() => {
+        void frogWorld.hopTo(DIAGONAL, f, { x: BigInt(x), y: BigInt(y) }).then(() => {
           const [nx, ny] = PATH[(pos[j] + 1) % PATH.length];
           f.face = yawToward(x, y, nx, ny);
         });

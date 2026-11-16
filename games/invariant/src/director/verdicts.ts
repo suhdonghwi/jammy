@@ -12,7 +12,7 @@ import { EGG_REGROW } from '../scene/area/glsl';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, HOP, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { dismissFrogs, hatch, HATCH_MS } from './frogs';
+import { dismissFrogs, hatch, HATCH_MS, hopFrog } from './frogs';
 import { clamp01, smoothstep } from '../scene/easing';
 import { GHOST_RISE, previewHop, raiseGhost } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
@@ -127,7 +127,7 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
     const pace = Math.max(FASTEST_HOP, Math.min(HOP, REAL_RUN_SECONDS / run.length));
     for (const s of run.slice(1)) {
       if (!tok.alive) return;
-      await frogWorld.hopTo(L, f, s, pace);
+      await hopFrog(L, f, s, pace);
     }
   } else {
     sfx.ghost();
@@ -141,7 +141,7 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
     markFailure(x, y, say.startsOutsideTag(area));
     text = `${prefix}${say.startsOutside(fmt(cex.state), area)}${broken}`;
   } else if (cex.rule === 'maintenance' && cex.next) {
-    await frogWorld.hopTo(L, f, cex.next);
+    await hopFrog(L, f, cex.next);
     if (!tok.alive) return;
     markFailure(...tileOf(L, cex.next), say.landsOutsideTag(area));
     const lands =

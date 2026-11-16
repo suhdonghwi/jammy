@@ -5,8 +5,6 @@ import { hop, running, type CompiledLevel } from '../../levels/level';
 import { tileOf } from '../../levels/tiles';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
-import { traceHop } from './codeTrace';
-import { joinHopBatch, landInBatch } from './hopBatch';
 
 export type FrogKind = 'real' | 'test';
 
@@ -39,7 +37,6 @@ export interface FrogSim {
   oy?: number;
   os?: number;
   drawn?: { x: number; y: number; ground: number; z: number; scale: number };
-  touched?: boolean;
 }
 
 export const yawToward = (fx: number, fy: number, tx: number, ty: number) => Math.atan2(tx - fx, -(ty - fy));
@@ -104,13 +101,11 @@ class FrogWorld {
     }
   }
 
-  hopTo(level: CompiledLevel, f: FrogSim, next: State, dur = HOP, quiet = false): Promise<void> {
-    const from = f.state;
+  hopTo(level: CompiledLevel, f: FrogSim, next: State, dur = HOP): Promise<void> {
     f.state = next;
     const [tx, ty] = tileOf(level, next);
     if (tx !== f.x || ty !== f.y) f.face = yawToward(f.x, f.y, tx, ty);
     f.hop = { fx: f.x, fy: f.y, tx, ty, t0: sceneNow(), dur };
-    const batch = quiet ? null : joinHopBatch(() => traceHop(level, from, next, dur));
     return new Promise((res) =>
       after(dur * 1000, () => {
         f.x = tx;
@@ -119,7 +114,6 @@ class FrogWorld {
         f.landT0 = sceneNow();
         f.trail?.push([tx, ty]);
         f.face = facingFor(level, next, f.face);
-        if (batch) landInBatch(batch);
         if (!running(level, next) && holds(level.post, next)) this.landOnGoal(f);
         res();
       }),

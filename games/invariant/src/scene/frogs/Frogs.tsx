@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/inputs';
-import { toNum } from '../../levels/level';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { uploadInstances } from '../instances';
@@ -91,14 +90,9 @@ export function Frogs() {
     const k = 1 - Math.exp(-dt * 11);
     lastT.current = t;
     let badges = 0;
-    const level = useGame.getState().level;
     for (const f of visible) {
       if (n >= MAX_FROGS) break;
       const p = pose(f, t);
-      if (p.landed) {
-        const s = toNum(f.state);
-        if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f);
-      }
       const key = tileOf(f);
       const g = groups.get(key)!;
       const target = slotFor(g.indexOf(f), g.length);

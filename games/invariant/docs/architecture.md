@@ -21,7 +21,7 @@ src/
   levels/      the level format (level.ts), the inputs that pick a plane (inputs.ts), every level (catalog.ts), its Korean text (catalog.ko.ts, localize.ts), the plane's tiles
   i18n/        the language switch, and every other line the game says (en.ts, ko.ts)
   game/        the zustand store, cleared levels (progress.ts), what the app's buttons do (actions.ts)
-  director/    scripted sequences: Step/Run, looping frogs, ghost frogs, check playback
+  director/    scripted sequences: Step/Run, looping frogs, ghost frogs, check playback; a hop's sound and code cursor
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
   audio/       sound clips and the synthesised ghost siren
   hooks/       React hooks the scene and the DOM share: exit animations, media queries

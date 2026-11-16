@@ -7,13 +7,14 @@ import { hop, running, toBig, type CompiledLevel } from '../levels/level';
 import { eggsNear, tileOf, tileState } from '../levels/tiles';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
-import { frogWorld, HOP_GAP_MS, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
-import { clearTrace } from '../scene/frogs/codeTrace';
+import { frogWorld, HOP, HOP_GAP_MS, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
 import { hopArcs } from '../scene/frogs/HopArcs';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
 import { HATCH_GROW } from '../scene/frogs/motion';
 import { EGG_ALONE, EGG_ASIDE, occupancy } from '../scene/frogs/occupancy';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
+import { clearTrace, traceHop } from './codeTrace';
+import { joinHopBatch, landInBatch } from './hopBatch';
 import { eggRegion } from './regions';
 import { abandonCheck, begin, currentLevel, events } from './sequence';
 
@@ -61,6 +62,12 @@ export function hatch(s: State): FrogSim {
   return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale, home: [x, y] });
 }
 
+export function hopFrog(L: CompiledLevel, f: FrogSim, next: State, dur = HOP): Promise<void> {
+  const from = f.state;
+  const batch = joinHopBatch(() => traceHop(L, from, next, dur));
+  return frogWorld.hopTo(L, f, next, dur).then(() => landInBatch(batch));
+}
+
 function hatchUntrailed(s: State): FrogSim {
   const f = hatch(s);
   f.trail = undefined;
@@ -81,7 +88,7 @@ async function hopAllOnce(): Promise<number> {
     await Promise.all(
       frogs.map((f) => {
         const n = hop(L, f.state);
-        return frogWorld.hopTo(L, f, n).then(() => {
+        return hopFrog(L, f, n).then(() => {
           f.stopped = !running(L, n);
         });
       }),
@@ -140,7 +147,7 @@ async function hopOnce(f: FrogSim) {
   const n = hop(L, f.state);
   useGame.setState({ stepping: true });
   try {
-    await frogWorld.hopTo(L, f, n);
+    await hopFrog(L, f, n);
     f.stopped = !running(L, n);
   } finally {
     useGame.setState({ stepping: false });
@@ -255,7 +262,7 @@ export function loopFrogs(eggs: State[]) {
       await sleep(650);
       while (tok.alive && !f.stopped) {
         const n = hop(L, f.state);
-        await frogWorld.hopTo(L, f, n);
+        await hopFrog(L, f, n);
         f.stopped = !running(L, n);
         await sleep(HOP_GAP_MS);
       }
