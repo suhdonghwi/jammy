@@ -75,10 +75,14 @@ export function Frogs() {
     return m;
   }, []);
   const shadowGeom = useMemo(() => new THREE.PlaneGeometry(0.62, 0.62).rotateX(-Math.PI / 2), []);
-  useEffect(() => () => (geom.dispose(), ghostGeom.dispose(), shadowGeom.dispose()), [geom, ghostGeom, shadowGeom]);
   const shadowMat = useMemo(
     () => new THREE.MeshBasicMaterial({ map: getBlobTexture(), transparent: true, depthWrite: false }),
     [],
+  );
+  useEffect(() => () => (geom.dispose(), ghostGeom.dispose(), shadowGeom.dispose()), [geom, ghostGeom, shadowGeom]);
+  useEffect(
+    () => () => [mat, ghostDepthMat, ghostMat, shadowMat].forEach((m) => m.dispose()),
+    [mat, ghostDepthMat, ghostMat, shadowMat],
   );
   const plane = useGame((s) => planeKey(s.inputs));
   const lastT = useRef<number | undefined>(undefined);

@@ -101,7 +101,7 @@ export function HopArcs() {
   const washes = useRef<THREE.InstancedMesh>(null);
   const plane = useGame((s) => planeKey(s.inputs));
   const parts = useMemo(() => ({ ring: instancedParts(ringGeometry, MAX), wash: instancedParts(washGeometry, MAX) }), []);
-  useEffect(() => () => (parts.ring.g.dispose(), parts.wash.g.dispose()), [parts]);
+  useEffect(() => () => [parts.ring, parts.wash].forEach((p) => (p.g.dispose(), p.mat.dispose())), [parts]);
 
   useFrame(() => {
     const r = rings.current;

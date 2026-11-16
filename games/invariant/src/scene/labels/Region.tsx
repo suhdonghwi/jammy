@@ -138,6 +138,7 @@ export function OutlineRegion() {
   const win = useTileWindow();
   const ring = useMemo(() => regionMaterial(0.85), []);
   const wash = useMemo(() => regionMaterial(0.3), []);
+  useEffect(() => () => (ring.dispose(), wash.dispose()), [ring, wash]);
   const exit = useExitFade(leaving);
   const [shown, setShown] = useState<{ id: string; t0: number } | null>(null);
   if (region && region.id !== shown?.id) setShown({ id: region.id, t0: sceneNow() });

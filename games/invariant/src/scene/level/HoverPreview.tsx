@@ -20,7 +20,7 @@ export function HoverPreview() {
     const depth = ghostDepthMaterial();
     return { geom, mat, depth };
   }, []);
-  useEffect(() => () => assets.geom.dispose(), [assets]);
+  useEffect(() => () => (assets.geom.dispose(), assets.mat.dispose(), assets.depth.dispose()), [assets]);
 
   const hop = useMemo(() => {
     if (!tile) return null;

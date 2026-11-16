@@ -103,6 +103,7 @@ export function HatchShells() {
       ),
     [],
   );
+  useEffect(() => () => (cupMat.dispose(), capMat.dispose()), [cupMat, capMat]);
   const plane = useGame((s) => planeKey(s.inputs));
 
   useFrame(() => {

@@ -189,6 +189,7 @@ function EggField({ eggs, base }: { eggs: [number, number][]; base: THREE.Buffer
       }),
     [material],
   );
+  useEffect(() => () => (shadowBase.dispose(), material.dispose(), shadowMat.dispose()), [shadowBase, material, shadowMat]);
   useFrame(() => {
     syncFrogs();
     material.uniforms.uTime.value = sceneNow();

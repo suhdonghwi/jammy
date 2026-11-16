@@ -239,6 +239,7 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
       }),
     [material],
   );
+  useEffect(() => () => (material.dispose(), shadowMat.dispose()), [material, shadowMat]);
   useEffect(() => setAxisNames(material.uniforms, level), [material, level]);
   useFrame((_, frameDt) => {
     const dt = Math.min(frameDt, 0.1);

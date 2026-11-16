@@ -25,7 +25,7 @@ export function StartEggs({ eggs }: { eggs: React.RefObject<StartEgg[]> }) {
     m.count = 0;
     return m;
   }, []);
-  useEffect(() => () => mesh.geometry.dispose(), [mesh]);
+  useEffect(() => () => (mesh.geometry.dispose(), mesh.material.dispose()), [mesh]);
   useFrame(() => {
     const t = sceneNow();
     let n = 0;

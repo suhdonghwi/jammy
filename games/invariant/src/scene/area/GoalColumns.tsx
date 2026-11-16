@@ -81,6 +81,7 @@ export function GoalColumns() {
       }),
     [],
   );
+  useEffect(() => () => (base.dispose(), material.dispose()), [base, material]);
   useFrame(() => {
     material.uniforms.uTime.value = sceneNow();
     goalEvents.sync(planeKey(useGame.getState().inputs));
