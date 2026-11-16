@@ -11,7 +11,7 @@ import { counterexample, type CounterexampleOptions } from './counterexample';
 import { sendFrogsHome } from './frogs';
 import { proofWave } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
-import { busyWhile, caption, type Token } from './sequence';
+import { busyWhile, type Token } from './sequence';
 
 const HOLD_MS = 1000;
 const REGION_MS = 1300;
@@ -115,8 +115,4 @@ function nearestTile(region: Region): { x: number; y: number } | null {
     if (d < bestD) [best, bestD] = [{ x: tile.x, y: tile.y }, d];
   }
   return best;
-}
-
-export function showUndecided(text: string) {
-  caption(text, 'muted');
 }

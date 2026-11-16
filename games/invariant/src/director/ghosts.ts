@@ -15,19 +15,18 @@ import { busyWhile, currentLevel } from './sequence';
 export const GHOST_RISE = 0.6;
 const TURNS = 2;
 
-export function raiseGhost(s: State, delay = 0, fade = 1): FrogSim {
+export function raiseGhost(s: State, fade = 1): FrogSim {
   const L = currentLevel();
-  const t0 = sceneNow() + delay;
-  const f = frogWorld.add(L, 'test', s, { rise: { t0, dur: GHOST_RISE, turns: TURNS }, fade });
-  after((delay + GHOST_RISE) * 1000, () => {
+  const f = frogWorld.add(L, 'test', s, { rise: { t0: sceneNow(), dur: GHOST_RISE, turns: TURNS }, fade });
+  after(GHOST_RISE * 1000, () => {
     if (frogWorld.frogs.includes(f) && !running(L, f.state) && holds(L.post, f.state)) frogWorld.landOnGoal(f);
   });
   return f;
 }
 
-export function previewHop(s: State, delay = 0, fade = 1): FrogSim {
+export function previewHop(s: State, fade = 1): FrogSim {
   const L = currentLevel();
-  const f = raiseGhost(s, delay, fade);
+  const f = raiseGhost(s, fade);
   const [tx, ty] = tileOf(L, hop(L, s));
   hopArcs.add({
     frog: f.id,
@@ -36,10 +35,10 @@ export function previewHop(s: State, delay = 0, fade = 1): FrogSim {
     tx,
     ty,
     plane: f.plane,
-    t0: sceneNow() + delay + GHOST_RISE + 0.1,
+    t0: sceneNow() + GHOST_RISE + 0.1,
     fade,
   });
-  after((delay + GHOST_RISE + 0.1 + ARC_DRAW) * 1000, () => frogWorld.frogs.includes(f) && sfx.landing());
+  after((GHOST_RISE + 0.1 + ARC_DRAW) * 1000, () => frogWorld.frogs.includes(f) && sfx.landing());
   return f;
 }
 
@@ -92,7 +91,7 @@ export async function proofWave(): Promise<FrogSim | null> {
   const hops = spreadHops(candidates.sort((a, b) => a.d - b.d));
   const fadeAt = (d: number) => 1 - smoothstep(clamp01((d - PROOF_NEAR) / (PROOF_FAR - PROOF_NEAR)));
   sfx.ghost();
-  const ghosts = hops.map((h) => previewHop(h.from, 0, fadeAt(h.d)));
+  const ghosts = hops.map((h) => previewHop(h.from, fadeAt(h.d)));
   await sleep((GHOST_RISE + 1.0) * 1000);
   return ghosts[0] ?? null;
 }

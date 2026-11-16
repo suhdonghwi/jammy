@@ -2,7 +2,8 @@ import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
 import { warmSolver } from '../checker/z3-browser';
 import { resetFrogs, resetLevel } from '../director/reset';
-import { checkAndPlay, showUndecided } from '../director/verification';
+import { caption } from '../director/sequence';
+import { checkAndPlay } from '../director/verification';
 import { t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
 import { startInputs } from '../levels/inputs';
@@ -89,7 +90,7 @@ export async function check(): Promise<'refused' | void> {
   if (now.level !== g.level || now.valid !== g.valid) return;
   if (out.undecided) {
     const tip = g.formulaText.includes('/') ? t().level.avoidDivision : '';
-    showUndecided(`${t().level.undecided}${tip}`);
+    caption(`${t().level.undecided}${tip}`, 'muted');
     return;
   }
   const level = g.level;

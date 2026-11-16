@@ -47,11 +47,11 @@ export async function busyWhile<T>(body: (tok: Token) => Promise<T>): Promise<T>
 
 export const currentLevel = (): CompiledLevel => useGame.getState().level!;
 
-export function caption(text: string, tone: CaptionTone = 'info') {
+export function caption(text: string, tone: CaptionTone) {
   useGame.setState({ caption: { text, tone } });
 }
 
-type EventName = 'stepped' | 'runDone';
+export type EventName = 'stepped' | 'runDone';
 
 const listeners = new Set<(e: EventName) => void>();
 

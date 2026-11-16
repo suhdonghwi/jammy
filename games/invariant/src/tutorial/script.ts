@@ -1,8 +1,8 @@
 import type { Rule } from '../checker/types';
 import { runChecker } from '../director/checkRun';
 import { sendFrogsHome } from '../director/frogs';
-import { Aborted, createScope, events, type Token } from '../director/sequence';
-import { checkAndPlay, revealAll, showUndecided } from '../director/verification';
+import { Aborted, caption, createScope, events, type EventName, type Token } from '../director/sequence';
+import { checkAndPlay, revealAll } from '../director/verification';
 import { ALLOW_NONE, setTutorial, useGame, type CaptionTone, type Game, type TutorialState } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import { cameraRig } from '../scene/cameraRig';
@@ -126,7 +126,7 @@ export function allow(a: Partial<TutorialState['allow']>) {
   setTutorial({ allow: { ...ALLOW_NONE, ...a } });
 }
 
-export function waitEvent(gen: Token, names: ('stepped' | 'runDone')[], until?: () => boolean): Promise<void> {
+export function waitEvent(gen: Token, names: EventName[], until?: () => boolean): Promise<void> {
   return settled(gen, (settle) => {
     const off = events.on((e) => {
       if (!gen.alive || (names.includes(e) && (!until || until()))) {
@@ -149,24 +149,15 @@ export function waitStore(gen: Token, test: (g: Game) => boolean): Promise<void>
   });
 }
 
-function choose<K extends string>(gen: Token, text: string, choices: { key: K; label: string; tone?: 'yes' | 'no' }[]): Promise<K> {
-  return settled<K>(gen, (settle) => {
-    const pick = (k: K) => () => settle(k);
-    useGame.setState({
-      caption: { text, tone: 'info', choices: choices.map((c) => ({ label: c.label, tone: c.tone, onClick: pick(c.key) })) },
-      callouts: [],
-      region: null,
-    });
+export function ask(gen: Token, text: string): Promise<boolean> {
+  return settled<boolean>(gen, (settle) => {
+    const choices = [
+      { label: messages().caption.yes, tone: 'yes' as const, onClick: () => settle(true) },
+      { label: messages().caption.no, tone: 'no' as const, onClick: () => settle(false) },
+    ];
+    useGame.setState({ caption: { text, tone: 'info', choices }, callouts: [], region: null });
     setTutorial({ spotlight: null });
   });
-}
-
-export async function ask(gen: Token, text: string): Promise<boolean> {
-  const k = await choose(gen, text, [
-    { key: 'yes', label: messages().caption.yes, tone: 'yes' },
-    { key: 'no', label: messages().caption.no, tone: 'no' },
-  ]);
-  return k === 'yes';
 }
 
 export function tutorialCheck(): 'refused' | void {
@@ -229,7 +220,7 @@ export async function stage(gen: Token, o: StageOptions): Promise<void> {
       continue;
     }
     if (out.undecided) {
-      showUndecided(messages().tutorial.undecided);
+      caption(messages().tutorial.undecided, 'muted');
       continue;
     }
     allow({});
