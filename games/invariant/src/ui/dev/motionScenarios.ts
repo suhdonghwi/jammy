@@ -43,13 +43,13 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'cex-plane',
     title: '다른 plane의 counterexample',
-    what: 'Tag Along에서 i <= 4를 Check. 개구리가 들어가고, n 입력이 강조되며, 판이 바뀐 뒤 카메라가 출발합니다.',
+    what: 'Tag Along에서 i <= 4를 Check. 캡션이 먼저 다른 판으로 간다고 말하고 n 행이 깜빡인 뒤, 판이 바뀌고, 잠깐 머문 다음 카메라가 출발합니다.',
     run: () => tryFormula('tag-along', 'i <= 4'),
   },
   {
     id: 'wave',
     title: '입력 바꾸기 (+/−)',
-    what: 'n을 6 → 2 → 9로 바꿉니다. 판이 통째로 빠지고 새 판이 들어옵니다. n이 줄 때는 방향이 반대입니다.',
+    what: 'n을 6 → 2 → 9로 바꿉니다. 판은 즉시 바뀌고, 슬랩 소리가 납니다.',
     run: async () => {
       await open('tag-along');
       useGame.getState().setFormula('i <= n');

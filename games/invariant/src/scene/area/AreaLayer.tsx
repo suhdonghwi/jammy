@@ -5,8 +5,6 @@ import { planeKey, type Inputs } from '../../levels/inputs';
 import type { CompiledLevel, Formula } from '../../levels/level';
 import { cameraRig } from '../cameraRig';
 import { goalEvents } from '../goalEvents';
-import { planeShift } from '../planeShift';
-import { sceneNow } from '../sceneTime';
 import { Eggs } from './Eggs';
 import { field } from './field';
 import { GoalColumns } from './GoalColumns';
@@ -41,23 +39,21 @@ function useArea(level: CompiledLevel, inputs: Inputs, area: Formula | null) {
     () => () => {
       field.reset();
       areaMask.clear();
-      planeShift.reset();
     },
     [],
   );
+  const shown = useRef({ level, inputs });
   useFrame(() => {
     field.inputs = inputs;
-    goalEvents.sync(planeKey(inputs));
     const t = cameraRig.target();
-    const now = sceneNow();
-    if (planeShift.track(level, inputs, now)) {
-      areaMask.shiftPlane();
-      if (planeShift.before) {
-        const { rising, sinking } = field.planeMovedNear({ cx: Math.round(t.x), cy: Math.round(-t.z), R: HEARD_WITHIN }, planeShift.before);
-        sfx.slabs(rising, sinking);
-      }
+    const was = shown.current;
+    shown.current = { level, inputs };
+    if (was.level === level && planeKey(was.inputs) !== planeKey(inputs)) {
+      const { rising, sinking } = field.planeMovedNear({ cx: Math.round(t.x), cy: Math.round(-t.z), R: HEARD_WITHIN }, was.inputs);
+      sfx.slabs(rising, sinking);
     }
-    areaMask.draw(gl, t.x, -t.z, inputs, field.risen(), planeShift.shifting(now));
+    goalEvents.sync(planeKey(inputs));
+    areaMask.draw(gl, t.x, -t.z, inputs, field.risen());
   }, -1);
 }
 

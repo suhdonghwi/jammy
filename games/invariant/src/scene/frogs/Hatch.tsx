@@ -1,10 +1,11 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { useGame } from '../../game/store';
+import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
 import { uploadInstances } from '../instances';
 import { eggGeometry } from '../models';
-import { planeShift } from '../planeShift';
 import { sceneNow } from '../sceneTime';
 import { colorUniform, GLSL_COMMON } from '../shaders/common';
 import { clamp01, smoothstep } from '../easing';
@@ -103,6 +104,7 @@ export function HatchShells() {
     [],
   );
   useEffect(() => () => (cupMat.dispose(), capMat.dispose()), [cupMat, capMat]);
+  const plane = useGame((s) => planeKey(s.inputs));
 
   useFrame(() => {
     const a = cup.current;
@@ -113,8 +115,7 @@ export function HatchShells() {
     let na = 0;
     let nb = 0;
     for (const fx of active) {
-      const shown = fx.plane === '' ? 1 : planeShift.visibility(fx.plane, t);
-      if (shown <= 0) continue;
+      if (fx.plane !== plane) continue;
       const u = t - fx.t0;
       const base = field.groundAt(fx.x, fx.y);
       const bx = fx.x + fx.dx;
@@ -123,7 +124,7 @@ export function HatchShells() {
         const w = u / HATCH_WOBBLE;
         const tilt = Math.sin(w * Math.PI * 4) * 0.22 * w;
         q.setFromAxisAngle(axis.set(Math.cos(fx.dir), 0, -Math.sin(fx.dir)), tilt);
-        m.compose(pos.set(bx, base, bz), q, scl.setScalar(fx.s * shown));
+        m.compose(pos.set(bx, base, bz), q, scl.setScalar(fx.s));
         a.setMatrixAt(na++, m);
         b.setMatrixAt(nb++, m);
         continue;
@@ -132,7 +133,7 @@ export function HatchShells() {
       if (v < CUP_LIFE) {
         const k = 1 - smoothstep(clamp01((v - CUP_HOLD) / (CUP_LIFE - CUP_HOLD)));
         q.identity();
-        m.compose(pos.set(bx, base, bz), q, scl.setScalar(fx.s * k * shown));
+        m.compose(pos.set(bx, base, bz), q, scl.setScalar(fx.s * k));
         a.setMatrixAt(na++, m);
       }
       if (v < CAP_LIFE) {
@@ -144,7 +145,7 @@ export function HatchShells() {
         pivot.makeTranslation(0, 0.2 * fx.s, 0);
         unpivot.makeTranslation(0, -0.2 * fx.s, 0);
         r.makeRotationFromQuaternion(q);
-        m.compose(pos, NO_ROT, scl.setScalar(fx.s * k * shown));
+        m.compose(pos, NO_ROT, scl.setScalar(fx.s * k));
         m.multiply(pivot).multiply(r).multiply(unpivot);
         b.setMatrixAt(nb++, m);
       }

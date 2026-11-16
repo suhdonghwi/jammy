@@ -45,7 +45,7 @@ varying float vA;
 void main() {
   float a = clamp((uTime - uT0 - aDelay) / ${APPEAR.toFixed(2)}, 0.0, 1.0);
   float s = ringPopScale(a);
-  vec4 w = modelMatrix * vec4(position * vec3(s, 1.0, s) + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.012 + uBoardY, -aTile.y), 1.0);
+  vec4 w = modelMatrix * vec4(position * vec3(s, 1.0, s) + vec3(aTile.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.012, -aTile.y), 1.0);
   vWorld = w.xyz;
   vColor = aColor;
   vA = ringPopAlpha(a);
@@ -62,7 +62,7 @@ varying float vA;
 ${GLSL_FADE}
 void main() {
   float far = smoothstep(uFade.x, uFade.y, length(vWorld.xz - uCenter));
-  gl_FragColor = vec4(applyFade(vColor, vWorld), uAlpha * vA * uOut * (1.0 - far) * (1.0 - uBoardFade));
+  gl_FragColor = vec4(applyFade(vColor, vWorld), uAlpha * vA * uOut * (1.0 - far));
   #include <colorspace_fragment>
 }
 `;

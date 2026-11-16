@@ -224,18 +224,6 @@ backend agree. `pnpm validate` and the tests are the safety net.
 
 - The floor is **one shader plane**: the level's precondition, guard and
   postcondition are evaluated per pixel, so the plane is truly infinite.
-- **Changing an input swaps the board** (`scene/planeShift.ts`). When the
-  plane changes, the mask keeps the old plane's texture
-  (`areaMask.shiftPlane`) and the floor's shader carries a second copy of
-  the level's formulas on the old inputs (`levelGlsl(level, areas, PREV)`).
-  For `BOARD_OUT` the old board is shown (`uBoardPrev`) and sinks
-  (`uBoardY`) while fading to the horizon colour (`uBoardFade`, folded into
-  `applyFade`); then the new board comes in from the other side for
-  `BOARD_IN`. It goes down when the input goes up and up when it goes down,
-  as if the planes were stacked. `field.groundAt` adds the same offset and
-  `field.heightAt` reads the board on show, so frogs, trails, arcs and tags
-  ride with their board, and `planeShift.visibility` fades the frogs of the
-  board on show. Reduced motion keeps the fade and drops the movement.
 - **Slabs are one instanced grid centred on the camera**, sorted outward,
   drawn as far as the floor is still visible. A cell with no slab collapses
   in the vertex shader. So the area reaches the horizon at any zoom, and a

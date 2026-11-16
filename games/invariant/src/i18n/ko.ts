@@ -126,6 +126,7 @@ export const ko: Messages = {
   verdicts: {
     solverFailed: (why) => `솔버를 시작하지 못했습니다: ${why}`,
     far: '근처는 모두 괜찮았지만, 멀리 떨어진 곳에 문제가 있습니다. ',
+    otherBoard: (from, to) => `이번 경우는 다른 판에 있습니다. ${from} → ${to}로 바꿉니다.`,
     yourArea: '영역',
     theArea: '이 영역',
     noLongerHolds: (part) => ` 여기서는 \`${part}\` 조건이 깨집니다.`,

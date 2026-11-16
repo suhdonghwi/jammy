@@ -6,7 +6,6 @@ import { tileOf } from '../../levels/tiles';
 import { BASE, ms, TICK } from '../../motion';
 import { clamp01 } from '../easing';
 import { goalEvents } from '../goalEvents';
-import { planeShift } from '../planeShift';
 import { after, sceneNow } from '../sceneTime';
 import type { Slot } from './occupancy';
 
@@ -128,10 +127,6 @@ class FrogWorld {
     goalEvents.push(f.x, f.y, f.plane);
     f.cheerT0 = sceneNow();
   }
-}
-
-export function shownTrails(): FrogSim[] {
-  return [planeShift.key, planeShift.prevKey].filter((k): k is string => k !== null).flatMap(trailFrogs);
 }
 
 export function trailFrogs(plane: string): FrogSim[] {

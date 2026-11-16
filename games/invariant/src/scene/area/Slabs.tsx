@@ -31,19 +31,19 @@ varying vec2 vFlags;
 varying vec2 vTile;
 void main() {
   vec2 tile = uGrid + aOffset;
-  vec4 m = maskShown(tile);
-  float h = heightAt(tile);
+  vec4 m = maskAt(tile);
+  float h = heightOf(m);
   if (h < 0.002) {
     gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
     return;
   }
   vec3 p = position;
   p.y += (h - 1.0) * ${SLAB_H.toFixed(3)} - (1.0 - h) * 0.04;
-  vec4 w = modelMatrix * vec4(p + vec3(tile.x, uBoardY, -tile.y), 1.0);
+  vec4 w = modelMatrix * vec4(p + vec3(tile.x, 0.0, -tile.y), 1.0);
   vWorld = w.xyz;
   vN = normalize(mat3(modelMatrix) * normal);
   vF = vec2(position.x, -position.z);
-  vFlags = vec2(m.b, goalOf(m));
+  vFlags = vec2(m.b, mod(floor(m.a * 3.0 + 0.5), 2.0));
   vTile = tile;
   gl_Position = projectionMatrix * viewMatrix * w;
 }
@@ -112,12 +112,12 @@ varying float vH;
 void main() {
   vec2 tile = uGrid + aOffset;
   vUv = uv;
-  vH = heightAt(tile);
+  vH = heightOf(maskAt(tile));
   if (vH < 0.002) {
     gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
     return;
   }
-  vec4 w = modelMatrix * vec4(position + vec3(tile.x, 0.003 + uBoardY, -tile.y), 1.0);
+  vec4 w = modelMatrix * vec4(position + vec3(tile.x, 0.003, -tile.y), 1.0);
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;
@@ -125,10 +125,9 @@ const shadowFragment = /* glsl */ `
 varying vec2 vUv;
 varying float vH;
 uniform sampler2D uMap;
-uniform float uBoardFade;
 void main() {
   vec4 c = texture2D(uMap, vUv);
-  gl_FragColor = vec4(c.rgb, c.a * vH * 0.75 * (1.0 - uBoardFade));
+  gl_FragColor = vec4(c.rgb, c.a * vH * 0.75);
 }
 `;
 

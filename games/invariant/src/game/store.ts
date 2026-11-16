@@ -91,6 +91,7 @@ export interface Game {
   frogTags: boolean;
   tutorial: TutorialState;
   inputHover: string | null;
+  cuedInputs: string[];
   callouts: { x: number; y: number; frog?: number; text: string; tone: 'info' | 'good' | 'fail' }[];
   region: Region | null;
   failMark: { x: number; y: number; label: string; t0: number } | null;
@@ -162,6 +163,7 @@ const FRESH = {
   frogTags: false,
   tutorial: NO_TUTORIAL,
   inputHover: null,
+  cuedInputs: [],
 } satisfies Partial<Game>;
 
 export function openingCaption(level: CompiledLevel): Caption | null {

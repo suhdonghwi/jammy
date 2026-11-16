@@ -1,16 +1,14 @@
 import * as THREE from 'three';
 import { cameraRig } from '../cameraRig';
-import { planeShift } from '../planeShift';
 import { colorUniform } from './common';
 
 export const GLSL_FADE = /* glsl */ `
 uniform vec2 uCenter;
 uniform vec2 uFade;
 uniform vec3 uHorizon;
-uniform float uBoardFade;
 vec3 applyFade(vec3 col, vec3 world) {
   float r = length(world.xz - uCenter);
-  return mix(col, uHorizon, max(smoothstep(uFade.x, uFade.y, r), uBoardFade));
+  return mix(col, uHorizon, smoothstep(uFade.x, uFade.y, r));
 }
 `;
 
@@ -19,7 +17,6 @@ export function fadeUniforms(): Record<string, THREE.IUniform> {
     uCenter: { value: new THREE.Vector2() },
     uFade: { value: new THREE.Vector2(20, 30) },
     uHorizon: colorUniform('horizon'),
-    uBoardFade: planeShift.uniforms.uBoardFade,
   };
 }
 

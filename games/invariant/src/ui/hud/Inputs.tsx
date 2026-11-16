@@ -35,6 +35,7 @@ export function InputsSection({ folded }: { folded: boolean }) {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
   const busy = useGame((s) => s.busy);
+  const cued = useGame((s) => s.cuedInputs);
   const tr = useT();
   const rows = inputRows(level);
   const exists = planeExists(level, inputs);
@@ -62,7 +63,7 @@ export function InputsSection({ folded }: { folded: boolean }) {
         {rows.map((name) => (
           <div
             key={name}
-            className="flex items-center gap-2"
+            className={`-mx-1.5 flex items-center gap-2 rounded-lg px-1.5 ${cued.includes(name) ? 'spotlight spotlight-soft' : ''}`}
             onPointerEnter={() => useGame.setState({ inputHover: name })}
             onPointerLeave={() => useGame.setState((s) => (s.inputHover === name ? { inputHover: null } : {}))}
           >

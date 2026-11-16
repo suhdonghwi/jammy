@@ -26,9 +26,9 @@ varying vec3 vLocal;
 void main() {
   float h = heightNow();
   vec3 sl = slotNow();
-  float s = (1.0 - aHide) * backNow() * sl.z * appearNow() * eggNow();
+  float s = (1.0 - aHide) * backNow() * sl.z * appearNow();
   vec3 p = position * s;
-  vec4 w = modelMatrix * vec4(p + vec3(aTile.x + sl.x, h * ${SLAB_H.toFixed(3)} + uBoardY, -aTile.y - sl.y), 1.0);
+  vec4 w = modelMatrix * vec4(p + vec3(aTile.x + sl.x, h * ${SLAB_H.toFixed(3)}, -aTile.y - sl.y), 1.0);
   vWorld = w.xyz;
   vLocal = position;
   vN = normalize(mat3(modelMatrix) * normal);
@@ -67,8 +67,8 @@ varying float vA;
 void main() {
   vUv = uv;
   vec3 sl = slotNow();
-  vA = (1.0 - aHide) * backNow() * sl.z * clamp(appearNow(), 0.0, 1.0) * eggNow();
-  vec4 w = modelMatrix * vec4(position * sl.z + vec3(aTile.x + sl.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.006 + uBoardY, -aTile.y - sl.y), 1.0);
+  vA = (1.0 - aHide) * backNow() * sl.z * clamp(appearNow(), 0.0, 1.0);
+  vec4 w = modelMatrix * vec4(position * sl.z + vec3(aTile.x + sl.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.006, -aTile.y - sl.y), 1.0);
   gl_Position = projectionMatrix * viewMatrix * w;
 }
 `;
@@ -76,8 +76,7 @@ const shadowFragment = /* glsl */ `
 varying vec2 vUv;
 varying float vA;
 uniform sampler2D uMap;
-uniform float uBoardFade;
-void main() { vec4 c = texture2D(uMap, vUv); gl_FragColor = vec4(c.rgb, c.a * 0.7 * vA * (1.0 - uBoardFade)); }
+void main() { vec4 c = texture2D(uMap, vUv); gl_FragColor = vec4(c.rgb, c.a * 0.7 * vA); }
 `;
 
 interface SlotAnim {

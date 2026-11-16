@@ -3,7 +3,6 @@ import { GHOST_RISE } from '../../director/ghosts';
 import { BASE, BEAT, EXIT, HOLD, LONG, MICRO, SHORT, TICK } from '../../motion';
 import { easeIn, easeInOut, easeOut, smootherstep } from '../../scene/easing';
 import { FLIGHT_MAX, FLIGHT_MIN, plan, velocity, type Pose } from '../../scene/flight';
-import { BOARD_IN, BOARD_OUT, PLANE_SHIFT } from '../../scene/planeShift';
 import { SLOWMO } from '../../scene/sceneTime';
 import { button, CARD, CARD_LABEL } from '../classes';
 import { SCENARIOS } from './motionScenarios';
@@ -17,7 +16,7 @@ const TOKENS: [string, number, string][] = [
   ['MICRO', MICRO, '호버, 눌림, 코드 커서'],
   ['SHORT', SHORT, '작은 등장·퇴장: tag, ring, 알 재생, slot, 개구리 귀가, 회전'],
   ['EXIT', EXIT, '모든 퇴장 (CSS --duration-exit)'],
-  ['BASE', BASE, 'hop, 슬랩 상승, 새 판이 들어오는 시간, 입력 pop'],
+  ['BASE', BASE, 'hop, 슬랩 상승, 입력 pop'],
   ['LONG', LONG, '패널, stop/goal 표시 전환, 튜토리얼의 긴 숨'],
   ['TICK', TICK, '연속 hop 사이, 부화 직후'],
   ['BEAT', BEAT, '시퀀스 안 액션 사이의 간격'],
@@ -54,11 +53,10 @@ const CHANGES: { group: string; rows: Change[] }[] = [
   {
     group: 'plane(비축 변수) 전환',
     rows: [
-      { what: '판 전체', before: '그 프레임에 즉시 교체', after: `판 교체: 이전 판이 ${s(BOARD_OUT)} 동안 아래로 빠지며 배경색으로 사라지고(ease-in), 새 판이 ${s(BOARD_IN)} 동안 위에서 내려와 자리 잡음(ease-out). 값이 줄면 방향 반대. 전체 ${s(PLANE_SHIFT)}` },
-      { what: '개구리·trail·hop arc·부화 껍질·tag', before: '필터로 즉시 사라짐/나타남', after: '자기 판과 함께 움직이고 함께 사라짐/나타남' },
-      { what: '소리', before: '없음', after: '오르고 내리는 슬랩 수만큼 기존 slabs 효과음' },
-      { what: '입력 패널', before: 'busy 동안 패널 전체 흐림, 바뀐 값은 pop만', after: '흐리지 않음. 게임이 바꾼 행은 파란 링이 1.2s 동안 빠짐' },
-      { what: 'counterexample 순서', before: '개구리 귀가 대기 → plane 즉시 교체 → 250ms → 카메라 대기 250ms → 0.16s SmoothDamp', after: `귀가와 병렬로 ${s(EXIT)} 뒤 판 교체, 교체의 60% 지점(새 판이 들어오는 중)에서 카메라 출발, 착지 0.12s 전에 ghost/frog 등장` },
+      { what: '판 자체', before: '즉시 교체', after: '즉시 교체 그대로 (애니메이션은 써 보고 뺐음: 같은 판이 바뀌는 wave도, 판이 빠지고 들어오는 교체도 어색했음)' },
+      { what: '소리', before: '없음', after: '판이 바뀌는 순간, 근처에서 오르고 내리는 슬랩 수만큼 slabs 효과음' },
+      { what: '입력 패널', before: 'busy 동안 패널 전체 흐림, 바뀐 값은 pop만', after: '흐리지 않음. 바뀔 행은 미리 깜빡이는 링으로 예고, 바뀐 뒤 파란 링이 1.2s 동안 빠짐' },
+      { what: '다른 판의 counterexample', before: '개구리 귀가 대기 → 아무 말 없이 즉시 교체 → 250ms → 카메라 대기 250ms → 0.16s SmoothDamp', after: `먼저 캡션 "이번 경우는 다른 판에 있습니다. n = 4 → n = 5로 바꿉니다."와 입력 행 예고 (${s(LONG + BEAT)}) → 판 교체 + 소리 → 카메라는 제자리에서 새 판을 ${s(LONG)} 보여 줌 → 이동 → 착지 0.12s 전에 ghost/frog` },
     ],
   },
   {
@@ -98,7 +96,7 @@ const CHANGES: { group: string; rows: Change[] }[] = [
       { what: '홈 바닥 fade', before: '지수 2.6/s', after: '1.2s tween' },
       { what: '장면 안 퇴장 fade', before: '선형', after: 'ease-in (CSS 퇴장과 같은 결)' },
       { what: 'CSS', before: 'rise 0.25, pop 0.3, rise-slow 0.4, slide-in 0.45, 불 0.35, readout 0.15, dialog 0.15, tag 0.25, 커서 0.15, fold 0.3', after: 'rise 0.2, pop 0.34, rise-slow 0.5, slide-in 0.5, 불 0.34, readout 0.12, dialog 0.2, tag 0.2, 커서 0.12, fold 0.34 (모두 --duration-* 토큰)' },
-      { what: '움직임 줄이기 설정', before: '장면은 무시', after: '카메라는 물러나지 않고, 판 교체는 움직임 없이 fade만' },
+      { what: '움직임 줄이기 설정', before: '장면은 무시', after: '카메라가 물러나지 않음' },
     ],
   },
 ];
@@ -195,8 +193,8 @@ function Legend({ items }: { items: [string, string][] }) {
 
 const CURVES: [string, (u: number) => number, string][] = [
   ['smootherstep', smootherstep, '이동 (카메라, tween)'],
-  ['ease-out', easeOut, '등장 (새 판 포함)'],
-  ['ease-in', easeIn, '퇴장 (이전 판 포함)'],
+  ['ease-out', easeOut, '등장'],
+  ['ease-in', easeIn, '퇴장'],
   ['ease-in-out', easeInOut, '홈 intro'],
 ];
 
@@ -244,13 +242,14 @@ function cexTimelines(): { before: Bar[]; after: Bar[] } {
     { label: 'hop → 실패 표시', from: oldArrive + GHOST_RISE + 0.25, to: oldArrive + GHOST_RISE + 0.25 + BASE, kind: 'motion' },
   ];
   const flight = plan(pose(0), pose(12)).dur;
-  const glideAt = EXIT + PLANE_SHIFT * 0.6 + 0.06;
+  const switchAt = LONG + BEAT;
+  const glideAt = switchAt + LONG + 0.06;
   const land = glideAt + flight;
   const after: Bar[] = [
     { label: '개구리 귀가', from: 0, to: SHORT, kind: 'motion' },
-    { label: '입력 행 강조', from: EXIT, to: EXIT + 1.2, kind: 'motion' },
-    { label: '이전 판 빠짐', from: EXIT, to: EXIT + BOARD_OUT, kind: 'motion' },
-    { label: '새 판 들어옴', from: EXIT + BOARD_OUT, to: EXIT + PLANE_SHIFT, kind: 'motion' },
+    { label: '캡션 예고 + 입력 행 링', from: 0, to: switchAt, kind: 'motion' },
+    { label: '판 즉시 교체 + 소리', from: switchAt, to: switchAt, kind: 'mark' },
+    { label: '새 판 보여 주기 (정지)', from: switchAt, to: switchAt + LONG, kind: 'wait' },
     { label: `flight 12타일 ${s(flight)}`, from: glideAt, to: land, kind: 'motion' },
     { label: 'ghost 등장 (착지 0.12s 전)', from: land - 0.12, to: land - 0.12 + GHOST_RISE, kind: 'motion' },
     { label: 'hop → 실패 표시', from: land - 0.12 + GHOST_RISE + BEAT, to: land - 0.12 + GHOST_RISE + BEAT + BASE, kind: 'motion' },
@@ -426,7 +425,7 @@ export function MotionNotes() {
           <div className="mt-4">
             <div className={CARD_LABEL}>순서 규칙</div>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-ink">
-              <li>원인을 먼저 보여 주고 결과를 보여 줍니다 (입력 강조 → 판 교체 → 카메라).</li>
+              <li>원인을 먼저 보여 주고 결과를 보여 줍니다 (캡션과 입력 예고 → 판 교체 → 카메라).</li>
               <li>대기를 직렬로 잇지 않고 겹칩니다 (다음 동작은 앞 동작의 약 60–70% 지점에서).</li>
               <li>카메라가 움직이는 동안 주인공은 기다리고, 착지 직전에 출발합니다.</li>
               <li>멀수록 오래 걸리되 상한이 있고, 멀수록 더 높이 물러나서 화면 속 속도는 비슷하게 유지됩니다.</li>

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { FLIGHT_MAX, FLIGHT_MIN, HIGHEST, plan, sample, STILL, velocity, type Pose } from '../src/scene/flight';
-import { BOARD_OUT, boardAt, direction, PLANE_SHIFT } from '../src/scene/planeShift';
 
 const at = (x: number, y: number, d = 14): Pose => ({ x, y, d, az: 0.26, po: 0.8 });
 
@@ -64,28 +63,5 @@ describe('camera flights', () => {
 
   it('do not pull back when motion is reduced', () => {
     expect(plan(at(0, 0), at(100, 0), STILL, true).lift).toBe(0);
-  });
-});
-
-describe('board swap', () => {
-  it('drops the old board, then brings the new one in from the other side', () => {
-    const early = boardAt(BOARD_OUT * 0.5, 1);
-    expect(early.prev).toBe(true);
-    expect(early.y).toBeLessThan(0);
-    const late = boardAt(BOARD_OUT + 0.01, 1);
-    expect(late.prev).toBe(false);
-    expect(late.y).toBeGreaterThan(0);
-    expect(late.fade).toBeGreaterThan(0.9);
-    expect(boardAt(PLANE_SHIFT, 1)).toEqual({ prev: false, y: 0, fade: 0 });
-  });
-
-  it('goes the other way when the input goes down', () => {
-    expect(boardAt(BOARD_OUT * 0.5, -1).y).toBeGreaterThan(0);
-    expect(direction({ n: 4 }, { n: 2 })).toBe(-1);
-    expect(direction({ n: 4 }, { n: 9 })).toBe(1);
-  });
-
-  it('only fades when motion is reduced', () => {
-    expect(boardAt(BOARD_OUT * 0.5, 1, 0).y).toBe(-0);
   });
 });

@@ -15,8 +15,7 @@ import { goalUniforms } from '../shaders/goal';
 import { floorFragment, floorVertex } from './floorShader';
 import { LONG } from '../../motion';
 import { Toward } from '../easing';
-import { planeShift } from '../planeShift';
-import { inputUniforms, PREV, setInputUniforms } from './levelGlsl';
+import { inputUniforms, setInputUniforms } from './levelGlsl';
 
 const _p = new THREE.Vector3();
 function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
@@ -56,8 +55,6 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
       depthWrite: true,
       uniforms: {
         ...inputUniforms(level),
-        ...inputUniforms(level, PREV),
-        ...planeShift.uniforms,
         uHover: { value: new THREE.Vector2() },
         uHoverOn: { value: 0 },
         ...fadeUniforms(),
@@ -96,11 +93,9 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     if (!m) return;
     const now = sceneNow();
     setInputUniforms(u, level, inputs, planeExists(level, inputs));
-    const before = planeShift.shifting(now) ? planeShift.before : null;
-    if (before) setInputUniforms(u, level, before, planeExists(level, before), PREV);
     const R = updateFade(u);
     const t = cameraRig.target();
-    m.position.set(Math.round(t.x), planeShift.board(now).y, Math.round(t.z));
+    m.position.set(Math.round(t.x), 0, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
     u.uTime.value = now;
     u.uShowStop.value = amounts.stop.at(showStop ? 1 : 0, now);

@@ -5,7 +5,6 @@ import { tilesNear, tileState, type TileWindow } from '../../levels/tiles';
 import { BASE } from '../../motion';
 import { SLAB_H } from '../constants';
 import { clamp01, smoothstep } from '../easing';
-import { planeShift } from '../planeShift';
 import { sceneNow } from '../sceneTime';
 
 const RISE_DUR = BASE;
@@ -38,13 +37,7 @@ class AreaField {
   heightAt(x: number, y: number): number {
     const level = this.level;
     if (!level) return 0;
-    const before = planeShift.before;
-    const inputs = before && planeShift.showingPrev(sceneNow()) ? before : this.inputs;
-    return this.heightOn(level, inputs, Math.round(x), Math.round(y));
-  }
-
-  private heightOn(level: CompiledLevel, inputs: Inputs, x: number, y: number): number {
-    const s = tileState(level, x, y, inputs);
+    const s = tileState(level, Math.round(x), Math.round(y), this.inputs);
     if (level.fast.planeReq(s) !== true) return 0;
     const covers = (f: FastFn | undefined) => (f?.(s) === true ? 1 : 0);
     const to = covers(this.area?.fast);
@@ -64,7 +57,7 @@ class AreaField {
   }
 
   groundAt(x: number, y: number): number {
-    return this.heightAt(x, y) * SLAB_H + planeShift.board(sceneNow()).y;
+    return this.heightAt(x, y) * SLAB_H;
   }
 
   movedNear(near: TileWindow): { rising: number; sinking: number } {

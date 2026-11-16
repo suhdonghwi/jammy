@@ -1,43 +1,18 @@
 import * as THREE from 'three';
 import { SHORT } from '../../motion';
-import { GLSL_BOARD } from '../planeShift';
 import { MASK_SIZE } from './mask';
 
 export const GLSL_MASK = /* glsl */ `
 uniform highp sampler2D uMask;
 uniform vec2 uMaskOrigin;
-uniform highp sampler2D uMaskPrev;
-uniform vec2 uMaskPrevOrigin;
 uniform float uRise;
-${GLSL_BOARD}
-vec4 fetchMask(highp sampler2D mask, vec2 origin, vec2 tile) {
-  ivec2 at = ivec2(floor(tile - origin + 0.5));
-  if (at.x < 0 || at.y < 0 || at.x >= ${MASK_SIZE} || at.y >= ${MASK_SIZE}) return vec4(0.0);
-  return texelFetch(mask, at, 0);
-}
 vec4 maskAt(vec2 tile) {
-  return fetchMask(uMask, uMaskOrigin, tile);
-}
-vec4 maskPrevAt(vec2 tile) {
-  return fetchMask(uMaskPrev, uMaskPrevOrigin, tile);
+  ivec2 at = ivec2(floor(tile - uMaskOrigin + 0.5));
+  if (at.x < 0 || at.y < 0 || at.x >= ${MASK_SIZE} || at.y >= ${MASK_SIZE}) return vec4(0.0);
+  return texelFetch(uMask, at, 0);
 }
 float heightOf(vec4 m) {
   return mix(m.g, m.r, uRise);
-}
-float maskBits(vec4 m) {
-  return floor(m.a * 3.0 + 0.5);
-}
-float goalOf(vec4 m) {
-  return mod(maskBits(m), 2.0);
-}
-float eggOf(vec4 m) {
-  return step(1.5, maskBits(m));
-}
-vec4 maskShown(vec2 tile) {
-  return uBoardPrev > 0.5 ? maskPrevAt(tile) : maskAt(tile);
-}
-float heightAt(vec2 tile) {
-  return uBoardPrev > 0.5 ? maskPrevAt(tile).r : heightOf(maskAt(tile));
 }
 `;
 
@@ -46,13 +21,7 @@ ${GLSL_MASK}
 attribute vec2 aTile;
 uniform float uTime;
 float heightNow() {
-  return heightAt(aTile);
-}
-float eggNow() {
-  return eggOf(maskShown(aTile));
-}
-float goalNow() {
-  return goalOf(maskShown(aTile));
+  return heightOf(maskAt(aTile));
 }
 `;
 
