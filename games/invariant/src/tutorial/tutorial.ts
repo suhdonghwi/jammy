@@ -1,10 +1,14 @@
-import { interrupt, placeFrog, resetLevel } from '../director/frogs';
+import { loopFrogs, placeFrog } from '../director/frogs';
+import { interrupt, resetLevel } from '../director/reset';
+import { Aborted, type Token } from '../director/sequence';
 import { EMPTY_REVEAL, NO_TUTORIAL, setTutorial, useGame, type Game } from '../game/store';
 import { exampleLevel, tutorialLevel } from '../levels/catalog';
+import { toBig } from '../levels/level';
+import { eggsNear, tileState } from '../levels/tiles';
 import { cameraRig, type Shot } from '../scene/cameraRig';
 import { sleep, switchScene } from '../scene/sceneTime';
-import { Aborted, currentGeneration, guard, newGeneration } from './script';
-import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
+import { newGeneration, setSkipStep, settled } from './script';
+import { learnerFormula, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
 
 export { tutorialCheck } from './script';
 
@@ -16,7 +20,14 @@ let onFinish: () => void = () => {};
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
 const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? VIEW, focus: scene.focus, labels: scene.labels });
 
-function restore(gen: number, scene: Scene) {
+function loopExampleFrogs() {
+  const L = useGame.getState().level!;
+  const { inputs } = useGame.getState();
+  const eggs = eggsNear(L, inputs, 0, 2, 2).sort((a, b) => [2, 0, 4, 1, 3].indexOf(a[1]) - [2, 0, 4, 1, 3].indexOf(b[1]));
+  loopFrogs(eggs.map(([x, y]) => toBig(tileState(L, x, y, inputs))));
+}
+
+function restore(scene: Scene) {
   const level = levelOf(scene);
   const switched = useGame.getState().level?.id !== level.id;
   if (switched) {
@@ -30,21 +41,18 @@ function restore(gen: number, scene: Scene) {
     region: null,
     tutorial: NO_TUTORIAL,
     verdicts: {},
-    pitfallMessage: null,
   });
   useGame.getState().setFormula(scene.formula === 'learner' ? learnerFormula : (scene.formula ?? ''));
   if (level === tutorialLevel) for (const [i, n] of scene.frogs ?? []) placeFrog(st(i, n));
   if (scene.loop) loopExampleFrogs();
   void cameraRig.frame(shotOf(scene));
-  guard(gen);
 }
 
-function crossTo(gen: number, scene: Scene): Promise<void> {
-  return new Promise((resolve, reject) => {
+function crossTo(gen: Token, scene: Scene): Promise<void> {
+  return settled(gen, (settle) => {
     const go = () => {
-      if (gen !== currentGeneration()) return reject(new Aborted());
-      restore(gen, scene);
-      resolve();
+      if (gen.alive) restore(scene);
+      settle();
     };
     useGame.setState({ callouts: [], region: null, failMark: null });
     setTutorial({ spotlight: null });
@@ -52,24 +60,24 @@ function crossTo(gen: number, scene: Scene): Promise<void> {
   });
 }
 
-function play(from: number, rewound = false) {
+function play(from: number, opening = false) {
   const gen = newGeneration();
   void (async () => {
-    if (from > 0) restore(gen, STEPS[from].scene);
-    else if (!rewound) {
+    if (opening) {
       void cameraRig.frame(shotOf(STEPS[0].scene));
       setTutorial({ allow: NO_TUTORIAL.allow });
       await sleep(500);
-      guard(gen);
-    }
+      gen.guard();
+    } else restore(STEPS[from].scene);
     for (let i = from; i < STEPS.length; i++) {
       if (i > from && levelOf(STEPS[i].scene).id !== useGame.getState().level?.id) await crossTo(gen, STEPS[i].scene);
       else if (i > from) void cameraRig.frame(shotOf(STEPS[i].scene));
       stepIndex = i;
       stepCaption = useGame.getState().caption;
-      setTutorial({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
+      setTutorial({ back: i > 0 ? goBack : null });
+      setSkipStep(i + 1 < STEPS.length ? skipAhead : null);
       await STEPS[i].run(gen);
-      guard(gen);
+      gen.guard();
       noteShown();
     }
     onFinish();
@@ -82,7 +90,8 @@ export function startTutorial(finish: () => void, from = 0) {
   onFinish = finish;
   resetProgress();
   shown.clear();
-  play(Math.min(Math.max(0, from), STEPS.length - 1));
+  const start = Math.min(Math.max(0, from), STEPS.length - 1);
+  play(start, start === 0);
 }
 
 export function stopTutorial() {
@@ -107,8 +116,5 @@ function goBack() {
   const earlier = [...shown].filter((i) => i < stepIndex);
   const target = earlier.length ? Math.max(...earlier) : Math.max(0, stepIndex - 1);
   stopTutorial();
-  if (target === 0) {
-    restore(currentGeneration(), STEPS[0].scene);
-    play(0, true);
-  } else play(target);
+  play(target);
 }

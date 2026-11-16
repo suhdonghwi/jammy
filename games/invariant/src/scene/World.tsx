@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { prepareSound } from '../audio/sfx';
 import { useGame } from '../game/store';
-import { cameraRig } from './cameraRig';
+import { cameraRig, FOV, MAX_DISTANCE } from './cameraRig';
 import { MAX_DPR } from './constants';
 import { HomeScene } from './home/HomeScene';
 import { LevelScene } from './level/LevelScene';
@@ -39,7 +39,7 @@ function Controls() {
       makeDefault
       enabled={interactive}
       minDistance={6}
-      maxDistance={60}
+      maxDistance={MAX_DISTANCE}
       minPolarAngle={0.25}
       maxPolarAngle={1.15}
       dollySpeed={0.6}
@@ -86,7 +86,7 @@ export function World() {
     <Canvas
       flat
       dpr={dpr}
-      camera={{ position: [3, 10, 12], fov: 36, near: 0.1, far: 500 }}
+      camera={{ position: [3, 10, 12], fov: FOV, near: 0.1, far: 500 }}
       gl={{ antialias: true, alpha: true }}
     >
       <PerformanceMonitor

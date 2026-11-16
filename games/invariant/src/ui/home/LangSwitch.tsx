@@ -1,6 +1,6 @@
 import { Languages } from 'lucide-react';
 import { setLang, useLang, useT, type Lang } from '../../i18n/i18n';
-import { PILL } from './CornerControls';
+import { PILL } from '../classes';
 
 const OPTIONS: { lang: Lang; label: string }[] = [
   { lang: 'en', label: 'English' },

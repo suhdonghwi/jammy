@@ -2,10 +2,9 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
-import type { FastState } from '../../lang/eval';
-import { tileState } from '../../levels/tiles';
+import { hopFrom, tileState } from '../../levels/tiles';
 import { field } from '../area/field';
-import { SLAB_H } from '../constants';
+import { yawToward } from '../frogs/frogWorld';
 import { HopLine } from '../frogs/HopLine';
 import { useHover } from '../hover';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
@@ -13,7 +12,7 @@ import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 export function HoverPreview() {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
-  const enabled = useGame((s) => s.reveal.hover && !s.busy);
+  const idle = useGame((s) => !s.busy);
   const tile = useHover((s) => s.tile);
   const ghost = useRef<THREE.Group>(null);
   const assets = useMemo(() => {
@@ -22,32 +21,30 @@ export function HoverPreview() {
     const depth = ghostDepthMaterial();
     return { geom, mat, depth };
   }, []);
-  useEffect(() => () => assets.geom.dispose(), [assets]);
+  useEffect(() => () => (assets.geom.dispose(), assets.mat.dispose(), assets.depth.dispose()), [assets]);
 
   const hop = useMemo(() => {
     if (!tile) return null;
     const s = tileState(level, tile[0], tile[1], inputs);
-    if (!level.fast.planeReq(s) || level.fast.guard(s) !== true) return null;
-    const n: FastState = { ...s };
-    for (const v in level.fast.next) n[v] = level.fast.next[v](s) as number;
-    return { from: tile, to: [n[level.view.x] as number, n[level.view.y] as number] as [number, number] };
+    if (!level.fast.planeReq(s)) return null;
+    const to = hopFrom(level, s);
+    return to && { from: tile, to };
   }, [tile, level, inputs]);
 
   useFrame(() => {
     const g = ghost.current;
     if (!g || !hop) return;
-    const h = field.heightAt(hop.to[0], hop.to[1]) * SLAB_H;
-    g.position.set(hop.to[0], h, -hop.to[1]);
-    g.rotation.y = Math.atan2(hop.to[0] - hop.from[0], -(hop.to[1] - hop.from[1]));
+    g.position.set(hop.to[0], field.groundAt(hop.to[0], hop.to[1]), -hop.to[1]);
+    g.rotation.y = yawToward(hop.from[0], hop.from[1], hop.to[0], hop.to[1]);
   });
 
-  if (!enabled || !hop) return null;
+  if (!idle || !hop) return null;
   return (
     <group>
       <HopLine
         path={() => ({
-          from: [hop.from[0], hop.from[1], field.heightAt(hop.from[0], hop.from[1]) * SLAB_H],
-          to: [hop.to[0], hop.to[1], field.heightAt(hop.to[0], hop.to[1]) * SLAB_H],
+          from: [hop.from[0], hop.from[1], field.groundAt(hop.from[0], hop.from[1])],
+          to: [hop.to[0], hop.to[1], field.groundAt(hop.to[0], hop.to[1])],
           drawn: 1,
           opacity: 1,
         })}

@@ -1,10 +1,13 @@
 import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
-import { dismissFrogs, resetFrogs, resetLevel } from '../director/frogs';
-import { playVerification, runChecker, showUndecided } from '../director/verdicts';
+import { warmSolver } from '../checker/z3-browser';
+import { resetFrogs, resetLevel } from '../director/reset';
+import { caption } from '../director/sequence';
+import { checkAndPlay } from '../director/verification';
 import { t } from '../i18n/i18n';
 import { levels, tutorialLevel } from '../levels/catalog';
-import { startInputs, type LevelDef } from '../levels/level';
+import { startInputs } from '../levels/inputs';
+import type { LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 import { cameraRig } from '../scene/cameraRig';
 import { switchScene } from '../scene/sceneTime';
@@ -17,6 +20,7 @@ export function openLevel(def: LevelDef) {
     stopTutorial();
     resetLevel();
     useGame.getState().openLevel(def, 'level');
+    warmSolver();
   });
 }
 
@@ -24,6 +28,7 @@ export function openTutorial() {
   switchScene(() => {
     resetLevel();
     useGame.getState().openLevel(tutorialLevel, 'tutorial');
+    warmSolver();
     const from = Number(new URLSearchParams(location.search).get('step') ?? 0);
     startTutorial(() => openLevel(levels[0]), from);
   });
@@ -34,7 +39,13 @@ export function goMenu(view: 'home' | 'levels' = 'home') {
     stopTutorial();
     resetLevel();
     useGame.getState().backToMenu(view);
+    if (view === 'levels') warmSolver();
   });
+}
+
+export function showLevels() {
+  useGame.setState({ menuView: 'levels' });
+  warmSolver();
 }
 
 export function resetScreen() {
@@ -73,16 +84,13 @@ export async function check(): Promise<'refused' | void> {
   if (g.busy || g.checking || !g.level) return;
   if (g.mode === 'tutorial') return tutorialCheck();
   if (!g.formula || !g.formula.ok) return 'refused';
-  void dismissFrogs('test');
-  const res = await runChecker(RULES);
-  if (!res) return;
-  const out = await playVerification(res, RULES, () => ({ extra: res.pitfall?.message }));
+  const out = await checkAndPlay(RULES);
   if (!out || out.failing) return;
   const now = useGame.getState();
   if (now.level !== g.level || now.valid !== g.valid) return;
   if (out.undecided) {
     const tip = g.formulaText.includes('/') ? t().level.avoidDivision : '';
-    showUndecided(`${t().level.undecided}${tip}`);
+    caption(`${t().level.undecided}${tip}`, 'muted');
     return;
   }
   const level = g.level;

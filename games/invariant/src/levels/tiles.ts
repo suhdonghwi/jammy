@@ -1,5 +1,7 @@
+import type { State } from '../lang/ast';
 import type { FastState } from '../lang/eval';
-import type { CompiledLevel, Inputs } from './level';
+import type { Inputs } from './inputs';
+import type { CompiledLevel } from './level';
 
 export interface TileWindow {
   cx: number;
@@ -9,6 +11,17 @@ export interface TileWindow {
 
 export function tileState(level: CompiledLevel, x: number, y: number, inputs: Inputs): FastState {
   return { ...inputs, [level.view.x]: x, [level.view.y]: y };
+}
+
+export function tileOf(level: CompiledLevel, s: State | FastState): [number, number] {
+  return [Number(s[level.view.x]), Number(s[level.view.y])];
+}
+
+export function hopFrom(level: CompiledLevel, s: FastState): [number, number] | null {
+  if (level.fast.guard(s) !== true) return null;
+  const n: FastState = { ...s };
+  for (const v in level.fast.next) n[v] = level.fast.next[v](s) as number;
+  return tileOf(level, n);
 }
 
 export function eggsNear(level: CompiledLevel, inputs: Inputs, cx: number, cy: number, R: number): [number, number][] {

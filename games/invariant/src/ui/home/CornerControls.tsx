@@ -3,8 +3,7 @@ import { useEffect, useState } from 'react';
 import { setMuted, useSound } from '../../audio/sfx';
 import { resetCleared, useProgress } from '../../game/progress';
 import { useT } from '../../i18n/i18n';
-
-export const PILL = 'flex items-center rounded-full border border-line bg-card p-1 shadow-card backdrop-blur-md';
+import { PILL } from '../classes';
 
 const ICON = 'grid size-7.5 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-shade/6 hover:text-ink';
 

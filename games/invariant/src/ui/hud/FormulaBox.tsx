@@ -1,49 +1,28 @@
 import { Check, LoaderCircle } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { check } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { displayNames } from '../../levels/level';
-import { button } from '../classes';
-import { colorRuns } from '../codeColors';
+import { BUTTON } from '../classes';
+import { HighlightedCode } from '../codeColors';
 import { RuleLights } from './RuleLights';
 
-const ERROR_MARK = 'underline decoration-fail decoration-wavy underline-offset-4';
-
-function colored(text: string, error: { from: number; to: number } | null): ReactNode[] {
-  let err: { from: number; to: number } | null = null;
-  if (error) {
-    const from = Math.min(error.from, text.length);
-    const to = Math.min(Math.max(error.to, from + 1), text.length);
-    if (from < to) err = { from, to };
-  }
-  const out: ReactNode[] = [];
-  for (const r of colorRuns(text)) {
-    const cuts = [r.from, r.to];
-    if (err) for (const c of [err.from, err.to]) if (c > r.from && c < r.to) cuts.splice(-1, 0, c);
-    for (let i = 0; i + 1 < cuts.length; i++) {
-      const [from, to] = [cuts[i], cuts[i + 1]];
-      const marked = err && from >= err.from && to <= err.to;
-      const cls = marked ? `${r.cls} ${ERROR_MARK}` : r.cls;
-      out.push(cls ? <span key={from} className={cls}>{text.slice(from, to)}</span> : text.slice(from, to));
-    }
-  }
-  return out;
-}
-
 const SHAKE: Keyframe[] = [{ transform: 'none' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(-2px)' }, { transform: 'none' }];
+
+const CHECK = `${BUTTON} relative -top-[1.5px] bg-brand pl-4.5 pr-5 py-2 compact:pl-3.5 compact:pr-4 text-md compact:text-sm font-semibold text-white shadow-[0_3px_0_var(--color-brand-deep)] enabled:hover:bg-brand-light enabled:active:translate-y-px`;
 
 const TEXT = 'col-start-1 row-start-1 m-0 min-w-0 px-1 py-2.5 font-mono text-(length:--formula-size) leading-[1.4] whitespace-pre-wrap [overflow-wrap:anywhere]';
 
 export function FormulaBox() {
   const level = useGame((s) => s.level);
-  const names = useMemo(() => (level ? displayNames(level) : []), [level]);
+  const names = level ? displayNames(level) : [];
   const formula = useGame((s) => s.formula);
   const formulaText = useGame((s) => s.formulaText);
   const busy = useGame((s) => s.busy);
   const checking = useGame((s) => s.checking);
   const mode = useGame((s) => s.mode);
-  const awaitingCheck = useGame((s) => s.tutorial.awaitingCheck);
+  const awaitingCheck = useGame((s) => s.tutorial.check !== null);
   const locked = useGame((s) => s.mode === 'tutorial' && !s.tutorial.allow.formula);
   const spot = useGame((s) => s.tutorial.spotlight);
   const tr = useT();
@@ -75,7 +54,7 @@ export function FormulaBox() {
   const canCheck = !busy && !checking && (mode !== 'tutorial' || awaitingCheck);
   return (
     // 16px on phones: any smaller and iOS zooms the page when the box is focused
-    <div className="animate-[rise_0.4s_var(--ease-entrance)] [--formula-size:17px] compact:[--formula-size:16px]">
+    <div className="animate-rise-slow [--formula-size:17px] compact:[--formula-size:16px]">
       <div
         ref={box}
         className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-2xl border-2 bg-white py-1.25 pr-1.5 pl-4 shadow-card compact:gap-x-2 compact:pl-3 transition-colors duration-150 ${shownError ? 'border-fail/50' : 'border-brand/30 focus-within:border-brand/65'} ${spot === 'formula' ? 'spotlight' : ''}`}
@@ -85,7 +64,7 @@ export function FormulaBox() {
         </span>
         <div className={`grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] ${locked ? 'cursor-default opacity-60' : ''}`}>
           <div aria-hidden className={`${TEXT} pointer-events-none text-ink`}>
-            {formulaText ? colored(formulaText, shownError?.span ?? null) : <span className="font-sans text-[0.9em] text-[#a8afbb]">{placeholder}</span>}
+            {formulaText ? <HighlightedCode src={formulaText} boldNames mark={shownError?.span} /> : <span className="font-sans text-[0.9em] text-[#a8afbb]">{placeholder}</span>}
             {'\u200b'}
           </div>
           <textarea
@@ -113,7 +92,7 @@ export function FormulaBox() {
           <RuleLights />
         </div>
         <button
-          className={`${button('check', 'none')} ${spot === 'check' ? 'spotlight spotlight-glow' : ''}`}
+          className={`${CHECK} ${spot === 'check' ? 'spotlight spotlight-glow' : ''}`}
           disabled={!canCheck}
           onClick={submit}
         >

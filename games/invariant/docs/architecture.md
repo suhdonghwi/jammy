@@ -16,16 +16,18 @@ from the font, and spaced, at build time (`scripts/title-glyphs.ts`,
 ```
 src/
   main.tsx, App.tsx   entry point and the page's top-level layout
-  lang/        parser, type checker, AST, interpreter, symbolic body execution
+  lang/        parser, type checker, AST, interpreter, symbolic body execution, quantifier unrolling
   checker/     counterexamples on the plane in view (nearby.ts), Z3 (proofs) and its loaders and dec_ref guard, verdicts
-  levels/      the level format (level.ts), every level (catalog.ts), its Korean text (catalog.ko.ts, localize.ts), the plane's tiles
+  levels/      the level format (level.ts), the inputs that pick a plane (inputs.ts), every level (catalog.ts), its Korean text (catalog.ko.ts, localize.ts), the plane's tiles
   i18n/        the language switch, and every other line the game says (en.ts, ko.ts)
   game/        the zustand store, cleared levels (progress.ts), what the app's buttons do (actions.ts)
-  director/    scripted sequences: Step/Run, looping frogs, ghost frogs, check playback
+  director/    scripted sequences and the scopes that cancel them (sequence.ts); frogs, the player's Step/Run/egg controls, resets;
+               solver runs, counterexamples, rule-by-rule verification, ghost frogs and the proof wave; a hop's sound and code cursor
   tutorial/    the tutorial's steps, and the beat/caption helpers they are written with
   audio/       sound clips and the synthesised ghost siren
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
   storage.ts   localStorage behind a try/catch: language, mute, cleared levels, code panel width
+  timing.ts    EXIT_MS, the length of every exit animation (`--duration-exit` in styles.css)
   scene/       the 3D world: canvas, camera rig, scene time, hovered tile, WebGL check
     floor/       the infinite floor, drawn per pixel from the level's formulas (GLSL)
     area/        the learner's slabs, eggs and goal columns
@@ -33,13 +35,12 @@ src/
     labels/      tags over tiles and frogs, and outlines of endless regions
     level/       a level's scene and hover preview
     home/        the home screen's scene
-    shaders/     shared GLSL
+    shaders/     shared GLSL: lighting and stripes, axis labels, goal pools and ripples, the horizon fade
   ui/          the DOM over the scene; shared dialogs, caption Markdown, syntax colours, RevealSlot, error cards
     hud/         level screen: top bar, code panel, inputs, caption, formula box, rule lights, tile readout, controls
     home/        title (3D lettering), home copy and level list, corner buttons, language switch
     rules/       the rules and syntax cards
     dev/         the link preview's page (`?poster`, development only)
-    timing.ts    EXIT_MS, the length of every exit animation
   styles.css   Tailwind setup and the little that is clearer as CSS (see Styling)
 scripts/       level validation, the Z3 copy, font subsets, the title's glyphs, the link preview image
 tests/         unit tests (language, counterexample search)
@@ -127,14 +128,17 @@ backend agree. `pnpm validate` and the tests are the safety net.
   is made before the first press, and sleeps while muted or hidden). Before
   the first start, `index.html`'s backdrop and loader cover the page;
   `startScene` fades them out.
-- **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`).
+- **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`,
+  the CSS's `--duration-exit`).
 
 ## Sequences
 
 - Anything scripted — counterexamples, Run, the ghost wave, looping frogs —
   is a `director/` function. Each starts with `begin()`, which cancels
   whatever was playing; after every `await` it checks `tok.alive` and stops
-  if it was superseded. `busy` locks the learner's input while one plays.
+  if it was superseded. `busy` locks the learner's input while one plays
+  (`busyWhile(body)`). Sequences, checks and tutorial generations are
+  three scopes made by `createScope()` (`sequence.ts`).
 - **A check can't be stopped, only abandoned.** `runChecker` takes its own
   token (`beginCheck()`); `interrupt()` (a new level, the menu, a tutorial
   rewind) abandons it, and a result for another level, mode or formula is
@@ -169,8 +173,8 @@ backend agree. `pnpm validate` and the tests are the safety net.
   formula) and the view they show (`camera`, `focus`, `labels`; default
   `VIEW`), so Back and skip-ahead can rebuild any step instantly and frame
   its view. Steps don't move the camera themselves, except through a played
-  proof (the wrap-up). A step runs under a generation number and calls
-  `guard(gen)` after every `await`, inside a beat's `prepare` too (a fast
+  proof (the wrap-up). A step runs under a generation token and calls
+  `gen.guard()` after every `await`, inside a beat's `prepare` too (a fast
   Next can skip ahead mid-glide, and what the old step does after it would
   land on the new step); stopping or rewinding aborts the old generation.
 - The tutorial reacts to the learner through events (`stepped`, `runDone`),
@@ -222,11 +226,13 @@ backend agree. `pnpm validate` and the tests are the safety net.
   Korean `@font-face`s, keyframes, the page base, the screen start/leave
   rules, and the tutorial's spotlight.
 - Class lists used in many places live in `ui/classes.ts`: `CARD`,
-  `CARD_LABEL`, and `button(variant, size)`. Variants are complete and never
-  override each other — don't append utilities that conflict with a
-  variant's.
-- Use the theme's tokens (colours, `text-md`, shadows, animations) and
-  Tailwind's scales before arbitrary values.
+  `CARD_LABEL`, `PILL`, `FOLD` (the code panel's fold transition, with
+  `FOLD_MS` and `FOLD_EASE` for `element.animate()`), and
+  `button(variant, size)`, whose shared base is `BUTTON` (for a one-off
+  button such as Check). Variants are complete and never override each
+  other — don't append utilities that conflict with a variant's.
+- Use the theme's tokens (colours, `text-md`, shadows, eases, animations,
+  the `xs` breakpoint) and Tailwind's scales before arbitrary values.
 
 ## The solver
 
@@ -237,8 +243,9 @@ and can be retried. `pnpm dev` and `pnpm build` copy its browser build into
 `public/z3/<version>/`, versioned so hosts can cache it forever (the copy
 leaves the current version in place, so a running dev server keeps serving
 it). It is loaded as a plain script, not bundled, because its thread workers
-re-load it by URL, and warmed up once the player opens the level list, a
-level or the tutorial, never on the home screen alone.
+re-load it by URL, and warmed up (`warmSolver()`, from the actions in
+`game/actions.ts`) once the player opens the level list, a level or the
+tutorial, never on the home screen alone.
 
 ## Deployment
 

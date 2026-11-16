@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
-import { freeVars, type Expr } from '../../lang/ast';
-import { MAX_LEN, type CompiledLevel, type Inputs } from '../../levels/level';
+import { freeVars, rangeBounds, type Expr, type Quant } from '../../lang/ast';
+import { MAX_LEN, type Inputs } from '../../levels/inputs';
+import type { CompiledLevel } from '../../levels/level';
 
 const ident = (name: string) => `v_${name}`;
 const inputUniform = (name: string) => `uIn_${name}`;
@@ -43,25 +44,25 @@ class Compiler {
     }
   }
 
-  private quant(e: Expr & { kind: 'quant' }): string {
+  private quant(e: Quant): string {
     const free = [...freeVars(e)].filter((n) => !this.level.arrays[n]);
     const name = `Q${this.n++}`;
     const all = e.q === 'forall';
-    const last = e.ops[e.ops.length - 1] === '<' ? 'hi - 1' : 'hi';
+    const { from, to } = rangeBounds(e);
     let inner = `if (${all ? '!' : ''}(${this.expr(e.body)})) return ${all ? 'false' : 'true'};`;
     for (let k = e.vars.length - 1; k >= 0; k--) {
       const v = ident(e.vars[k]);
-      const from = k === 0 ? (e.ops[0] === '<' ? 'lo + 1' : 'lo') : e.ops[k] === '<' ? `${ident(e.vars[k - 1])} + 1` : ident(e.vars[k - 1]);
+      const start = k === 0 ? 'first' : this.expr(from[k]);
       // GLSL ES 1.0 loops need a constant bound
-      inner = `for (int i${k} = 0; i${k} <= ${MAX_LEN}; i${k}++) { int ${v} = ${from} + i${k}; if (${v} > ${last}) break; ${inner} }`;
+      inner = `for (int i${k} = 0; i${k} <= ${MAX_LEN}; i${k}++) { int ${v} = ${start} + i${k}; if (${v} > last) break; ${inner} }`;
     }
     const params = free.map((n) => `int ${ident(n)}`).join(', ');
-    this.fns.push(`bool ${name}(${params}) { int lo = ${this.expr(e.lo)}; int hi = ${this.expr(e.hi)}; ${inner} return ${all}; }`);
+    this.fns.push(`bool ${name}(${params}) { int first = ${this.expr(from[0])}; int last = ${this.expr(to)}; ${inner} return ${all}; }`);
     return `${name}(${free.map(ident).join(', ')})`;
   }
 }
 
-export const GLSL_INT_HELPERS = /* glsl */ `
+const GLSL_INT_HELPERS = /* glsl */ `
 int fdiv(int a, int k) { return int(floor(float(a) / float(k))); }
 int emod(int a, int k) { return a - k * fdiv(a, k); }
 `;
@@ -81,6 +82,7 @@ export function levelGlsl(level: CompiledLevel, areas?: { area: Expr | null; bef
   const before = areas?.before ? c.expr(areas.before) : 'false';
   const decls = [`int ${ident(level.view.x)} = t.x;`, `int ${ident(level.view.y)} = t.y;`, ...level.offAxis.filter((n) => !level.arrays[n]).map((n) => `int ${ident(n)} = ${inputUniform(n)};`)].join(' ');
   return `
+${GLSL_INT_HELPERS}
 uniform bool uExists;
 ${uniforms}
 ${cells}

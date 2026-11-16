@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { compileFormula, compileLevel, type Formula, type Inputs } from '../../levels/level';
-import { useArea } from '../area/AreaLayer';
-import { GoalColumns } from '../area/GoalColumns';
-import { Slabs } from '../area/Slabs';
+import type { Inputs } from '../../levels/inputs';
+import { compileFormula, compileLevel, type Formula } from '../../levels/level';
+import { AreaLayer } from '../area/AreaLayer';
 import { Floor } from '../floor/Floor';
 import { Frogs } from '../frogs/Frogs';
-import { frogWorld, HOP, yawToward } from '../frogs/frogWorld';
+import { frogWorld, yawToward } from '../frogs/frogWorld';
 import { HATCH_EMERGE, HatchShells, hatchFx } from '../frogs/Hatch';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
@@ -53,8 +52,6 @@ const NO_INPUTS: Inputs = {};
 export function HomeScene() {
   useHomeCamera();
 
-  useArea(DIAGONAL, NO_INPUTS, AREA);
-
   const eggs = useRef<StartEgg[]>([]);
   useEffect(() => {
     frogWorld.clear();
@@ -79,7 +76,7 @@ export function HomeScene() {
       frogs.forEach((f, j) => {
         pos[j] = (pos[j] + 1) % PATH.length;
         const [x, y] = PATH[pos[j]];
-        void frogWorld.hopTo(DIAGONAL, f, { x: BigInt(x), y: BigInt(y) }, HOP, true).then(() => {
+        void frogWorld.hopTo(DIAGONAL, f, { x: BigInt(x), y: BigInt(y) }).then(() => {
           const [nx, ny] = PATH[(pos[j] + 1) % PATH.length];
           f.face = yawToward(x, y, nx, ny);
         });
@@ -98,8 +95,7 @@ export function HomeScene() {
   return (
     <group>
       <Floor level={DIAGONAL} inputs={NO_INPUTS} fadeIn={2.6} showAxes={false} />
-      <Slabs level={DIAGONAL} dim={false} showStop showGoal />
-      <GoalColumns />
+      <AreaLayer level={DIAGONAL} inputs={NO_INPUTS} area={AREA} dim={false} showStop showGoal showEggs={false} />
       <StartEggs eggs={eggs} />
       <Frogs />
       <HatchShells />

@@ -81,7 +81,7 @@ function live(): AudioContext | null {
   return ctx && ctx.state === 'running' && !useSound.getState().muted ? ctx : null;
 }
 
-function play(role: Role, { gain = 1, rate = 1, at = 0, pan = 0 }: { gain?: number; rate?: number; at?: number; pan?: number } = {}) {
+function play(role: Role, { gain = 1, rate = 1, at = 0 }: { gain?: number; rate?: number; at?: number } = {}) {
   const c = live();
   const bufs = takes.get(role);
   if (!c || !bufs?.length) return;
@@ -90,10 +90,21 @@ function play(role: Role, { gain = 1, rate = 1, at = 0, pan = 0 }: { gain?: numb
   src.playbackRate.value = rate;
   const g = c.createGain();
   g.gain.value = GAIN[role] * gain;
-  let node: AudioNode = src.connect(g);
-  if (pan) node = node.connect(new StereoPannerNode(c, { pan }));
-  node.connect(master!);
+  src.connect(g).connect(master!);
   src.start(c.currentTime + at);
+}
+
+function blip(c: AudioContext, freq: number, at: number, gain: number, attack: number, decay: number, length: number) {
+  const osc = c.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0, at);
+  g.gain.linearRampToValueAtTime(gain, at + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + decay);
+  osc.connect(g).connect(master!);
+  osc.start(at);
+  osc.stop(at + length);
 }
 
 const wobble = (amount = 0.06) => 1 + (Math.random() * 2 - 1) * amount;
@@ -147,17 +158,8 @@ export const sfx = {
     const c = live();
     if (!c) return;
     offsets.forEach((offset, step) => {
-      const at = c.currentTime + Math.max(0, offset);
-      const osc = c.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = TICK_BASE * semitones(PENTA[step % 5] + 12 * Math.floor(step / 5));
-      const g = c.createGain();
-      g.gain.setValueAtTime(0, at);
-      g.gain.linearRampToValueAtTime(TICK_GAIN, at + 0.004);
-      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.07);
-      osc.connect(g).connect(master!);
-      osc.start(at);
-      osc.stop(at + 0.08);
+      const freq = TICK_BASE * semitones(PENTA[step % 5] + 12 * Math.floor(step / 5));
+      blip(c, freq, c.currentTime + Math.max(0, offset), TICK_GAIN, 0.004, 0.07, 0.08);
     });
   },
 
@@ -165,21 +167,8 @@ export const sfx = {
     const c = live();
     if (!c || !gap('landing', 120)) return;
     const at = c.currentTime;
-    for (const [f, delay] of [
-      [1568, 0],
-      [2349, 0.07],
-    ] as const) {
-      const osc = c.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = f;
-      const g = c.createGain();
-      g.gain.setValueAtTime(0, at + delay);
-      g.gain.linearRampToValueAtTime(LANDING_GAIN, at + delay + 0.006);
-      g.gain.exponentialRampToValueAtTime(0.0001, at + delay + 0.18);
-      osc.connect(g).connect(master!);
-      osc.start(at + delay);
-      osc.stop(at + delay + 0.2);
-    }
+    blip(c, 1568, at, LANDING_GAIN, 0.006, 0.18, 0.2);
+    blip(c, 2349, at + 0.07, LANDING_GAIN, 0.006, 0.18, 0.2);
   },
 
   ghost() {

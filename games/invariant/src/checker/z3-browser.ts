@@ -34,3 +34,7 @@ export function browserZ3(): Promise<Context<'main'>> {
   }
   return pending;
 }
+
+export function warmSolver() {
+  void browserZ3().catch(() => {});
+}

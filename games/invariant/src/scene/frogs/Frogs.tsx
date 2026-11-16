@@ -2,17 +2,17 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
-import { planeKey, toNum } from '../../levels/level';
+import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
-import { COLORS, SLAB_H } from '../constants';
+import { COLORS } from '../constants';
 import { uploadInstances } from '../instances';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 import { sceneNow } from '../sceneTime';
 import { getBlobTexture } from '../shaders/common';
 import { placeBadge } from './badges';
-import { frogWorld, trailFrogs, yawToward, type FrogSim } from './frogWorld';
+import { frogWorld, leaveFade, trailFrogs, yawToward, type FrogSim } from './frogWorld';
 import { pose } from './motion';
-import { MAX_SHOWN, occupancy, slotFor } from './occupancy';
+import { byTile, leftTiles, MAX_SHOWN, occupancy, slotFor, tileKey, type Slot } from './occupancy';
 
 const MAX_FROGS = 400;
 const BADGES = 24;
@@ -24,8 +24,36 @@ const ECHO_FADE = 0.6;
 const FLOAT = 0.12;
 const BOB = 0.035;
 
-const leftTiles = (f: FrogSim) => (f.hop ? f.trail! : f.trail!.slice(0, -1));
-const tileOf = (f: FrogSim) => (f.hop ? `${f.hop.tx},${f.hop.ty}` : `${f.x},${f.y}`);
+function easeSlot(f: FrogSim, target: Slot, t: number, dt: number, k: number): Slot {
+  if (!f.slot) return (f.slot = { ...target });
+  const left = f.hop ? f.hop.t0 + f.hop.dur - t : 0;
+  const kk = left > 0 ? Math.min(1, dt / left) : k;
+  f.slot.dx += (target.dx - f.slot.dx) * kk;
+  f.slot.dy += (target.dy - f.slot.dy) * kk;
+  f.slot.scale += (target.scale - f.slot.scale) * kk;
+  return f.slot;
+}
+
+function placeEchoes(walkers: FrogSim[], t: number, from: number, depth: THREE.InstancedMesh, ghosts: THREE.InstancedMesh, fades: THREE.InstancedBufferAttribute): number {
+  let n = from;
+  for (const walker of walkers) {
+    const trail = walker.trail!;
+    const fade = ECHO_FADE * leaveFade(walker, t);
+    leftTiles(walker).forEach(([x, y], i) => {
+      if (n >= MAX_FROGS) return;
+      const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
+      dummy.position.set(x, field.groundAt(x, y), -y);
+      dummy.rotation.set(0, yawToward(x, y, tx, ty), 0);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      depth.setMatrixAt(n, dummy.matrix);
+      ghosts.setMatrixAt(n, dummy.matrix);
+      fades.setX(n, fade);
+      ghosts.setColorAt(n++, ECHO);
+    });
+  }
+  return n;
+}
 
 export function Frogs() {
   const body = useRef<THREE.InstancedMesh>(null);
@@ -47,10 +75,14 @@ export function Frogs() {
     return m;
   }, []);
   const shadowGeom = useMemo(() => new THREE.PlaneGeometry(0.62, 0.62).rotateX(-Math.PI / 2), []);
-  useEffect(() => () => (geom.dispose(), ghostGeom.dispose(), shadowGeom.dispose()), [geom, ghostGeom, shadowGeom]);
   const shadowMat = useMemo(
     () => new THREE.MeshBasicMaterial({ map: getBlobTexture(), transparent: true, depthWrite: false }),
     [],
+  );
+  useEffect(() => () => (geom.dispose(), ghostGeom.dispose(), shadowGeom.dispose()), [geom, ghostGeom, shadowGeom]);
+  useEffect(
+    () => () => [mat, ghostDepthMat, ghostMat, shadowMat].forEach((m) => m.dispose()),
+    [mat, ghostDepthMat, ghostMat, shadowMat],
   );
   const plane = useGame((s) => planeKey(s.inputs));
   const lastT = useRef<number | undefined>(undefined);
@@ -64,25 +96,9 @@ export function Frogs() {
     if (!b || !gh || !gd || !sh) return;
     const t = sceneNow();
     const visible = frogWorld.frogs.filter((f) => f.plane === plane);
-    const groups = new Map<string, FrogSim[]>();
-    for (const f of visible) {
-      const key = tileOf(f);
-      const g = groups.get(key);
-      if (g) g.push(f);
-      else groups.set(key, [f]);
-    }
     const walkers = trailFrogs(plane);
-    const taken = new Map<string, number>();
-    const take = (k: string) => taken.set(k, (taken.get(k) ?? 0) + 1);
-    for (const f of visible) if (!f.leave) take(tileOf(f));
-    for (const w of walkers) if (!w.leave) for (const [x, y] of leftTiles(w)) take(`${x},${y}`);
-    let sig = '';
-    for (const [k, count] of taken) sig += `${k}:${count}|`;
-    if (sig !== occupancy.signature) {
-      occupancy.signature = sig;
-      occupancy.frogs = taken;
-      occupancy.version++;
-    }
+    occupancy.update(visible, walkers);
+    const groups = byTile(visible);
     let n = 0;
     let nReal = 0;
     let nGhost = 0;
@@ -90,34 +106,18 @@ export function Frogs() {
     const k = 1 - Math.exp(-dt * 11);
     lastT.current = t;
     let badges = 0;
-    const level = useGame.getState().level;
     for (const f of visible) {
       if (n >= MAX_FROGS) break;
       const p = pose(f, t);
-      if (p.landed) {
-        const s = toNum(f.state);
-        if (level && level.fast.guard(s) !== true && level.fast.post(s) === true) frogWorld.landOnGoal(f);
-      }
-      const key = tileOf(f);
-      const g = groups.get(key)!;
-      const target = slotFor(g.indexOf(f), g.length);
-      if (g.length > MAX_SHOWN && g.indexOf(f) === 0 && badges < BADGES) {
+      const g = groups.get(tileKey(f))!;
+      const i = g.indexOf(f);
+      if (g.length > MAX_SHOWN && i === 0 && badges < BADGES) {
         placeBadge(badgeRefs.current[badges++], f.x, f.y, p.ground, g.length);
       }
-      if (f.ox === undefined) {
-        f.ox = target.dx;
-        f.oy = target.dy;
-        f.os = target.scale;
-      } else {
-        const left = f.hop ? f.hop.t0 + f.hop.dur - t : 0;
-        const kk = left > 0 ? Math.min(1, dt / left) : k;
-        f.ox += (target.dx - f.ox) * kk;
-        f.oy! += (target.dy - f.oy!) * kk;
-        f.os! += (target.scale - f.os!) * kk;
-      }
-      const os = f.os!;
-      const px = p.x + f.ox;
-      const pz = p.z - f.oy!;
+      const slot = easeSlot(f, slotFor(i, g.length), t, dt, k);
+      const os = slot.scale;
+      const px = p.x + slot.dx;
+      const pz = p.z - slot.dy;
       const ghost = f.kind === 'test';
       const py = ghost ? p.y + FLOAT + BOB * Math.sin(t * 2.6 + f.id * 1.7) : p.y;
       if (!f.drawn) f.drawn = { x: 0, y: 0, ground: 0, z: 0, scale: 1 };
@@ -133,7 +133,7 @@ export function Frogs() {
       if (ghost) {
         gd.setMatrixAt(nGhost, dummy.matrix);
         gh.setMatrixAt(nGhost, dummy.matrix);
-        fades.setX(nGhost, (f.fade ?? 1) * (f.leave ? 1 - Math.min(1, (t - f.leave.t0) / f.leave.dur) : 1));
+        fades.setX(nGhost, (f.fade ?? 1) * leaveFade(f, t));
         gh.setColorAt(nGhost++, GHOST);
       } else b.setMatrixAt(nReal++, dummy.matrix);
       const air = Math.max(0, py - p.ground);
@@ -145,22 +145,7 @@ export function Frogs() {
       sh.setMatrixAt(n, dummy.matrix);
       n++;
     }
-    for (const walker of walkers) {
-      const trail = walker.trail!;
-      const fade = ECHO_FADE * (walker.leave ? 1 - Math.min(1, (t - walker.leave.t0) / walker.leave.dur) : 1);
-      leftTiles(walker).forEach(([x, y], i) => {
-        if (nGhost >= MAX_FROGS) return;
-        const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
-        dummy.position.set(x, field.heightAt(x, y) * SLAB_H, -y);
-        dummy.rotation.set(0, yawToward(x, y, tx, ty), 0);
-        dummy.scale.setScalar(1);
-        dummy.updateMatrix();
-        gd.setMatrixAt(nGhost, dummy.matrix);
-        gh.setMatrixAt(nGhost, dummy.matrix);
-        fades.setX(nGhost, fade);
-        gh.setColorAt(nGhost++, ECHO);
-      });
-    }
+    nGhost = placeEchoes(walkers, t, nGhost, gd, gh, fades);
     for (let i = badges; i < BADGES; i++) {
       const sp = badgeRefs.current[i];
       if (sp) sp.visible = false;

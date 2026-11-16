@@ -1,9 +1,6 @@
 import { field } from '../area/field';
-import { SLAB_H } from '../constants';
 import { bump, clamp01, popIn, smoothstep } from '../easing';
 import type { FrogSim } from './frogWorld';
-
-const baseAt = (x: number, y: number) => field.heightAt(x, y) * SLAB_H;
 
 interface Pose {
   x: number;
@@ -14,7 +11,6 @@ interface Pose {
   sy: number;
   yaw: number;
   pitch: number;
-  landed: boolean;
   emerged: number;
 }
 
@@ -98,11 +94,10 @@ export function pose(f: FrogSim, t: number): Pose {
   f.lastT = t;
   let x = f.x;
   let ty = f.y;
-  let h = baseAt(x, ty);
+  let h = field.groundAt(x, ty);
   let ground = h;
   let squash = 0;
   let pitch = 0;
-  let landed = false;
 
   const off = angleDelta(f.yaw, f.face);
   if (!f.turn && !f.hop && !f.rise && Math.abs(off) > 0.35) {
@@ -123,15 +118,15 @@ export function pose(f: FrogSim, t: number): Pose {
 
   if (f.hop) {
     const u = clamp01((t - f.hop.t0) / f.hop.dur);
-    const h0 = baseAt(f.hop.fx, f.hop.fy);
-    const h1 = baseAt(f.hop.tx, f.hop.ty);
+    const h0 = field.groundAt(f.hop.fx, f.hop.fy);
+    const h1 = field.groundAt(f.hop.tx, f.hop.ty);
     const dist = Math.hypot(f.hop.tx - f.hop.fx, f.hop.ty - f.hop.fy);
     const H = hopHeight(dist);
     const { g, h: hh } = hopAt(u, h0, h1, H);
     x = f.hop.fx + (f.hop.tx - f.hop.fx) * g;
     ty = f.hop.fy + (f.hop.ty - f.hop.fy) * g;
     h = hh;
-    ground = baseAt(x, ty);
+    ground = field.groundAt(x, ty);
     squash = keyed(u, SQUASH_KEYS);
     const vy = (hopAt(Math.min(1, u + 0.01), h0, h1, H).h - hopAt(Math.max(0, u - 0.01), h0, h1, H).h) / 0.02;
     pitch = -Math.max(-0.35, Math.min(0.35, vy * 0.07)) * Math.min(1, dist);
@@ -161,10 +156,6 @@ export function pose(f: FrogSim, t: number): Pose {
     f.yaw = f.face - f.rise.turns * Math.PI * 2 * Math.pow(1 - u, 3);
     squash += 0.22 * bump(u) - 0.18 * bump(clamp01((raw - 1) / 0.3));
     emerged = smoothstep(clamp01(u * 1.6 - 0.2));
-    if (raw >= 1 && !f.touched) {
-      f.touched = true;
-      landed = true;
-    }
     if (raw >= 1.3) f.rise = undefined;
   }
   const breath = 0.022 * Math.sin(t * 2.4 + f.phase);
@@ -184,5 +175,5 @@ export function pose(f: FrogSim, t: number): Pose {
   }
   const sy = (1 + squash + breath) * s;
   const sx = (1 - squash * 0.45 - breath * 0.5) * s;
-  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, landed, emerged };
+  return { x, y: h, z: -ty, ground, sx, sy, yaw: f.yaw, pitch, emerged };
 }

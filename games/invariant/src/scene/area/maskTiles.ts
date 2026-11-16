@@ -1,12 +1,12 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useState } from 'react';
 import { cameraRig } from '../cameraRig';
-import { fadeRadius } from '../shaders/common';
+import { fadeRadius } from '../shaders/fade';
 import { areaMask, MASK_REACH, type MaskBit } from './mask';
 
 const DRIFT = 8;
 
-export interface MaskTiles {
+interface MaskTiles {
   tiles: [number, number][];
   cx: number;
   cy: number;

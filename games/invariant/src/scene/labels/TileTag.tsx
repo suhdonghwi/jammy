@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
-import { COLORS, SLAB_H } from '../constants';
+import { COLORS } from '../constants';
 import { useExitFade } from '../../hooks/presence';
 import { sceneNow } from '../sceneTime';
 import { SceneTag, type TagTone } from './SceneTag';
@@ -58,7 +58,7 @@ export function TileTag({ x, y, label, tone, pulse = false, wash = false, leavin
     const g = group.current;
     if (!g) return;
     const t = sceneNow() - t0.current;
-    g.position.set(x, field.heightAt(x, y) * SLAB_H + 0.012, -y);
+    g.position.set(x, field.groundAt(x, y) + 0.012, -y);
     const out = exit();
     const pop = Math.min(1, t / 0.3) * out;
     const beat = pulse ? 0.5 + 0.5 * Math.sin(t * 4.2) : 1;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { EXIT_MS } from '../ui/timing';
+import { EXIT_MS } from '../timing';
 
 export function usePresence(show: boolean): { mounted: boolean; leaving: boolean } {
   const [mounted, setMounted] = useState(show);

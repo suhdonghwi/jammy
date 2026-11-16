@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import * as THREE from 'three';
 import { layouts } from 'virtual:title-glyphs';
 import { COLORS, MAX_DPR } from '../../../scene/constants';
@@ -73,7 +73,7 @@ function TitleScene({ align, wave }: { align: TitleAlign; wave: number }) {
 }
 
 export function Title3D({
-  width = 'w-full max-w-125 narrow:mx-auto narrow:max-w-85 short:max-w-[min(31.25rem,45vw,calc((100dvh-12.5rem)*1.95))]',
+  width = 'w-full max-w-125 narrow:mx-auto narrow:max-w-85 short:max-w-[min(31.25rem,45vw,calc((100dvh-12.5rem)*var(--title-aspect)))]',
   align = 'left',
   still = false,
 }: {
@@ -82,7 +82,7 @@ export function Title3D({
   still?: boolean;
 }) {
   return (
-    <div className={width} style={{ aspectRatio: TITLE_ASPECT }}>
+    <div className={width} style={{ aspectRatio: TITLE_ASPECT, '--title-aspect': TITLE_ASPECT } as CSSProperties}>
       <ErrorBoundary fallback={() => <PlainTitle align={align} />}>
         <Canvas flat dpr={[1, MAX_DPR]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 0, 30], fov: FOV, near: 0.1, far: 200 }}>
           <hemisphereLight args={['#ffffff', '#cfd6e2', 2.1]} />

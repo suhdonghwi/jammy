@@ -1,7 +1,8 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { startView, type CompiledLevel } from '../levels/level';
-import { EXIT_MS } from '../ui/timing';
+import type { CompiledLevel } from '../levels/level';
+import { EXIT_MS } from '../timing';
+import { freeRect, type Rect } from './freeRect';
 import { sceneStarted, sleep } from './sceneTime';
 
 export type Tile = readonly [number, number];
@@ -13,19 +14,12 @@ export interface Shot {
   labels?: readonly Tile[];
 }
 
-interface Rect {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-}
-
 let controls: CameraControls | null = null;
 let size = { width: 1, height: 1 };
 let current: Shot | null = null;
 let base: number | null = null;
 let layout = { key: '', changed: 0, settled: true };
-let pending: { shot: Shot; since: number; done: () => void } | null = null;
+let pending: { shot: Shot; since: number; done: () => void; settled: Promise<void> } | null = null;
 
 const tmp = new THREE.Vector3();
 const point = new THREE.Vector3();
@@ -40,47 +34,21 @@ const MARGIN = 14;
 const TAG_ROOM = 46;
 const TAG_HALF = 64;
 const TILE_RADIUS = 0.5;
-const MAX_DISTANCE = 60;
+export const FOV = 36;
+export const MAX_DISTANCE = 60;
+const DEFAULT_DISTANCE = 14;
 const ZOOM_OUT = 1.6;
 const ARRIVING_MS = 1500;
 const SWIFT_SMOOTH_TIME = 0.16;
 const SETTLE_MS = EXIT_MS + 100;
 
-const area = (r: Rect) => Math.max(0, r.right - r.left) * Math.max(0, r.bottom - r.top);
-
-const overlaps = (a: Rect, b: Rect) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-
-function edges(view: Rect, blocks: Rect[], lo: 'left' | 'top', hi: 'right' | 'bottom'): number[] {
-  const all = [view[lo], view[hi], ...blocks.flatMap((b) => [b[lo], b[hi]])];
-  return [...new Set(all.filter((v) => v >= view[lo] && v <= view[hi]))].sort((a, b) => a - b);
-}
-
 function safeRect(): Rect {
-  const view: Rect = { left: 0, top: 0, right: size.width, bottom: Math.min(size.height, window.innerHeight) };
-  const blocks: Rect[] = [];
-  for (const el of document.querySelectorAll('[data-frame]')) {
-    const b = el.getBoundingClientRect();
-    if (b.width && b.height && overlaps(b, view)) blocks.push(b);
-  }
-  const xs = edges(view, blocks, 'left', 'right');
-  const ys = edges(view, blocks, 'top', 'bottom');
-  let best = view;
-  let bestArea = blocks.length ? 0 : area(view);
-  for (const [i, left] of xs.entries())
-    for (const right of xs.slice(i + 1))
-      for (const [j, top] of ys.entries())
-        for (const bottom of ys.slice(j + 1)) {
-          const r = { left, top, right, bottom };
-          const a = area(r);
-          if (a <= bestArea || blocks.some((b) => overlaps(b, r))) continue;
-          best = r;
-          bestArea = a;
-        }
-  return { left: best.left + MARGIN, top: best.top + MARGIN, right: best.right - MARGIN, bottom: best.bottom - MARGIN };
+  const r = freeRect(size.width, size.height);
+  return { left: r.left + MARGIN, top: r.top + MARGIN, right: r.right - MARGIN, bottom: r.bottom - MARGIN };
 }
 
 function endView(): { x: number; y: number; d: number } {
-  if (!controls) return { x: 0, y: 0, d: 14 };
+  if (!controls) return { x: 0, y: 0, d: DEFAULT_DISTANCE };
   controls.getTarget(tmp, true);
   return { x: tmp.x, y: -tmp.z, d: controls.getSpherical(sph, true).radius };
 }
@@ -195,6 +163,17 @@ async function swiftly(move: () => Promise<unknown>) {
   }
 }
 
+function retarget(shot: Shot) {
+  current = shot;
+  pending?.done();
+  pending = null;
+}
+
+function startView(level: CompiledLevel): { x: number; y: number; distance: number } {
+  const cam = level.camera ?? { x: 0, y: 0 };
+  return { x: cam.x, y: cam.y, distance: (cam.distance ?? 15) * 1.2 };
+}
+
 export const cameraRig = {
   attach(c: CameraControls | null) {
     controls = c;
@@ -207,7 +186,7 @@ export const cameraRig = {
     return controls.getTarget(tmp);
   },
   distance(): number {
-    return controls ? controls.distance : 14;
+    return controls ? controls.distance : DEFAULT_DISTANCE;
   },
   viewCenter(): { x: number; y: number } {
     const v = endView();
@@ -217,12 +196,13 @@ export const cameraRig = {
     return ground((r.left + r.right) / 2, (r.top + r.bottom) / 2) ?? v;
   },
   frame(shot: Shot, smooth = true): Promise<void> {
-    current = shot;
-    pending?.done();
-    pending = null;
+    retarget(shot);
     if (!controls) return Promise.resolve();
     if (!smooth || !sceneStarted()) return apply(shot, false);
-    return new Promise((done) => (pending = { shot, since: performance.now(), done }));
+    let done = () => {};
+    const settled = new Promise<void>((resolve) => (done = resolve));
+    pending = { shot, since: performance.now(), done, settled };
+    return settled;
   },
   async arrive(shot: Shot) {
     await Promise.race([swiftly(() => cameraRig.frame(shot)), sleep(ARRIVING_MS)]);
@@ -255,16 +235,7 @@ export const cameraRig = {
     }
   },
   async zoomTo(distance: number) {
-    if (pending) {
-      const p = pending;
-      await new Promise<void>((resolve) => {
-        const done = p.done;
-        p.done = () => {
-          done();
-          resolve();
-        };
-      });
-    }
+    if (pending) await pending.settled;
     if (!controls) return;
     await controls.dollyTo(distance, true);
   },
@@ -280,9 +251,7 @@ export const cameraRig = {
       void cameraRig.frame(shot, false);
       return;
     }
-    current = shot;
-    pending?.done();
-    pending = null;
+    retarget(shot);
     void swiftly(() => Promise.all([cameraRig.resetAngle(), apply(shot, true)]));
   },
 };

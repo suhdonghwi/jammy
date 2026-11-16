@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { field } from '../area/field';
-import { SLAB_H } from '../constants';
 import type { FrogSim } from '../frogs/frogWorld';
 
 export type TagTone = 'info' | 'good' | 'fail';
@@ -50,7 +49,7 @@ function liftClear(box: Box, frame: number): number {
 function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
   if ('tile' in a) {
     const [x, y] = a.tile;
-    return v.set(x, field.heightAt(x, y) * SLAB_H + TILE_TAG_Y, -y);
+    return v.set(x, field.groundAt(x, y) + TILE_TAG_Y, -y);
   }
   const p = a.frog.drawn;
   return p ? v.set(p.x, p.y + FROG_TOP * p.scale + GAP, p.z) : null;

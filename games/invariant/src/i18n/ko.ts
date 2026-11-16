@@ -148,8 +148,6 @@ export const ko: Messages = {
 
   langErrors: {
     anArea: '영역',
-    aCondition: '조건',
-    bothBranches: '두 갈래',
     anIndex: '첨자',
     aBound: '범위의 끝',
     isArray: (name) => `${name}은(는) 배열입니다. \`${name}[0]\`처럼 칸 하나를 쓰세요`,
@@ -173,7 +171,7 @@ export const ko: Messages = {
     expectedNameEnded: '이름이 와야 하는데 식이 끝났습니다',
     expectedNameFound: (found) => `'${found}' 자리에는 이름이 와야 합니다`,
     notHere: (word) => `'${word}' 키워드는 여기에 쓸 수 없습니다`,
-    unknownFunction: (name) => `모르는 함수입니다: '${name}' (쓸 수 있는 함수: abs, min, max)`,
+    unknownFunction: (name, available) => `모르는 함수입니다: '${name}' (쓸 수 있는 함수: ${available})`,
     endsEarly: '식이 완성되지 않았습니다',
     unexpected: (found) => `'${found}' 부분을 이해하지 못했습니다`,
     empty: '조건을 입력하세요',

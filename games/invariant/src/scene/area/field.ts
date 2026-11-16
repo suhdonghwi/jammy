@@ -1,10 +1,12 @@
-import type { FastFn } from '../../lang/eval';
-import type { CompiledLevel, Formula, Inputs } from '../../levels/level';
-import { tileState } from '../../levels/tiles';
+import type { FastFn, FastState } from '../../lang/eval';
+import type { Inputs } from '../../levels/inputs';
+import type { CompiledLevel, Formula } from '../../levels/level';
+import { tilesNear, tileState, type TileWindow } from '../../levels/tiles';
+import { SLAB_H } from '../constants';
 import { clamp01, smoothstep } from '../easing';
 import { sceneNow } from '../sceneTime';
 
-export const RISE_DUR = 0.26;
+const RISE_DUR = 0.26;
 
 class AreaField {
   level: CompiledLevel | null = null;
@@ -42,6 +44,18 @@ class AreaField {
     if (risen >= 1) return to;
     const from = covers(this.before?.fast);
     return from + (to - from) * risen;
+  }
+
+  groundAt(x: number, y: number): number {
+    return this.heightAt(x, y) * SLAB_H;
+  }
+
+  movedNear(near: TileWindow): { rising: number; sinking: number } {
+    const level = this.level;
+    if (!level) return { rising: 0, sinking: 0 };
+    const covers = (f: Formula | null, s: FastState) => (f?.fast(s) === true ? 1 : 0);
+    const moved = tilesNear(level, this.inputs, near, (s) => (level.fast.planeReq(s) === true ? covers(this.area, s) - covers(this.before, s) : 0));
+    return { rising: moved.filter((m) => m > 0).length, sinking: moved.filter((m) => m < 0).length };
   }
 }
 

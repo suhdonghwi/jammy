@@ -8,7 +8,8 @@ import { frogWorld } from '../frogs/frogWorld';
 import { EGG_ALONE, EGG_ASIDE, occupancy } from '../frogs/occupancy';
 import { eggGeometry } from '../models';
 import { sceneNow } from '../sceneTime';
-import { colorUniform, fadeUniforms, getBlobTexture, GLSL_COMMON, GLSL_FADE, updateFade } from '../shaders/common';
+import { colorUniform, getBlobTexture, GLSL_COMMON } from '../shaders/common';
+import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/fade';
 import { areaMask, EGG } from './mask';
 import { useMaskTiles } from './maskTiles';
 import { GLSL_APPEAR, GLSL_BACK, GLSL_HEIGHT, GLSL_SLOT, instanced, SLOT_DUR } from './glsl';
@@ -188,6 +189,7 @@ function EggField({ eggs, base }: { eggs: [number, number][]; base: THREE.Buffer
       }),
     [material],
   );
+  useEffect(() => () => (shadowBase.dispose(), material.dispose(), shadowMat.dispose()), [shadowBase, material, shadowMat]);
   useFrame(() => {
     syncFrogs();
     material.uniforms.uTime.value = sceneNow();

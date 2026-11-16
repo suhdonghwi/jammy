@@ -87,16 +87,22 @@
   --shadow-toy-brand: 0 4px 0 var(--color-brand-deep), 0 8px 18px rgb(59 130 246 / 0.3);
   --shadow-toy-brand-pressed: 0 1px 0 var(--color-brand-deep), 0 3px 8px rgb(59 130 246 / 0.3);
 
+  --breakpoint-xs: 22.5rem;
+
   --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-fold: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --animate-fade: fade 0.2s var(--ease-entrance);
   --animate-rise: rise 0.25s var(--ease-entrance);
+  --animate-rise-slow: rise 0.4s var(--ease-entrance);
+  --animate-pop: pop 0.3s var(--ease-entrance);
   --animate-slide-in: slide-in 0.45s var(--ease-entrance) both;
   --animate-tag-in: tag-in 0.2s var(--ease-entrance);
-  --animate-fade-out: fade-out 0.15s ease-in forwards;
-  --animate-pop-out: pop-out 0.15s ease-in forwards;
-  --animate-sink-out: sink-out 0.15s ease-in forwards;
-  --animate-tag-out: tag-out 0.15s ease-in forwards;
+  --duration-exit: 150ms;
+  --animate-fade-out: fade-out var(--duration-exit) ease-in forwards;
+  --animate-pop-out: pop-out var(--duration-exit) ease-in forwards;
+  --animate-sink-out: sink-out var(--duration-exit) ease-in forwards;
+  --animate-tag-out: tag-out var(--duration-exit) ease-in forwards;
 }
 
 @layer base {
@@ -245,26 +251,26 @@ html[data-leaving] .screen {
   0%,
   100% {
     box-shadow:
-      0 0 0 3px rgb(59 130 246 / 0.55),
-      0 0 0 8px rgb(59 130 246 / 0.12);
+      0 0 0 3px --alpha(var(--color-brand) / 55%),
+      0 0 0 8px --alpha(var(--color-brand) / 12%);
   }
   50% {
     box-shadow:
-      0 0 0 3px rgb(59 130 246 / 0.85),
-      0 0 0 13px rgb(59 130 246 / 0.08);
+      0 0 0 3px --alpha(var(--color-brand) / 85%),
+      0 0 0 13px --alpha(var(--color-brand) / 8%);
   }
 }
 @keyframes spotlight-soft {
   0%,
   100% {
     box-shadow:
-      0 0 0 2px rgb(59 130 246 / 0.45),
-      0 0 0 3px rgb(59 130 246 / 0.06);
+      0 0 0 2px --alpha(var(--color-brand) / 45%),
+      0 0 0 3px --alpha(var(--color-brand) / 6%);
   }
   50% {
     box-shadow:
-      0 0 0 2px rgb(59 130 246 / 0.75),
-      0 0 0 5px rgb(59 130 246 / 0.08);
+      0 0 0 2px --alpha(var(--color-brand) / 75%),
+      0 0 0 5px --alpha(var(--color-brand) / 8%);
   }
 }
 @keyframes check-pulse {
@@ -275,9 +281,9 @@ html[data-leaving] .screen {
 @keyframes check-halo {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(59 130 246 / 0);
+    box-shadow: 0 0 0 0 --alpha(var(--color-brand) / 0%);
   }
   50% {
-    box-shadow: 0 0 0 4px rgb(59 130 246 / 0.42);
+    box-shadow: 0 0 0 4px --alpha(var(--color-brand) / 42%);
   }
 }

@@ -5,7 +5,7 @@ export function RevealSlot({ open, children }: { open: boolean; children: ReactN
   if (!open && settled) setSettled(false);
   return (
     <div
-      className={`grid grid-cols-1 transition-[grid-template-rows,opacity] duration-450 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${open ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none! grid-rows-[0fr] opacity-0'}`}
+      className={`grid grid-cols-1 transition-[grid-template-rows,opacity] duration-450 ease-fold ${open ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none! grid-rows-[0fr] opacity-0'}`}
       aria-hidden={!open}
       onTransitionEnd={(e) => e.target === e.currentTarget && e.propertyName === 'grid-template-rows' && setSettled(open)}
     >

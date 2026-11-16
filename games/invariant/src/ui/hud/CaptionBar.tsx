@@ -14,27 +14,19 @@ const TONE: Record<CaptionTone, string> = {
 
 export function CaptionBar() {
   const { value: caption, leaving } = useLingering(useGame((s) => s.caption));
-  const pitfall = useGame((s) => s.pitfallMessage);
   const back = useGame((s) => (s.mode === 'tutorial' ? s.tutorial.back : null));
   const replayLocked = useGame((s) => s.busy || s.checking);
   const tr = useT();
   if (!caption) return null;
-  const replay = caption.action?.label === tr.caption.replay;
   return (
     <div
       key={caption.text}
-      data-caption
       className={`flex min-h-0 flex-col gap-2.5 rounded-2xl border-2 bg-card py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md transition-colors duration-200 compact:gap-2 compact:py-2.75 compact:pr-3 compact:pl-3.5 compact:text-sm compact:leading-[1.45] ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
     >
       <div className="min-h-0 overflow-y-auto">
         <Markdown text={caption.text} />
-        {pitfall && caption.tone === 'fail' && !caption.text.includes(pitfall) && (
-          <div className="mt-1.5 text-sm text-muted">
-            <Markdown text={pitfall} />
-          </div>
-        )}
       </div>
-      {(caption.secondary || caption.action || caption.choices || caption.close || back) && (
+      {(caption.action || caption.replay || caption.choices || caption.close || back) && (
         <div className="flex min-h-8.5 flex-wrap items-center justify-end gap-1.5">
           {back && (
             <button className={button('quiet', 'sm')} onClick={back}>
@@ -55,17 +47,16 @@ export function CaptionBar() {
               {tr.caption.close}
             </button>
           )}
-          {caption.secondary && (
-            <button className={button('quiet', 'sm')} disabled={replayLocked} onClick={caption.secondary.onClick}>
+          {caption.replay && (
+            <button className={button(caption.action ? 'quiet' : 'primary', 'sm')} disabled={replayLocked} onClick={caption.replay}>
               <RotateCcw size={15} strokeWidth={2.4} />
-              {caption.secondary.label}
+              {tr.caption.replay}
             </button>
           )}
           {caption.action && (
-            <button className={button('primary', 'sm')} disabled={caption.action.disabled || (replay && replayLocked)} onClick={() => caption.action!.onClick()}>
-              {replay ? <RotateCcw size={15} strokeWidth={2.4} /> : null}
+            <button className={button('primary', 'sm')} disabled={caption.action.disabled} onClick={() => caption.action!.onClick()}>
               {caption.action.label}
-              {!replay ? <ArrowRight size={15} strokeWidth={2.4} /> : null}
+              <ArrowRight size={15} strokeWidth={2.4} />
             </button>
           )}
         </div>

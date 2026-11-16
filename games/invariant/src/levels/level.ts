@@ -2,17 +2,8 @@ import { t } from '../i18n/i18n';
 import { conjuncts, freeVars, mk, NO_SPAN, subst, type Expr, type Program, type State } from '../lang/ast';
 import { compileFast, evaluate, holds, step, symbolicStep, type FastFn, type FastState } from '../lang/eval';
 import { LangError, parseFormula, parseProgram } from '../lang/parser';
-import { checkCondition, checkProgram, programScope, type Scope } from '../lang/typecheck';
-
-export type Inputs = Record<string, number | number[]>;
-
-export const MAX_LEN = 32;
-
-interface Dice {
-  length: [number, number];
-  values: [number, number];
-  sorted?: boolean;
-}
+import { checkCondition, checkProgram, type Scope } from '../lang/typecheck';
+import type { Dice, Inputs } from './inputs';
 
 export interface Pitfall {
   formula: string;
@@ -62,12 +53,12 @@ export interface CompiledLevel extends LevelDef {
 
 export function compileLevel(def: LevelDef): CompiledLevel {
   const program = parseProgram(def.source);
-  checkProgram(program);
-  const inputs = program.inputs;
+  const scope = checkProgram(program);
+  const inputs = program.inputs.map((d) => d.name);
   const vars = program.vars.map((v) => v.name);
   const names = [...inputs, ...vars];
-  const scope = programScope(program);
-  const arrays = program.arrays;
+  const arrays: Record<string, string> = {};
+  for (const d of program.inputs) if (d.length) arrays[d.name] = d.length;
   const { x, y } = def.view;
   for (const a of [x, y]) {
     if (scope.get(a) !== 'int') throw new Error(`[${def.id}] view axis '${a}' is not an integer variable`);
@@ -188,57 +179,6 @@ export function toBig(s: FastState): State {
     o[k] = Array.isArray(v) ? v.map((x) => BigInt(Math.round(x))) : BigInt(Math.round(v));
   }
   return o;
-}
-
-export function startInputs(level: CompiledLevel): Inputs {
-  const out: Inputs = {};
-  for (const n of level.offAxis) out[n] = level.arrays[n] ? [] : 0;
-  Object.assign(out, level.start);
-  return withLengths(level, out);
-}
-
-export function withLengths(level: CompiledLevel, inputs: Inputs): Inputs {
-  const out = { ...inputs };
-  for (const [arr, len] of Object.entries(level.arrays)) out[len] = (out[arr] as number[]).length;
-  return out;
-}
-
-export function inputsOf(level: CompiledLevel, s: State | FastState): Inputs {
-  const out: Inputs = {};
-  for (const n of level.offAxis) {
-    const v = s[n];
-    out[n] = Array.isArray(v) ? v.map(Number) : Number(v);
-  }
-  return out;
-}
-
-export function planeKey(inputs: Inputs): string {
-  return Object.keys(inputs)
-    .sort()
-    .map((k) => `${k}=${String(inputs[k])}`)
-    .join(';');
-}
-
-export function planeExists(level: CompiledLevel, inputs: Inputs): boolean {
-  return level.fast.inputsReq(inputs) === true;
-}
-
-export function rollArray(level: CompiledLevel, inputs: Inputs, name: string): Inputs {
-  const d = level.dice?.[name] ?? { length: [1, 6], values: [0, 9] };
-  const rand = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
-  let next = inputs;
-  for (let tries = 0; tries < 50; tries++) {
-    const arr = Array.from({ length: Math.min(MAX_LEN, rand(d.length[0], d.length[1])) }, () => rand(d.values[0], d.values[1]));
-    if (d.sorted) arr.sort((a, b) => a - b);
-    next = withLengths(level, { ...inputs, [name]: arr });
-    if (planeExists(level, next)) break;
-  }
-  return next;
-}
-
-export function startView(level: CompiledLevel): { x: number; y: number; distance: number } {
-  const cam = level.camera ?? { x: 0, y: 0 };
-  return { x: cam.x, y: cam.y, distance: (cam.distance ?? 15) * 1.2 };
 }
 
 export function displayNames(level: CompiledLevel): string[] {

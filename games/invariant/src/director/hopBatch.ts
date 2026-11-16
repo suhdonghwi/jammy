@@ -1,4 +1,4 @@
-import { sfx } from '../../audio/sfx';
+import { sfx } from '../audio/sfx';
 
 interface HopBatch {
   pending: number;

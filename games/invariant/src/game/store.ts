@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { RULES, type Rule, type Verdicts } from '../checker/types';
-import { compileFormula, compileLevel, startInputs, type CompiledLevel, type Formula, type FormulaResult, type Inputs, type LevelDef } from '../levels/level';
+import { startInputs, type Inputs } from '../levels/inputs';
+import { compileFormula, compileLevel, type CompiledLevel, type Formula, type FormulaResult, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 import type { TileWindow } from '../levels/tiles';
 
@@ -55,7 +56,7 @@ export interface Caption {
   text: string;
   tone: CaptionTone;
   action?: { label: string; onClick: () => void; disabled?: boolean };
-  secondary?: { label: string; onClick: () => void };
+  replay?: () => void;
   close?: () => void;
   choices?: { label: string; onClick: () => void; tone?: 'yes' | 'no' }[];
 }
@@ -115,14 +116,12 @@ export interface RegionTile {
 export interface Region {
   id: string;
   tiles: (win: TileWindow) => RegionTile[];
-  center: [number, number];
   tick?: boolean;
 }
 
 export interface TutorialState {
   back: (() => void) | null;
-  skip: (() => void) | null;
-  awaitingCheck: boolean;
+  check: (() => void) | null;
   nextAction: { label: string; onClick: () => void } | null;
   allow: { step: boolean; run: boolean; eggs: boolean; formula: boolean };
   spotLines: number[];
@@ -134,8 +133,7 @@ export const ALLOW_NONE: TutorialState['allow'] = { step: false, run: false, egg
 
 export const NO_TUTORIAL: TutorialState = {
   back: null,
-  skip: null,
-  awaitingCheck: false,
+  check: null,
   nextAction: null,
   allow: ALLOW_NONE,
   spotLines: [],
@@ -201,7 +199,7 @@ export const useGame = create<Game>((set, get) => ({
     const { level } = get();
     if (!level) return;
     if (text.trim() === '') {
-      set({ formulaText: text, formula: null, valid: null, verdicts: {}, failMark: null });
+      set({ formulaText: text, formula: null, valid: null, verdicts: {}, pitfallMessage: null, failMark: null });
       return;
     }
     const formula = compileFormula(level, text);

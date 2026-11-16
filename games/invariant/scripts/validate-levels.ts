@@ -3,7 +3,8 @@ import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import type { State } from '../src/lang/ast';
 import { allLevels, exampleLevel, tutorialLevel } from '../src/levels/catalog';
 import { levelsKo } from '../src/levels/catalog.ko';
-import { compileFormula, compileLevel, hop, isEgg, running, showState, startInputs, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
+import { startInputs, type Inputs } from '../src/levels/inputs';
+import { compileFormula, compileLevel, hop, isEgg, running, showState, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
 
 const ctx = await nodeZ3();
 let failures = 0;
@@ -54,13 +55,62 @@ function checkKorean(def: LevelDef) {
   if (!ko) return fail('no Korean text in catalog.ko.ts');
   const count = (what: string, en = 0, k = 0) => en !== k && fail(`${en} ${what} in English but ${k} in Korean`);
   count('hints', def.hints?.length, ko.hints?.length);
-  count('pitfall messages', def.pitfalls?.length, ko.pitfalls?.length);
+  const formulas = (def.pitfalls ?? []).map((p) => p.formula);
+  for (const f of formulas) if (!ko.pitfalls?.[f]) fail(`no Korean message for pitfall '${f}'`);
+  for (const f of Object.keys(ko.pitfalls ?? {})) if (!formulas.includes(f)) fail(`Korean message for unknown pitfall '${f}'`);
   if (!!def.intro !== !!ko.intro) fail(`intro in ${def.intro ? 'English' : 'Korean'} only`);
   checkHints(def, ko.hints ?? []);
 }
 
 for (const id of Object.keys(levelsKo)) {
   if (!allLevels.some((l) => l.id === id)) fail(`catalog.ko.ts has text for unknown level '${id}'`);
+}
+
+function checkTermination(level: CompiledLevel) {
+  const eggs = sampleEggs(level);
+  if (eggs.length === 0) fail('no starting states');
+  for (const e of eggs) {
+    let s = e;
+    let k = 0;
+    while (running(level, s) && k < 500) {
+      s = hop(level, s);
+      k++;
+    }
+    if (k >= 500) return fail(`frog from ${showState(level, e)} does not stop`);
+  }
+}
+
+async function checkSolutions(level: CompiledLevel, inputs: Inputs) {
+  for (const sol of level.solutions) {
+    const f = compileFormula(level, sol);
+    if (!f.ok) {
+      fail(`solution '${sol}' does not compile: ${f.error.message}`);
+      continue;
+    }
+    const t = performance.now();
+    const r = await checkFormula(ctx, level, f, inputs, { timeout: 5000 });
+    const ms = Math.round(performance.now() - t);
+    const bad = Object.entries(r.verdicts).filter(([, v]) => v.status !== 'pass' || v.how !== 'proved');
+    if (bad.length) fail(`solution '${sol}': ${bad.map(([k, v]) => `${k}=${v.status}`).join(', ')}`);
+    else console.log(`  ✓ solution '${sol}' (${ms} ms)`);
+  }
+}
+
+async function checkPitfalls(level: CompiledLevel, inputs: Inputs) {
+  for (const p of level.pitfalls ?? []) {
+    const f = compileFormula(level, p.formula);
+    if (!f.ok) {
+      fail(`pitfall '${p.formula}' does not compile: ${f.error.message}`);
+      continue;
+    }
+    const r = await checkFormula(ctx, level, f, inputs, { timeout: 5000 });
+    const failed = Object.entries(r.verdicts).flatMap(([k, v]) => (v.status === 'fail' ? [`${k} (${v.cex.run ? 'real' : 'ghost'} frog at ${showState(level, v.cex.state)}${v.cex.far ? ', far' : ''})`] : []));
+    const undecided = Object.entries(r.verdicts).filter(([, v]) => v.status === 'undecided').map(([k]) => k);
+    if (failed.length === 0) fail(`pitfall '${p.formula}' does not fail`);
+    else if (undecided.length) fail(`pitfall '${p.formula}' has undecided rules: ${undecided}`);
+    else if (r.pitfall?.formula !== p.formula) fail(`pitfall '${p.formula}' not recognized as itself`);
+    else console.log(`  ✓ pitfall '${p.formula}' fails ${failed.join(', ')}`);
+  }
 }
 
 const only = process.argv.slice(2);
@@ -79,51 +129,10 @@ for (const def of allLevels) {
     if ((def.hints?.length ?? 0) < 2) fail('needs at least two hints');
     checkHints(def, def.hints ?? []);
   }
+  checkTermination(level);
   const inputs = startInputs(level);
-
-  const eggs = sampleEggs(level);
-  if (eggs.length === 0) fail('no starting states');
-  for (const e of eggs) {
-    let s = e;
-    let k = 0;
-    while (running(level, s) && k < 500) {
-      s = hop(level, s);
-      k++;
-    }
-    if (k >= 500) {
-      fail(`frog from ${JSON.stringify(e, (_, v) => (typeof v === 'bigint' ? Number(v) : v))} does not stop`);
-      break;
-    }
-  }
-
-  for (const sol of def.solutions) {
-    const f = compileFormula(level, sol);
-    if (!f.ok) {
-      fail(`solution '${sol}' does not compile: ${f.error.message}`);
-      continue;
-    }
-    const t = performance.now();
-    const r = await checkFormula(ctx, level, f, inputs, { timeout: 5000 });
-    const ms = Math.round(performance.now() - t);
-    const bad = Object.entries(r.verdicts).filter(([, v]) => v.status !== 'pass' || v.how !== 'proved');
-    if (bad.length) fail(`solution '${sol}': ${bad.map(([k, v]) => `${k}=${v.status}`).join(', ')}`);
-    else console.log(`  ✓ solution '${sol}' (${ms} ms)`);
-  }
-
-  for (const p of def.pitfalls ?? []) {
-    const f = compileFormula(level, p.formula);
-    if (!f.ok) {
-      fail(`pitfall '${p.formula}' does not compile: ${f.error.message}`);
-      continue;
-    }
-    const r = await checkFormula(ctx, level, f, inputs, { timeout: 5000 });
-    const failed = Object.entries(r.verdicts).flatMap(([k, v]) => (v.status === 'fail' ? [`${k} (${v.cex.run ? 'real' : 'ghost'} frog at ${showState(level, v.cex.state)}${v.cex.far ? ', far' : ''})`] : []));
-    const undecided = Object.entries(r.verdicts).filter(([, v]) => v.status === 'undecided').map(([k]) => k);
-    if (failed.length === 0) fail(`pitfall '${p.formula}' does not fail`);
-    else if (undecided.length) fail(`pitfall '${p.formula}' has undecided rules: ${undecided}`);
-    else if (r.pitfall?.formula !== p.formula) fail(`pitfall '${p.formula}' not recognized as itself`);
-    else console.log(`  ✓ pitfall '${p.formula}' fails ${failed.join(', ')}`);
-  }
+  await checkSolutions(level, inputs);
+  await checkPitfalls(level, inputs);
 }
 
 await shutdownZ3();

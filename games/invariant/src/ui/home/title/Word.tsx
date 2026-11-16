@@ -8,7 +8,7 @@ import { sceneNow } from '../../../scene/sceneTime';
 import { letterOpts, OUTLINE } from './layout';
 import { extrudeLetters } from './text3d';
 
-const outline = outlineMaterial(OUTLINE, undefined, 0.08);
+const outline = outlineMaterial(OUTLINE, 0.08);
 
 export const STAGGER = 0.03;
 export const entrance = (t: number, start: number) => popIn((t - start) / 0.28, 0.6);

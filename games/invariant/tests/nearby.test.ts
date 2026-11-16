@@ -1,9 +1,11 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { checkFormula } from '../src/checker/check';
 import { realFailure, realRunTo, smallestOnPlane } from '../src/checker/nearby';
+import { RULES, type Counterexample, type Rule } from '../src/checker/types';
 import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import { allLevels } from '../src/levels/catalog';
-import { compileFormula, compileLevel, startInputs, toBig, toNum, type Inputs } from '../src/levels/level';
+import { startInputs, type Inputs } from '../src/levels/inputs';
+import { compileFormula, compileLevel, toBig, toNum } from '../src/levels/level';
 
 const level = (id: string) => compileLevel(allLevels.find((l) => l.id === id)!);
 const formula = (lvl: ReturnType<typeof compileLevel>, text: string) => {
@@ -15,11 +17,7 @@ const smallest = (id: string, text: string) => {
   const lvl = level(id);
   const f = formula(lvl, text);
   const inputs = startInputs(lvl);
-  return {
-    initialization: smallestOnPlane(lvl, f, 'initialization', inputs),
-    maintenance: smallestOnPlane(lvl, f, 'maintenance', inputs),
-    exit: smallestOnPlane(lvl, f, 'exit', inputs),
-  };
+  return Object.fromEntries(RULES.map((r) => [r, smallestOnPlane(lvl, f, r, inputs)])) as Record<Rule, Counterexample | undefined>;
 };
 const real = (id: string, text: string, inputs?: Inputs) => {
   const lvl = level(id);

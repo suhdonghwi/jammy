@@ -1,6 +1,9 @@
 import type { CompiledLevel } from '../../levels/level';
-import { GLSL_COMMON, GLSL_DIGITS, GLSL_GOAL } from '../shaders/common';
-import { GLSL_INT_HELPERS, levelGlsl } from './levelGlsl';
+import { TILE } from '../constants';
+import { GLSL_AXIS_LABELS } from '../shaders/axisLabels';
+import { GLSL_COMMON } from '../shaders/common';
+import { GLSL_GOAL } from '../shaders/goal';
+import { levelGlsl } from './levelGlsl';
 
 export const floorVertex = /* glsl */ `
 varying vec3 vWorld;
@@ -26,9 +29,8 @@ uniform float uShowGoal;
 uniform float uShowAxes;
 uniform vec3 uGap, uVoid, uTile, uStop, uHatch, uHoverCol, uCross, uLabel;
 ${GLSL_COMMON}
-${GLSL_DIGITS}
+${GLSL_AXIS_LABELS}
 ${GLSL_GOAL}
-${GLSL_INT_HELPERS}
 ${levelGlsl(level)}
 
 bool existsAt(ivec2 t) { return uExists && L_exists(t); }
@@ -46,7 +48,7 @@ void main() {
   float fwr = fwidth(length(f));
   float ringD = abs(sdRoundBox(f, vec2(0.47), 0.13)) - 0.035;
   float fwRing = fwidth(ringD);
-  float d = sdRoundBox(f, vec2(${(0.9 / 2).toFixed(3)}), 0.1);
+  float d = sdRoundBox(f, vec2(${(TILE / 2).toFixed(3)}), 0.1);
   float aa = fwidth(d);
   float inside = 1.0 - smoothstep(-aa, aa, d);
   float hatchV = (p.x - p.y) * STOP_HATCH_FREQ;

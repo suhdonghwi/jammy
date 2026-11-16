@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { Expr } from '../../lang/ast';
-import { planeExists, planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
-import { GLSL_INT_HELPERS, inputUniforms, levelGlsl, setInputUniforms } from '../floor/levelGlsl';
+import { planeExists, planeKey, type Inputs } from '../../levels/inputs';
+import type { CompiledLevel } from '../../levels/level';
+import { inputUniforms, levelGlsl, setInputUniforms } from '../floor/levelGlsl';
 
 export const MASK_SIZE = 352;
 const SNAP = 16;
@@ -28,7 +29,6 @@ function evaluator(level: CompiledLevel, area: Expr | null, before: Expr | null)
 precision highp float;
 precision highp int;
 uniform vec2 uOrigin;
-${GLSL_INT_HELPERS}
 ${levelGlsl(level, { area, before })}
 void main() {
   ivec2 t = ivec2(int(uOrigin.x), int(uOrigin.y)) + ivec2(gl_FragCoord.xy);

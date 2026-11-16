@@ -1,4 +1,4 @@
-import { mk, NO_SPAN, subst, type Expr, type Span, type State, type Stmt } from './ast';
+import { mk, NO_SPAN, rangeBounds, subst, type Expr, type Span, type State, type Stmt } from './ast';
 
 export function floorDiv(a: bigint, k: bigint): bigint {
   const q = a / k;
@@ -10,11 +10,20 @@ export function euclidMod(a: bigint, k: bigint): bigint {
   return r < 0n ? r + k : r;
 }
 
-export const EVAL_BUDGET = 4096;
+const EVAL_BUDGET = 4096;
 
 export class OverBudget extends Error {
   constructor() {
     super('over budget');
+  }
+}
+
+export function withinBudget(run: () => boolean): boolean {
+  try {
+    return run();
+  } catch (e) {
+    if (e instanceof OverBudget) return false;
+    throw e;
   }
 }
 
@@ -43,26 +52,20 @@ function ev(e: Expr, s: State, meter: { left: number }): Value {
       return cell(arr, ev(e.index, s, meter) as bigint);
     }
     case 'quant': {
-      const lo = ev(e.lo, s, meter) as bigint;
-      const hi = ev(e.hi, s, meter) as bigint;
-      const first = e.ops[0] === '<' ? lo + 1n : lo;
-      const last = e.ops[e.ops.length - 1] === '<' ? hi - 1n : hi;
+      const { from, to } = rangeBounds(e);
+      const last = ev(to, s, meter) as bigint;
       const inner: State = { ...s };
-      const go = (k: number, prev: bigint): boolean => {
-        if (k === e.vars.length) {
-          if (!(e.ops[k] === '<' ? prev < hi : prev <= hi)) return e.q === 'forall';
-          return ev(e.body, inner, meter) === true;
-        }
-        const from = k === 0 ? first : e.ops[k] === '<' ? prev + 1n : prev;
-        for (let v = from; v <= last; v++) {
+      const go = (k: number): boolean => {
+        if (k === e.vars.length) return ev(e.body, inner, meter) === true;
+        for (let v = ev(from[k], inner, meter) as bigint; v <= last; v++) {
           if (--meter.left < 0) throw new OverBudget();
           inner[e.vars[k]] = v;
-          const r = go(k + 1, v);
+          const r = go(k + 1);
           if (e.q === 'forall' ? !r : r) return r;
         }
         return e.q === 'forall';
       };
-      return go(0, lo);
+      return go(0);
     }
     case 'unary': {
       const a = ev(e.arg, s, meter);
@@ -102,10 +105,11 @@ export function holds(e: Expr, s: State): boolean {
   return evaluate(e, s) === true;
 }
 
-export function step(body: Stmt[], s: State): State {
+export function step(body: Stmt[], s: State, visit?: (st: Stmt) => void): State {
   const out: State = { ...s };
   const run = (stmts: Stmt[]) => {
     for (const st of stmts) {
+      visit?.(st);
       if (st.kind === 'assign') out[st.name] = evaluate(st.value, out) as bigint;
       else run(evaluate(st.cond, out) ? st.then : st.else);
     }
@@ -115,16 +119,8 @@ export function step(body: Stmt[], s: State): State {
 }
 
 export function trace(body: Stmt[], s: State): Span[] {
-  const out: State = { ...s };
   const ran: Span[] = [];
-  const run = (stmts: Stmt[]) => {
-    for (const st of stmts) {
-      ran.push(st.span);
-      if (st.kind === 'assign') out[st.name] = evaluate(st.value, out) as bigint;
-      else run(evaluate(st.cond, out) ? st.then : st.else);
-    }
-  };
-  run(body);
+  step(body, s, (st) => ran.push(st.span));
   return ran;
 }
 
@@ -164,18 +160,14 @@ export function compileFast(e: Expr): FastFn {
       case 'var': return `s[${JSON.stringify(e.name)}]`;
       case 'index': return `cell(s[${JSON.stringify(e.array)}],${go(e.index)})`;
       case 'quant': {
-        const id = tmp++;
-        const lo = `lo${id}`;
-        const hi = `hi${id}`;
+        const last = `last${tmp++}`;
+        const { from, to } = rangeBounds(e);
         const all = e.q === 'forall';
         let inner = `if(${all ? '!' : ''}(${go(e.body)}))return ${!all};`;
         for (let k = e.vars.length - 1; k >= 0; k--) {
-          const v = `s[${JSON.stringify(e.vars[k])}]`;
-          const from = k === 0 ? (e.ops[0] === '<' ? `${lo}+1` : lo) : e.ops[k] === '<' ? `s[${JSON.stringify(e.vars[k - 1])}]+1` : `s[${JSON.stringify(e.vars[k - 1])}]`;
-          const to = e.ops[e.ops.length - 1] === '<' ? `${hi}-1` : hi;
-          inner = `for(let k=${from};k<=${to};k++){if(--m.left<0)throw over;${v}=k;${inner}}`;
+          inner = `for(let k=${go(from[k])};k<=${last};k++){if(--m.left<0)throw over;s[${JSON.stringify(e.vars[k])}]=k;${inner}}`;
         }
-        return `((s)=>{const ${lo}=${go(e.lo)},${hi}=${go(e.hi)};s={...s};${inner}return ${all};})(s)`;
+        return `((s)=>{const ${last}=${go(to)};s={...s};${inner}return ${all};})(s)`;
       }
       case 'unary': return `(${e.op}${go(e.arg)})`;
       case 'call':

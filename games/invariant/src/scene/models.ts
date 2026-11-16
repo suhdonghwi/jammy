@@ -103,10 +103,10 @@ export function frogMaterial(opts: { ghost?: boolean; fade?: boolean } = {}): TH
 }
 
 // `back` pushes the hull away from the camera, so it stays hidden where it pokes through the shape's own concave corners.
-export function outlineMaterial(thickness: number, color = COLORS.outline, back = 0): THREE.ShaderMaterial {
+export function outlineMaterial(thickness: number, back = 0): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     side: THREE.BackSide,
-    uniforms: { uThick: { value: thickness }, uBack: { value: back }, uColor: { value: new THREE.Color(color) } },
+    uniforms: { uThick: { value: thickness }, uBack: { value: back }, uColor: { value: new THREE.Color(COLORS.outline) } },
     vertexShader: /* glsl */ `
       uniform float uThick;
       uniform float uBack;

@@ -2,8 +2,10 @@ import { Dices, Minus, Plus } from 'lucide-react';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
-import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type CompiledLevel, type Inputs } from '../../levels/level';
-import { CARD_LABEL } from '../classes';
+import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type Inputs } from '../../levels/inputs';
+import type { CompiledLevel } from '../../levels/level';
+import { CARD_LABEL, FOLD } from '../classes';
+import { TOKEN } from '../codeColors';
 
 const showArray = (a: number[]) => `[${a.join(', ')}]`;
 
@@ -44,12 +46,12 @@ export function InputsSection({ folded }: { folded: boolean }) {
   const hasArrays = Object.keys(level.arrays).length > 0;
   return (
     <div
-      className={`-mx-4 flex min-w-0 shrink-0 flex-col border-t px-4 transition-[opacity,border-color,padding] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none max-md:-mx-2.5 max-md:px-2.5 ${busy ? 'opacity-60' : ''} ${
+      className={`-mx-4 flex min-w-0 shrink-0 flex-col border-t px-4 transition-[opacity,border-color,padding] ${FOLD} max-md:-mx-2.5 max-md:px-2.5 ${busy ? 'opacity-60' : ''} ${
         folded ? 'border-transparent pt-1' : 'border-line pt-2.5 max-md:pt-2'
       }`}
     >
       <div
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none ${folded ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'}`}
+        className={`grid transition-[grid-template-rows,opacity] ${FOLD} ${folded ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'}`}
         aria-hidden={folded}
       >
         <div className="min-h-0 overflow-hidden">
@@ -64,7 +66,7 @@ export function InputsSection({ folded }: { folded: boolean }) {
             onPointerEnter={() => useGame.setState({ inputHover: name })}
             onPointerLeave={() => useGame.setState((s) => (s.inputHover === name ? { inputHover: null } : {}))}
           >
-            <span className="w-5 shrink-0 font-mono text-sm font-semibold text-[#1f63c4]">{name}</span>
+            <span className={`w-5 shrink-0 font-mono text-sm font-semibold ${TOKEN.name}`}>{name}</span>
             {level.arrays[name] ? (
               <ArrayRow level={level} name={name} inputs={inputs} disabled={busy} onChange={set} label={tr.inputs.random(name)} />
             ) : (
@@ -105,16 +107,30 @@ function usePop(value: string): [number, () => void] {
   return [pops, () => setOwnNext(true)];
 }
 
-function IntRow({ name, value, disabled, onChange, labels }: { name: string; value: number; disabled: boolean; onChange: (v: number) => void; labels: [string, string] }) {
-  const [text, setText] = useState(String(value));
+function useDraft(shown: string) {
+  const [text, setText] = useState(shown);
   const [editing, setEditing] = useState(false);
+  const draft = editing ? text : null;
+  const field = {
+    value: draft ?? shown,
+    onFocus: () => {
+      setText(shown);
+      setEditing(true);
+    },
+    onBlur: () => setEditing(false),
+  };
+  return { draft, setDraft: setText, field };
+}
+
+function IntRow({ name, value, disabled, onChange, labels }: { name: string; value: number; disabled: boolean; onChange: (v: number) => void; labels: [string, string] }) {
+  const { draft, setDraft, field } = useDraft(String(value));
   const [pops, own] = usePop(String(value));
   const commit = (v: number) => {
     own();
     onChange(v);
   };
   const type = (t: string) => {
-    setText(t);
+    setDraft(t);
     if (INT.test(t.trim())) commit(Number(t.trim()));
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -123,23 +139,18 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
     e.preventDefault();
     commit(value + d);
   };
-  const bad = editing && !INT.test(text.trim());
+  const bad = draft !== null && !INT.test(draft.trim());
   return (
-    <div key={pops} className="flex animate-[pop_0.3s_var(--ease-entrance)] items-center">
+    <div key={pops} className="flex animate-pop items-center">
       <SmallButton onClick={() => commit(value - 1)} disabled={disabled} label={labels[0]} className="rounded-r-none">
         <Minus size={12} strokeWidth={2.6} />
       </SmallButton>
       <input
         className={`${FIELD} w-10 rounded-none border-x-0 text-center ${bad ? 'text-fail' : ''}`}
-        value={editing ? text : String(value)}
+        {...field}
         inputMode="numeric"
         disabled={disabled}
         aria-label={name}
-        onFocus={() => {
-          setText(String(value));
-          setEditing(true);
-        }}
-        onBlur={() => setEditing(false)}
         onChange={(e) => type(e.target.value)}
         onKeyDown={onKeyDown}
       />
@@ -160,35 +171,28 @@ function SmallButton({ onClick, disabled, label, className = '', children }: { o
 
 function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: CompiledLevel; name: string; inputs: Inputs; disabled: boolean; onChange: (next: Inputs) => void; label: string }) {
   const value = inputs[name] as number[];
-  const shown = showArray(value);
-  const [text, setText] = useState(shown);
-  const [editing, setEditing] = useState(false);
+  const { draft, setDraft, field } = useDraft(showArray(value));
   const [pops, own] = usePop(planeKey({ [name]: value }));
   const type = (t: string) => {
-    setText(t);
+    setDraft(t);
     const arr = parseArray(t);
     if (arr) {
       own();
       onChange(withLengths(level, { ...inputs, [name]: arr }));
     }
   };
-  const bad = editing && !incomplete(text) && parseArray(text) === null;
+  const bad = draft !== null && !incomplete(draft) && parseArray(draft) === null;
   return (
-    <div key={pops} className="flex min-w-0 flex-1 animate-[pop_0.3s_var(--ease-entrance)] items-center gap-1.5">
+    <div key={pops} className="flex min-w-0 flex-1 animate-pop items-center gap-1.5">
       <input
         className={`${FIELD} flex-1 ${bad ? 'border-fail/50 text-fail' : ''}`}
-        value={editing ? text : shown}
+        {...field}
         disabled={disabled}
         aria-label={name}
         spellCheck={false}
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
-        onFocus={() => {
-          setText(shown);
-          setEditing(true);
-        }}
-        onBlur={() => setEditing(false)}
         onChange={(e) => type(e.target.value)}
       />
       <SmallButton

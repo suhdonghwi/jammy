@@ -1,27 +1,15 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { useGame } from '../../game/store';
-import { planeKey, type CompiledLevel } from '../../levels/level';
+import type { CompiledLevel } from '../../levels/level';
+import { cameraRig } from '../cameraRig';
 import { SLAB_H, TILE } from '../constants';
-import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
-import {
-  colorUniform,
-  fadeUniforms,
-  getBlobTexture,
-  axisNameUniforms,
-  getDigitTexture,
-  GLSL_COMMON,
-  GLSL_DIGITS,
-  GLSL_FADE,
-  GLSL_GOAL,
-  goalUniforms,
-  setAxisNames,
-  updateFade,
-} from '../shaders/common';
-import { cameraRig } from '../cameraRig';
+import { axisNameUniforms, getDigitTexture, GLSL_AXIS_LABELS, setAxisNames } from '../shaders/axisLabels';
+import { colorUniform, getBlobTexture, GLSL_COMMON } from '../shaders/common';
+import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/fade';
+import { GLSL_GOAL, goalUniforms } from '../shaders/goal';
 import { GLSL_MASK, instanced } from './glsl';
 import { areaMask, MASK_REACH } from './mask';
 
@@ -74,7 +62,7 @@ uniform float uDim;
 uniform float uStopAmt;
 uniform float uGoalAmt;
 ${GLSL_COMMON}
-${GLSL_DIGITS}
+${GLSL_AXIS_LABELS}
 ${GLSL_GOAL}
 ${GLSL_FADE}
 void main() {
@@ -248,11 +236,11 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
       }),
     [material],
   );
+  useEffect(() => () => (material.dispose(), shadowMat.dispose()), [material, shadowMat]);
+  useEffect(() => setAxisNames(material.uniforms, level), [material, level]);
   useFrame((_, frameDt) => {
     const dt = Math.min(frameDt, 0.1);
     material.uniforms.uTime.value = sceneNow();
-    setAxisNames(material.uniforms, level);
-    goalEvents.sync(planeKey(useGame.getState().inputs));
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);

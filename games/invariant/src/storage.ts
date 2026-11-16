@@ -10,8 +10,6 @@ export const storage = {
     try {
       if (value === null) localStorage.removeItem(key);
       else localStorage.setItem(key, value);
-    } catch {
-      // storage blocked: the value lasts for this visit only
-    }
+    } catch {}
   },
 };
