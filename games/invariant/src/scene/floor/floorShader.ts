@@ -1,4 +1,5 @@
 import type { CompiledLevel } from '../../levels/level';
+import { TILE } from '../constants';
 import { GLSL_AXIS_LABELS } from '../shaders/axisLabels';
 import { GLSL_COMMON } from '../shaders/common';
 import { GLSL_GOAL } from '../shaders/goal';
@@ -47,7 +48,7 @@ void main() {
   float fwr = fwidth(length(f));
   float ringD = abs(sdRoundBox(f, vec2(0.47), 0.13)) - 0.035;
   float fwRing = fwidth(ringD);
-  float d = sdRoundBox(f, vec2(${(0.9 / 2).toFixed(3)}), 0.1);
+  float d = sdRoundBox(f, vec2(${(TILE / 2).toFixed(3)}), 0.1);
   float aa = fwidth(d);
   float inside = 1.0 - smoothstep(-aa, aa, d);
   float hatchV = (p.x - p.y) * STOP_HATCH_FREQ;
