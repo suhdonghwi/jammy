@@ -107,16 +107,30 @@ function usePop(value: string): [number, () => void] {
   return [pops, () => setOwnNext(true)];
 }
 
-function IntRow({ name, value, disabled, onChange, labels }: { name: string; value: number; disabled: boolean; onChange: (v: number) => void; labels: [string, string] }) {
-  const [text, setText] = useState(String(value));
+function useDraft(shown: string) {
+  const [text, setText] = useState(shown);
   const [editing, setEditing] = useState(false);
+  const draft = editing ? text : null;
+  const field = {
+    value: draft ?? shown,
+    onFocus: () => {
+      setText(shown);
+      setEditing(true);
+    },
+    onBlur: () => setEditing(false),
+  };
+  return { draft, setDraft: setText, field };
+}
+
+function IntRow({ name, value, disabled, onChange, labels }: { name: string; value: number; disabled: boolean; onChange: (v: number) => void; labels: [string, string] }) {
+  const { draft, setDraft, field } = useDraft(String(value));
   const [pops, own] = usePop(String(value));
   const commit = (v: number) => {
     own();
     onChange(v);
   };
   const type = (t: string) => {
-    setText(t);
+    setDraft(t);
     if (INT.test(t.trim())) commit(Number(t.trim()));
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -125,7 +139,7 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
     e.preventDefault();
     commit(value + d);
   };
-  const bad = editing && !INT.test(text.trim());
+  const bad = draft !== null && !INT.test(draft.trim());
   return (
     <div key={pops} className="flex animate-pop items-center">
       <SmallButton onClick={() => commit(value - 1)} disabled={disabled} label={labels[0]} className="rounded-r-none">
@@ -133,15 +147,10 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
       </SmallButton>
       <input
         className={`${FIELD} w-10 rounded-none border-x-0 text-center ${bad ? 'text-fail' : ''}`}
-        value={editing ? text : String(value)}
+        {...field}
         inputMode="numeric"
         disabled={disabled}
         aria-label={name}
-        onFocus={() => {
-          setText(String(value));
-          setEditing(true);
-        }}
-        onBlur={() => setEditing(false)}
         onChange={(e) => type(e.target.value)}
         onKeyDown={onKeyDown}
       />
@@ -162,35 +171,28 @@ function SmallButton({ onClick, disabled, label, className = '', children }: { o
 
 function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: CompiledLevel; name: string; inputs: Inputs; disabled: boolean; onChange: (next: Inputs) => void; label: string }) {
   const value = inputs[name] as number[];
-  const shown = showArray(value);
-  const [text, setText] = useState(shown);
-  const [editing, setEditing] = useState(false);
+  const { draft, setDraft, field } = useDraft(showArray(value));
   const [pops, own] = usePop(planeKey({ [name]: value }));
   const type = (t: string) => {
-    setText(t);
+    setDraft(t);
     const arr = parseArray(t);
     if (arr) {
       own();
       onChange(withLengths(level, { ...inputs, [name]: arr }));
     }
   };
-  const bad = editing && !incomplete(text) && parseArray(text) === null;
+  const bad = draft !== null && !incomplete(draft) && parseArray(draft) === null;
   return (
     <div key={pops} className="flex min-w-0 flex-1 animate-pop items-center gap-1.5">
       <input
         className={`${FIELD} flex-1 ${bad ? 'border-fail/50 text-fail' : ''}`}
-        value={editing ? text : shown}
+        {...field}
         disabled={disabled}
         aria-label={name}
         spellCheck={false}
         autoCapitalize="off"
         autoComplete="off"
         autoCorrect="off"
-        onFocus={() => {
-          setText(shown);
-          setEditing(true);
-        }}
-        onBlur={() => setEditing(false)}
         onChange={(e) => type(e.target.value)}
       />
       <SmallButton
