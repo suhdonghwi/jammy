@@ -14,7 +14,7 @@ export function RunControls() {
   const mode = useGame((s) => s.mode);
   const hint = useGame((s) => s.tutorial.hint);
   const levelHints = useGame((s) => (s.mode === 'level' ? (s.level?.hints?.length ?? 0) : 0));
-  const awaitingCheck = useGame((s) => s.tutorial.awaitingCheck);
+  const awaitingCheck = useGame((s) => s.tutorial.check !== null);
   const spot = useGame((s) => s.tutorial.spotlight);
   const allow = useGame((s) => s.tutorial.allow);
   const tut = mode === 'tutorial';

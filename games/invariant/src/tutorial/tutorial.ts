@@ -5,7 +5,7 @@ import { EMPTY_REVEAL, NO_TUTORIAL, setTutorial, useGame, type Game } from '../g
 import { exampleLevel, tutorialLevel } from '../levels/catalog';
 import { cameraRig, type Shot } from '../scene/cameraRig';
 import { sleep, switchScene } from '../scene/sceneTime';
-import { newGeneration, settled } from './script';
+import { newGeneration, setSkipStep, settled } from './script';
 import { learnerFormula, loopExampleFrogs, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
 
 export { tutorialCheck } from './script';
@@ -65,7 +65,8 @@ function play(from: number, opening = false) {
       else if (i > from) void cameraRig.frame(shotOf(STEPS[i].scene));
       stepIndex = i;
       stepCaption = useGame.getState().caption;
-      setTutorial({ back: i > 0 ? goBack : null, skip: i + 1 < STEPS.length ? skipAhead : null });
+      setTutorial({ back: i > 0 ? goBack : null });
+      setSkipStep(i + 1 < STEPS.length ? skipAhead : null);
       await STEPS[i].run(gen);
       gen.guard();
       noteShown();

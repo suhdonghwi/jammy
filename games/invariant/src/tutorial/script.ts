@@ -9,18 +9,22 @@ import { cameraRig } from '../scene/cameraRig';
 import { sleep } from '../scene/sceneTime';
 
 const generations = createScope();
-let pendingCheck: (() => void) | null = null;
+let skipStep: (() => void) | null = null;
 let pendingNext: (() => void) | null = null;
 let captionShownAt = 0;
 
 export function newGeneration(): Token {
-  pendingCheck = null;
+  skipStep = null;
   pendingNext = null;
   return generations.begin();
 }
 
 export function settled<T = void>(gen: Token, start: (settle: (value: T) => void) => void): Promise<T> {
   return new Promise((resolve, reject) => start((value) => (gen.alive ? resolve(value) : reject(new Aborted()))));
+}
+
+export function setSkipStep(skip: (() => void) | null) {
+  skipStep = skip;
 }
 
 const DOUBLE_CLICK_MS = 120;
@@ -32,8 +36,7 @@ function earlyNext(label = messages().caption.next, last?: () => void) {
     label,
     onClick: () => {
       if (tooSoonAfter(shownAt)) return;
-      const skip = useGame.getState().tutorial.skip;
-      if (skip) skip();
+      if (skipStep) skipStep();
       else last?.();
     },
   };
@@ -167,21 +170,21 @@ export async function ask(gen: Token, text: string): Promise<boolean> {
 }
 
 export function tutorialCheck(): 'refused' | void {
-  const g = useGame.getState();
-  if (!pendingCheck) return;
-  if (!g.formula || !g.formula.ok) return 'refused';
-  pendingCheck();
+  const { formula, tutorial } = useGame.getState();
+  if (!tutorial.check) return;
+  if (!formula || !formula.ok) return 'refused';
+  tutorial.check();
 }
 
 function waitCheck(gen: Token): Promise<void> {
   return settled(gen, (settle) => {
-    pendingCheck = () => {
-      pendingCheck = null;
-      setTutorial({ awaitingCheck: false });
-      settle();
-    };
     allow({ formula: true });
-    setTutorial({ awaitingCheck: true });
+    setTutorial({
+      check: () => {
+        setTutorial({ check: null });
+        settle();
+      },
+    });
   });
 }
 

@@ -121,8 +121,7 @@ export interface Region {
 
 export interface TutorialState {
   back: (() => void) | null;
-  skip: (() => void) | null;
-  awaitingCheck: boolean;
+  check: (() => void) | null;
   nextAction: { label: string; onClick: () => void } | null;
   allow: { step: boolean; run: boolean; eggs: boolean; formula: boolean };
   spotLines: number[];
@@ -134,8 +133,7 @@ export const ALLOW_NONE: TutorialState['allow'] = { step: false, run: false, egg
 
 export const NO_TUTORIAL: TutorialState = {
   back: null,
-  skip: null,
-  awaitingCheck: false,
+  check: null,
   nextAction: null,
   allow: ALLOW_NONE,
   spotLines: [],

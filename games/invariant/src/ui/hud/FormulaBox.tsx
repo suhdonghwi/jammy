@@ -43,7 +43,7 @@ export function FormulaBox() {
   const busy = useGame((s) => s.busy);
   const checking = useGame((s) => s.checking);
   const mode = useGame((s) => s.mode);
-  const awaitingCheck = useGame((s) => s.tutorial.awaitingCheck);
+  const awaitingCheck = useGame((s) => s.tutorial.check !== null);
   const locked = useGame((s) => s.mode === 'tutorial' && !s.tutorial.allow.formula);
   const spot = useGame((s) => s.tutorial.spotlight);
   const tr = useT();
