@@ -246,7 +246,7 @@ export const STEPS: Step[] = [
     scene: { example: true, reveal: EXAMPLE_DRAWN, formula: EXAMPLE_AREA, camera: EXAMPLE_CAM, focus: EXAMPLE_BOARD },
     run: (gen) =>
       beat(gen, T().exEndings, {
-        region: endingsRegion(() => 'good', EXAMPLE_CAM),
+        region: endingsRegion('good'),
         callouts: [{ x: 4, y: 3, text: T().exEndingTag, tone: 'good' }],
       }),
   },
@@ -356,7 +356,7 @@ export const STEPS: Step[] = [
     scene: { reveal: AWAKE_MAINTENANCE, formula: 'learner', focus: BOARD },
     run: async (gen) => {
       await beat(gen, T().leadExit, {
-        region: endingsRegion(() => 'info'),
+        region: endingsRegion('info'),
         prepare: resetFrogs,
       });
       useGame.getState().setReveal(AWAKE_ALL);

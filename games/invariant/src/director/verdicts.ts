@@ -220,7 +220,7 @@ async function showHolds(rule: Rule): Promise<Callout | null> {
     const f = await proofWave();
     return f ? { x: f.x, y: f.y, frog: f.id, text, tone: 'good' } : null;
   }
-  const region = rule === 'initialization' ? eggRegion('good') : endingsRegion(() => 'good');
+  const region = rule === 'initialization' ? eggRegion('good') : endingsRegion('good');
   useGame.setState({ region: { ...region, id: `check-${rule}`, tick: true } });
   await sleep(REGION_MS);
   const near = nearestTile(region);
