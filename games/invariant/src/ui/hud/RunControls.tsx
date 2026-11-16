@@ -1,4 +1,5 @@
 import { BookOpen, Braces, Lightbulb, Pause, Play, RotateCcw, StepForward } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { pauseRun, runFrogs, stepFrogs } from '../../director/controls';
 import { resetScreen, showLevelHint } from '../../game/actions';
 import { useGame } from '../../game/store';
@@ -23,7 +24,6 @@ export function RunControls() {
   const onHint = hinting ? showHint : levelHints > 0 ? showLevelHint : null;
   const rules = reveal.lights.length > 0;
   const crowded = !!onHint || (reveal.run && !tut) || (rules && reveal.formula);
-  const square = (iconOnly: boolean) => (iconOnly ? 'compact:w-9.5 compact:self-stretch compact:px-0!' : '');
   return (
     <div className="flex animate-rise-slow items-center gap-1.5 max-xs:gap-1">
       {reveal.run &&
@@ -50,31 +50,50 @@ export function RunControls() {
         </button>
       )}
       {reveal.run && !tut && (
-        <button className={`${button()} ${square(crowded)}`} disabled={busy} title={tr.controls.resetTitle} aria-label={tr.controls.reset} onClick={resetScreen}>
-          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" /> <span className={crowded ? 'compact:hidden' : ''}>{tr.controls.reset}</span>
-        </button>
+        <ToolButton variant="plain" iconOnly={crowded} label={tr.controls.reset} title={tr.controls.resetTitle} disabled={busy} onClick={resetScreen}>
+          <RotateCcw size={16} strokeWidth={2.4} className="text-warn" />
+        </ToolButton>
       )}
       <span className="flex-1" />
       {onHint && (
-        <button className={`${button('glass')} ${square(!tut)}`} disabled={busy} title={tr.controls.hintTitle} aria-label={tr.controls.hint} onClick={onHint}>
-          <Lightbulb size={16} strokeWidth={2.2} /> <span className={tut ? '' : 'compact:hidden'}>{tr.controls.hint}</span>
-        </button>
+        <ToolButton variant="glass" iconOnly={!tut} label={tr.controls.hint} title={tr.controls.hintTitle} disabled={busy} onClick={onHint}>
+          <Lightbulb size={16} strokeWidth={2.2} />
+        </ToolButton>
       )}
       {reveal.formula && (
-        <button
-          className={`${button('glass')} ${square(crowded)}`}
-          title={tr.controls.syntaxTitle}
-          aria-label={tr.controls.syntax}
-          onClick={() => useGame.setState({ showSyntax: true })}
-        >
-          <Braces size={16} strokeWidth={2.2} /> <span className={crowded ? 'compact:hidden' : ''}>{tr.controls.syntax}</span>
-        </button>
+        <ToolButton variant="glass" iconOnly={crowded} label={tr.controls.syntax} title={tr.controls.syntaxTitle} onClick={() => useGame.setState({ showSyntax: true })}>
+          <Braces size={16} strokeWidth={2.2} />
+        </ToolButton>
       )}
       {rules && (
-        <button className={`${button('glass')} ${square(crowded)}`} title={tr.controls.rules} aria-label={tr.controls.rules} onClick={() => useGame.setState({ showRules: true })}>
-          <BookOpen size={16} strokeWidth={2.2} /> <span className={crowded ? 'compact:hidden' : ''}>{tr.controls.rules}</span>
-        </button>
+        <ToolButton variant="glass" iconOnly={crowded} label={tr.controls.rules} title={tr.controls.rules} onClick={() => useGame.setState({ showRules: true })}>
+          <BookOpen size={16} strokeWidth={2.2} />
+        </ToolButton>
       )}
     </div>
+  );
+}
+
+function ToolButton({
+  variant,
+  iconOnly,
+  label,
+  title,
+  disabled,
+  onClick,
+  children,
+}: {
+  variant: 'plain' | 'glass';
+  iconOnly: boolean;
+  label: string;
+  title: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button className={`${button(variant)} ${iconOnly ? 'compact:w-9.5 compact:self-stretch compact:px-0!' : ''}`} disabled={disabled} title={title} aria-label={label} onClick={onClick}>
+      {children} <span className={iconOnly ? 'compact:hidden' : ''}>{label}</span>
+    </button>
   );
 }
