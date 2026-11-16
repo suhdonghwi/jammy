@@ -8,7 +8,9 @@ export type BinOp =
   | '==' | '!=' | '<' | '<=' | '>' | '>='
   | '&&' | '||';
 
-export type BuiltinFn = 'abs' | 'min' | 'max';
+export const BUILTIN_ARITY = { abs: 1, min: 2, max: 2 } as const;
+
+export type BuiltinFn = keyof typeof BUILTIN_ARITY;
 
 export type RangeOp = '<' | '<=';
 
@@ -19,16 +21,11 @@ export type Expr =
   | { kind: 'unary'; op: '-' | '!'; arg: Expr; span: Span }
   | { kind: 'binary'; op: BinOp; left: Expr; right: Expr; span: Span }
   | { kind: 'call'; fn: BuiltinFn; args: Expr[]; span: Span }
-  /** `A[index]`: a cell of an array input; outside the array it reads as 0. */
   | { kind: 'index'; array: string; index: Expr; span: Span }
-  /**
-   * `forall lo <= j <= k < hi: body` (or `exists`): the bound names run over
-   * the integers, and `body` is tested wherever the chain of comparisons
-   * `lo ops[0] vars[0] ops[1] vars[1] … ops[n] hi` holds.
-   */
   | { kind: 'quant'; q: 'forall' | 'exists'; vars: string[]; ops: RangeOp[]; lo: Expr; hi: Expr; body: Expr; span: Span }
-  // Internal only (never parsed): produced by symbolic execution of `if`.
   | { kind: 'ite'; cond: Expr; then: Expr; else: Expr; span: Span };
+
+export type Quant = Extract<Expr, { kind: 'quant' }>;
 
 export type Stmt =
   | { kind: 'assign'; name: string; value: Expr; span: Span }
@@ -63,7 +60,9 @@ export interface Program {
 
 export type State = Record<string, bigint | bigint[]>;
 
-export const COMPARISON_OPS: ReadonlySet<BinOp> = new Set(['==', '!=', '<', '<=', '>', '>=']);
+export const ARITHMETIC_OPS: ReadonlySet<BinOp> = new Set(['+', '-', '*', '/', '%']);
+export const ORDERING_OPS: ReadonlySet<BinOp> = new Set(['<', '<=', '>', '>=']);
+export const COMPARISON_OPS: ReadonlySet<BinOp> = new Set([...ORDERING_OPS, '==', '!=']);
 
 export function spanOf(a: { span: Span }, b: { span: Span }): Span {
   return { from: Math.min(a.span.from, b.span.from), to: Math.max(a.span.to, b.span.to) };

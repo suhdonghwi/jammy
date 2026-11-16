@@ -1,5 +1,5 @@
 import { t as messages } from '../i18n/i18n';
-import { freeVars, type Expr, type Program, type Span, type Stmt } from './ast';
+import { ARITHMETIC_OPS, BUILTIN_ARITY, freeVars, ORDERING_OPS, type Expr, type Program, type Span, type Stmt } from './ast';
 import { evaluate } from './eval';
 import { LangError } from './parser';
 
@@ -9,8 +9,6 @@ export type Scope = ReadonlyMap<string, 'int' | 'array'>;
 
 export const intScope = (names: Iterable<string>): Scope => new Map([...names].map((n) => [n, 'int' as const]));
 
-const ARITH = new Set(['+', '-', '*', '/', '%']);
-const REL = new Set(['<', '<=', '>', '>=']);
 const MAX_CONSTANT_RANGE = 1000;
 
 function constantWidth(e: Extract<Expr, { kind: 'quant' }>): bigint | null {
@@ -77,7 +75,7 @@ function typeOf(e: Expr, scope: Scope, src: string): Type {
       want(e.arg, 'bool', "'!'");
       return 'bool';
     case 'call': {
-      const arity = e.fn === 'abs' ? 1 : 2;
+      const arity = BUILTIN_ARITY[e.fn];
       if (e.args.length !== arity) {
         throw new LangError(E.arity(e.fn, arity), e.span);
       }
@@ -85,11 +83,9 @@ function typeOf(e: Expr, scope: Scope, src: string): Type {
       return 'int';
     }
     case 'ite':
-      want(e.cond, 'bool', E.aCondition);
-      want(e.else, typeOf(e.then, scope, src), E.bothBranches);
-      return typeOf(e.then, scope, src);
+      throw new Error('ite only comes from symbolic execution, never from parsed code');
     case 'binary': {
-      if (ARITH.has(e.op)) {
+      if (ARITHMETIC_OPS.has(e.op)) {
         want(e.left, 'int', `'${e.op}'`);
         want(e.right, 'int', `'${e.op}'`);
         if (e.op === '/' || e.op === '%') {
@@ -99,7 +95,7 @@ function typeOf(e: Expr, scope: Scope, src: string): Type {
         }
         return 'int';
       }
-      if (REL.has(e.op)) {
+      if (ORDERING_OPS.has(e.op)) {
         want(e.left, 'int', `'${e.op}'`);
         want(e.right, 'int', `'${e.op}'`);
         return 'bool';

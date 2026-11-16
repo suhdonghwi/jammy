@@ -149,8 +149,6 @@ export const en = {
 
   langErrors: {
     anArea: 'an area',
-    aCondition: 'a condition',
-    bothBranches: 'both branches',
     anIndex: 'an index',
     aBound: 'a bound of the range',
     isArray: (name: string) => `${name} is an array: write a cell of it, like \`${name}[0]\``,
@@ -174,7 +172,7 @@ export const en = {
     expectedNameEnded: 'Expected a name but the input ended',
     expectedNameFound: (found: string) => `Expected a name but found '${found}'`,
     notHere: (word: string) => `'${word}' can't be used here`,
-    unknownFunction: (name: string) => `Unknown function '${name}'. Available: abs, min, max`,
+    unknownFunction: (name: string, available: string) => `Unknown function '${name}'. Available: ${available}`,
     endsEarly: 'The formula ends too early',
     unexpected: (found: string) => `Unexpected '${found}'`,
     empty: 'Type a condition',
