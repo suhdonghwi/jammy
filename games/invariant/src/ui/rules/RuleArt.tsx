@@ -1,3 +1,5 @@
+import { COLORS } from '../../scene/constants';
+
 const iso = (i: number, j: number) => ({ x: 60 + (i - j) * 20, y: 36 + (i + j) * 9 });
 const SLAB_T = 6;
 
@@ -7,7 +9,7 @@ const HH = 7.65;
 const Tile = ({ i, j }: { i: number; j: number }) => {
   const { x, y } = iso(i, j);
   return (
-    <path d={`M${x - HW} ${y} L${x} ${y - HH} L${x + HW} ${y} L${x} ${y + HH} Z`} fill="#ffffff" stroke="#d3d9e2" strokeWidth="1.5" strokeLinejoin="round" />
+    <path d={`M${x - HW} ${y} L${x} ${y - HH} L${x + HW} ${y} L${x} ${y + HH} Z`} fill={COLORS.tile} stroke={COLORS.gap} strokeWidth="1.5" strokeLinejoin="round" />
   );
 };
 const Slab = ({ i, j }: { i: number; j: number }) => {
@@ -15,9 +17,9 @@ const Slab = ({ i, j }: { i: number; j: number }) => {
   const t = y - SLAB_T;
   return (
     <g strokeLinejoin="round">
-      <path d={`M${x - HW} ${t} L${x} ${t + HH} L${x} ${y + HH} L${x - HW} ${y} Z`} fill="#3a78d8" />
+      <path d={`M${x - HW} ${t} L${x} ${t + HH} L${x} ${y + HH} L${x - HW} ${y} Z`} fill={COLORS.slabSide} />
       <path d={`M${x + HW} ${t} L${x} ${t + HH} L${x} ${y + HH} L${x + HW} ${y} Z`} fill="#2f66bf" />
-      <path d={`M${x - HW} ${t} L${x} ${t - HH} L${x + HW} ${t} L${x} ${t + HH} Z`} fill="#5c9df5" />
+      <path d={`M${x - HW} ${t} L${x} ${t - HH} L${x + HW} ${t} L${x} ${t + HH} Z`} fill={COLORS.slabTop} />
     </g>
   );
 };
@@ -27,9 +29,9 @@ const top = (i: number, j: number) => {
 };
 const Frog = ({ x, y }: { x: number; y: number }) => (
   <g transform={`translate(${x},${y - 6})`}>
-    <ellipse cx="0" cy="1" rx="9" ry="6.5" fill="#52c24a" stroke="#2a3142" strokeWidth="1.2" />
-    <circle cx="-4.2" cy="-5" r="3.4" fill="#fff" stroke="#2a3142" strokeWidth="1.2" />
-    <circle cx="4.2" cy="-5" r="3.4" fill="#fff" stroke="#2a3142" strokeWidth="1.2" />
+    <ellipse cx="0" cy="1" rx="9" ry="6.5" fill={COLORS.frog} stroke={COLORS.outline} strokeWidth="1.2" />
+    <circle cx="-4.2" cy="-5" r="3.4" fill="#fff" stroke={COLORS.outline} strokeWidth="1.2" />
+    <circle cx="4.2" cy="-5" r="3.4" fill="#fff" stroke={COLORS.outline} strokeWidth="1.2" />
     <circle cx="-4" cy="-4.8" r="1.5" fill="#12141c" />
     <circle cx="4.4" cy="-4.8" r="1.5" fill="#12141c" />
   </g>
@@ -58,7 +60,7 @@ export function ArtInitialization() {
   return (
     <svg viewBox="0 0 120 70" width="120" height="70">
       <Cells cells={PLUS('slab')} />
-      <ellipse cx={p.x} cy={p.y - 6} rx="5" ry="6.5" fill="#f8efd9" stroke="#2a3142" strokeWidth="1.2" />
+      <ellipse cx={p.x} cy={p.y - 6} rx="5" ry="6.5" fill={COLORS.egg} stroke={COLORS.outline} strokeWidth="1.2" />
     </svg>
   );
 }
