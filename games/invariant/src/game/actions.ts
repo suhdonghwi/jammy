@@ -79,7 +79,7 @@ export async function check(): Promise<'refused' | void> {
   void sendFrogsHome('test');
   const res = await runChecker(RULES);
   if (!res) return;
-  const out = await playVerification(res, RULES, () => ({ extra: res.pitfall?.message }));
+  const out = await playVerification(res, RULES);
   if (!out || out.failing) return;
   const now = useGame.getState();
   if (now.level !== g.level || now.valid !== g.valid) return;

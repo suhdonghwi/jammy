@@ -32,7 +32,6 @@ function restore(scene: Scene) {
     region: null,
     tutorial: NO_TUTORIAL,
     verdicts: {},
-    pitfallMessage: null,
   });
   useGame.getState().setFormula(scene.formula === 'learner' ? learnerFormula : (scene.formula ?? ''));
   if (level === tutorialLevel) for (const [i, n] of scene.frogs ?? []) placeFrog(st(i, n));

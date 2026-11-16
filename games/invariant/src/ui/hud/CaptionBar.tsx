@@ -14,7 +14,6 @@ const TONE: Record<CaptionTone, string> = {
 
 export function CaptionBar() {
   const { value: caption, leaving } = useLingering(useGame((s) => s.caption));
-  const pitfall = useGame((s) => s.pitfallMessage);
   const back = useGame((s) => (s.mode === 'tutorial' ? s.tutorial.back : null));
   const replayLocked = useGame((s) => s.busy || s.checking);
   const tr = useT();
@@ -28,11 +27,6 @@ export function CaptionBar() {
     >
       <div className="min-h-0 overflow-y-auto">
         <Markdown text={caption.text} />
-        {pitfall && caption.tone === 'fail' && !caption.text.includes(pitfall) && (
-          <div className="mt-1.5 text-sm text-muted">
-            <Markdown text={pitfall} />
-          </div>
-        )}
       </div>
       {(caption.secondary || caption.action || caption.choices || caption.close || back) && (
         <div className="flex min-h-8.5 flex-wrap items-center justify-end gap-1.5">

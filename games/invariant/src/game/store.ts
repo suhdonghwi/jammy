@@ -201,7 +201,7 @@ export const useGame = create<Game>((set, get) => ({
     const { level } = get();
     if (!level) return;
     if (text.trim() === '') {
-      set({ formulaText: text, formula: null, valid: null, verdicts: {}, failMark: null });
+      set({ formulaText: text, formula: null, valid: null, verdicts: {}, pitfallMessage: null, failMark: null });
       return;
     }
     const formula = compileFormula(level, text);

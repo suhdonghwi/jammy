@@ -96,6 +96,8 @@ export async function counterexample(tok: Token, cex: Counterexample, opts: Coun
   }
   if (!run && opts.ghostExtra) text += `\n\n${opts.ghostExtra}`;
   if (opts.extra) text += `\n\n${opts.extra}`;
+  const { mode, pitfallMessage } = useGame.getState();
+  if (mode === 'level' && pitfallMessage) text += `\n\n${pitfallMessage}`;
   const replay = { label: messages().caption.replay, onClick: () => void playCounterexample(cex, opts) };
   const action = opts.action?.();
   const tone = opts.tone ?? 'fail';

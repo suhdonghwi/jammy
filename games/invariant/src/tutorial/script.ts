@@ -214,7 +214,6 @@ export async function stage(gen: Token, o: StageOptions): Promise<void> {
     gen.guard();
     if (!res) continue;
     const stageRule = o.rules[o.rules.length - 1];
-    useGame.setState({ pitfallMessage: null });
     const out = await playVerification(res, o.rules, (failing) => ({
       prefix: failing !== stageRule ? messages().tutorial.lostRule(messages().rules[failing]) : undefined,
       extra: messages().tutorial.fixAndCheck,
@@ -263,7 +262,6 @@ export async function demo(
   const res = await runChecker(rules);
   gen.guard();
   if (res) {
-    useGame.setState({ pitfallMessage: null });
     const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? messages().tutorial.guessedRight : messages().tutorial.guessedWrong;
     const tone = opts.guessedRight ? 'success' : 'fail';
     const out = await playVerification(res, rules, () => ({ prefix: verdict, tone, ghostExtra: opts.ghostExtra, area: messages().verdicts.theArea, action: nextAfterCounterexample }));
