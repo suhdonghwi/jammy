@@ -14,7 +14,7 @@ export function RuleLights() {
   const tr = useT();
   if (!lights.length) return null;
   return (
-    <div className={`flex w-fit flex-wrap items-center gap-1 rounded-full max-[22.5rem]:gap-0.5 ${spot === 'lights' ? 'spotlight spotlight-soft' : ''}`}>
+    <div className={`flex w-fit flex-wrap items-center gap-1 rounded-full max-xs:gap-0.5 ${spot === 'lights' ? 'spotlight spotlight-soft' : ''}`}>
       {RULES
         .filter((r) => lights.includes(r))
         .map((r) => {
@@ -23,7 +23,7 @@ export function RuleLights() {
           return (
             <button
               key={r}
-              className={`flex animate-[pop_0.35s_var(--ease-entrance)] items-center gap-1 rounded-full px-1.75 py-1 font-display text-xs font-medium max-[22.5rem]:gap-0.75 max-[22.5rem]:px-1.25 max-[22.5rem]:text-[11px] [&_svg]:shrink-0 ${LIGHT[status]}`}
+              className={`flex animate-[pop_0.35s_var(--ease-entrance)] items-center gap-1 rounded-full px-1.75 py-1 font-display text-xs font-medium max-xs:gap-0.75 max-xs:px-1.25 max-xs:text-[11px] [&_svg]:shrink-0 ${LIGHT[status]}`}
               disabled={locked || v?.status !== 'fail'}
               title={v?.status === 'fail' ? tr.formula.replay : tr.rules[r]}
               onClick={() => v?.status === 'fail' && void playCounterexample(v.cex)}

@@ -4,7 +4,7 @@ import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type Inputs } from '../../levels/inputs';
 import type { CompiledLevel } from '../../levels/level';
-import { CARD_LABEL } from '../classes';
+import { CARD_LABEL, FOLD } from '../classes';
 
 const showArray = (a: number[]) => `[${a.join(', ')}]`;
 
@@ -45,12 +45,12 @@ export function InputsSection({ folded }: { folded: boolean }) {
   const hasArrays = Object.keys(level.arrays).length > 0;
   return (
     <div
-      className={`-mx-4 flex min-w-0 shrink-0 flex-col border-t px-4 transition-[opacity,border-color,padding] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none max-md:-mx-2.5 max-md:px-2.5 ${busy ? 'opacity-60' : ''} ${
+      className={`-mx-4 flex min-w-0 shrink-0 flex-col border-t px-4 transition-[opacity,border-color,padding] ${FOLD} max-md:-mx-2.5 max-md:px-2.5 ${busy ? 'opacity-60' : ''} ${
         folded ? 'border-transparent pt-1' : 'border-line pt-2.5 max-md:pt-2'
       }`}
     >
       <div
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none ${folded ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'}`}
+        className={`grid transition-[grid-template-rows,opacity] ${FOLD} ${folded ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'}`}
         aria-hidden={folded}
       >
         <div className="min-h-0 overflow-hidden">
@@ -126,7 +126,7 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
   };
   const bad = editing && !INT.test(text.trim());
   return (
-    <div key={pops} className="flex animate-[pop_0.3s_var(--ease-entrance)] items-center">
+    <div key={pops} className="flex animate-pop items-center">
       <SmallButton onClick={() => commit(value - 1)} disabled={disabled} label={labels[0]} className="rounded-r-none">
         <Minus size={12} strokeWidth={2.6} />
       </SmallButton>
@@ -175,7 +175,7 @@ function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: C
   };
   const bad = editing && !incomplete(text) && parseArray(text) === null;
   return (
-    <div key={pops} className="flex min-w-0 flex-1 animate-[pop_0.3s_var(--ease-entrance)] items-center gap-1.5">
+    <div key={pops} className="flex min-w-0 flex-1 animate-pop items-center gap-1.5">
       <input
         className={`${FIELD} flex-1 ${bad ? 'border-fail/50 text-fail' : ''}`}
         value={editing ? text : shown}

@@ -2,6 +2,10 @@ export const CARD = 'rounded-2xl border border-line bg-card shadow-card backdrop
 
 export const CARD_LABEL = 'mb-1.5 font-display text-xs font-semibold uppercase tracking-[0.08em] text-faint';
 
+export const FOLD = 'duration-300 ease-fold motion-reduce:transition-none';
+export const FOLD_MS = 300;
+export const FOLD_EASE = 'cubic-bezier(0.2,0.8,0.2,1)';
+
 type Variant = 'plain' | 'quiet' | 'glass' | 'toy' | 'primary' | 'check';
 type Size = 'sm' | 'md' | 'lg' | 'icon' | 'none';
 
@@ -19,7 +23,7 @@ const VARIANTS: Record<Variant, string> = {
 
 const SIZES: Record<Size, string> = {
   sm: 'px-3.5 py-1.5 text-sm font-medium',
-  md: 'px-4 py-2 text-md font-medium compact:px-3 compact:py-1.75 compact:text-sm max-[22.5rem]:px-2.5',
+  md: 'px-4 py-2 text-md font-medium compact:px-3 compact:py-1.75 compact:text-sm max-xs:px-2.5',
   lg: 'min-w-44 px-8 py-3.5 text-xl font-semibold max-sm:min-w-0 max-sm:flex-1 max-sm:px-4 max-sm:text-lg short:min-w-36 short:px-6 short:py-2.5 short:text-lg',
   icon: 'size-9',
   none: '',

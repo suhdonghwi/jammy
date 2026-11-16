@@ -6,7 +6,7 @@ import { useT } from '../../i18n/i18n';
 import { planeExists } from '../../levels/inputs';
 import type { CompiledLevel } from '../../levels/level';
 import { storage } from '../../storage';
-import { CARD, CARD_LABEL } from '../classes';
+import { CARD, CARD_LABEL, FOLD, FOLD_EASE, FOLD_MS } from '../classes';
 import { HighlightedCode } from '../codeColors';
 import { inputRows, InputsSection } from './Inputs';
 
@@ -53,9 +53,6 @@ function highlightSource(level: CompiledLevel, marks: Marks) {
 const widthKey = (levelId: string) => `invariant-frog:code-width:${levelId}`;
 const MIN_WIDTH = 150;
 const KEY_STEP = 24;
-const FOLD_MS = 300;
-const FOLD_EASE = 'cubic-bezier(0.2,0.8,0.2,1)';
-const FOLD = 'duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none';
 
 function storedWidth(levelId: string): number | null {
   const w = Number(storage.get(widthKey(levelId)));
