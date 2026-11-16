@@ -251,26 +251,26 @@ html[data-leaving] .screen {
   0%,
   100% {
     box-shadow:
-      0 0 0 3px rgb(59 130 246 / 0.55),
-      0 0 0 8px rgb(59 130 246 / 0.12);
+      0 0 0 3px --alpha(var(--color-brand) / 55%),
+      0 0 0 8px --alpha(var(--color-brand) / 12%);
   }
   50% {
     box-shadow:
-      0 0 0 3px rgb(59 130 246 / 0.85),
-      0 0 0 13px rgb(59 130 246 / 0.08);
+      0 0 0 3px --alpha(var(--color-brand) / 85%),
+      0 0 0 13px --alpha(var(--color-brand) / 8%);
   }
 }
 @keyframes spotlight-soft {
   0%,
   100% {
     box-shadow:
-      0 0 0 2px rgb(59 130 246 / 0.45),
-      0 0 0 3px rgb(59 130 246 / 0.06);
+      0 0 0 2px --alpha(var(--color-brand) / 45%),
+      0 0 0 3px --alpha(var(--color-brand) / 6%);
   }
   50% {
     box-shadow:
-      0 0 0 2px rgb(59 130 246 / 0.75),
-      0 0 0 5px rgb(59 130 246 / 0.08);
+      0 0 0 2px --alpha(var(--color-brand) / 75%),
+      0 0 0 5px --alpha(var(--color-brand) / 8%);
   }
 }
 @keyframes check-pulse {
@@ -281,9 +281,9 @@ html[data-leaving] .screen {
 @keyframes check-halo {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(59 130 246 / 0);
+    box-shadow: 0 0 0 0 --alpha(var(--color-brand) / 0%);
   }
   50% {
-    box-shadow: 0 0 0 4px rgb(59 130 246 / 0.42);
+    box-shadow: 0 0 0 4px --alpha(var(--color-brand) / 42%);
   }
 }
