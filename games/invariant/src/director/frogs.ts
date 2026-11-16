@@ -59,7 +59,7 @@ export function hatch(s: State): FrogSim {
   const slot = occupancy.frogs.has(`${x},${y}`) ? EGG_ASIDE : EGG_ALONE;
   hatchFx.push({ x, y, plane: planeKey(inputsOf(L, s)), dx: slot.dx, dy: slot.dy, s: slot.scale });
   sfx.hatch();
-  return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, ox: slot.dx, oy: slot.dy, os: slot.scale, home: [x, y] });
+  return placeFrog(s, { hatchT0: sceneNow() + HATCH_EMERGE, slot: { ...slot }, home: [x, y] });
 }
 
 export function hopFrog(L: CompiledLevel, f: FrogSim, next: State, dur = HOP): Promise<void> {

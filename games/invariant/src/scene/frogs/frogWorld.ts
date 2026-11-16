@@ -6,6 +6,7 @@ import { tileOf } from '../../levels/tiles';
 import { clamp01 } from '../easing';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
+import type { Slot } from './occupancy';
 
 export type FrogKind = 'real' | 'test';
 
@@ -34,9 +35,7 @@ export interface FrogSim {
   cheerT0?: number;
   turn?: { t0: number; from: number; delta: number };
   lastT?: number;
-  ox?: number;
-  oy?: number;
-  os?: number;
+  slot?: Slot;
   drawn?: { x: number; y: number; ground: number; z: number; scale: number };
 }
 
