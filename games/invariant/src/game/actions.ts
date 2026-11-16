@@ -1,5 +1,6 @@
 import { sfx } from '../audio/sfx';
 import { RULES } from '../checker/types';
+import { warmSolver } from '../checker/z3-browser';
 import { resetFrogs, resetLevel } from '../director/reset';
 import { checkAndPlay, showUndecided } from '../director/verification';
 import { t } from '../i18n/i18n';
@@ -18,6 +19,7 @@ export function openLevel(def: LevelDef) {
     stopTutorial();
     resetLevel();
     useGame.getState().openLevel(def, 'level');
+    warmSolver();
   });
 }
 
@@ -25,6 +27,7 @@ export function openTutorial() {
   switchScene(() => {
     resetLevel();
     useGame.getState().openLevel(tutorialLevel, 'tutorial');
+    warmSolver();
     const from = Number(new URLSearchParams(location.search).get('step') ?? 0);
     startTutorial(() => openLevel(levels[0]), from);
   });
@@ -35,7 +38,13 @@ export function goMenu(view: 'home' | 'levels' = 'home') {
     stopTutorial();
     resetLevel();
     useGame.getState().backToMenu(view);
+    if (view === 'levels') warmSolver();
   });
+}
+
+export function showLevels() {
+  useGame.setState({ menuView: 'levels' });
+  warmSolver();
 }
 
 export function resetScreen() {

@@ -240,8 +240,9 @@ and can be retried. `pnpm dev` and `pnpm build` copy its browser build into
 `public/z3/<version>/`, versioned so hosts can cache it forever (the copy
 leaves the current version in place, so a running dev server keeps serving
 it). It is loaded as a plain script, not bundled, because its thread workers
-re-load it by URL, and warmed up once the player opens the level list, a
-level or the tutorial, never on the home screen alone.
+re-load it by URL, and warmed up (`warmSolver()`, from the actions in
+`game/actions.ts`) once the player opens the level list, a level or the
+tutorial, never on the home screen alone.
 
 ## Deployment
 

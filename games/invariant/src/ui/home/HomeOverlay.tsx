@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, GraduationCap, LayoutGrid } from 'lucide-react';
-import { openLevel, openTutorial } from '../../game/actions';
+import { openLevel, openTutorial, showLevels } from '../../game/actions';
 import { useProgress } from '../../game/progress';
 import { useGame } from '../../game/store';
 import { COMPACT_HOME, NARROW_HOME, useMedia } from '../../hooks/media';
@@ -49,7 +49,7 @@ function HomeButtons() {
       <button className={button('primary', 'lg')} onClick={openTutorial}>
         <GraduationCap size={22} strokeWidth={2.2} /> {tr.home.tutorial}
       </button>
-      <button className={button('toy', 'lg')} onClick={() => useGame.setState({ menuView: 'levels' })}>
+      <button className={button('toy', 'lg')} onClick={showLevels}>
         <LayoutGrid size={22} strokeWidth={2.2} /> {tr.home.levels}
       </button>
     </div>
