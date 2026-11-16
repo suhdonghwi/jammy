@@ -1,5 +1,5 @@
 import { Check, LoaderCircle } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { check } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
@@ -16,7 +16,7 @@ const TEXT = 'col-start-1 row-start-1 m-0 min-w-0 px-1 py-2.5 font-mono text-(le
 
 export function FormulaBox() {
   const level = useGame((s) => s.level);
-  const names = useMemo(() => (level ? displayNames(level) : []), [level]);
+  const names = level ? displayNames(level) : [];
   const formula = useGame((s) => s.formula);
   const formulaText = useGame((s) => s.formulaText);
   const busy = useGame((s) => s.busy);
