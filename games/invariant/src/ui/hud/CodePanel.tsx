@@ -30,7 +30,7 @@ function highlightSource(level: CompiledLevel, marks: Marks) {
     from = k + 1;
   }
   const lineOf = (pos: number) => lines.findIndex((l) => pos >= l.from && pos <= l.to);
-  const hoverLine = marks.inputHover ? lineOf(level.program.inputDecls.find((d) => d.name === marks.inputHover)?.span.from ?? -1) : -1;
+  const hoverLine = marks.inputHover ? lineOf(level.program.inputs.find((d) => d.name === marks.inputHover)?.span.from ?? -1) : -1;
   const requiresLines = marks.impossible ? level.program.requires.map((r) => lineOf(r.span.from)) : [];
   const rows = lines.map((l, i) => {
     let cls = ROW;

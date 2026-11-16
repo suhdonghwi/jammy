@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { show } from '../src/lang/ast';
 import { compileFast, evaluate, euclidMod, floorDiv, OverBudget, step } from '../src/lang/eval';
 import { LangError, parseFormula, parseProgram } from '../src/lang/parser';
-import { checkCondition, checkProgram, intScope, type Scope } from '../src/lang/typecheck';
+import { checkCondition, checkProgram, type Scope } from '../src/lang/typecheck';
 
 describe('parser', () => {
   it('desugars chained comparisons', () => {
@@ -23,7 +23,7 @@ describe('parser', () => {
   it('parses programs with sugar', () => {
     const p = parseProgram(`input n; var i = 0; while (i < n) { i++; if (i > 2) { i += 2; } else i -= 0; } ensures i >= n;`);
     checkProgram(p);
-    expect(p.inputs).toEqual(['n']);
+    expect(p.inputs.map((d) => d.name)).toEqual(['n']);
     const s = step(p.loop.body, { n: 10n, i: 2n });
     expect(s.i).toBe(5n);
   });
@@ -34,7 +34,7 @@ describe('parser', () => {
   });
   it('still skips // comments in programs', () => {
     const p = parseProgram(`input n; // the input\nvar i = 0; while (i < n) { i++; } ensures i == n;`);
-    expect(p.inputs).toEqual(['n']);
+    expect(p.inputs.map((d) => d.name)).toEqual(['n']);
   });
   it('only chains orderings, not == or !=', () => {
     expect(() => parseFormula('x >= 0 == y >= 0')).toThrow(/parentheses/);
@@ -85,8 +85,8 @@ describe('arrays and quantifiers', () => {
   });
   it('declares array inputs with a length declared first', () => {
     const p = parseProgram(`input n; input A[n]; var i = 0; while (i < n) { i = i + 1; } ensures i == n;`);
-    checkProgram(p);
-    expect(p.arrays).toEqual({ A: 'n' });
+    expect(checkProgram(p)).toEqual(new Map([['n', 'int'], ['A', 'array'], ['i', 'int']]));
+    expect(p.inputs.map((d) => d.length)).toEqual([undefined, 'n']);
     expect(() => checkProgram(parseProgram(`input A[n]; input n; var i = 0; while (i < n) { i++; }`))).toThrow(/before the array/);
   });
 });
@@ -128,7 +128,10 @@ describe('quantifier ranges', () => {
 });
 
 describe('types', () => {
-  const scope = intScope(['x', 'y']);
+  const scope: Scope = new Map([
+    ['x', 'int'],
+    ['y', 'int'],
+  ]);
   it('explains number-vs-condition', () => {
     const src = 'x + y';
     expect(() => checkCondition(parseFormula(src), scope, src, 'an area')).toThrow(/Did you mean `x \+ y == 0`/);

@@ -2,7 +2,7 @@ import { t } from '../i18n/i18n';
 import { conjuncts, freeVars, mk, NO_SPAN, subst, type Expr, type Program, type State } from '../lang/ast';
 import { compileFast, evaluate, holds, step, symbolicStep, type FastFn, type FastState } from '../lang/eval';
 import { LangError, parseFormula, parseProgram } from '../lang/parser';
-import { checkCondition, checkProgram, programScope, type Scope } from '../lang/typecheck';
+import { checkCondition, checkProgram, type Scope } from '../lang/typecheck';
 
 export type Inputs = Record<string, number | number[]>;
 
@@ -62,12 +62,12 @@ export interface CompiledLevel extends LevelDef {
 
 export function compileLevel(def: LevelDef): CompiledLevel {
   const program = parseProgram(def.source);
-  checkProgram(program);
-  const inputs = program.inputs;
+  const scope = checkProgram(program);
+  const inputs = program.inputs.map((d) => d.name);
   const vars = program.vars.map((v) => v.name);
   const names = [...inputs, ...vars];
-  const scope = programScope(program);
-  const arrays = program.arrays;
+  const arrays: Record<string, string> = {};
+  for (const d of program.inputs) if (d.length) arrays[d.name] = d.length;
   const { x, y } = def.view;
   for (const a of [x, y]) {
     if (scope.get(a) !== 'int') throw new Error(`[${def.id}] view axis '${a}' is not an integer variable`);

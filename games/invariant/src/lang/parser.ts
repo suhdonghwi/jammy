@@ -286,9 +286,7 @@ class Parser {
   }
 
   program(): Program {
-    const inputs: string[] = [];
-    const inputDecls: InputDecl[] = [];
-    const arrays: Record<string, string> = {};
+    const inputs: InputDecl[] = [];
     const vars: VarDecl[] = [];
     const input = () => {
       const name = this.ident();
@@ -299,10 +297,8 @@ class Parser {
         const close = this.expectOp(']');
         decl.length = len.text;
         decl.span = { from: name.span.from, to: close.span.to };
-        arrays[name.text] = len.text;
       }
-      inputs.push(name.text);
-      inputDecls.push(decl);
+      inputs.push(decl);
     };
     const requires: Expr[] = [];
     const ensures: Expr[] = [];
@@ -351,7 +347,7 @@ class Parser {
       }
     }
     if (!loop) throw new LangError('The program needs a while loop', NO_SPAN);
-    return { source: this.src, inputs, inputDecls, arrays, vars, requires, ensures, loop };
+    return { source: this.src, inputs, vars, requires, ensures, loop };
   }
 }
 

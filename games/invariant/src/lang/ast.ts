@@ -45,9 +45,7 @@ export interface InputDecl {
 
 export interface Program {
   source: string;
-  inputs: string[];
-  inputDecls: InputDecl[];
-  arrays: Record<string, string>;
+  inputs: InputDecl[];
   vars: VarDecl[];
   requires: Expr[];
   ensures: Expr[];

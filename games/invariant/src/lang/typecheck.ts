@@ -5,9 +5,9 @@ import { LangError } from './parser';
 
 type Type = 'int' | 'bool';
 
-export type Scope = ReadonlyMap<string, 'int' | 'array'>;
+export type NameKind = 'int' | 'array';
 
-export const intScope = (names: Iterable<string>): Scope => new Map([...names].map((n) => [n, 'int' as const]));
+export type Scope = ReadonlyMap<string, NameKind>;
 
 const MAX_CONSTANT_RANGE = 1000;
 
@@ -121,26 +121,19 @@ export function checkCondition(e: Expr, scope: Scope, src: string, what: string)
   }
 }
 
-export function programScope(p: Program): Scope {
-  const scope = new Map<string, 'int' | 'array'>();
-  for (const d of p.inputDecls) scope.set(d.name, d.length ? 'array' : 'int');
-  for (const v of p.vars) scope.set(v.name, 'int');
-  return scope;
-}
-
-export function checkProgram(p: Program): void {
+export function checkProgram(p: Program): Scope {
   const src = p.source;
   const names = new Set<string>();
   const declare = (n: string, span: Span) => {
     if (names.has(n)) throw new LangError(`'${n}' is declared twice`, span);
     names.add(n);
   };
-  const scope = new Map<string, 'int' | 'array'>();
-  for (const d of p.inputDecls) {
+  const scope = new Map<string, NameKind>();
+  for (const d of p.inputs) {
     declare(d.name, d.span);
     if (d.length) {
       if (scope.get(d.length) !== 'int') throw new LangError(`Declare the length '${d.length}' as an input before the array '${d.name}'`, d.span);
-      if (p.inputDecls.some((o) => o !== d && o.length === d.length)) throw new LangError(`'${d.length}' is already the length of another array`, d.span);
+      if (p.inputs.some((o) => o !== d && o.length === d.length)) throw new LangError(`'${d.length}' is already the length of another array`, d.span);
     }
     scope.set(d.name, d.length ? 'array' : 'int');
   }
@@ -155,7 +148,7 @@ export function checkProgram(p: Program): void {
   for (const r of p.requires) checkCondition(r, scope, src, 'requires');
   for (const r of p.ensures) checkCondition(r, scope, src, 'ensures');
   checkCondition(p.loop.guard, scope, src, 'the loop condition');
-  const inputs = new Set(p.inputs);
+  const inputs = new Set(p.inputs.map((d) => d.name));
   const stmt = (s: Stmt): void => {
     if (s.kind === 'assign') {
       if (inputs.has(s.name)) throw new LangError(`'${s.name}' is an input and can't be changed`, s.span);
@@ -169,4 +162,5 @@ export function checkProgram(p: Program): void {
     }
   };
   p.loop.body.forEach(stmt);
+  return scope;
 }

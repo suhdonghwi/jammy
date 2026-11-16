@@ -68,7 +68,7 @@ export function smallestOnPlane(level: CompiledLevel, inv: Formula, rule: Rule, 
 
 export function realRunTo(level: CompiledLevel, s: State): State[] | undefined {
   const inputs: State = {};
-  for (const n of level.program.inputs) inputs[n] = s[n];
+  for (const { name } of level.program.inputs) inputs[name] = s[name];
   let shortest: State[] | undefined;
   for (const egg of eggs(level, inputs)) {
     const run = [egg];
