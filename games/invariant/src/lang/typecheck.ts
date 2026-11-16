@@ -1,5 +1,5 @@
 import { t as messages } from '../i18n/i18n';
-import { ARITHMETIC_OPS, BUILTIN_ARITY, freeVars, ORDERING_OPS, type Expr, type Program, type Span, type Stmt } from './ast';
+import { ARITHMETIC_OPS, BUILTIN_ARITY, freeVars, ORDERING_OPS, rangeBounds, type Expr, type Program, type Quant, type Span, type Stmt } from './ast';
 import { evaluate } from './eval';
 import { LangError } from './parser';
 
@@ -11,13 +11,10 @@ export type Scope = ReadonlyMap<string, NameKind>;
 
 const MAX_CONSTANT_RANGE = 1000;
 
-function constantWidth(e: Extract<Expr, { kind: 'quant' }>): bigint | null {
+function constantWidth(e: Quant): bigint | null {
   if (freeVars(e.lo).size > 0 || freeVars(e.hi).size > 0) return null;
-  const lo = evaluate(e.lo, {}) as bigint;
-  const hi = evaluate(e.hi, {}) as bigint;
-  const first = e.ops[0] === '<' ? lo + 1n : lo;
-  const last = e.ops[e.ops.length - 1] === '<' ? hi - 1n : hi;
-  return last - first + 1n;
+  const { from, to } = rangeBounds(e);
+  return (evaluate(to, {}) as bigint) - (evaluate(from[0], {}) as bigint) + 1n;
 }
 
 function typeOf(e: Expr, scope: Scope, src: string): Type {

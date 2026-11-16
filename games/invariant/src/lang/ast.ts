@@ -62,6 +62,15 @@ export const ARITHMETIC_OPS: ReadonlySet<BinOp> = new Set(['+', '-', '*', '/', '
 export const ORDERING_OPS: ReadonlySet<BinOp> = new Set(['<', '<=', '>', '>=']);
 export const COMPARISON_OPS: ReadonlySet<BinOp> = new Set([...ORDERING_OPS, '==', '!=']);
 
+export function rangeBounds(q: Quant): { from: Expr[]; to: Expr } {
+  const past = (e: Expr, op: '+' | '-', range: RangeOp): Expr =>
+    range === '<' ? { kind: 'binary', op, left: e, right: { kind: 'num', value: 1n, span: e.span }, span: e.span } : e;
+  return {
+    from: q.vars.map((_, k) => past(k === 0 ? q.lo : { kind: 'var', name: q.vars[k - 1], span: q.span }, '+', q.ops[k])),
+    to: past(q.hi, '-', q.ops[q.vars.length]),
+  };
+}
+
 export function spanOf(a: { span: Span }, b: { span: Span }): Span {
   return { from: Math.min(a.span.from, b.span.from), to: Math.max(a.span.to, b.span.to) };
 }
