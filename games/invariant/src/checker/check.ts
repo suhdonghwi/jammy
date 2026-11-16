@@ -1,8 +1,9 @@
 import type { Context } from 'z3-solver';
+import { mk } from '../lang/ast';
 import { compileFormula, type CompiledLevel, type Formula, type Inputs, type Pitfall } from '../levels/level';
 import { realFailure, realRunTo, smallestOnPlane } from './nearby';
-import { breaksRule, counterexample } from './rules';
-import { equivalent, ruleQuery, solve } from './smt';
+import { breaksRule, counterexample, ruleQuery } from './rules';
+import { equivalent, solve } from './smt';
 import { RULES, type Counterexample, type Rule, type RuleVerdict, type Verdicts } from './types';
 
 interface CheckOptions {
@@ -36,8 +37,8 @@ export async function checkFormula(
       verdicts[rule] = { status: 'fail', cex: withRun(level, near) };
       continue;
     }
-    const { dims, query } = ruleQuery(level, inv.expr, rule);
-    const r = await solve(ctx, level, dims, query, { timeout, verify: (s) => breaksRule(level, inv.expr, rule, s) });
+    const query = ruleQuery(level, inv.expr, rule);
+    const r = await solve(ctx, level, query.dims, mk.andAll(query.parts), { timeout, verify: (s) => breaksRule(query, s) });
     verdicts[rule] =
       r.kind === 'unsat'
         ? { status: 'pass', how: 'proved' }

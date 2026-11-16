@@ -1,7 +1,7 @@
 import type { State } from '../lang/ast';
-import { holds, OverBudget } from '../lang/eval';
+import { holds, withinBudget } from '../lang/eval';
 import { hop, isEgg, running, startState, toBig, type CompiledLevel, type Formula, type Inputs } from '../levels/level';
-import { breaksRule, counterexample } from './rules';
+import { breaksRule, counterexample, ruleQuery } from './rules';
 import type { Counterexample, Rule } from './types';
 
 export const NEAR = 8;
@@ -23,19 +23,10 @@ function smallestFirst(level: CompiledLevel, states: State[]): State[] {
   return states.sort((a, b) => cmp(size(a), size(b)) || cmp(b[y] as bigint, a[y] as bigint) || cmp(b[x] as bigint, a[x] as bigint));
 }
 
-function within(run: () => boolean): boolean {
-  try {
-    return run();
-  } catch (e) {
-    if (e instanceof OverBudget) return false;
-    throw e;
-  }
-}
-
 function eggs(level: CompiledLevel, fixed: State): State[] {
   const free = level.freeDims.filter((d) => !(d in fixed));
   const starts = ranging(free, fixed).map((s) => startState(level, s));
-  return smallestFirst(level, starts.filter((s) => within(() => isEgg(level, s))));
+  return smallestFirst(level, starts.filter((s) => withinBudget(() => isEgg(level, s))));
 }
 
 function tiles(level: CompiledLevel, plane: State): State[] {
@@ -47,12 +38,13 @@ function sameTile(level: CompiledLevel, a: State, b: State): boolean {
 }
 
 export function realFailure(level: CompiledLevel, inv: Formula, inputs: Inputs): Counterexample | undefined {
+  const maintenance = ruleQuery(level, inv.expr, 'maintenance');
   for (const egg of eggs(level, toBig(inputs))) {
-    if (!within(() => holds(inv.expr, egg))) continue;
+    if (!withinBudget(() => holds(inv.expr, egg))) continue;
     const run = [egg];
     let s = egg;
     for (let k = 0; k < RUN_LIMIT && running(level, s); k++) {
-      if (breaksRule(level, inv.expr, 'maintenance', s)) return { ...counterexample(level, inv, 'maintenance', s, false), run };
+      if (breaksRule(maintenance, s)) return { ...counterexample(level, inv, 'maintenance', s, false), run };
       s = hop(level, s);
       run.push(s);
     }
@@ -62,7 +54,8 @@ export function realFailure(level: CompiledLevel, inv: Formula, inputs: Inputs):
 export function smallestOnPlane(level: CompiledLevel, inv: Formula, rule: Rule, inputs: Inputs): Counterexample | undefined {
   const plane = toBig(inputs);
   const candidates = rule === 'initialization' ? eggs(level, plane) : tiles(level, plane);
-  const s = candidates.find((c) => breaksRule(level, inv.expr, rule, c));
+  const query = ruleQuery(level, inv.expr, rule);
+  const s = candidates.find((c) => breaksRule(query, c));
   return s && counterexample(level, inv, rule, s, false);
 }
 

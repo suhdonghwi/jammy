@@ -18,6 +18,15 @@ export class OverBudget extends Error {
   }
 }
 
+export function withinBudget(run: () => boolean): boolean {
+  try {
+    return run();
+  } catch (e) {
+    if (e instanceof OverBudget) return false;
+    throw e;
+  }
+}
+
 type Value = bigint | boolean;
 
 function cell(arr: bigint[], k: bigint): bigint {

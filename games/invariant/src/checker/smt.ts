@@ -1,10 +1,9 @@
 import type { Arith, Bool, Context, FuncDecl, Model } from 'z3-solver';
-import { hasQuantifier, mk, subst, type Expr, type State } from '../lang/ast';
-import { holds, OverBudget } from '../lang/eval';
+import { hasQuantifier, mk, type Expr, type State } from '../lang/ast';
+import { holds, withinBudget } from '../lang/eval';
 import { unroll } from '../lang/unroll';
 import { MAX_LEN, type CompiledLevel } from '../levels/level';
 import { NEAR } from './nearby';
-import type { Rule } from './types';
 import { whileSolving } from './z3-guard';
 
 type Ctx = Context<'main'>;
@@ -155,31 +154,9 @@ export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], quer
   return { kind: 'unsat' };
 }
 
-export function ruleQuery(level: CompiledLevel, inv: Expr, rule: Rule): { dims: string[]; query: Expr } {
-  if (rule === 'initialization') {
-    return {
-      dims: level.freeDims,
-      query: mk.andAll([subst(level.planeReq, level.initExprs), subst(level.eggReq, level.initExprs), mk.not(subst(inv, level.initExprs))]),
-    };
-  }
-  if (rule === 'maintenance') {
-    return { dims: level.names, query: mk.andAll([level.planeReq, inv, level.guard, mk.not(subst(inv, level.next))]) };
-  }
-  return { dims: level.names, query: mk.andAll([level.planeReq, inv, mk.not(level.guard), mk.not(level.post)]) };
-}
-
-function differs(query: Expr, s: State): boolean {
-  try {
-    return holds(query, s);
-  } catch (e) {
-    if (e instanceof OverBudget) return false;
-    throw e;
-  }
-}
-
 export async function equivalent(ctx: Ctx, level: CompiledLevel, a: Expr, b: Expr, timeout: number): Promise<boolean> {
   const differ: Expr = { kind: 'binary', op: '!=', left: a, right: b, span: a.span };
   const query = mk.and(level.planeReq, differ);
-  const r = await solve(ctx, level, level.names, query, { timeout, verify: (s) => differs(query, s) });
+  const r = await solve(ctx, level, level.names, query, { timeout, verify: (s) => withinBudget(() => holds(query, s)) });
   return r.kind === 'unsat';
 }
