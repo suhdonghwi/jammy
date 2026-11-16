@@ -1,6 +1,7 @@
 import type { Arith, Bool, Context, FuncDecl, Model } from 'z3-solver';
-import { hasQuantifier, mk, subst, type Expr, type RangeOp, type State } from '../lang/ast';
+import { hasQuantifier, mk, subst, type Expr, type State } from '../lang/ast';
 import { holds, OverBudget } from '../lang/eval';
+import { unroll } from '../lang/unroll';
 import { MAX_LEN, type CompiledLevel } from '../levels/level';
 import { NEAR } from './nearby';
 import type { Rule } from './types';
@@ -75,51 +76,6 @@ function toZ3(ctx: Ctx, e: Expr, env: Env): Z {
   }
 }
 
-const MAX_UNROLL = 1200;
-
-function unroll(e: Expr, b: number): Expr {
-  const go = (e: Expr): Expr => {
-    switch (e.kind) {
-      case 'unary': return { ...e, arg: go(e.arg) };
-      case 'binary': return { ...e, left: go(e.left), right: go(e.right) };
-      case 'call': return { ...e, args: e.args.map(go) };
-      case 'index': return { ...e, index: go(e.index) };
-      case 'ite': return { ...e, cond: go(e.cond), then: go(e.then), else: go(e.else) };
-      case 'quant': {
-        const lo = go(e.lo);
-        const hi = go(e.hi);
-        const body = go(e.body);
-        if ((2 * b + 1) ** e.vars.length > MAX_UNROLL * 2) return { ...e, lo, hi, body };
-        const num = (v: number): Expr => ({ kind: 'num', value: BigInt(v), span: e.span });
-        const cmp = (op: RangeOp, l: Expr, r: Expr): Expr => ({ kind: 'binary', op, left: l, right: r, span: e.span });
-        const instances: Expr[] = [];
-        const tuple: number[] = [];
-        const emit = () => {
-          const map: Record<string, Expr> = {};
-          e.vars.forEach((v, i) => (map[v] = num(tuple[i])));
-          const inRange = mk.and(cmp(e.ops[0], lo, num(tuple[0])), cmp(e.ops[e.ops.length - 1], num(tuple[tuple.length - 1]), hi));
-          const inst = subst(body, map);
-          instances.push(e.q === 'forall' ? mk.or(mk.not(inRange), inst) : mk.and(inRange, inst));
-        };
-        const walk = (k: number, from: number) => {
-          if (instances.length > MAX_UNROLL) return;
-          if (k === e.vars.length) return emit();
-          for (let v = from; v <= b; v++) {
-            tuple[k] = v;
-            walk(k + 1, e.ops[k + 1] === '<' ? v + 1 : v);
-          }
-        };
-        walk(0, -b);
-        if (instances.length > MAX_UNROLL) return { ...e, lo, hi, body };
-        if (instances.length === 0) return { kind: 'bool', value: e.q === 'forall', span: e.span };
-        return instances.reduce(e.q === 'forall' ? mk.and : mk.or);
-      }
-      default: return e;
-    }
-  };
-  return go(e);
-}
-
 type SolveResult = { kind: 'sat'; state: State } | { kind: 'unsat' } | { kind: 'unknown' };
 
 interface SolveOptions {
@@ -129,7 +85,7 @@ interface SolveOptions {
 
 const BOUNDS = [NEAR, 64, 1024];
 
-export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], query: Expr, opts: SolveOptions): Promise<SolveResult> {
+function declare(ctx: Ctx, level: CompiledLevel, dims: string[]): { env: Env; readModel: (m: Model<'main'>) => State } {
   const env: Env = { ints: {}, arrays: {} };
   for (const d of dims) {
     if (level.arrays[d]) continue;
@@ -156,6 +112,11 @@ export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], quer
     }
     return s;
   };
+  return { env, readModel };
+}
+
+export async function solve(ctx: Ctx, level: CompiledLevel, dims: string[], query: Expr, opts: SolveOptions): Promise<SolveResult> {
+  const { env, readModel } = declare(ctx, level, dims);
   const quantified = hasQuantifier(query);
   const arrayLens = Object.values(env.arrays).map((a) => a.len);
   const check = async (form: Expr, logic: string | undefined, bound: (solver: InstanceType<Ctx['Solver']>) => void): Promise<SolveResult> => {

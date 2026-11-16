@@ -16,7 +16,7 @@ from the font, and spaced, at build time (`scripts/title-glyphs.ts`,
 ```
 src/
   main.tsx, App.tsx   entry point and the page's top-level layout
-  lang/        parser, type checker, AST, interpreter, symbolic body execution
+  lang/        parser, type checker, AST, interpreter, symbolic body execution, quantifier unrolling
   checker/     counterexamples on the plane in view (nearby.ts), Z3 (proofs) and its loaders and dec_ref guard, verdicts
   levels/      the level format (level.ts), every level (catalog.ts), its Korean text (catalog.ko.ts, localize.ts), the plane's tiles
   i18n/        the language switch, and every other line the game says (en.ts, ko.ts)

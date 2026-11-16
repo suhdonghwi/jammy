@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { show } from '../src/lang/ast';
+import { hasQuantifier, show } from '../src/lang/ast';
 import { compileFast, evaluate, euclidMod, floorDiv, OverBudget, step } from '../src/lang/eval';
 import { LangError, parseFormula, parseProgram } from '../src/lang/parser';
 import { checkCondition, checkProgram, type Scope } from '../src/lang/typecheck';
+import { unroll } from '../src/lang/unroll';
 
 describe('parser', () => {
   it('desugars chained comparisons', () => {
@@ -124,6 +125,33 @@ describe('quantifier ranges', () => {
     const f = parseFormula('forall 0 <= j < k < n: A[j] <= A[k] + m');
     expect(compileFast(f)(fs)).toBe(true);
     expect(evaluate(f, s)).toBe(true);
+  });
+});
+
+describe('unrolling quantifiers', () => {
+  it('writes one instance per value within the bound, guarded by the range', () => {
+    expect(show(unroll(parseFormula('forall 0 <= k < n: A[k] > 0'), 1))).toBe('(!(0 <= -1 && -1 < n) || A[-1] > 0) && (!(0 <= 0 && 0 < n) || A[0] > 0) && (!(0 <= 1 && 1 < n) || A[1] > 0)');
+    expect(show(unroll(parseFormula('i >= 0 && exists 0 <= k < n: A[k] == i'), 0))).toBe('i >= 0 && (0 <= 0 && 0 < n && A[0] == i)');
+  });
+  it('agrees with the quantifier when the range is within the bound', () => {
+    for (const f of ['forall 0 <= j <= k < n: A[j] <= A[k]', 'exists 0 <= j < k < n: A[j] > A[k]']) {
+      const e = parseFormula(f);
+      const u = unroll(e, 4);
+      expect(hasQuantifier(u)).toBe(false);
+      for (const A of [[], [1n], [1n, 2n, 2n], [3n, 1n, 4n, 1n]]) {
+        const s = { A, n: BigInt(A.length) };
+        expect(evaluate(u, s), `${f} on [${A}]`).toBe(evaluate(e, s));
+      }
+    }
+  });
+  it('is vacuous when no tuple fits the bound', () => {
+    expect(show(unroll(parseFormula('forall 0 <= j < k < n: A[j] <= A[k]'), 0))).toBe('true');
+    expect(show(unroll(parseFormula('exists 0 <= j < k < n: A[j] <= A[k]'), 0))).toBe('false');
+  });
+  it('keeps the quantifier when the unrolling would be too large', () => {
+    expect(hasQuantifier(unroll(parseFormula('forall 0 <= k < n: A[k] > 0'), 64))).toBe(false);
+    expect(hasQuantifier(unroll(parseFormula('forall 0 <= k < n: A[k] > 0'), 1024))).toBe(true);
+    expect(hasQuantifier(unroll(parseFormula('forall 0 <= j < k < n: A[j] <= A[k]'), 64))).toBe(true);
   });
 });
 
