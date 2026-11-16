@@ -27,6 +27,7 @@ src/
   audio/       sound clips and the synthesised ghost siren
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
   storage.ts   localStorage behind a try/catch: language, mute, cleared levels, code panel width
+  timing.ts    EXIT_MS, the length of every exit animation (`--duration-exit` in styles.css)
   scene/       the 3D world: canvas, camera rig, scene time, hovered tile, WebGL check
     floor/       the infinite floor, drawn per pixel from the level's formulas (GLSL)
     area/        the learner's slabs, eggs and goal columns
@@ -40,7 +41,6 @@ src/
     home/        title (3D lettering), home copy and level list, corner buttons, language switch
     rules/       the rules and syntax cards
     dev/         the link preview's page (`?poster`, development only)
-    timing.ts    EXIT_MS, the length of every exit animation
   styles.css   Tailwind setup and the little that is clearer as CSS (see Styling)
 scripts/       level validation, the Z3 copy, font subsets, the title's glyphs, the link preview image
 tests/         unit tests (language, counterexample search)
@@ -128,7 +128,8 @@ backend agree. `pnpm validate` and the tests are the safety net.
   is made before the first press, and sleeps while muted or hidden). Before
   the first start, `index.html`'s backdrop and loader cover the page;
   `startScene` fades them out.
-- **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`).
+- **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`,
+  the CSS's `--duration-exit`).
 
 ## Sequences
 

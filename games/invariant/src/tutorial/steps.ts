@@ -7,11 +7,11 @@ import { eggRegion, endingsRegion } from '../director/regions';
 import { resetFrogs } from '../director/reset';
 import type { Token } from '../director/sequence';
 import { useGame, type Reveal } from '../game/store';
-import { EXIT_MS } from '../ui/timing';
 import { t } from '../i18n/i18n';
 import type { Tile, View } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
+import { EXIT_MS } from '../timing';
 import { allow, ask, beat, demo, say, sayWaiting, stage, waitEvent, waitStore, type StageOptions } from './script';
 
 export const st = (i: number, n: number) => ({ i: BigInt(i), n: BigInt(n) });

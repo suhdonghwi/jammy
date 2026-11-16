@@ -1,7 +1,7 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
-import { EXIT_MS } from '../ui/timing';
+import { EXIT_MS } from '../timing';
 import { freeRect, type Rect } from './freeRect';
 import { sceneStarted, sleep } from './sceneTime';
 
