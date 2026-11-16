@@ -10,7 +10,7 @@ export const COLORS = {
   cross: '#eceef1',
   slabTop: '#5c9df5',
   slabSide: '#3a78d8',
-  slabHatch: '#4b8bea',
+  slabHatch: '#3f7ddd',
   goal: '#f2a91f',
   poolLight: '#ffe6ad',
   poolDeep: '#ffcf73',
