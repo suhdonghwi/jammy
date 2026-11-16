@@ -1,8 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { useGame } from '../../game/store';
-import { planeKey } from '../../levels/inputs';
 import { COLORS, SLAB_H } from '../constants';
 import { goalEvents } from '../goalEvents';
 import { sceneNow } from '../sceneTime';
@@ -84,7 +82,6 @@ export function GoalColumns() {
   useEffect(() => () => (base.dispose(), material.dispose()), [base, material]);
   useFrame(() => {
     material.uniforms.uTime.value = sceneNow();
-    goalEvents.sync(planeKey(useGame.getState().inputs));
   });
   return <mesh geometry={geom} material={material} frustumCulled={false} renderOrder={6} />;
 }

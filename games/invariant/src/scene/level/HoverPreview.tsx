@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { hopFrom, tileState } from '../../levels/tiles';
 import { field } from '../area/field';
+import { yawToward } from '../frogs/frogWorld';
 import { HopLine } from '../frogs/HopLine';
 import { useHover } from '../hover';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
@@ -11,7 +12,7 @@ import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
 export function HoverPreview() {
   const level = useGame((s) => s.level)!;
   const inputs = useGame((s) => s.inputs);
-  const enabled = useGame((s) => s.reveal.hover && !s.busy);
+  const idle = useGame((s) => !s.busy);
   const tile = useHover((s) => s.tile);
   const ghost = useRef<THREE.Group>(null);
   const assets = useMemo(() => {
@@ -33,12 +34,11 @@ export function HoverPreview() {
   useFrame(() => {
     const g = ghost.current;
     if (!g || !hop) return;
-    const h = field.groundAt(hop.to[0], hop.to[1]);
-    g.position.set(hop.to[0], h, -hop.to[1]);
-    g.rotation.y = Math.atan2(hop.to[0] - hop.from[0], -(hop.to[1] - hop.from[1]));
+    g.position.set(hop.to[0], field.groundAt(hop.to[0], hop.to[1]), -hop.to[1]);
+    g.rotation.y = yawToward(hop.from[0], hop.from[1], hop.to[0], hop.to[1]);
   });
 
-  if (!enabled || !hop) return null;
+  if (!idle || !hop) return null;
   return (
     <group>
       <HopLine

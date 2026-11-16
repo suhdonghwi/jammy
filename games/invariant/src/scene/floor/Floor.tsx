@@ -1,12 +1,11 @@
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { planeExists, planeKey, type Inputs } from '../../levels/inputs';
+import { planeExists, type Inputs } from '../../levels/inputs';
 import type { CompiledLevel } from '../../levels/level';
 import { field } from '../area/field';
 import { cameraRig } from '../cameraRig';
 import { SLAB_H } from '../constants';
-import { goalEvents } from '../goalEvents';
 import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
 import { axisNameUniforms, getDigitTexture, setAxisNames } from '../shaders/axisLabels';
@@ -81,9 +80,6 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
   useEffect(() => () => material.dispose(), [material]);
 
   const u = material.uniforms;
-  const key = planeKey(inputs);
-  const shows = useRef({ stop: showStop, goal: showGoal, axes: showAxes });
-  shows.current = { stop: showStop, goal: showGoal, axes: showAxes };
 
   useFrame((_, frameDt) => {
     const dt = Math.min(frameDt, 0.1);
@@ -95,15 +91,14 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     m.position.set(Math.round(t.x), 0, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
     u.uTime.value = sceneNow();
-    goalEvents.sync(key);
     const kr = 1 - Math.exp(-dt * 3.2);
     const towards = (cur: number, on: boolean) => {
       const v = cur + ((on ? 1 : 0) - cur) * kr;
       return Math.abs(v - (on ? 1 : 0)) < 0.003 ? (on ? 1 : 0) : v;
     };
-    u.uShowStop.value = towards(u.uShowStop.value, shows.current.stop);
-    u.uShowGoal.value = towards(u.uShowGoal.value, shows.current.goal);
-    u.uShowAxes.value = towards(u.uShowAxes.value, shows.current.axes);
+    u.uShowStop.value = towards(u.uShowStop.value, showStop);
+    u.uShowGoal.value = towards(u.uShowGoal.value, showGoal);
+    u.uShowAxes.value = towards(u.uShowAxes.value, showAxes);
     if (u.uOpacity.value < 1) {
       u.uOpacity.value += (1 - u.uOpacity.value) * (1 - Math.exp(-dt * fadeIn));
       if (1 - u.uOpacity.value < 0.002) u.uOpacity.value = 1;

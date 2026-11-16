@@ -1,9 +1,10 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import { sfx } from '../../audio/sfx';
-import type { Inputs } from '../../levels/inputs';
+import { planeKey, type Inputs } from '../../levels/inputs';
 import type { CompiledLevel, Formula } from '../../levels/level';
 import { cameraRig } from '../cameraRig';
+import { goalEvents } from '../goalEvents';
 import { Eggs } from './Eggs';
 import { field } from './field';
 import { GoalColumns } from './GoalColumns';
@@ -43,6 +44,7 @@ function useArea(level: CompiledLevel, inputs: Inputs, area: Formula | null) {
   );
   useFrame(() => {
     field.inputs = inputs;
+    goalEvents.sync(planeKey(inputs));
     const t = cameraRig.target();
     areaMask.draw(gl, t.x, -t.z, inputs, field.risen());
   }, -1);

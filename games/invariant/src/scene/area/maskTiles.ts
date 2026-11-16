@@ -6,7 +6,7 @@ import { areaMask, MASK_REACH, type MaskBit } from './mask';
 
 const DRIFT = 8;
 
-export interface MaskTiles {
+interface MaskTiles {
   tiles: [number, number][];
   cx: number;
   cy: number;
