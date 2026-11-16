@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Expr } from '../../lang/ast';
-import { planeExists, planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
+import { planeExists, planeKey, type Inputs } from '../../levels/inputs';
+import type { CompiledLevel } from '../../levels/level';
 import { GLSL_INT_HELPERS, inputUniforms, levelGlsl, setInputUniforms } from '../floor/levelGlsl';
 
 export const MASK_SIZE = 352;

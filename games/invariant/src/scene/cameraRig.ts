@@ -1,6 +1,6 @@
 import type { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { startView, type CompiledLevel } from '../levels/level';
+import type { CompiledLevel } from '../levels/level';
 import { EXIT_MS } from '../ui/timing';
 import { sceneStarted, sleep } from './sceneTime';
 
@@ -193,6 +193,11 @@ async function swiftly(move: () => Promise<unknown>) {
   } finally {
     if (--swift === 0 && controls) controls.smoothTime = usualSmoothTime;
   }
+}
+
+function startView(level: CompiledLevel): { x: number; y: number; distance: number } {
+  const cam = level.camera ?? { x: 0, y: 0 };
+  return { x: cam.x, y: cam.y, distance: (cam.distance ?? 15) * 1.2 };
 }
 
 export const cameraRig = {

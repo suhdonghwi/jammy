@@ -3,7 +3,8 @@ import { nodeZ3, shutdownZ3 } from '../src/checker/z3-node';
 import type { State } from '../src/lang/ast';
 import { allLevels, exampleLevel, tutorialLevel } from '../src/levels/catalog';
 import { levelsKo } from '../src/levels/catalog.ko';
-import { compileFormula, compileLevel, hop, isEgg, running, showState, startInputs, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
+import { startInputs } from '../src/levels/inputs';
+import { compileFormula, compileLevel, hop, isEgg, running, showState, startState, type CompiledLevel, type LevelDef } from '../src/levels/level';
 
 const ctx = await nodeZ3();
 let failures = 0;

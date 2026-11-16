@@ -2,8 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
-import type { FastState } from '../../lang/eval';
-import { tileState } from '../../levels/tiles';
+import { hopFrom, tileState } from '../../levels/tiles';
 import { field } from '../area/field';
 import { SLAB_H } from '../constants';
 import { HopLine } from '../frogs/HopLine';
@@ -27,10 +26,9 @@ export function HoverPreview() {
   const hop = useMemo(() => {
     if (!tile) return null;
     const s = tileState(level, tile[0], tile[1], inputs);
-    if (!level.fast.planeReq(s) || level.fast.guard(s) !== true) return null;
-    const n: FastState = { ...s };
-    for (const v in level.fast.next) n[v] = level.fast.next[v](s) as number;
-    return { from: tile, to: [n[level.view.x] as number, n[level.view.y] as number] as [number, number] };
+    if (!level.fast.planeReq(s)) return null;
+    const to = hopFrom(level, s);
+    return to && { from: tile, to };
   }, [tile, level, inputs]);
 
   useFrame(() => {

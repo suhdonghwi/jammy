@@ -1,7 +1,8 @@
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { planeExists, planeKey, type CompiledLevel, type Inputs } from '../../levels/level';
+import { planeExists, planeKey, type Inputs } from '../../levels/inputs';
+import type { CompiledLevel } from '../../levels/level';
 import { field } from '../area/field';
 import { cameraRig } from '../cameraRig';
 import { SLAB_H } from '../constants';

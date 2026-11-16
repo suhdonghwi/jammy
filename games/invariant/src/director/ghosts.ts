@@ -1,5 +1,6 @@
 import type { State } from '../lang/ast';
 import { hop } from '../levels/level';
+import { tileOf } from '../levels/tiles';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { ARC_DRAW, hopArcs } from '../scene/frogs/HopArcs';
 import { after, sceneNow } from '../scene/sceneTime';
@@ -17,13 +18,13 @@ export function raiseGhost(s: State, delay = 0, fade = 1): FrogSim {
 export function previewHop(s: State, delay = 0, fade = 1): FrogSim {
   const L = currentLevel();
   const f = raiseGhost(s, delay, fade);
-  const to = hop(L, s);
+  const [tx, ty] = tileOf(L, hop(L, s));
   hopArcs.add({
     frog: f.id,
     fx: f.x,
     fy: f.y,
-    tx: Number(to[L.view.x]),
-    ty: Number(to[L.view.y]),
+    tx,
+    ty,
     plane: f.plane,
     t0: sceneNow() + delay + GHOST_RISE + 0.1,
     fade,

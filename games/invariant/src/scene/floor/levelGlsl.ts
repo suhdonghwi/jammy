@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
 import { freeVars, rangeBounds, type Expr, type Quant } from '../../lang/ast';
-import { MAX_LEN, type CompiledLevel, type Inputs } from '../../levels/level';
+import { MAX_LEN, type Inputs } from '../../levels/inputs';
+import type { CompiledLevel } from '../../levels/level';
 
 const ident = (name: string) => `v_${name}`;
 const inputUniform = (name: string) => `uIn_${name}`;

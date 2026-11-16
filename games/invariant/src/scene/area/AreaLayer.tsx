@@ -1,7 +1,8 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../audio/sfx';
-import type { CompiledLevel, Formula, Inputs } from '../../levels/level';
+import type { Inputs } from '../../levels/inputs';
+import type { CompiledLevel, Formula } from '../../levels/level';
 import { tilesNear, type TileWindow } from '../../levels/tiles';
 import { cameraRig } from '../cameraRig';
 import { Eggs } from './Eggs';

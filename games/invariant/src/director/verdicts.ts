@@ -5,8 +5,9 @@ import { browserZ3 } from '../checker/z3-browser';
 import { useGame, type Caption, type CaptionTone, type Game, type Region } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
-import { hop, inputsOf, planeKey, showState, toBig } from '../levels/level';
-import { tilesNear } from '../levels/tiles';
+import { inputsOf, planeKey } from '../levels/inputs';
+import { hop, showState, toBig } from '../levels/level';
+import { tileOf, tilesNear } from '../levels/tiles';
 import { EGG_REGROW } from '../scene/area/glsl';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, HOP, type FrogSim } from '../scene/frogs/frogWorld';
@@ -32,7 +33,7 @@ async function focusOn(cex: Counterexample) {
     useGame.setState({ inputs });
     await sleep(250);
   }
-  const tile = (s: State) => [Number(s[L.view.x]), Number(s[L.view.y])] as const;
+  const tile = (s: State) => tileOf(L, s);
   const labels = [cex.state, cex.next].flatMap((s) => (s ? [tile(s)] : []));
   await cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile) });
 }
@@ -111,8 +112,7 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
   useGame.setState({ failMark: null, region: null });
   await dismissFrogs();
   if (!tok.alive) return;
-  const x = Number(cex.state[L.view.x]);
-  const y = Number(cex.state[L.view.y]);
+  const [x, y] = tileOf(L, cex.state);
   await focusOn(cex);
   if (!tok.alive) return;
   const say = messages().verdicts;
@@ -143,7 +143,7 @@ async function counterexample(tok: Token, cex: Counterexample, opts: Counterexam
   } else if (cex.rule === 'maintenance' && cex.next) {
     await frogWorld.hopTo(L, f, cex.next);
     if (!tok.alive) return;
-    markFailure(Number(cex.next[L.view.x]), Number(cex.next[L.view.y]), say.landsOutsideTag(area));
+    markFailure(...tileOf(L, cex.next), say.landsOutsideTag(area));
     const lands =
       !from ? say.landsOutside(fmt(cex.state), fmt(cex.next), area)
       : run!.length === 1 ? say.eggLandsOutside(fmt(cex.state), fmt(cex.next), area)
@@ -255,7 +255,7 @@ interface ProofHop {
 
 function spreadHops(hops: ProofHop[]): ProofHop[] {
   const L = currentLevel();
-  const at = (s: State) => [Number(s[L.view.x]), Number(s[L.view.y])] as const;
+  const at = (s: State) => tileOf(L, s);
   const apart = (a: readonly number[], b: readonly number[], r: number) => Math.hypot(a[0] - b[0], a[1] - b[1]) >= r;
   const picked: ProofHop[] = [];
   for (const h of hops) {

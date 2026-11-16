@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { RULES, type Rule, type Verdicts } from '../checker/types';
-import { compileFormula, compileLevel, startInputs, type CompiledLevel, type Formula, type FormulaResult, type Inputs, type LevelDef } from '../levels/level';
+import { startInputs, type Inputs } from '../levels/inputs';
+import { compileFormula, compileLevel, type CompiledLevel, type Formula, type FormulaResult, type LevelDef } from '../levels/level';
 import { localizeLevel } from '../levels/localize';
 import type { TileWindow } from '../levels/tiles';
 

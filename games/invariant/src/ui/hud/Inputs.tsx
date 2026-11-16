@@ -2,7 +2,8 @@ import { Dices, Minus, Plus } from 'lucide-react';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
-import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type CompiledLevel, type Inputs } from '../../levels/level';
+import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type Inputs } from '../../levels/inputs';
+import type { CompiledLevel } from '../../levels/level';
 import { CARD_LABEL } from '../classes';
 
 const showArray = (a: number[]) => `[${a.join(', ')}]`;

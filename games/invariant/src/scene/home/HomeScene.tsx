@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { compileFormula, compileLevel, type Formula, type Inputs } from '../../levels/level';
+import type { Inputs } from '../../levels/inputs';
+import { compileFormula, compileLevel, type Formula } from '../../levels/level';
 import { useArea } from '../area/AreaLayer';
 import { GoalColumns } from '../area/GoalColumns';
 import { Slabs } from '../area/Slabs';

@@ -1,6 +1,7 @@
 import type { Context } from 'z3-solver';
 import { mk } from '../lang/ast';
-import { compileFormula, type CompiledLevel, type Formula, type Inputs, type Pitfall } from '../levels/level';
+import type { Inputs } from '../levels/inputs';
+import { compileFormula, type CompiledLevel, type Formula, type Pitfall } from '../levels/level';
 import { realFailure, realRunTo, smallestOnPlane } from './nearby';
 import { breaksRule, counterexample, ruleQuery } from './rules';
 import { equivalent, solve } from './smt';

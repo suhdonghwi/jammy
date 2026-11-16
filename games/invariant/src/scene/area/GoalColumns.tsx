@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
-import { planeKey } from '../../levels/level';
+import { planeKey } from '../../levels/inputs';
 import { COLORS, SLAB_H } from '../constants';
 import { goalEvents, MAX_EVENTS } from '../goalEvents';
 import { sceneNow } from '../sceneTime';

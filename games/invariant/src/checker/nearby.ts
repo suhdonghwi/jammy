@@ -1,6 +1,7 @@
 import type { State } from '../lang/ast';
 import { holds, withinBudget } from '../lang/eval';
-import { hop, isEgg, running, startState, toBig, type CompiledLevel, type Formula, type Inputs } from '../levels/level';
+import type { Inputs } from '../levels/inputs';
+import { hop, isEgg, running, startState, toBig, type CompiledLevel, type Formula } from '../levels/level';
 import { breaksRule, counterexample, ruleQuery } from './rules';
 import type { Counterexample, Rule } from './types';
 

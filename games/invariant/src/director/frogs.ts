@@ -2,8 +2,9 @@ import { sfx } from '../audio/sfx';
 import { useGame } from '../game/store';
 import { t } from '../i18n/i18n';
 import type { State } from '../lang/ast';
-import { hop, inputsOf, planeKey, running, toBig, type CompiledLevel } from '../levels/level';
-import { eggsNear, tileState } from '../levels/tiles';
+import { inputsOf, planeKey } from '../levels/inputs';
+import { hop, running, toBig, type CompiledLevel } from '../levels/level';
+import { eggsNear, tileOf, tileState } from '../levels/tiles';
 import { field } from '../scene/area/field';
 import { cameraRig } from '../scene/cameraRig';
 import { frogWorld, HOP_GAP_MS, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
@@ -36,10 +37,9 @@ const MAX_HOPS = 40;
 const RUN_REACH = 12;
 
 function runTiles(L: CompiledLevel, egg: State): (readonly [number, number])[] {
-  const at = (s: State) => [Number(s[L.view.x]), Number(s[L.view.y])] as const;
   let s = egg;
   for (let k = 0; k < MAX_HOPS && running(L, s); k++) s = hop(L, s);
-  const [from, to] = [at(egg), at(s)];
+  const [from, to] = [tileOf(L, egg), tileOf(L, s)];
   return Math.hypot(to[0] - from[0], to[1] - from[1]) <= RUN_REACH ? [from, to] : [from];
 }
 
@@ -54,8 +54,7 @@ function firstEggs(count: number): State[] {
 
 export function hatch(s: State): FrogSim {
   const L = currentLevel();
-  const x = Number(s[L.view.x]);
-  const y = Number(s[L.view.y]);
+  const [x, y] = tileOf(L, s);
   const slot = occupancy.frogs.has(`${x},${y}`) ? EGG_ASIDE : EGG_ALONE;
   hatchFx.push({ x, y, plane: planeKey(inputsOf(L, s)), dx: slot.dx, dy: slot.dy, s: slot.scale });
   sfx.hatch();
@@ -124,8 +123,7 @@ export async function dismissFrogs(kind?: FrogKind): Promise<void> {
 
 export function placeFrog(s: State, opts: Partial<FrogSim> = {}): FrogSim {
   const L = currentLevel();
-  const x = Number(s[L.view.x]);
-  const y = Number(s[L.view.y]);
+  const [x, y] = tileOf(L, s);
   frogWorld.markHatched(x, y);
   const f = frogWorld.add(L, 'real', s, { home: [x, y], trail: [[x, y]], ...opts });
   f.stopped = !running(L, s);
@@ -158,8 +156,7 @@ function nothingToHop(f: FrogSim | undefined) {
   }
   const egg = eggStatesNear(1, EGG_POINT_REACH)[0] ?? firstEggs(1)[0];
   if (!egg) return;
-  const L = currentLevel();
-  const tile = [Number(egg[L.view.x]), Number(egg[L.view.y])] as const;
+  const tile = tileOf(currentLevel(), egg);
   useGame.setState({ region: { ...eggRegion('info'), id: 'pick-egg' }, callouts: [{ x: tile[0], y: tile[1], text: t().level.pickEgg, tone: 'info' }] });
   cameraRig.include([tile]);
 }

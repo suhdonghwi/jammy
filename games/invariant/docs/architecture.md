@@ -18,7 +18,7 @@ src/
   main.tsx, App.tsx   entry point and the page's top-level layout
   lang/        parser, type checker, AST, interpreter, symbolic body execution, quantifier unrolling
   checker/     counterexamples on the plane in view (nearby.ts), Z3 (proofs) and its loaders and dec_ref guard, verdicts
-  levels/      the level format (level.ts), every level (catalog.ts), its Korean text (catalog.ko.ts, localize.ts), the plane's tiles
+  levels/      the level format (level.ts), the inputs that pick a plane (inputs.ts), every level (catalog.ts), its Korean text (catalog.ko.ts, localize.ts), the plane's tiles
   i18n/        the language switch, and every other line the game says (en.ts, ko.ts)
   game/        the zustand store, cleared levels (progress.ts), what the app's buttons do (actions.ts)
   director/    scripted sequences: Step/Run, looping frogs, ghost frogs, check playback

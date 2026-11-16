@@ -5,7 +5,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { useGame } from '../../game/store';
-import { planeKey } from '../../levels/level';
+import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
 import { COLORS, SLAB_H } from '../constants';
 import { clamp01 } from '../easing';

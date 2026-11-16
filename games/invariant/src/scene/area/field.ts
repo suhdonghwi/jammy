@@ -1,5 +1,6 @@
 import type { FastFn } from '../../lang/eval';
-import type { CompiledLevel, Formula, Inputs } from '../../levels/level';
+import type { Inputs } from '../../levels/inputs';
+import type { CompiledLevel, Formula } from '../../levels/level';
 import { tileState } from '../../levels/tiles';
 import { clamp01, smoothstep } from '../easing';
 import { sceneNow } from '../sceneTime';

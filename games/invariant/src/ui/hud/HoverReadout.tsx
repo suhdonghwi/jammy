@@ -2,9 +2,8 @@ import { useLayoutEffect, useRef } from 'react';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { scalarNames } from '../../levels/level';
-import type { FastState } from '../../lang/eval';
 import { useHover } from '../../scene/hover';
-import { tileState } from '../../levels/tiles';
+import { hopFrom, tileState } from '../../levels/tiles';
 
 const READOUT =
   'flex animate-[fade_0.15s_var(--ease-entrance)] items-center gap-2 rounded-full bg-ink/86 p-1.25 text-sm text-white shadow-card has-[>span+span]:pr-2 compact:mx-4 compact:flex-wrap compact:justify-center compact:pr-1.25!';
@@ -65,20 +64,15 @@ export function HoverReadout() {
       </div>
     );
   }
-  const cont = level.fast.guard(s) === true;
-  let next: string | null = null;
-  if (cont) {
-    const n: FastState = { ...s };
-    for (const v in level.fast.next) n[v] = level.fast.next[v](s) as number;
-    next = `(${n[level.view.x]}, ${n[level.view.y]})`;
-  }
+  const next = hopFrom(level, s);
+  const cont = next !== null;
   const inArea = reveal.formula && valid ? valid.fast(s) === true : null;
   const goal = !cont && level.fast.post(s) === true;
   return (
     <div className={READOUT} ref={ref}>
       <Values names={names} state={s} />
       {reveal.stop && (
-        <span className={`${TAG} ${cont ? 'bg-white/12' : 'bg-[#efa52b]/25 text-[#ffd48a]'}`}>{cont ? tr.hover.hopsTo(next!) : goal && reveal.goals ? tr.hover.stopsOnGoal : tr.hover.stops}</span>
+        <span className={`${TAG} ${cont ? 'bg-white/12' : 'bg-[#efa52b]/25 text-[#ffd48a]'}`}>{cont ? tr.hover.hopsTo(`(${next[0]}, ${next[1]})`) : goal && reveal.goals ? tr.hover.stopsOnGoal : tr.hover.stops}</span>
       )}
       {inArea !== null && <span className={`${TAG} ${inArea ? 'bg-slab/35 text-[#d5e6ff]' : 'bg-white/8 text-[#c9cfdb]'}`}>{inArea ? tr.hover.inArea : tr.hover.outsideArea}</span>}
     </div>

@@ -1,6 +1,8 @@
 import type { State } from '../../lang/ast';
-import { holds, step } from '../../lang/eval';
-import { inputsOf, planeKey, type CompiledLevel } from '../../levels/level';
+import { holds } from '../../lang/eval';
+import { inputsOf, planeKey } from '../../levels/inputs';
+import { hop, running, type CompiledLevel } from '../../levels/level';
+import { tileOf } from '../../levels/tiles';
 import { goalEvents } from '../goalEvents';
 import { after, sceneNow } from '../sceneTime';
 import { traceHop } from './codeTrace';
@@ -43,12 +45,9 @@ export interface FrogSim {
 export const yawToward = (fx: number, fy: number, tx: number, ty: number) => Math.atan2(tx - fx, -(ty - fy));
 
 function facingFor(level: CompiledLevel, s: State, fallback: number, stoppedToo = false): number {
-  if (!stoppedToo && !holds(level.guard, s)) return fallback;
-  const n = step(level.program.loop.body, s);
-  const fx = Number(s[level.view.x]);
-  const fy = Number(s[level.view.y]);
-  const tx = Number(n[level.view.x]);
-  const ty = Number(n[level.view.y]);
+  if (!stoppedToo && !running(level, s)) return fallback;
+  const [fx, fy] = tileOf(level, s);
+  const [tx, ty] = tileOf(level, hop(level, s));
   if (fx === tx && fy === ty) return fallback;
   return yawToward(fx, fy, tx, ty);
 }
@@ -78,13 +77,14 @@ class FrogWorld {
 
   add(level: CompiledLevel, kind: FrogKind, state: State, opts: Partial<FrogSim> = {}): FrogSim {
     const face = facingFor(level, state, 0, true);
+    const [x, y] = tileOf(level, state);
     const f: FrogSim = {
       id: this.nextId++,
       kind,
       state,
       plane: planeKey(inputsOf(level, state)),
-      x: Number(state[level.view.x]),
-      y: Number(state[level.view.y]),
+      x,
+      y,
       stopped: false,
       phase: Math.random() * 10,
       face,
@@ -107,8 +107,7 @@ class FrogWorld {
   hopTo(level: CompiledLevel, f: FrogSim, next: State, dur = HOP, quiet = false): Promise<void> {
     const from = f.state;
     f.state = next;
-    const tx = Number(next[level.view.x]);
-    const ty = Number(next[level.view.y]);
+    const [tx, ty] = tileOf(level, next);
     if (tx !== f.x || ty !== f.y) f.face = yawToward(f.x, f.y, tx, ty);
     f.hop = { fx: f.x, fy: f.y, tx, ty, t0: sceneNow(), dur };
     const batch = quiet ? null : joinHopBatch(() => traceHop(level, from, next, dur));
@@ -121,7 +120,7 @@ class FrogWorld {
         f.trail?.push([tx, ty]);
         f.face = facingFor(level, next, f.face);
         if (batch) landInBatch(batch);
-        if (!holds(level.guard, next) && holds(level.post, next)) this.landOnGoal(f);
+        if (!running(level, next) && holds(level.post, next)) this.landOnGoal(f);
         res();
       }),
     );

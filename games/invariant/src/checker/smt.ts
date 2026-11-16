@@ -2,7 +2,8 @@ import type { Arith, Bool, Context, FuncDecl, Model } from 'z3-solver';
 import { hasQuantifier, mk, type Expr, type State } from '../lang/ast';
 import { holds, withinBudget } from '../lang/eval';
 import { unroll } from '../lang/unroll';
-import { MAX_LEN, type CompiledLevel } from '../levels/level';
+import { MAX_LEN } from '../levels/inputs';
+import type { CompiledLevel } from '../levels/level';
 import { NEAR } from './nearby';
 import { whileSolving } from './z3-guard';
 
