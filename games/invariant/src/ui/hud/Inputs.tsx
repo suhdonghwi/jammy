@@ -5,6 +5,7 @@ import { useT } from '../../i18n/i18n';
 import { MAX_LEN, planeExists, planeKey, rollArray, withLengths, type Inputs } from '../../levels/inputs';
 import type { CompiledLevel } from '../../levels/level';
 import { CARD_LABEL, FOLD } from '../classes';
+import { TOKEN } from '../codeColors';
 
 const showArray = (a: number[]) => `[${a.join(', ')}]`;
 
@@ -65,7 +66,7 @@ export function InputsSection({ folded }: { folded: boolean }) {
             onPointerEnter={() => useGame.setState({ inputHover: name })}
             onPointerLeave={() => useGame.setState((s) => (s.inputHover === name ? { inputHover: null } : {}))}
           >
-            <span className="w-5 shrink-0 font-mono text-sm font-semibold text-[#1f63c4]">{name}</span>
+            <span className={`w-5 shrink-0 font-mono text-sm font-semibold ${TOKEN.name}`}>{name}</span>
             {level.arrays[name] ? (
               <ArrayRow level={level} name={name} inputs={inputs} disabled={busy} onChange={set} label={tr.inputs.random(name)} />
             ) : (

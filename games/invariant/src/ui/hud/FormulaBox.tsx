@@ -1,35 +1,12 @@
 import { Check, LoaderCircle } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { check } from '../../game/actions';
 import { useGame } from '../../game/store';
 import { useT } from '../../i18n/i18n';
 import { displayNames } from '../../levels/level';
 import { BUTTON } from '../classes';
-import { colorRuns } from '../codeColors';
+import { HighlightedCode } from '../codeColors';
 import { RuleLights } from './RuleLights';
-
-const ERROR_MARK = 'underline decoration-fail decoration-wavy underline-offset-4';
-
-function colored(text: string, error: { from: number; to: number } | null): ReactNode[] {
-  let err: { from: number; to: number } | null = null;
-  if (error) {
-    const from = Math.min(error.from, text.length);
-    const to = Math.min(Math.max(error.to, from + 1), text.length);
-    if (from < to) err = { from, to };
-  }
-  const out: ReactNode[] = [];
-  for (const r of colorRuns(text)) {
-    const cuts = [r.from, r.to];
-    if (err) for (const c of [err.from, err.to]) if (c > r.from && c < r.to) cuts.splice(-1, 0, c);
-    for (let i = 0; i + 1 < cuts.length; i++) {
-      const [from, to] = [cuts[i], cuts[i + 1]];
-      const marked = err && from >= err.from && to <= err.to;
-      const cls = marked ? `${r.cls} ${ERROR_MARK}` : r.cls;
-      out.push(cls ? <span key={from} className={cls}>{text.slice(from, to)}</span> : text.slice(from, to));
-    }
-  }
-  return out;
-}
 
 const SHAKE: Keyframe[] = [{ transform: 'none' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(-2px)' }, { transform: 'none' }];
 
@@ -87,7 +64,7 @@ export function FormulaBox() {
         </span>
         <div className={`grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] ${locked ? 'cursor-default opacity-60' : ''}`}>
           <div aria-hidden className={`${TEXT} pointer-events-none text-ink`}>
-            {formulaText ? colored(formulaText, shownError?.span ?? null) : <span className="font-sans text-[0.9em] text-[#a8afbb]">{placeholder}</span>}
+            {formulaText ? <HighlightedCode src={formulaText} boldNames mark={shownError?.span} /> : <span className="font-sans text-[0.9em] text-[#a8afbb]">{placeholder}</span>}
             {'\u200b'}
           </div>
           <textarea

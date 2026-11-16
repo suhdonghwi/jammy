@@ -1,11 +1,14 @@
+import type { Span } from '../lang/ast';
 import { BUILTINS, KEYWORDS, tokenize } from '../lang/parser';
 
-const TOKEN = {
+export const TOKEN = {
   keyword: 'font-semibold text-[#7c4ddb]',
   name: 'text-[#1f63c4]',
   num: 'text-[#c06a00]',
   op: 'text-muted',
 };
+
+const MARK = 'underline decoration-fail decoration-wavy underline-offset-4';
 
 type Token = ReturnType<typeof tokenize>[number];
 
@@ -17,14 +20,8 @@ function tokenClass(t: Token, boldNames: boolean): string {
   return boldNames ? `${TOKEN.name} font-semibold` : TOKEN.name;
 }
 
-export interface ColorRun {
-  from: number;
-  to: number;
-  cls: string;
-}
-
-export function colorRuns(src: string, boldNames = true): ColorRun[] {
-  const out: ColorRun[] = [];
+function colorRuns(src: string, boldNames: boolean): (Span & { cls: string })[] {
+  const out: (Span & { cls: string })[] = [];
   let p = 0;
   for (const t of tokenize(src, { lenient: true })) {
     if (t.span.from > p) out.push({ from: p, to: t.span.from, cls: '' });
@@ -34,10 +31,26 @@ export function colorRuns(src: string, boldNames = true): ColorRun[] {
   return out;
 }
 
-export function HighlightedCode({ src, boldNames = false }: { src: string; boldNames?: boolean }) {
-  return colorRuns(src, boldNames).map((r) => (
-    <span key={r.from} className={r.cls}>
-      {src.slice(r.from, r.to)}
-    </span>
-  ));
+function visibleMark(src: string, mark: Span | null): Span | null {
+  if (!mark) return null;
+  const from = Math.min(mark.from, src.length);
+  const to = Math.min(Math.max(mark.to, from + 1), src.length);
+  return from < to ? { from, to } : null;
+}
+
+export function HighlightedCode({ src, boldNames = false, mark = null }: { src: string; boldNames?: boolean; mark?: Span | null }) {
+  const marked = visibleMark(src, mark);
+  return colorRuns(src, boldNames).flatMap((r) => {
+    const cuts = [r.from, r.to];
+    if (marked) for (const c of [marked.from, marked.to]) if (c > r.from && c < r.to) cuts.splice(-1, 0, c);
+    return cuts.slice(1).map((to, i) => {
+      const from = cuts[i];
+      const cls = marked && from >= marked.from && to <= marked.to ? `${r.cls} ${MARK}` : r.cls;
+      return (
+        <span key={from} className={cls}>
+          {src.slice(from, to)}
+        </span>
+      );
+    });
+  });
 }
