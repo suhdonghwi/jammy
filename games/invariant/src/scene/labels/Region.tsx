@@ -8,11 +8,12 @@ import { GLSL_HEIGHT, instanced } from '../area/glsl';
 import { SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';
 import { sfx } from '../../audio/sfx';
+import { SHORT } from '../../motion';
 import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/fade';
 import { ringGeometry, TONE_COLORS, washGeometry } from './TileTag';
 import { useTileWindow } from './useTileWindow';
 
-export const APPEAR = 0.18;
+export const APPEAR = SHORT;
 
 const RING_POP = { from: 0.6, cubic: 2.2, square: 1.2 };
 
@@ -79,6 +80,7 @@ function regionMaterial(alpha: number) {
 const TICKS = 10;
 const TICK_STEP = 0.06;
 const MAX_SPAN = 0.8;
+export const SWEEP = MAX_SPAN + APPEAR;
 const POP = 0.11;
 const onScreen = new THREE.Vector3();
 

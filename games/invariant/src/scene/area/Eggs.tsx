@@ -26,7 +26,7 @@ varying vec3 vLocal;
 void main() {
   float h = heightNow();
   vec3 sl = slotNow();
-  float s = (1.0 - aHide) * backNow() * sl.z * appearNow();
+  float s = (1.0 - aHide) * backNow() * sl.z * appearNow() * eggNow();
   vec3 p = position * s;
   vec4 w = modelMatrix * vec4(p + vec3(aTile.x + sl.x, h * ${SLAB_H.toFixed(3)}, -aTile.y - sl.y), 1.0);
   vWorld = w.xyz;
@@ -67,7 +67,7 @@ varying float vA;
 void main() {
   vUv = uv;
   vec3 sl = slotNow();
-  vA = (1.0 - aHide) * backNow() * sl.z * clamp(appearNow(), 0.0, 1.0);
+  vA = (1.0 - aHide) * backNow() * sl.z * clamp(appearNow(), 0.0, 1.0) * eggNow();
   vec4 w = modelMatrix * vec4(position * sl.z + vec3(aTile.x + sl.x, heightNow() * ${SLAB_H.toFixed(3)} + 0.006, -aTile.y - sl.y), 1.0);
   gl_Position = projectionMatrix * viewMatrix * w;
 }

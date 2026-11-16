@@ -6,7 +6,9 @@ import type { State } from '../lang/ast';
 import { inputsOf, planeKey } from '../levels/inputs';
 import { showState } from '../levels/level';
 import { tileOf } from '../levels/tiles';
+import { BEAT, EXIT, ms } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
+import { PLANE_SHIFT } from '../scene/planeShift';
 import { HOP, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
 import { hatch, HATCH_MS, hopFrog, sendFrogsHome } from './frogs';
@@ -29,16 +31,21 @@ function markFailure(x: number, y: number, label: string) {
   sfx.fail();
 }
 
-async function focusOn(cex: Counterexample) {
+const SHIFT_BEFORE_GLIDE = 0.6;
+
+async function focusOn(tok: Token, cex: Counterexample, leaving: Promise<void>) {
   const L = currentLevel();
   const inputs = inputsOf(L, cex.state);
   if (planeKey(inputs) !== planeKey(useGame.getState().inputs)) {
+    await sleep(ms(EXIT));
+    if (!tok.alive) return;
     useGame.setState({ inputs });
-    await sleep(250);
+    await sleep(ms(PLANE_SHIFT * SHIFT_BEFORE_GLIDE));
+    if (!tok.alive) return;
   }
   const tile = (s: State) => tileOf(L, s);
   const labels = [cex.state, cex.next].flatMap((s) => (s ? [tile(s)] : []));
-  await cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile) });
+  await Promise.all([cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile) }), leaving]);
 }
 
 export function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
@@ -51,10 +58,8 @@ const FASTEST_HOP = 0.08;
 export async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
   const L = currentLevel();
   useGame.setState({ failMark: null, region: null });
-  await sendFrogsHome();
-  if (!tok.alive) return;
   const [x, y] = tileOf(L, cex.state);
-  await focusOn(cex);
+  await focusOn(tok, cex, sendFrogsHome());
   if (!tok.alive) return;
   const say = messages().verdicts;
   const prefix = opts.prefix ?? (cex.far ? say.far : '');
@@ -73,7 +78,7 @@ export async function counterexample(tok: Token, cex: Counterexample, opts: Coun
   } else {
     sfx.ghost();
     f = raiseGhost(cex.state);
-    await sleep(GHOST_RISE * 1000 + 250);
+    await sleep(ms(GHOST_RISE + BEAT));
   }
   if (!tok.alive) return;
   const from = run ? run[0] : null;

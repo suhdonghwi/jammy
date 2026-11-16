@@ -1,5 +1,5 @@
 import { CameraControls, CameraControlsImpl, PerformanceMonitor } from '@react-three/drei';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { prepareSound } from '../audio/sfx';
 import { useGame } from '../game/store';
@@ -23,6 +23,11 @@ function Lights() {
 function Controls() {
   const ref = useRef<CameraControls>(null);
   const interactive = useGame((s) => s.mode !== 'menu');
+  const canvas = useThree((s) => s.gl.domElement);
+  useLayoutEffect(() => {
+    canvas.addEventListener('wheel', cameraRig.userMoved, { passive: true });
+    return () => canvas.removeEventListener('wheel', cameraRig.userMoved);
+  }, [canvas]);
   useLayoutEffect(() => {
     cameraRig.attach(ref.current);
     const c = ref.current;

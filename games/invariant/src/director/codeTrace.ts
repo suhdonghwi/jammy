@@ -2,9 +2,10 @@ import { useGame } from '../game/store';
 import type { State } from '../lang/ast';
 import { holds, trace } from '../lang/eval';
 import type { CompiledLevel } from '../levels/level';
+import { BEAT, ms } from '../motion';
 import { after } from '../scene/sceneTime';
 
-const EXIT_PAUSE_MS = 450;
+const ENSURES_AFTER_MS = ms(BEAT);
 
 let run = 0;
 
@@ -19,7 +20,7 @@ export function traceHop(level: CompiledLevel, from: State, to: State, dur: numb
   const { ensures } = level.program;
   if (!loops && ensures.length) {
     const block = { at: ensures[0].span.from, until: ensures[ensures.length - 1].span.to, loops: null };
-    after(dur * 1000 + EXIT_PAUSE_MS, () => live() && useGame.setState({ codeCursor: block }));
+    after(ms(dur) + ENSURES_AFTER_MS, () => live() && useGame.setState({ codeCursor: block }));
   }
 }
 

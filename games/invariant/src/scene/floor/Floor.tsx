@@ -13,7 +13,10 @@ import { colorUniform } from '../shaders/common';
 import { fadeUniforms, updateFade } from '../shaders/fade';
 import { goalUniforms } from '../shaders/goal';
 import { floorFragment, floorVertex } from './floorShader';
-import { inputUniforms, setInputUniforms } from './levelGlsl';
+import { LONG } from '../../motion';
+import { Toward } from '../easing';
+import { planeShift } from '../planeShift';
+import { inputUniforms, PREV, setInputUniforms } from './levelGlsl';
 
 const _p = new THREE.Vector3();
 function pickTile(e: ThreeEvent<PointerEvent | MouseEvent>): [number, number] {
@@ -53,6 +56,8 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
       depthWrite: true,
       uniforms: {
         ...inputUniforms(level),
+        ...inputUniforms(level, PREV),
+        ...planeShift.uniforms,
         uHover: { value: new THREE.Vector2() },
         uHoverOn: { value: 0 },
         ...fadeUniforms(),
@@ -81,28 +86,27 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
 
   const u = material.uniforms;
 
-  useFrame((_, frameDt) => {
-    const dt = Math.min(frameDt, 0.1);
+  const amounts = useMemo(
+    () => ({ stop: new Toward(showStop ? 1 : 0, LONG), goal: new Toward(showGoal ? 1 : 0, LONG), axes: new Toward(showAxes ? 1 : 0, LONG), shown: new Toward(fadeIn ? 0 : 1, fadeIn || LONG) }),
+    [level],
+  );
+
+  useFrame(() => {
     const m = mesh.current;
     if (!m) return;
+    const now = sceneNow();
     setInputUniforms(u, level, inputs, planeExists(level, inputs));
+    const before = planeShift.shifting(now) ? planeShift.before : null;
+    if (before) setInputUniforms(u, level, before, planeExists(level, before), PREV);
     const R = updateFade(u);
     const t = cameraRig.target();
     m.position.set(Math.round(t.x), 0, Math.round(t.z));
     m.scale.setScalar(R * 2.2);
-    u.uTime.value = sceneNow();
-    const kr = 1 - Math.exp(-dt * 3.2);
-    const towards = (cur: number, on: boolean) => {
-      const v = cur + ((on ? 1 : 0) - cur) * kr;
-      return Math.abs(v - (on ? 1 : 0)) < 0.003 ? (on ? 1 : 0) : v;
-    };
-    u.uShowStop.value = towards(u.uShowStop.value, showStop);
-    u.uShowGoal.value = towards(u.uShowGoal.value, showGoal);
-    u.uShowAxes.value = towards(u.uShowAxes.value, showAxes);
-    if (u.uOpacity.value < 1) {
-      u.uOpacity.value += (1 - u.uOpacity.value) * (1 - Math.exp(-dt * fadeIn));
-      if (1 - u.uOpacity.value < 0.002) u.uOpacity.value = 1;
-    }
+    u.uTime.value = now;
+    u.uShowStop.value = amounts.stop.at(showStop ? 1 : 0, now);
+    u.uShowGoal.value = amounts.goal.at(showGoal ? 1 : 0, now);
+    u.uShowAxes.value = amounts.axes.at(showAxes ? 1 : 0, now);
+    u.uOpacity.value = amounts.shown.at(1, now);
     if (interactive && hover.tile) {
       u.uHover.value.set(hover.tile[0], hover.tile[1]);
       u.uHoverOn.value = 1;

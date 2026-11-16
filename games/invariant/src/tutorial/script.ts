@@ -6,6 +6,7 @@ import { checkAndPlay, revealAll } from '../director/verification';
 import { ALLOW_NONE, setTutorial, useGame, type CaptionTone, type Game, type TutorialState } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import { cameraRig } from '../scene/cameraRig';
+import { BEAT, LONG, ms } from '../motion';
 import { sleep } from '../scene/sceneTime';
 
 const generations = createScope();
@@ -28,6 +29,8 @@ export function setSkipStep(skip: (() => void) | null) {
 }
 
 const DOUBLE_CLICK_MS = 120;
+const TYPE_KEY_MS = 70;
+const TYPE_SPACE_MS = 30;
 const tooSoonAfter = (shownAt: number) => performance.now() - shownAt < DOUBLE_CLICK_MS;
 
 function earlyNext(label = messages().caption.next, last?: () => void) {
@@ -111,7 +114,7 @@ export async function beat(
   if (opts.prepare) await Promise.race([opts.prepare(), early]);
   gen.guard();
   if (pressed) return;
-  await Promise.race([sleep(opts.settle ?? 300), early]);
+  await Promise.race([sleep(opts.settle ?? ms(BEAT)), early]);
   gen.guard();
   if (pressed) return;
   await next(gen, text, label, opts.spot ?? null, tone);
@@ -242,15 +245,15 @@ export async function demo(
   say(messages().tutorial.trying(formula), null, 'muted');
   if (g.formulaText.trim() !== formula) {
     setTutorial({ spotlight: 'formula' });
-    await sleep(500);
+    await sleep(ms(LONG));
     gen.guard();
     for (let k = 1; k <= formula.length; k++) {
       g.setFormula(formula.slice(0, k));
-      await sleep(formula[k - 1] === ' ' ? 30 : 70);
+      await sleep(formula[k - 1] === ' ' ? TYPE_SPACE_MS : TYPE_KEY_MS);
       gen.guard();
     }
   }
-  await sleep(550);
+  await sleep(ms(LONG));
   gen.guard();
   useGame.setState({ busy: false });
   const verdict = opts.guessedRight === undefined ? undefined : opts.guessedRight ? messages().tutorial.guessedRight : messages().tutorial.guessedWrong;

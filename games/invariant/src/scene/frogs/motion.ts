@@ -1,3 +1,4 @@
+import { SHORT } from '../../motion';
 import { field } from '../area/field';
 import { bump, clamp01, popIn, smoothstep } from '../easing';
 import type { FrogSim } from './frogWorld';
@@ -81,7 +82,7 @@ const CHEER_KEYS = [
   [0.85, -0.12],
   [1, 0],
 ] as const;
-const TURN_DUR = 0.2;
+const TURN_DUR = SHORT;
 export const HATCH_GROW = 0.28;
 export const HATCH_CLEAR = 0.5;
 const HATCH_SMALL = 0.5;

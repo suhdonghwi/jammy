@@ -27,7 +27,7 @@ src/
   audio/       sound clips and the synthesised ghost siren
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
   storage.ts   localStorage behind a try/catch: language, mute, cleared levels, code panel width
-  timing.ts    EXIT_MS, the length of every exit animation (`--duration-exit` in styles.css)
+  motion.ts    the motion tokens: every duration and pause (`--duration-*` in styles.css), EXIT_MS
   scene/       the 3D world: canvas, camera rig, scene time, hovered tile, WebGL check
     floor/       the infinite floor, drawn per pixel from the level's formulas (GLSL)
     area/        the learner's slabs, eggs and goal columns
@@ -130,6 +130,18 @@ backend agree. `pnpm validate` and the tests are the safety net.
   `startScene` fades them out.
 - **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`,
   the CSS's `--duration-exit`).
+- **Every duration and pause is a token** from `motion.ts`: `MICRO`, `SHORT`,
+  `EXIT`, `BASE`, `LONG` for how long something moves, `TICK`, `BEAT`, `HOLD`
+  for the gaps between moves (`ms()` turns one into a `sleep`). The CSS
+  mirrors them as `--duration-*`. A new wait picks the token for what it is
+  for, not a number that felt right; only accent animations (hatching, a
+  cheer, a ghost's rise) keep their own lengths. Values that settle towards a
+  target over time use `Toward` (`scene/easing.ts`), a timed smootherstep,
+  not a per-frame exponential.
+- **`?slowmo=N`** (dev only) slows scene time N times, the camera's flights
+  included; CSS and the player's own camera moves stay real time. `?motion`
+  (dev only) opens the motion notes page, with buttons that replay the
+  transitions in the game.
 
 ## Sequences
 
@@ -162,13 +174,25 @@ backend agree. `pnpm validate` and the tests are the safety net.
   all frame this way; don't call `moveTo`/`dollyTo` directly. The other
   entries are narrow: `include(labels)` (callouts), `zoomTo` (the proof's
   wide view), `resetAngle`; the home screen drives its own camera.
-  A move waits until the panels have been still for `SETTLE_MS`, so it is
-  measured against the new caption, and requests made meanwhile merge; the
-  last shot is re-fitted (without its `at`) when the panels settle at a new
-  size. Before a screen shows, placements snap; after, they glide. Use
-  `arrive()` when something should start once the camera is there (a hatch,
-  a counterexample's frog): it glides quickly and waits for the camera, up
-  to `ARRIVING_MS`.
+  A move waits a few frames (`LAYOUT_BEAT_MS`) so a new caption is laid out,
+  and, if the panels moved, until they have been still for `SETTLE_MS`;
+  requests made meanwhile merge, and the last shot is re-fitted (without its
+  `at`) when the panels settle at a new size. Before a screen shows,
+  placements snap; after, they fly.
+- **A camera move is a planned flight** (`scene/flight.ts`), not
+  camera-controls' smoothing, which takes the same time for any distance
+  (so far moves were fast) and starts with its hardest acceleration. A
+  flight's length grows with the log of the trip (screens panned, zoom
+  doublings, turn) from `FLIGHT_MIN` to `FLIGHT_MAX`, it eases with
+  smootherstep (no jolt at either end), pulls back a little on trips over
+  about a screen, and past seven screens it dips through the fog
+  (`cameraFog()` shrinks the fade radius) instead of crossing the world. A
+  new move mid-flight starts from where the camera is with the speed it has
+  (quintic Hermite), so it bends rather than kinks. Position, zoom and angle
+  share one flight (`opening` turns and moves at once). The player's drag or
+  wheel stops a flight. camera-controls' own smoothing is left for the
+  player's moves. `arrive()` resolves `ARRIVE_LEAD` before the flight lands,
+  so a counterexample's frog sets off as the camera gets there.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
   formula) and the view they show (`camera`, `focus`, `labels`; default
   `VIEW`), so Back and skip-ahead can rebuild any step instantly and frame
@@ -197,6 +221,19 @@ backend agree. `pnpm validate` and the tests are the safety net.
 
 - The floor is **one shader plane**: the level's precondition, guard and
   postcondition are evaluated per pixel, so the plane is truly infinite.
+- **Changing an input is a wave, not a cut** (`scene/planeShift.ts`). When
+  the plane changes, the mask keeps the old plane's texture
+  (`areaMask.shiftPlane`), and every layer blends old into new per tile with
+  `planeMix`: the slab heights and tops, the eggs, the goal columns, and the
+  floor, whose shader carries a second copy of the level's formulas on the
+  old inputs (`levelGlsl(level, areas, PREV)`) and evaluates it only while
+  the wave runs. The wave starts where the learner is looking (or at
+  `planeShift.aimAt`) and spreads outwards: each tile takes `PLANE_TILE`,
+  starting `0.035 s` per tile from the centre, at most `0.3 s` late. Frogs,
+  trails, hop arcs and hatching shells of either plane fade by
+  `planeShift.visibility` on their own tile, and `field.heightAt` blends the
+  same way, so a frog on the new plane lands on the right height. Reduced
+  motion makes it one crossfade.
 - **Slabs are one instanced grid centred on the camera**, sorted outward,
   drawn as far as the floor is still visible. A cell with no slab collapses
   in the vertex shader. So the area reaches the horizon at any zoom, and a

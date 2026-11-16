@@ -59,7 +59,7 @@ export function CodeListing({ level, hasInputs }: { level: CompiledLevel; hasInp
       <div className="relative w-max min-w-full">
         <div
           aria-hidden
-          className={`pointer-events-none absolute inset-x-0 top-0 -mx-4 transition-[translate,height,opacity,background-color] duration-150 ease-out max-md:-mx-2.5 ${cursorLine < 0 ? 'opacity-0' : ''} ${stops ? 'bg-warn/15 text-warn' : 'bg-pass/15 text-pass'}`}
+          className={`pointer-events-none absolute inset-x-0 top-0 -mx-4 transition-[translate,height,opacity,background-color] duration-120 ease-out max-md:-mx-2.5 ${cursorLine < 0 ? 'opacity-0' : ''} ${stops ? 'bg-warn/15 text-warn' : 'bg-pass/15 text-pass'}`}
           style={{ translate: `0 ${inLines(Math.max(0, cursorLine))}`, height: inLines(cursorLines) }}
         >
           <span className="absolute left-0.5 -translate-y-1/2 leading-none max-md:left-px" style={{ top: inLines(0.5) }}>

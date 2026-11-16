@@ -8,12 +8,16 @@ import { cameraRig } from '../scene/cameraRig';
 import { clamp01, smoothstep } from '../scene/easing';
 import { frogWorld, type FrogSim } from '../scene/frogs/frogWorld';
 import { ARC_DRAW, hopArcs } from '../scene/frogs/HopArcs';
+import { APPEAR } from '../scene/labels/Region';
+import { BEAT, ms } from '../motion';
 import { after, sceneNow, sleep } from '../scene/sceneTime';
 import { sendFrogsHome } from './frogs';
 import { busyWhile, currentLevel } from './sequence';
 
 export const GHOST_RISE = 0.6;
 const TURNS = 2;
+const ARC_AFTER_RISE = 0.1;
+export const PROOF_PICTURE = GHOST_RISE + ARC_AFTER_RISE + ARC_DRAW + APPEAR + BEAT;
 
 export function raiseGhost(s: State, fade = 1): FrogSim {
   const L = currentLevel();
@@ -35,10 +39,10 @@ export function previewHop(s: State, fade = 1): FrogSim {
     tx,
     ty,
     plane: f.plane,
-    t0: sceneNow() + GHOST_RISE + 0.1,
+    t0: sceneNow() + GHOST_RISE + ARC_AFTER_RISE,
     fade,
   });
-  after((GHOST_RISE + 0.1 + ARC_DRAW) * 1000, () => frogWorld.frogs.includes(f) && sfx.landing());
+  after(ms(GHOST_RISE + ARC_AFTER_RISE + ARC_DRAW), () => frogWorld.frogs.includes(f) && sfx.landing());
   return f;
 }
 
@@ -71,8 +75,7 @@ function spreadHops(hops: ProofHop[]): ProofHop[] {
 
 export function playProof() {
   return busyWhile(async (tok) => {
-    void sendFrogsHome();
-    await cameraRig.zoomTo(Math.max(cameraRig.distance(), 18));
+    await Promise.all([sendFrogsHome(), cameraRig.zoomTo(Math.max(cameraRig.distance(), 18))]);
     if (tok.alive) await proofWave();
   });
 }
@@ -92,6 +95,6 @@ export async function proofWave(): Promise<FrogSim | null> {
   const fadeAt = (d: number) => 1 - smoothstep(clamp01((d - PROOF_NEAR) / (PROOF_FAR - PROOF_NEAR)));
   sfx.ghost();
   const ghosts = hops.map((h) => previewHop(h.from, fadeAt(h.d)));
-  await sleep((GHOST_RISE + 1.0) * 1000);
+  await sleep(ms(PROOF_PICTURE));
   return ghosts[0] ?? null;
 }

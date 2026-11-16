@@ -6,6 +6,7 @@ import { exampleLevel, tutorialLevel } from '../levels/catalog';
 import { toBig } from '../levels/level';
 import { eggsNear, tileState } from '../levels/tiles';
 import { cameraRig, type Shot } from '../scene/cameraRig';
+import { LONG, ms } from '../motion';
 import { sleep, switchScene } from '../scene/sceneTime';
 import { newGeneration, setSkipStep, settled } from './script';
 import { learnerFormula, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
@@ -66,7 +67,7 @@ function play(from: number, opening = false) {
     if (opening) {
       void cameraRig.frame(shotOf(STEPS[0].scene));
       setTutorial({ allow: NO_TUTORIAL.allow });
-      await sleep(500);
+      await sleep(ms(LONG));
       gen.guard();
     } else restore(STEPS[from].scene);
     for (let i = from; i < STEPS.length; i++) {

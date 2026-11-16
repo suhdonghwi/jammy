@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useState } from 'react';
 import { cameraRig } from '../cameraRig';
-import { fadeRadius } from '../shaders/fade';
+import { clearRadius } from '../shaders/fade';
 import { areaMask, MASK_REACH, type MaskBit } from './mask';
 
 const DRIFT = 8;
@@ -19,7 +19,7 @@ export function useMaskTiles(bit: MaskBit): MaskTiles {
     const t = cameraRig.target();
     const cx = Math.round(t.x);
     const cy = Math.round(-t.z);
-    const R = Math.min(MASK_REACH, Math.ceil(fadeRadius()));
+    const R = Math.min(MASK_REACH, Math.ceil(clearRadius()));
     const s = seen.current;
     if (areaMask.revision === s.revision && Math.abs(cx - s.cx) <= DRIFT && Math.abs(cy - s.cy) <= DRIFT && R <= s.R && R >= s.R - 2 * DRIFT) return;
     seen.current = { revision: areaMask.revision, cx, cy, R: R + DRIFT };

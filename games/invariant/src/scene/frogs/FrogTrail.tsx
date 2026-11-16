@@ -1,12 +1,11 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import { useGame } from '../../game/store';
-import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
 import { COLORS } from '../constants';
 import { clamp01 } from '../easing';
+import { planeShift } from '../planeShift';
 import { sceneNow } from '../sceneTime';
-import { leaveFade, trailFrogs, type FrogSim } from './frogWorld';
+import { leaveFade, shownTrails, type FrogSim } from './frogWorld';
 import { arcPoints, useArcLine, type ArcEnd } from './hopArc';
 
 const TRAILS = 4;
@@ -29,11 +28,10 @@ function pathOf(f: FrogSim): number[] {
 
 function TrailLine({ index }: { index: number }) {
   const size = useThree((s) => s.size);
-  const plane = useGame((s) => planeKey(s.inputs));
   const line = useArcLine(COLORS.trail);
 
   useFrame(() => {
-    const f = trailFrogs(plane)[index];
+    const f = shownTrails()[index];
     const points = f ? pathOf(f) : [];
     line.visible = !!f && points.length >= 6;
     if (!f || !line.visible) return;
@@ -44,7 +42,8 @@ function TrailLine({ index }: { index: number }) {
       line.geometry = new LineGeometry().setPositions(points);
       line.computeLineDistances();
     }
-    line.material.opacity = 0.9 * leaveFade(f, sceneNow());
+    const t = sceneNow();
+    line.material.opacity = 0.9 * leaveFade(f, t) * planeShift.visibility(f.plane, f.x, f.y, t);
     line.material.resolution.set(size.width, size.height);
   });
 

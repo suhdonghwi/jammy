@@ -2,13 +2,12 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { create } from 'zustand';
-import { useGame } from '../../game/store';
-import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
 import { clamp01 } from '../easing';
 import { uploadInstances } from '../instances';
 import { APPEAR, ringPop } from '../labels/Region';
 import { ringGeometry, TONE_COLORS, washGeometry } from '../labels/TileTag';
+import { planeShift } from '../planeShift';
 import { sceneNow } from '../sceneTime';
 import { frogWorld, leaveFade } from './frogWorld';
 import { HopLine } from './HopLine';
@@ -74,21 +73,22 @@ const pos = new THREE.Vector3();
 const scl = new THREE.Vector3();
 const RING = new THREE.Color(TONE_COLORS.good);
 
-function GhostHop({ arc, plane }: { arc: Arc; plane: string }) {
+function GhostHop({ arc }: { arc: Arc }) {
   return (
     <HopLine
       path={() => {
-        if (arc.plane !== plane) return null;
         const frog = frogWorld.frogs.find((f) => f.id === arc.frog);
         if (!frog) return null;
         const t = sceneNow();
+        const shown = planeShift.visibility(arc.plane, arc.fx, arc.fy, t);
+        if (shown <= 0) return null;
         const fx = frog.drawn ? frog.drawn.x : arc.fx;
         const fy = frog.drawn ? -frog.drawn.z : arc.fy;
         return {
           from: [fx, fy, field.groundAt(arc.fx, arc.fy)],
           to: [arc.tx, arc.ty, field.groundAt(arc.tx, arc.ty)],
           drawn: (t - arc.t0) / ARC_DRAW,
-          opacity: arc.fade * leaveFade(frog, t),
+          opacity: arc.fade * leaveFade(frog, t) * shown,
         };
       }}
     />
@@ -99,7 +99,6 @@ export function HopArcs() {
   const list = useHopArcs((s) => s.arcs);
   const rings = useRef<THREE.InstancedMesh>(null);
   const washes = useRef<THREE.InstancedMesh>(null);
-  const plane = useGame((s) => planeKey(s.inputs));
   const parts = useMemo(() => ({ ring: instancedParts(ringGeometry, MAX), wash: instancedParts(washGeometry, MAX) }), []);
   useEffect(() => () => [parts.ring, parts.wash].forEach((p) => (p.g.dispose(), p.mat.dispose())), [parts]);
 
@@ -116,13 +115,14 @@ export function HopArcs() {
     }
     let nr = 0;
     for (const a of arcs) {
-      if (a.plane !== plane) continue;
+      const onPlane = planeShift.visibility(a.plane, a.tx, a.ty, t);
+      if (onPlane <= 0) continue;
       const shown = clamp01((t - a.t0 - ARC_DRAW) / APPEAR);
       if (shown <= 0) continue;
       const { scale, alpha } = ringPop(shown);
       const h1 = field.groundAt(a.tx, a.ty);
       m.compose(pos.set(a.tx, h1 + 0.012, -a.ty), q, scl.set(scale, 1, scale));
-      const fade = alpha * a.fade * leaveFade(ghosts.get(a.frog), t);
+      const fade = alpha * a.fade * leaveFade(ghosts.get(a.frog), t) * onPlane;
       for (const [mesh, p, opacity] of [
         [r, parts.ring, 0.85],
         [w, parts.wash, 0.3],
@@ -145,7 +145,7 @@ export function HopArcs() {
   return (
     <>
       {list.map((a) => (
-        <GhostHop key={a.frog} arc={a} plane={plane} />
+        <GhostHop key={a.frog} arc={a} />
       ))}
       <instancedMesh ref={washes} args={[parts.wash.g, parts.wash.mat, MAX]} count={0} frustumCulled={false} renderOrder={8} />
       <instancedMesh ref={rings} args={[parts.ring.g, parts.ring.mat, MAX]} count={0} frustumCulled={false} renderOrder={9} />

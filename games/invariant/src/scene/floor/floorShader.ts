@@ -3,7 +3,8 @@ import { TILE } from '../constants';
 import { GLSL_AXIS_LABELS } from '../shaders/axisLabels';
 import { GLSL_COMMON } from '../shaders/common';
 import { GLSL_GOAL } from '../shaders/goal';
-import { levelGlsl } from './levelGlsl';
+import { GLSL_PLANE_WAVE } from '../planeShift';
+import { levelGlsl, PREV } from './levelGlsl';
 
 export const floorVertex = /* glsl */ `
 varying vec3 vWorld;
@@ -32,16 +33,33 @@ ${GLSL_COMMON}
 ${GLSL_AXIS_LABELS}
 ${GLSL_GOAL}
 ${levelGlsl(level)}
+${levelGlsl(level, undefined, PREV)}
+${GLSL_PLANE_WAVE}
 
-bool existsAt(ivec2 t) { return uExists && L_exists(t); }
-bool stopAt(ivec2 t) { return uShowStop > 0.002 && existsAt(t) && L_stop(t); }
+vec3 cellColor(bool ex, bool st, bool goal, bool onCross, vec2 f, vec2 tc, ivec2 t, vec2 p, float inside, float hatch, float fwr) {
+  if (!ex) {
+    vec3 ghost = mix(uVoid, uTile, 0.3);
+    if (onCross) ghost = mix(ghost, uCross, 0.55);
+    return mix(uVoid, ghost, inside);
+  }
+  vec3 tcol = uTile;
+  if (st) tcol = mix(uTile, mix(uStop, uHatch, hatch), uShowStop);
+  if (onCross) tcol = mix(tcol, uCross * 0.96, st ? 0.45 : 0.9);
+  if (goal) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
+  if (uShowAxes > 0.002) {
+    float m = axisLabelMask(f, t.xy);
+    tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
+  }
+  vec3 col = mix(uGap, tcol, inside);
+  if (uShowGoal > 0.002) col = mix(col, SPLASH, splashAt(p) * 0.45 * uShowGoal);
+  return col;
+}
 
 void main() {
   vec2 p = vec2(vWorld.x, -vWorld.z);
   vec2 tc = floor(p + 0.5);
   vec2 f = p - tc;
   ivec2 t = ivec2(int(tc.x), int(tc.y));
-  bool ex = existsAt(t);
 
   // derivatives up front, outside branches (they need uniform control flow)
   vec2 fw = fwidth(p);
@@ -55,25 +73,18 @@ void main() {
   float hatch = stopHatch(hatchV, fwidth(hatchV));
 
   bool onCross = uHoverOn > 0.5 && (t.x == int(uHover.x) || t.y == int(uHover.y));
-  vec3 col = uGap;
-  if (ex) {
-    bool st = stopAt(t);
-    vec3 tcol = uTile;
-    if (st) {
-      tcol = mix(uTile, mix(uStop, uHatch, hatch), uShowStop);
+  bool showStop = uShowStop > 0.002;
+  bool showGoal = uShowGoal > 0.002;
+  bool ex = uExists && L_exists(t);
+  bool st = showStop && ex && L_stop(t);
+  vec3 col = cellColor(ex, st, st && showGoal && L_goal(t), onCross, f, tc, t, p, inside, hatch, fwr);
+  if (planeShifting()) {
+    float k = planeMix(tc);
+    if (k < 1.0) {
+      bool pex = uExists${PREV} && L${PREV}_exists(t);
+      bool pst = showStop && pex && L${PREV}_stop(t);
+      col = mix(cellColor(pex, pst, pst && showGoal && L${PREV}_goal(t), onCross, f, tc, t, p, inside, hatch, fwr), col, k);
     }
-    if (onCross) tcol = mix(tcol, uCross * 0.96, st ? 0.45 : 0.9);
-    if (st && uShowGoal > 0.002 && L_goal(t)) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
-    if (uShowAxes > 0.002) {
-      float m = axisLabelMask(f, t.xy);
-      tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
-    }
-    col = mix(uGap, tcol, inside);
-    if (uShowGoal > 0.002) col = mix(col, SPLASH, splashAt(p) * 0.45 * uShowGoal);
-  } else {
-    vec3 ghost = mix(uVoid, uTile, 0.3);
-    if (onCross) ghost = mix(ghost, uCross, 0.55);
-    col = mix(uVoid, ghost, inside);
   }
 
   if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {

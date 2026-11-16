@@ -3,15 +3,17 @@ import { holds } from '../../lang/eval';
 import { inputsOf, planeKey } from '../../levels/inputs';
 import { hop, running, type CompiledLevel } from '../../levels/level';
 import { tileOf } from '../../levels/tiles';
+import { BASE, ms, TICK } from '../../motion';
 import { clamp01 } from '../easing';
 import { goalEvents } from '../goalEvents';
+import { planeShift } from '../planeShift';
 import { after, sceneNow } from '../sceneTime';
 import type { Slot } from './occupancy';
 
 export type FrogKind = 'real' | 'test';
 
-export const HOP = 0.34;
-export const HOP_GAP_MS = 90;
+export const HOP = BASE;
+export const HOP_GAP_MS = ms(TICK);
 
 export interface FrogSim {
   id: number;
@@ -126,6 +128,10 @@ class FrogWorld {
     goalEvents.push(f.x, f.y, f.plane);
     f.cheerT0 = sceneNow();
   }
+}
+
+export function shownTrails(): FrogSim[] {
+  return planeShift.planes().flatMap(trailFrogs);
 }
 
 export function trailFrogs(plane: string): FrogSim[] {

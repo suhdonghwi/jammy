@@ -9,7 +9,7 @@ export function Overlay({ open, onClose, card, children }: { open: boolean; onCl
   if (!mounted) return null;
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-horizon/55 p-4 backdrop-blur-xs max-sm:p-2.5 ${leaving ? 'pointer-events-none animate-fade-out' : 'animate-[fade_0.15s]'}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-horizon/55 p-4 backdrop-blur-xs max-sm:p-2.5 ${leaving ? 'pointer-events-none animate-fade-out' : 'animate-fade'}`}
       onClick={onClose}
     >
       <div

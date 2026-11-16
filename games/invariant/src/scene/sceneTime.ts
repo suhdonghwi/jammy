@@ -1,13 +1,15 @@
-import { EXIT_MS } from '../timing';
+import { EXIT_MS } from '../motion';
 
 let started = false;
 let hidden = typeof document !== 'undefined' && document.hidden;
 let pausedSince: number | null = performance.now();
 let pausedTotal = 0;
 
+export const SLOWMO = import.meta.env.DEV && typeof location !== 'undefined' ? Math.max(1, Number(new URLSearchParams(location.search).get('slowmo')) || 1) : 1;
+
 function sceneMs(): number {
   const t = performance.now();
-  return t - pausedTotal - (pausedSince === null ? 0 : t - pausedSince);
+  return (t - pausedTotal - (pausedSince === null ? 0 : t - pausedSince)) / SLOWMO;
 }
 
 export const sceneNow = () => sceneMs() / 1000;
@@ -19,7 +21,7 @@ function arm(tm: Timer) {
   tm.handle = window.setTimeout(() => {
     timers.delete(tm);
     tm.fn();
-  }, Math.max(0, tm.due - sceneMs()));
+  }, Math.max(0, tm.due - sceneMs()) * SLOWMO);
 }
 
 export function after(ms: number, fn: () => void): () => void {

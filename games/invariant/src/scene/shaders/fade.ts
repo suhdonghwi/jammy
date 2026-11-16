@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { cameraRig } from '../cameraRig';
+import { cameraFog, cameraRig } from '../cameraRig';
 import { colorUniform } from './common';
 
 export const GLSL_FADE = /* glsl */ `
@@ -20,7 +20,11 @@ export function fadeUniforms(): Record<string, THREE.IUniform> {
   };
 }
 
-export const fadeRadius = () => Math.max(26, cameraRig.distance() * 2.6);
+const FOGGED = 0.04;
+
+export const clearRadius = () => Math.max(26, cameraRig.distance() * 2.6);
+
+export const fadeRadius = () => clearRadius() * (FOGGED + (1 - FOGGED) * cameraFog());
 
 export function updateFade(u: Record<string, THREE.IUniform>): number {
   const t = cameraRig.target();

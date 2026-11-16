@@ -56,7 +56,7 @@ function anchorPoint(a: TagAnchor): THREE.Vector3 | null {
 }
 
 const TAG =
-  'relative origin-bottom rounded-full bg-(--tag-bg) px-3.25 pt-1 pb-1.25 font-display text-md font-semibold whitespace-nowrap text-white tabular-nums transition-[opacity,translate,scale] duration-250 data-covered:translate-y-1 data-covered:scale-90 data-covered:opacity-0 after:absolute after:-bottom-1.25 after:left-[calc(50%+var(--tag-dx,0px))] after:-ml-1.5 after:border-6 after:border-b-0 after:border-transparent after:border-t-(--tag-bg)';
+  'relative origin-bottom rounded-full bg-(--tag-bg) px-3.25 pt-1 pb-1.25 font-display text-md font-semibold whitespace-nowrap text-white tabular-nums transition-[opacity,translate,scale] duration-200 data-covered:translate-y-1 data-covered:scale-90 data-covered:opacity-0 after:absolute after:-bottom-1.25 after:left-[calc(50%+var(--tag-dx,0px))] after:-ml-1.5 after:border-6 after:border-b-0 after:border-transparent after:border-t-(--tag-bg)';
 const HOLDER = { transform: 'translate(-50%, -100%)' };
 const TONE: Record<TagTone, string> = {
   info: '[--tag-bg:var(--color-tag)]',

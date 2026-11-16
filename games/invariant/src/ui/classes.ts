@@ -4,8 +4,8 @@ export const CARD_LABEL = 'mb-1.5 font-display text-xs font-semibold uppercase t
 
 export const PILL = 'flex items-center rounded-full border border-line bg-card p-1 shadow-card backdrop-blur-md';
 
-export const FOLD = 'duration-300 ease-fold motion-reduce:transition-none';
-export const FOLD_MS = 300;
+export const FOLD = 'duration-340 ease-fold motion-reduce:transition-none';
+export const FOLD_MS = 340;
 export const FOLD_EASE = 'cubic-bezier(0.2,0.8,0.2,1)';
 
 type Variant = 'plain' | 'quiet' | 'glass' | 'toy' | 'primary';

@@ -2,8 +2,9 @@ import type { CheckResult } from '../checker/check';
 import { RULES, type Rule } from '../checker/types';
 import { useGame, type Game, type Region } from '../game/store';
 import { t as messages } from '../i18n/i18n';
-import { EGG_REGROW } from '../scene/area/glsl';
+import { BEAT, HOLD, ms, TICK } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
+import { SWEEP } from '../scene/labels/Region';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sleep } from '../scene/sceneTime';
 import { runChecker } from './checkRun';
@@ -13,9 +14,6 @@ import { proofWave } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
 import { busyWhile, type Token } from './sequence';
 
-const HOLD_MS = 1000;
-const REGION_MS = 1300;
-const BETWEEN_MS = 300;
 
 export function revealAll(res: CheckResult) {
   useGame.setState((g) => ({ verdicts: { ...g.verdicts, ...res.verdicts }, pending: [] }));
@@ -55,7 +53,7 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
   let undecided = false;
   if (frogWorld.frogs.length) {
     await sendFrogsHome();
-    await sleep(EGG_REGROW * 1000);
+    await sleep(ms(TICK));
     if (!tok.alive) return null;
   }
   for (const [i, rule] of order.entries()) {
@@ -70,7 +68,7 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
     if (v.status === 'undecided') {
       reveal(rule, res);
       undecided = true;
-      await sleep(HOLD_MS);
+      await sleep(ms(HOLD));
       if (!tok.alive) return null;
       continue;
     }
@@ -79,11 +77,11 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
     reveal(rule, res);
     if (tag) useGame.setState({ callouts: [tag] });
     if (i < order.length - 1) {
-      await sleep(HOLD_MS);
+      await sleep(ms(HOLD));
       if (!tok.alive) return null;
       useGame.setState({ region: null, callouts: [] });
       void sendFrogsHome('test');
-      await sleep(BETWEEN_MS);
+      await sleep(ms(BEAT));
       if (!tok.alive) return null;
     }
   }
@@ -100,7 +98,7 @@ async function showHolds(rule: Rule): Promise<Callout | null> {
   }
   const region = rule === 'initialization' ? eggRegion('good') : endingsRegion('good');
   useGame.setState({ region: { ...region, id: `check-${rule}`, tick: true } });
-  await sleep(REGION_MS);
+  await sleep(ms(SWEEP + BEAT));
   const near = nearestTile(region);
   return near ? { ...near, text, tone: 'good' } : null;
 }

@@ -1,17 +1,46 @@
 import * as THREE from 'three';
+import { SHORT } from '../../motion';
+import { GLSL_PLANE_WAVE } from '../planeShift';
 import { MASK_SIZE } from './mask';
 
 export const GLSL_MASK = /* glsl */ `
 uniform highp sampler2D uMask;
 uniform vec2 uMaskOrigin;
+uniform highp sampler2D uMaskPrev;
+uniform vec2 uMaskPrevOrigin;
 uniform float uRise;
-vec4 maskAt(vec2 tile) {
-  ivec2 at = ivec2(floor(tile - uMaskOrigin + 0.5));
+${GLSL_PLANE_WAVE}
+vec4 fetchMask(highp sampler2D mask, vec2 origin, vec2 tile) {
+  ivec2 at = ivec2(floor(tile - origin + 0.5));
   if (at.x < 0 || at.y < 0 || at.x >= ${MASK_SIZE} || at.y >= ${MASK_SIZE}) return vec4(0.0);
-  return texelFetch(uMask, at, 0);
+  return texelFetch(mask, at, 0);
+}
+vec4 maskAt(vec2 tile) {
+  return fetchMask(uMask, uMaskOrigin, tile);
+}
+vec4 maskPrevAt(vec2 tile) {
+  return fetchMask(uMaskPrev, uMaskPrevOrigin, tile);
 }
 float heightOf(vec4 m) {
   return mix(m.g, m.r, uRise);
+}
+float maskBits(vec4 m) {
+  return floor(m.a * 3.0 + 0.5);
+}
+float goalOf(vec4 m) {
+  return mod(maskBits(m), 2.0);
+}
+float eggOf(vec4 m) {
+  return step(1.5, maskBits(m));
+}
+float heightAt(vec2 tile) {
+  float h = heightOf(maskAt(tile));
+  if (!planeShifting()) return h;
+  return mix(maskPrevAt(tile).r, h, planeMix(tile));
+}
+float shiftedBit(vec2 tile, float now, float before) {
+  if (!planeShifting()) return now;
+  return mix(before, now, planeMix(tile));
 }
 `;
 
@@ -20,11 +49,17 @@ ${GLSL_MASK}
 attribute vec2 aTile;
 uniform float uTime;
 float heightNow() {
-  return heightOf(maskAt(aTile));
+  return heightAt(aTile);
+}
+float eggNow() {
+  return shiftedBit(aTile, eggOf(maskAt(aTile)), eggOf(maskPrevAt(aTile)));
+}
+float goalNow() {
+  return shiftedBit(aTile, goalOf(maskAt(aTile)) * maskAt(aTile).b, goalOf(maskPrevAt(aTile)) * maskPrevAt(aTile).b);
 }
 `;
 
-export const SLOT_DUR = 0.18;
+export const SLOT_DUR = SHORT;
 export const GLSL_SLOT = /* glsl */ `
 attribute vec4 aSlot;
 attribute vec3 aSlotAnim;
@@ -34,7 +69,7 @@ vec3 slotNow() {
 }
 `;
 
-export const EGG_REGROW = 0.2;
+export const EGG_REGROW = SHORT;
 export const GLSL_BACK = /* glsl */ `
 attribute float aBack;
 float backNow() {
