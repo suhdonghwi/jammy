@@ -55,7 +55,9 @@ function checkKorean(def: LevelDef) {
   if (!ko) return fail('no Korean text in catalog.ko.ts');
   const count = (what: string, en = 0, k = 0) => en !== k && fail(`${en} ${what} in English but ${k} in Korean`);
   count('hints', def.hints?.length, ko.hints?.length);
-  count('pitfall messages', def.pitfalls?.length, ko.pitfalls?.length);
+  const formulas = (def.pitfalls ?? []).map((p) => p.formula);
+  for (const f of formulas) if (!ko.pitfalls?.[f]) fail(`no Korean message for pitfall '${f}'`);
+  for (const f of Object.keys(ko.pitfalls ?? {})) if (!formulas.includes(f)) fail(`Korean message for unknown pitfall '${f}'`);
   if (!!def.intro !== !!ko.intro) fail(`intro in ${def.intro ? 'English' : 'Korean'} only`);
   checkHints(def, ko.hints ?? []);
 }

@@ -5,13 +5,6 @@ import type { LevelDef } from './level';
 let groupsKo = groupsKoAtLoad;
 let levelsKo = levelsKoAtLoad;
 
-export interface LevelText {
-  title: string;
-  intro?: string;
-  hints?: string[];
-  pitfalls?: string[];
-}
-
 export function localizeLevel(def: LevelDef): LevelDef {
   const text = useLang.getState().lang === 'ko' ? levelsKo[def.id] : undefined;
   if (!text) return def;
@@ -20,7 +13,7 @@ export function localizeLevel(def: LevelDef): LevelDef {
     title: text.title,
     intro: text.intro ?? def.intro,
     hints: text.hints ?? def.hints,
-    pitfalls: def.pitfalls?.map((p, k) => ({ ...p, message: text.pitfalls?.[k] ?? p.message })),
+    pitfalls: def.pitfalls?.map((p) => ({ ...p, message: text.pitfalls?.[p.formula] ?? p.message })),
   };
 }
 
