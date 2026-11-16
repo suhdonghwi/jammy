@@ -21,7 +21,6 @@ export function CaptionBar() {
   return (
     <div
       key={caption.text}
-      data-caption
       className={`flex min-h-0 flex-col gap-2.5 rounded-2xl border-2 bg-card py-3.5 pr-4 pl-4.5 text-md shadow-card backdrop-blur-md transition-colors duration-200 compact:gap-2 compact:py-2.75 compact:pr-3 compact:pl-3.5 compact:text-sm compact:leading-[1.45] ${TONE[caption.tone]} ${leaving ? 'pointer-events-none animate-sink-out' : 'animate-rise'}`}
     >
       <div className="min-h-0 overflow-y-auto">

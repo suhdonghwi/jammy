@@ -30,17 +30,10 @@ function useTopRowPlacement(ref: React.RefObject<HTMLDivElement | null>) {
     const el = ref.current;
     if (!el) return;
     el.style.transform = '';
-    const groups = document.querySelectorAll('[data-topbar] > [data-pill]');
-    if (!groups.length) return;
-    const left = groups[0].getBoundingClientRect();
-    const right = groups[groups.length - 1].getBoundingClientRect();
-    const mid = window.innerWidth / 2;
-    const half = READOUT_ROOM / 2;
-    const oneRow = Math.abs(left.top - right.top) < 4;
-    const fits = mid - half >= left.right && (groups.length < 2 || mid + half <= right.left);
-    if (!oneRow || !fits) return;
+    const pill = document.querySelector('[data-topbar] > [data-pill]')?.getBoundingClientRect();
+    if (!pill || window.innerWidth / 2 - READOUT_ROOM / 2 < pill.right) return;
     const r = el.getBoundingClientRect();
-    el.style.transform = `translateY(${left.top + left.height / 2 - (r.top + r.height / 2)}px)`;
+    el.style.transform = `translateY(${pill.top + pill.height / 2 - (r.top + r.height / 2)}px)`;
   });
 }
 
