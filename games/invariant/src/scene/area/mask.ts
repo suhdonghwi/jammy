@@ -5,7 +5,7 @@ import type { CompiledLevel } from '../../levels/level';
 import { inputUniforms, levelGlsl, setInputUniforms } from '../floor/levelGlsl';
 
 export const MASK_SIZE = 352;
-const SNAP = 16;
+const SNAP = 32;
 export const MASK_REACH = MASK_SIZE / 2 - SNAP / 2;
 
 export const GOAL = 1;
@@ -64,6 +64,9 @@ class AreaMask {
   private pixels = new Uint8Array(MASK_SIZE * MASK_SIZE * 4);
   private read = '';
   private origin = { x: 0, y: 0 };
+  private content = '';
+  private reads = 0;
+  private landed = 0;
   revision = 0;
 
   constructor() {
@@ -90,10 +93,14 @@ class AreaMask {
   tilesWithin(bit: MaskBit, cx: number, cy: number, R: number): [number, number][] {
     const out: [number, number][] = [];
     const { x: ox, y: oy } = this.origin;
+    const R2 = R * R;
     for (let y = Math.max(oy, cy - R); y <= Math.min(oy + MASK_SIZE - 1, cy + R); y++) {
+      const dy2 = (y - cy) * (y - cy);
+      if (dy2 > R2) continue;
+      const row = (y - oy) * MASK_SIZE;
       for (let x = Math.max(ox, cx - R); x <= Math.min(ox + MASK_SIZE - 1, cx + R); x++) {
-        const bits = Math.round(this.pixels[((y - oy) * MASK_SIZE + (x - ox)) * 4 + 3] / 85);
-        if (bits & bit && Math.hypot(x - cx, y - cy) <= R) out.push([x, y]);
+        const a = this.pixels[(row + x - ox) * 4 + 3];
+        if (a && Math.round(a / 85) & bit && (x - cx) * (x - cx) + dy2 <= R2) out.push([x, y]);
       }
     }
     return out;
@@ -117,12 +124,26 @@ class AreaMask {
     const back = gl.getRenderTarget();
     gl.setRenderTarget(this.target);
     gl.render(this.scene, this.camera);
-    const read = `${this.levels}|${ox},${oy}|${this.level ? planeKey(inputs) : ''}`;
+    const content = `${this.levels}|${this.level ? planeKey(inputs) : ''}`;
+    const read = `${content}|${ox},${oy}`;
     if (read !== this.read) {
+      const moved = content === this.content;
       this.read = read;
-      gl.readRenderTargetPixels(this.target, 0, 0, MASK_SIZE, MASK_SIZE, this.pixels);
-      this.origin = { x: ox, y: oy };
-      this.revision++;
+      this.content = content;
+      const ticket = ++this.reads;
+      const into = new Uint8Array(MASK_SIZE * MASK_SIZE * 4);
+      const land = () => {
+        if (ticket < this.landed) return;
+        this.landed = ticket;
+        this.pixels = into;
+        this.origin = { x: ox, y: oy };
+        this.revision++;
+      };
+      if (moved) void gl.readRenderTargetPixelsAsync(this.target, 0, 0, MASK_SIZE, MASK_SIZE, into).then(land);
+      else {
+        gl.readRenderTargetPixels(this.target, 0, 0, MASK_SIZE, MASK_SIZE, into);
+        land();
+      }
     }
     gl.setRenderTarget(back);
   }
