@@ -128,6 +128,8 @@ function indexOf(eggs: [number, number][], x: number, y: number): number {
   return -1;
 }
 
+const AT_REST: SlotAnim = { fx: EGG_ALONE.dx, fy: EGG_ALONE.dy, fs: EGG_ALONE.scale, tx: EGG_ALONE.dx, ty: EGG_ALONE.dy, ts: EGG_ALONE.scale, t0: -1000, hidden: false };
+
 const settled = (a: SlotAnim, now: number) => !a.hidden && a.tx === EGG_ALONE.dx && a.ty === EGG_ALONE.dy && a.ts === EGG_ALONE.scale && now - a.t0 >= SLOT_DUR;
 
 function EggField({ eggs, base }: { eggs: [number, number][]; base: THREE.BufferGeometry }) {
@@ -188,10 +190,10 @@ function EggField({ eggs, base }: { eggs: [number, number][]; base: THREE.Buffer
       hide[i] = hatched ? 1 : 0;
       back[i] = frogWorld.returned.get(k) ?? NEVER_BACK;
       const target = occupancy.frogs.has(k) ? EGG_ASIDE : EGG_ALONE;
-      const prev = slots.current.get(k);
-      const unseen = hatched || prev?.hidden || now - back[i] < EGG_REGROW;
+      const prev = slots.current.get(k) ?? AT_REST;
+      const unseen = hatched || prev.hidden || now - back[i] < EGG_REGROW;
       let cur: SlotAnim = { fx: target.dx, fy: target.dy, fs: target.scale, tx: target.dx, ty: target.dy, ts: target.scale, t0: 0, hidden: hatched };
-      if (prev && !unseen) {
+      if (!unseen) {
         const e = smoothstep(clamp01((now - prev.t0) / SLOT_DUR));
         const at = { x: prev.fx + (prev.tx - prev.fx) * e, y: prev.fy + (prev.ty - prev.fy) * e, s: prev.fs + (prev.ts - prev.fs) * e };
         cur =
