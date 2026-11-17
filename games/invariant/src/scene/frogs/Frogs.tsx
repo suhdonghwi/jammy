@@ -34,30 +34,23 @@ function easeSlot(f: FrogSim, target: Slot, t: number, dt: number, k: number): S
   return f.slot;
 }
 
-function placeEchoes(walkers: FrogSim[], standing: Set<string>, t: number, from: number, depth: THREE.InstancedMesh, ghosts: THREE.InstancedMesh, fades: THREE.InstancedBufferAttribute): number {
-  const echoes = new Map<string, { x: number; y: number; yaw: number; fade: number }>();
+function placeEchoes(walkers: FrogSim[], t: number, from: number, depth: THREE.InstancedMesh, ghosts: THREE.InstancedMesh, fades: THREE.InstancedBufferAttribute): number {
+  let n = from;
   for (const walker of walkers) {
     const trail = walker.trail!;
     const fade = ECHO_FADE * leaveFade(walker, t);
     leftTiles(walker).forEach(([x, y], i) => {
+      if (n >= MAX_FROGS) return;
       const [tx, ty] = trail[i + 1] ?? [walker.hop!.tx, walker.hop!.ty];
-      const key = `${x},${y}`;
-      echoes.delete(key);
-      echoes.set(key, { x, y, yaw: yawToward(x, y, tx, ty), fade });
+      dummy.position.set(x, field.groundAt(x, y), -y);
+      dummy.rotation.set(0, yawToward(x, y, tx, ty), 0);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      depth.setMatrixAt(n, dummy.matrix);
+      ghosts.setMatrixAt(n, dummy.matrix);
+      fades.setX(n, fade);
+      ghosts.setColorAt(n++, ECHO);
     });
-  }
-  let n = from;
-  for (const [key, e] of echoes) {
-    if (standing.has(key)) continue;
-    if (n >= MAX_FROGS) break;
-    dummy.position.set(e.x, field.groundAt(e.x, e.y), -e.y);
-    dummy.rotation.set(0, e.yaw, 0);
-    dummy.scale.setScalar(1);
-    dummy.updateMatrix();
-    depth.setMatrixAt(n, dummy.matrix);
-    ghosts.setMatrixAt(n, dummy.matrix);
-    fades.setX(n, e.fade);
-    ghosts.setColorAt(n++, ECHO);
   }
   return n;
 }
@@ -152,7 +145,7 @@ export function Frogs() {
       sh.setMatrixAt(n, dummy.matrix);
       n++;
     }
-    nGhost = placeEchoes(walkers, new Set(groups.keys()), t, nGhost, gd, gh, fades);
+    nGhost = placeEchoes(walkers, t, nGhost, gd, gh, fades);
     for (let i = badges; i < BADGES; i++) {
       const sp = badgeRefs.current[i];
       if (sp) sp.visible = false;
