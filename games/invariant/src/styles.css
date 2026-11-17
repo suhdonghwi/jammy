@@ -202,16 +202,6 @@ html[data-leaving] .screen {
     transform: translateX(-12px);
   }
 }
-.input-cued {
-  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.45);
-  background-color: rgb(59 130 246 / 0.12);
-}
-@keyframes ghost-in {
-  from {
-    opacity: 0;
-    scale: 0.7;
-  }
-}
 @keyframes input-changed {
   from,
   25% {

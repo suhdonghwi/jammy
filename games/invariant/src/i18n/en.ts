@@ -126,6 +126,8 @@ export const en = {
   verdicts: {
     solverFailed: (why: string) => `The solver could not start: ${why}`,
     far: 'Everything nearby looked fine — but far away: ',
+    elsewhere: (here: string, there: string) => `Nothing breaks near this board (\`${here}\`), but something does at \`${there}\`.`,
+    showThere: (there: string) => `Show ${there}`,
     yourArea: 'your area',
     theArea: 'the area',
     noLongerHolds: (part: string) => ` \`${part}\` no longer holds.`,

@@ -3,14 +3,13 @@ import type { Counterexample } from '../checker/types';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
-import { inputsOf } from '../levels/inputs';
+import { inputsOf, planeKey, showInputs } from '../levels/inputs';
 import { showState } from '../levels/level';
 import { tileOf } from '../levels/tiles';
-import { BEAT, LONG, ms } from '../motion';
+import { BEAT, ms } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
 import { HOP, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { adjustInputs } from './adjustInputs';
 import { hatch, HATCH_MS, hopFrog, sendFrogsHome } from './frogs';
 import { GHOST_RISE, raiseGhost } from './ghosts';
 import { busyWhile, currentLevel, type Token } from './sequence';
@@ -31,12 +30,29 @@ function markFailure(x: number, y: number, label: string) {
   sfx.fail();
 }
 
-const LOOK = LONG;
+const LOOK = BEAT;
+
+const planeOf = (cex: Counterexample) => inputsOf(currentLevel(), cex.state);
+
+export const onOtherBoard = (cex: Counterexample) => planeKey(planeOf(cex)) !== planeKey(useGame.getState().inputs);
+
+export function offerOtherBoard(cex: Counterexample, opts: CounterexampleOptions) {
+  const L = currentLevel();
+  const say = messages().verdicts;
+  const there = showInputs(L, planeOf(cex));
+  sfx.fail();
+  useGame.setState({
+    caption: { text: say.elsewhere(showInputs(L, useGame.getState().inputs), there), tone: 'fail', action: { label: say.showThere(there), onClick: () => void playCounterexample(cex, { ...opts, prefix: opts.prefix ?? '' }) } },
+  });
+}
 
 async function focusOn(tok: Token, cex: Counterexample, leaving: Promise<void>) {
   const L = currentLevel();
-  if (await adjustInputs(tok, inputsOf(L, cex.state))) await sleep(ms(LOOK));
-  if (!tok.alive) return;
+  if (onOtherBoard(cex)) {
+    useGame.setState({ inputs: planeOf(cex) });
+    await sleep(ms(LOOK));
+    if (!tok.alive) return;
+  }
   const tile = (s: State) => tileOf(L, s);
   const labels = [cex.state, cex.next].flatMap((s) => (s ? [tile(s)] : []));
   await Promise.all([cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile) }), leaving]);

@@ -34,6 +34,17 @@ export function inputsOf(level: CompiledLevel, s: State | FastState): Inputs {
   return out;
 }
 
+export function showInputs(level: CompiledLevel, inputs: Inputs): string {
+  const lengths = new Set(Object.values(level.arrays));
+  return level.offAxis
+    .filter((n) => !lengths.has(n))
+    .map((n) => {
+      const v = inputs[n];
+      return `${n} = ${Array.isArray(v) ? `[${v.join(', ')}]` : v}`;
+    })
+    .join(', ');
+}
+
 export function planeKey(inputs: Inputs): string {
   return Object.keys(inputs)
     .sort()

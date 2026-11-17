@@ -196,12 +196,9 @@ backend agree. `pnpm validate` and the tests are the safety net.
   so a counterexample's frog sets off as the camera gets there. Fitting
   starts from the tiles' middle when they don't project (behind the camera),
   so a far target behind the view is still reached.
-- **The game changes inputs through a ghost cursor** (`director/adjustInputs.ts`,
-  `ui/hud/GhostCursor.tsx`). The director finds its targets by
-  `data-ghost` (`n:inc`, `n:dec`, `n:field`) and measures them itself, so
-  the cursor is plain state (`ghost`: where, pressed) and the inputs read
-  `inputCue` (the input being worked on) and `inputDraft` (text being
-  typed). A target that isn't on screen is changed without the cursor.
+- **A counterexample on another board waits for the learner**
+  (`offerOtherBoard` in `director/counterexample.ts`): the check ends on a
+  caption whose button plays it, and only then are the inputs changed.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
   formula) and the view they show (`camera`, `focus`, `labels`; default
   `VIEW`), so Back and skip-ahead can rebuild any step instantly and frame

@@ -43,7 +43,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: 'cex-plane',
     title: '다른 plane의 counterexample',
-    what: 'Tag Along에서 i <= 4를 Check. 가상 커서가 나타나 n의 +를 눌러 4 → 5로 바꾸고, 판이 바뀐 뒤 잠깐 머물렀다가 카메라가 출발합니다.',
+    what: 'Tag Along에서 i <= 4를 Check. 판은 그대로 두고 캡션에 [n = 5에서 보기] 버튼이 뜹니다. 누르면 판이 바뀌고 잠깐 뒤 카메라가 출발합니다.',
     run: () => tryFormula('tag-along', 'i <= 4'),
   },
   {

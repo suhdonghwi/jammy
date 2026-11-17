@@ -42,9 +42,9 @@ behind many small decisions; keep them when changing or adding UI.
   (the camera, layers turning on), ease-out for entrances, ease-in for
   exits, and an overshoot only for accents (a hatch, a ring).
 - **Cause, then effect.** What changed is shown before what follows from it:
-  a cursor changes the input, the board changes, then the camera goes.
+  the learner asks for another board, the board changes, then the camera goes.
 - **Overlap, don't queue.** The next move starts while the last one is
-  finishing (frogs go home while the cursor heads for the input).
+  finishing (frogs go home while the board changes).
   A sequence never waits on nothing.
 - **The camera's time follows the distance.** A short move is short, a long
   one is longer but never more than about a second, and it never jumps in
@@ -106,13 +106,13 @@ behind many small decisions; keep them when changing or adding UI.
   the middle of the view, as a failure gets its red one. The first failing
   rule ends the check; an undecided one gets an amber light with a question
   mark.
-- **A failure is reached, not cut to.** If the failing case is on another
-  board, a ghost cursor shows up by the inputs and changes them the way the
-  learner would: it clicks + or − for a step of up to three, otherwise it
-  clicks the field and types the new value, one input at a time, the input
-  lit while it works. The board switches as the value does; the cursor
-  goes, and the camera holds still on the new board for a moment, so the
-  learner sees the same place with the new input; then, if it is off
+- **The board changes only when the learner asks.** If the failing case is
+  on another board, nothing moves: the rule's light turns red and the
+  caption says nothing breaks near this board, but something does at the
+  other inputs (`n = 5`), with a button to show it. (A cursor that changed
+  the input, and the boards stacked as floors, were both tried and read as
+  busy.) The button switches the board at once with the slabs' sound, and
+  the camera holds still on it for a beat; then, if it is off
   screen, the camera flies to it and the frog sets off just before it
   lands; if it is on screen the camera stays put. The light turns red as the caption arrives.
   The last picture stays under the result caption, and clear of it: a taller

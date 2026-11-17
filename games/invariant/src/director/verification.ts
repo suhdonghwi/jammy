@@ -8,7 +8,7 @@ import { SWEEP } from '../scene/labels/Region';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sleep } from '../scene/sceneTime';
 import { runChecker } from './checkRun';
-import { counterexample, type CounterexampleOptions } from './counterexample';
+import { counterexample, offerOtherBoard, onOtherBoard, type CounterexampleOptions } from './counterexample';
 import { sendFrogsHome } from './frogs';
 import { proofWave } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
@@ -60,6 +60,11 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
     const v = res.verdicts[rule];
     if (!v) continue;
     if (v.status === 'fail') {
+      if (onOtherBoard(v.cex)) {
+        reveal(rule, res);
+        offerOtherBoard(v.cex, onFail(rule));
+        return { failing: rule, undecided };
+      }
       await counterexample(tok, v.cex, onFail(rule));
       if (!tok.alive) return null;
       reveal(rule, res);
