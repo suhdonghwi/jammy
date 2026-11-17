@@ -185,6 +185,8 @@ behind many small decisions; keep them when changing or adding UI.
 - **Hovering a tile answers Check's question.** The readout gives the tile's
   values, where it hops or that it stops, and whether it is on the area; a
   ghost frog shows the hop, on the same dashed line Check's ghost frogs draw.
+  Where a frog or a trail's echo already stands on the landing tile, only
+  the line is drawn, so two see-through frogs never share a spot.
 - **Errors wait for Check.** A formula is never marked wrong while it is
   typed. Check (or Enter) on an invalid one shakes the box and underlines the
   fault, with the message inside the box, until the next edit.
