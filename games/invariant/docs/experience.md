@@ -46,6 +46,9 @@ behind many small decisions; keep them when changing or adding UI.
 - **Overlap, don't queue.** The next move starts while the last one is
   finishing (frogs go home while the board changes).
   A sequence never waits on nothing.
+- **A new frog gets a beat before it moves.** Every hatch, in a
+  counterexample, Run or an example loop, finishes and rests for a beat
+  (`HATCHED_MS`) before the first hop, so its egg reads as where it starts.
 - **The camera's time follows the distance.** A short move is short, a long
   one is longer but never more than about a second, and it never jumps in
   speed: it eases out of rest and into it. A long move pulls back on the

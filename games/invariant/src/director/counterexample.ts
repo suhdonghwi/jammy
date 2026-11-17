@@ -10,7 +10,7 @@ import { BEAT, ms } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
 import { HOP, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { hatch, HATCH_MS, hopFrog, sendFrogsHome } from './frogs';
+import { hatch, HATCHED_MS, hopFrog, sendFrogsHome } from './frogs';
 import { GHOST_RISE, raiseGhost } from './ghosts';
 import { busyWhile, currentLevel, type Token } from './sequence';
 
@@ -79,7 +79,7 @@ export async function counterexample(tok: Token, cex: Counterexample, opts: Coun
   let f: FrogSim;
   if (run) {
     f = hatch(run[0]);
-    await sleep(HATCH_MS);
+    await sleep(HATCHED_MS);
     const pace = Math.max(FASTEST_HOP, Math.min(HOP, REAL_RUN_SECONDS / run.length));
     for (const s of run.slice(1)) {
       if (!tok.alive) return;

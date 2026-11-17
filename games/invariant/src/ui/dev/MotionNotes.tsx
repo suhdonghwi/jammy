@@ -18,7 +18,7 @@ const TOKENS: [string, number, string][] = [
   ['EXIT', EXIT, '모든 퇴장 (CSS --duration-exit)'],
   ['BASE', BASE, 'hop, 슬랩 상승, 입력 pop'],
   ['LONG', LONG, '패널, stop/goal 표시 전환, 튜토리얼의 긴 숨'],
-  ['TICK', TICK, '연속 hop 사이, 부화 직후'],
+  ['TICK', TICK, '연속 hop 사이'],
   ['BEAT', BEAT, '시퀀스 안 액션 사이의 간격'],
   ['HOLD', HOLD, '결과를 읽는 시간'],
 ];
@@ -81,7 +81,8 @@ const CHANGES: { group: string; rows: Change[] }[] = [
       { what: '규칙 사이', before: '0.3s', after: `BEAT ${s(BEAT)}` },
       { what: 'Proof 그림', before: '0.6 + 1.0 (근거 없는 1.0)', after: `rise 0.6 + 0.1 + arc 0.45 + ring 0.2 + BEAT = ${s(GHOST_RISE + 0.1 + 0.45 + SHORT + BEAT)}` },
       { what: 'Proof 시작', before: '귀가는 버리고 줌만 대기', after: '귀가와 줌을 함께 대기' },
-      { what: '10개 알 테스트', before: '6ms 간격(사실상 동시), 300+6n ms 대기', after: '20ms 물결, 마지막 부화 + TICK' },
+      { what: '10개 알 테스트', before: '6ms 간격(사실상 동시), 300+6n ms 대기', after: '20ms 물결, 마지막 부화 + BEAT' },
+      { what: '부화 → 첫 hop', before: '반례: 부화 끝나자마자 바로 (0s), Run: TICK', after: `반례·Run·예제 모두 BEAT ${s(BEAT)} 쉬고 출발 (HATCHED_MS)` },
       { what: '예제 루프', before: '400 / 650 / 1200 / 500ms', after: 'LONG / 부화 + BEAT / HOLD / LONG' },
       { what: '코드 커서 → ensures', before: '0.45s', after: `BEAT ${s(BEAT)}` },
       { what: '튜토리얼 대기', before: '150, 200, 300, 400, 450, 500, 550, 800, 900, 1000, 1100, 1200ms…', after: 'BEAT · LONG · HOLD · EXIT+TICK 중 하나' },

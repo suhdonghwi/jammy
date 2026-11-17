@@ -1,7 +1,7 @@
 import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
 import { stepFrogs } from '../director/controls';
-import { hatch, HATCH_MS, placeFrog, sendFrogsHome, testEggs } from '../director/frogs';
+import { hatch, HATCHED_MS, placeFrog, sendFrogsHome, testEggs } from '../director/frogs';
 import { playProof, previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
 import { resetFrogs } from '../director/reset';
@@ -11,7 +11,7 @@ import { t } from '../i18n/i18n';
 import type { Tile, View } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { BEAT, EXIT, HOLD, LONG, ms, SHORT, TICK } from '../motion';
+import { EXIT, HOLD, LONG, ms, SHORT, TICK } from '../motion';
 import { allow, ask, beat, demo, say, sayWaiting, stage, waitEvent, waitStore, type StageOptions } from './script';
 
 export const st = (i: number, n: number) => ({ i: BigInt(i), n: BigInt(n) });
@@ -117,7 +117,7 @@ export const STEPS: Step[] = [
           useGame.getState().setReveal(SHOW_AXES);
           useGame.setState({ frogTags: true });
           hatch(st(0, 3));
-          await sleep(HATCH_MS + ms(BEAT));
+          await sleep(HATCHED_MS);
         },
       }),
   },
@@ -331,7 +331,7 @@ export const STEPS: Step[] = [
         prepare: async () => {
           resetFrogs();
           const f = hatch(st(0, 3));
-          await sleep(HATCH_MS + ms(BEAT));
+          await sleep(HATCHED_MS);
           gen.guard();
           useGame.setState({ callouts: [{ x: f.x, y: f.y, frog: f.id, text: T().stillOnTag, tone: 'good' }] });
           for (let k = 0; k < 6 && !f.stopped; k++) {

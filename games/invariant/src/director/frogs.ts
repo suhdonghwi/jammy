@@ -4,7 +4,7 @@ import type { State } from '../lang/ast';
 import { inputsOf, planeKey } from '../levels/inputs';
 import { hop, running, toBig, type CompiledLevel } from '../levels/level';
 import { eggsNear, tileOf, tileState } from '../levels/tiles';
-import { BEAT, HOLD, LONG, ms, SHORT, TICK } from '../motion';
+import { BEAT, HOLD, LONG, ms, SHORT } from '../motion';
 import { cameraRig, type Tile } from '../scene/cameraRig';
 import { frogWorld, HOP, HOP_GAP_MS, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
@@ -16,6 +16,7 @@ import { joinHopBatch, landInBatch } from './hopBatch';
 import { begin, busyWhile, currentLevel, events } from './sequence';
 
 export const HATCH_MS = (HATCH_EMERGE + HATCH_GROW) * 1000;
+export const HATCHED_MS = HATCH_MS + ms(BEAT);
 export const RUN_BEATS = 80;
 const TEST_EGGS = 10;
 const MAX_HOPS = 40;
@@ -124,7 +125,7 @@ export async function testEggs() {
       if (!tok.alive) return false;
     }
     eggs.forEach((s, i) => after(ms(i * HATCH_STAGGER), () => tok.alive && hatchUntrailed(s)));
-    await sleep(ms(Math.max(0, eggs.length - 1) * HATCH_STAGGER) + HATCH_MS + ms(TICK));
+    await sleep(ms(Math.max(0, eggs.length - 1) * HATCH_STAGGER) + HATCHED_MS);
     for (let beats = 0; tok.alive && beats < RUN_BEATS; beats++) {
       if ((await hopAllOnce()) === 0) break;
       await sleep(HOP_GAP_MS);
@@ -141,7 +142,7 @@ export function loopFrogs(eggs: State[]) {
     await sleep(ms(LONG));
     for (let k = 0; tok.alive; k = (k + 1) % eggs.length) {
       const f = hatchUntrailed(eggs[k]);
-      await sleep(HATCH_MS + ms(BEAT));
+      await sleep(HATCHED_MS);
       while (tok.alive && !f.stopped) {
         await hopOn(L, f);
         await sleep(HOP_GAP_MS);
