@@ -30,6 +30,33 @@ behind many small decisions; keep them when changing or adding UI.
   is closed; coming back from a level brings the level list in with the home
   scene, not after it.
 
+## One standard for motion
+
+- **Every length comes from a short list** (`src/motion.ts`): 0.12 s for
+  feedback, 0.2 s for small things appearing or leaving, 0.15 s for exits,
+  0.34 s for a hop or a slab, 0.5 s for panels and fades of a whole layer.
+  Gaps between moves are a tick (0.09 s, between hops), a beat (0.25 s,
+  between the steps of a sequence) or a hold (1 s, to read a result). Pick
+  the token for the job; don't invent a length.
+- **Four curves**: smootherstep for anything that travels or crossfades
+  (the camera, layers turning on), ease-out for entrances, ease-in for
+  exits, and an overshoot only for accents (a hatch, a ring).
+- **Cause, then effect.** What changed is shown before what follows from it:
+  the learner asks for another board, the board changes, then the camera goes.
+- **Overlap, don't queue.** The next move starts while the last one is
+  finishing (frogs go home while the board changes).
+  A sequence never waits on nothing.
+- **A new frog gets a beat before it moves.** Every hatch, in a
+  counterexample, Run or an example loop, finishes and rests for a beat
+  (`HATCHED_MS`) before the first hop, so its egg reads as where it starts.
+- **The camera's time follows the distance.** A short move is short, a long
+  one is longer but never more than about a second, and it never jumps in
+  speed: it eases out of rest and into it. A long move pulls back on the
+  way, further the further it goes, so the ground never streaks past. A
+  target behind the view is reached like any other. A new target mid-move
+  bends the path instead of kinking it.
+- **Reduced motion is respected**: the camera doesn't pull back.
+
 ## Motion in the scene
 
 - **Continuous motion.** A hop starts the moment it is asked for, accelerates,
@@ -54,6 +81,11 @@ behind many small decisions; keep them when changing or adding UI.
   it stops, and drops to cover the `ensures` lines when the loop ends.
 - **Visible, not loud.** A goal landing should be noticed (a ripple, a flash,
   the pool's light column brightening) without becoming a splash.
+- **Changing an input switches the board at once**, with the slabs' sound;
+  animating the board itself (a wave across it, or boards sliding past)
+  read worse than a clean switch. What makes a switch the game does not
+  sudden is the run-up: see the failure rule below. An input the game
+  changes lights up in the inputs panel.
 - **Things come from somewhere.** Frogs climb out of their egg; a frog that
   is done goes back into it, and the egg grows back. Ghost frogs break up
   through the slab of the tile they test (chips fly off), spinning as they
@@ -74,12 +106,20 @@ behind many small decisions; keep them when changing or adding UI.
   ringing its landing tile; Exit sweeps every stop on the area like
   the eggs. Then the light turns, the picture clears, and a short pause
   separates it from the next rule. A rule that holds gets a green tag near
-  the middle of the view, as a failure gets its red one. The first failing
+  the middle of the view, as a failure gets its red one. If none of the
+  rule's tiles are in view (eggs, hops inside the area, endings), the
+  camera first goes to the nearest ones, so no rule is checked off screen. The first failing
   rule ends the check; an undecided one gets an amber light with a question
   mark.
-- **A failure is reached, not cut to.** If the failing case is off screen
-  the camera glides to it and the frog sets off as it gets there; if it is on
-  screen the camera stays put. The light turns red as the caption arrives.
+- **The board changes only when the learner asks.** If the failing case is
+  on another board, nothing moves: the rule's light turns red and the
+  caption says nothing breaks near this board, but something does at the
+  other inputs (`n = 5`), with a button to show it. (A cursor that changed
+  the input, and the boards stacked as floors, were both tried and read as
+  busy.) The button switches the board at once with the slabs' sound, and
+  the camera holds still on it for a beat; then, if it is off
+  screen, the camera flies to it and the frog sets off just before it
+  lands; if it is on screen the camera stays put. The light turns red as the caption arrives.
   The last picture stays under the result caption, and clear of it: a taller
   caption nudges the camera. A red light, like the caption's Replay, plays
   the failure again.
@@ -119,8 +159,11 @@ behind many small decisions; keep them when changing or adding UI.
   egg hatches its frog, which waits. Step hops it once; Run hops it until it
   stops, and turns into Pause meanwhile. In a level there is one real frog
   at a time: picking another egg sends the last one home. Pressed with no
-  frog, Step and Run point at an egg ("pick an egg first"); pressed on a
-  frog that has stopped, they say so. They never choose a frog themselves.
+  frog, Step and Run point at an egg ("pick an egg first"), unless the
+  board has only one egg (both axes start at fixed values): then there is
+  nothing to choose, so they hatch it, wait the hatch's beat and go on.
+  Pressed on a frog that has stopped, they say so. Where there is a choice
+  they never make it themselves.
 - **A frog has the middle of its tile.** An egg sharing the tile with a frog,
   live or in a trail, shrinks into the near corner and comes back when the
   frog is gone. So a frog looks the same on every tile, and only frogs
@@ -142,6 +185,8 @@ behind many small decisions; keep them when changing or adding UI.
 - **Hovering a tile answers Check's question.** The readout gives the tile's
   values, where it hops or that it stops, and whether it is on the area; a
   ghost frog shows the hop, on the same dashed line Check's ghost frogs draw.
+  Where a frog or a trail's echo already stands on the landing tile, only
+  the line is drawn, so two see-through frogs never share a spot.
 - **Errors wait for Check.** A formula is never marked wrong while it is
   typed. Check (or Enter) on an invalid one shakes the box and underlines the
   fault, with the message inside the box, until the next edit.

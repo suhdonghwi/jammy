@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { EXIT_MS } from '../timing';
+import { EXIT_MS } from '../motion';
+import { clamp01, easeIn } from '../scene/easing';
 
 export function usePresence(show: boolean): { mounted: boolean; leaving: boolean } {
   const [mounted, setMounted] = useState(show);
@@ -48,6 +49,6 @@ export function useExitFade(leaving: boolean): () => number {
   return () => {
     if (!leaving) leftAt.current = null;
     else if (leftAt.current === null) leftAt.current = performance.now();
-    return leftAt.current === null ? 1 : Math.max(0, 1 - (performance.now() - leftAt.current) / EXIT_MS);
+    return leftAt.current === null ? 1 : 1 - easeIn(clamp01((performance.now() - leftAt.current) / EXIT_MS));
   };
 }

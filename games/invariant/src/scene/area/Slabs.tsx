@@ -2,8 +2,10 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../../levels/level';
+import { BASE, LONG } from '../../motion';
 import { cameraRig } from '../cameraRig';
 import { SLAB_H, TILE } from '../constants';
+import { Toward } from '../easing';
 import { hover } from '../hover';
 import { sceneNow } from '../sceneTime';
 import { axisNameUniforms, getDigitTexture, GLSL_AXIS_LABELS, setAxisNames } from '../shaders/axisLabels';
@@ -65,23 +67,25 @@ ${GLSL_COMMON}
 ${GLSL_AXIS_LABELS}
 ${GLSL_GOAL}
 ${GLSL_FADE}
+vec3 topColor(float stopFlag, float goalFlag, float hatch, float fwr) {
+  vec3 col = uTop;
+  bool stop = stopFlag > 0.5 && uStopAmt > 0.002;
+  if (stop) col = mix(uTop, uHatch, hatch * uStopAmt);
+  if (stop && goalFlag > 0.5 && uGoalAmt > 0.002) col = mix(col, drawGoal(col, vF, fwr, vTile), uGoalAmt);
+  return col;
+}
 void main() {
   vec2 fw = fwidth(vF);
   float hatchV = (vF.x - vF.y) * STOP_HATCH_FREQ;
-  float hatchFw = fwidth(hatchV);
+  float hatch = stopHatch(hatchV, fwidth(hatchV));
   float fwr = fwidth(length(vF));
   float ringD = abs(sdRoundBox(vF, vec2(0.372), 0.1)) - 0.026;
   float fwRing = fwidth(ringD);
   vec3 n = normalize(vN);
   float top = step(0.6, n.y);
-  bool stop = vFlags.x > 0.5 && uStopAmt > 0.002;
   vec3 col;
   if (top > 0.5) {
-    col = uTop;
-    if (stop) {
-      col = mix(uTop, uHatch, stopHatch(hatchV, hatchFw) * uStopAmt);
-    }
-    if (stop && vFlags.y > 0.5 && uGoalAmt > 0.002) col = mix(col, drawGoal(col, vF, fwr, vTile), uGoalAmt);
+    col = topColor(vFlags.x, vFlags.y, hatch, fwr);
     if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.45 * uGoalAmt);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
     col = mix(col, vec3(1.0), axisLabelMask(vF, t) * 0.85);
@@ -238,20 +242,19 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
   );
   useEffect(() => () => (material.dispose(), shadowMat.dispose()), [material, shadowMat]);
   useEffect(() => setAxisNames(material.uniforms, level), [material, level]);
-  useFrame((_, frameDt) => {
-    const dt = Math.min(frameDt, 0.1);
-    material.uniforms.uTime.value = sceneNow();
+  const amounts = useMemo(() => ({ dim: new Toward(0, BASE), stop: new Toward(showStop ? 1 : 0, LONG), goal: new Toward(showGoal ? 1 : 0, LONG) }), []);
+  useFrame(() => {
+    const t = sceneNow();
+    material.uniforms.uTime.value = t;
     const ht = hover.tile;
     material.uniforms.uHoverOn.value = ht ? 1 : 0;
     if (ht) material.uniforms.uHover.value.set(ht[0], ht[1]);
-    const k = 1 - Math.exp(-dt * 8);
-    material.uniforms.uDim.value += ((dim ? 0.55 : 0) - material.uniforms.uDim.value) * k;
-    const kr = 1 - Math.exp(-dt * 3.2);
-    material.uniforms.uStopAmt.value += ((showStop ? 1 : 0) - material.uniforms.uStopAmt.value) * kr;
-    material.uniforms.uGoalAmt.value += ((showGoal ? 1 : 0) - material.uniforms.uGoalAmt.value) * kr;
+    material.uniforms.uDim.value = amounts.dim.at(dim ? 0.55 : 0, t);
+    material.uniforms.uStopAmt.value = amounts.stop.at(showStop ? 1 : 0, t);
+    material.uniforms.uGoalAmt.value = amounts.goal.at(showGoal ? 1 : 0, t);
     const reach = Math.min(MASK_REACH, Math.ceil(updateFade(material.uniforms)));
-    const t = cameraRig.target();
-    (material.uniforms.uGrid.value as THREE.Vector2).set(Math.round(t.x), Math.round(-t.z));
+    const target = cameraRig.target();
+    (material.uniforms.uGrid.value as THREE.Vector2).set(Math.round(target.x), Math.round(-target.z));
     geoms.slabs.instanceCount = geoms.shadow.instanceCount = grid.within[reach];
   });
   return (

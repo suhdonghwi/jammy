@@ -42,10 +42,17 @@ function useArea(level: CompiledLevel, inputs: Inputs, area: Formula | null) {
     },
     [],
   );
+  const shown = useRef({ level, inputs });
   useFrame(() => {
     field.inputs = inputs;
-    goalEvents.sync(planeKey(inputs));
     const t = cameraRig.target();
+    const was = shown.current;
+    shown.current = { level, inputs };
+    if (was.level === level && planeKey(was.inputs) !== planeKey(inputs)) {
+      const { rising, sinking } = field.planeMovedNear({ cx: Math.round(t.x), cy: Math.round(-t.z), R: HEARD_WITHIN }, was.inputs);
+      sfx.slabs(rising, sinking);
+    }
+    goalEvents.sync(planeKey(inputs));
     areaMask.draw(gl, t.x, -t.z, inputs, field.risen());
   }, -1);
 }

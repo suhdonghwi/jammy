@@ -26,6 +26,10 @@ uniform float uTime;
 uniform float uLastEvent;
 ${GLSL_GOAL_PULSE}
 
+float sq(float x) {
+  return x * x;
+}
+
 float rippleAt(vec2 p) {
   float acc = 0.0;
   for (int i = 0; i < ${MAX_EVENTS}; i++) {
@@ -38,7 +42,7 @@ float rippleAt(vec2 p) {
       if (a < 0.0) continue;
       float rr = 0.03 + a * 0.5;
       float fade = pow(max(0.0, 1.0 - a / 1.25), 1.5);
-      acc = max(acc, exp(-pow((d - rr) / 0.022, 2.0)) * fade * (k == 0 ? 1.0 : 0.6));
+      acc = max(acc, exp(-sq((d - rr) / 0.022)) * fade * (k == 0 ? 1.0 : 0.6));
     }
   }
   return acc;
@@ -56,7 +60,7 @@ float splashAt(vec2 p) {
     float rr = 0.3 + 0.45 * (1.0 - exp(-a * 4.0));
     float w = 0.02 + 0.02 * a;
     float fade = pow(max(0.0, 1.0 - a / 0.8), 2.0);
-    acc = max(acc, exp(-pow((d - rr) / w, 2.0)) * fade);
+    acc = max(acc, exp(-sq((d - rr) / w)) * fade);
   }
   return acc;
 }

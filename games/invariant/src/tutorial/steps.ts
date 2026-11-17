@@ -1,7 +1,7 @@
 import { sfx } from '../audio/sfx';
 import { RULES, type Rule } from '../checker/types';
 import { stepFrogs } from '../director/controls';
-import { hatch, HATCH_MS, placeFrog, sendFrogsHome, testEggs } from '../director/frogs';
+import { hatch, HATCHED_MS, placeFrog, sendFrogsHome, testEggs } from '../director/frogs';
 import { playProof, previewHop } from '../director/ghosts';
 import { eggRegion, endingsRegion } from '../director/regions';
 import { resetFrogs } from '../director/reset';
@@ -11,7 +11,7 @@ import { t } from '../i18n/i18n';
 import type { Tile, View } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { EXIT_MS } from '../timing';
+import { EXIT, HOLD, LONG, ms, SHORT, TICK } from '../motion';
 import { allow, ask, beat, demo, say, sayWaiting, stage, waitEvent, waitStore, type StageOptions } from './script';
 
 export const st = (i: number, n: number) => ({ i: BigInt(i), n: BigInt(n) });
@@ -117,7 +117,7 @@ export const STEPS: Step[] = [
           useGame.getState().setReveal(SHOW_AXES);
           useGame.setState({ frogTags: true });
           hatch(st(0, 3));
-          await sleep(HATCH_MS + 150);
+          await sleep(HATCHED_MS);
         },
       }),
   },
@@ -148,7 +148,7 @@ export const STEPS: Step[] = [
     run: (gen) =>
       beat(gen, T().stops, {
         prepare: () => useGame.getState().setReveal(SHOW_STOPS),
-        settle: 1000,
+        settle: ms(HOLD),
         callouts: [{ x: 3, y: 3, text: T().stopsTag, tone: 'info' }],
       }),
   },
@@ -163,7 +163,7 @@ export const STEPS: Step[] = [
           useGame.setState({ frogTags: false });
           useGame.getState().setReveal(SHOW_EGGS);
         },
-        settle: 1100,
+        settle: ms(HOLD),
       }),
   },
   {
@@ -176,7 +176,7 @@ export const STEPS: Step[] = [
           if (!frogWorld.frogs.some((f) => f.kind === 'real')) placeFrog(st(3, 3));
           useGame.getState().setReveal(WORLD);
         },
-        settle: 1000,
+        settle: ms(HOLD),
       }),
   },
   {
@@ -184,7 +184,7 @@ export const STEPS: Step[] = [
     run: async (gen) => {
       await beat(gen, T().bug, {
         prepare: () => useGame.setState({ failMark: { x: 3, y: 1, label: T().bugTag, t0: sceneNow() } }),
-        settle: 800,
+        settle: ms(HOLD),
       });
       useGame.setState({ failMark: null });
     },
@@ -219,7 +219,7 @@ export const STEPS: Step[] = [
 
   {
     scene: { example: true, reveal: EXAMPLE, camera: EXAMPLE_CAM, loop: true, focus: EXAMPLE_BOARD },
-    run: (gen) => beat(gen, T().exWorld, { settle: 1200 }),
+    run: (gen) => beat(gen, T().exWorld, { settle: ms(HOLD) }),
   },
   {
     scene: { example: true, reveal: EXAMPLE, camera: EXAMPLE_CAM, loop: true, focus: EXAMPLE_BOARD },
@@ -229,7 +229,7 @@ export const STEPS: Step[] = [
           useGame.getState().setFormula(EXAMPLE_AREA);
           useGame.getState().setReveal(EXAMPLE_DRAWN);
         },
-        settle: 800,
+        settle: ms(HOLD),
       }),
   },
   {
@@ -261,7 +261,7 @@ export const STEPS: Step[] = [
           { x: 4, y: 3, text: holds().exit, tone: 'good' },
         ],
         prepare: async () => {
-          await sleep(400);
+          await sleep(ms(LONG));
           gen.guard();
           sfx.ghost();
           const f = previewHop({ x: 1n, y: 0n });
@@ -277,7 +277,7 @@ export const STEPS: Step[] = [
       allow({ formula: true });
       sayWaiting(T().draw, 'formula');
       await waitStore(gen, (g) => g.valid !== null && g.formulaText.trim() !== '');
-      await sleep(900);
+      await sleep(ms(HOLD));
       gen.guard();
       await beat(gen, T().draw, { spot: 'formula' });
       allow({});
@@ -331,17 +331,17 @@ export const STEPS: Step[] = [
         prepare: async () => {
           resetFrogs();
           const f = hatch(st(0, 3));
-          await sleep(HATCH_MS + 200);
+          await sleep(HATCHED_MS);
           gen.guard();
           useGame.setState({ callouts: [{ x: f.x, y: f.y, frog: f.id, text: T().stillOnTag, tone: 'good' }] });
           for (let k = 0; k < 6 && !f.stopped; k++) {
             await stepFrogs(true);
             gen.guard();
-            await sleep(450);
+            await sleep(ms(LONG));
             gen.guard();
           }
         },
-        settle: 200,
+        settle: ms(SHORT),
       });
     },
   },
@@ -391,7 +391,7 @@ export const STEPS: Step[] = [
       await beat(gen, T().wrapUp(mine()), { label: T().finish, prepare: () => playProof() });
       useGame.setState({ showRules: true });
       await waitStore(gen, (g) => !g.showRules);
-      await sleep(EXIT_MS + 60);
+      await sleep(ms(EXIT + TICK));
     },
   },
 ];

@@ -1,9 +1,11 @@
 import { sfx } from '../audio/sfx';
 import { useGame, type Game } from '../game/store';
 import type { State } from '../lang/ast';
+import type { FastState } from '../lang/eval';
 import { inputsOf, planeKey } from '../levels/inputs';
 import { hop, running, toBig, type CompiledLevel } from '../levels/level';
 import { eggsNear, tileOf, tileState } from '../levels/tiles';
+import { BEAT, HOLD, LONG, ms, SHORT } from '../motion';
 import { cameraRig, type Tile } from '../scene/cameraRig';
 import { frogWorld, HOP, HOP_GAP_MS, type FrogKind, type FrogSim } from '../scene/frogs/frogWorld';
 import { HATCH_EMERGE, hatchFx } from '../scene/frogs/Hatch';
@@ -15,11 +17,13 @@ import { joinHopBatch, landInBatch } from './hopBatch';
 import { begin, busyWhile, currentLevel, events } from './sequence';
 
 export const HATCH_MS = (HATCH_EMERGE + HATCH_GROW) * 1000;
+export const HATCHED_MS = HATCH_MS + ms(BEAT);
 export const RUN_BEATS = 80;
 const TEST_EGGS = 10;
 const MAX_HOPS = 40;
 const RUN_REACH = 12;
-const FROG_LEAVE = 0.18;
+const FROG_LEAVE = SHORT;
+const HATCH_STAGGER = 0.02;
 
 export const sceneBusy = (g: Game) => g.busy || g.running || g.stepping;
 
@@ -28,6 +32,17 @@ export function firstEggTiles(count: number): Tile[] {
   return eggsNear(level!, inputs, 0, 0, 30)
     .sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]) || a[1] - b[1] || a[0] - b[0])
     .slice(0, count);
+}
+
+export function soleEgg(): State | null {
+  const { level, inputs } = useGame.getState();
+  const L = level!;
+  if (L.freeDims.includes(L.view.x) || L.freeDims.includes(L.view.y)) return null;
+  const free: FastState = { ...inputs };
+  if (L.fast.planeReq(free) !== true) return null;
+  const s: FastState = { ...free };
+  for (const v in L.fast.init) s[v] = L.fast.init[v](free) as number;
+  return L.fast.eggReq(s) === true ? toBig(s) : null;
 }
 
 function runTiles(L: CompiledLevel, egg: State): Tile[] {
@@ -86,7 +101,7 @@ async function sendFrogHome(f: FrogSim) {
   f.leave = { t0: sceneNow(), dur: FROG_LEAVE };
   const home = f.home;
   if (home && !frogWorld.frogs.some((g) => !g.leave && g.home?.[0] === home[0] && g.home?.[1] === home[1])) frogWorld.returnEgg(...home);
-  await sleep(FROG_LEAVE * 1000 + 50);
+  await sleep(ms(FROG_LEAVE));
   frogWorld.remove(f);
 }
 
@@ -121,8 +136,8 @@ export async function testEggs() {
       await cameraRig.arrive({ focus: eggs.flatMap((s) => runTiles(L, s)) });
       if (!tok.alive) return false;
     }
-    eggs.forEach((s, i) => after(i * 6, () => tok.alive && hatchUntrailed(s)));
-    await sleep(Math.min(900, 300 + eggs.length * 6) + HATCH_EMERGE * 1000);
+    eggs.forEach((s, i) => after(ms(i * HATCH_STAGGER), () => tok.alive && hatchUntrailed(s)));
+    await sleep(ms(Math.max(0, eggs.length - 1) * HATCH_STAGGER) + HATCHED_MS);
     for (let beats = 0; tok.alive && beats < RUN_BEATS; beats++) {
       if ((await hopAllOnce()) === 0) break;
       await sleep(HOP_GAP_MS);
@@ -136,18 +151,18 @@ export function loopFrogs(eggs: State[]) {
   const tok = begin();
   const L = currentLevel();
   void (async () => {
-    await sleep(400);
+    await sleep(ms(LONG));
     for (let k = 0; tok.alive; k = (k + 1) % eggs.length) {
       const f = hatchUntrailed(eggs[k]);
-      await sleep(650);
+      await sleep(HATCHED_MS);
       while (tok.alive && !f.stopped) {
         await hopOn(L, f);
         await sleep(HOP_GAP_MS);
       }
-      await sleep(1200);
+      await sleep(ms(HOLD));
       if (!tok.alive) return;
       await sendFrogHome(f);
-      await sleep(500);
+      await sleep(ms(LONG));
     }
   })();
 }

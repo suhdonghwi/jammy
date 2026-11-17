@@ -2,11 +2,12 @@ import type { FastFn, FastState } from '../../lang/eval';
 import type { Inputs } from '../../levels/inputs';
 import type { CompiledLevel, Formula } from '../../levels/level';
 import { tilesNear, tileState, type TileWindow } from '../../levels/tiles';
+import { BASE } from '../../motion';
 import { SLAB_H } from '../constants';
 import { clamp01, smoothstep } from '../easing';
 import { sceneNow } from '../sceneTime';
 
-const RISE_DUR = 0.26;
+const RISE_DUR = BASE;
 
 class AreaField {
   level: CompiledLevel | null = null;
@@ -44,6 +45,15 @@ class AreaField {
     if (risen >= 1) return to;
     const from = covers(this.before?.fast);
     return from + (to - from) * risen;
+  }
+
+  planeMovedNear(near: TileWindow, before: Inputs): { rising: number; sinking: number } {
+    const level = this.level;
+    if (!level) return { rising: 0, sinking: 0 };
+    const on = (inputs: Inputs) => new Set(tilesNear(level, inputs, near, (s, x, y) => (level.fast.planeReq(s) === true && this.area?.fast(s) === true ? `${x},${y}` : undefined)));
+    const now = on(this.inputs);
+    const was = on(before);
+    return { rising: [...now].filter((k) => !was.has(k)).length, sinking: [...was].filter((k) => !now.has(k)).length };
   }
 
   groundAt(x: number, y: number): number {

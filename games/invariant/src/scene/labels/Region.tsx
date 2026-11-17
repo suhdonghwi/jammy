@@ -8,11 +8,12 @@ import { GLSL_HEIGHT, instanced } from '../area/glsl';
 import { SLAB_H } from '../constants';
 import { sceneNow } from '../sceneTime';
 import { sfx } from '../../audio/sfx';
+import { SHORT } from '../../motion';
 import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/fade';
 import { ringGeometry, TONE_COLORS, washGeometry } from './TileTag';
 import { useTileWindow } from './useTileWindow';
 
-export const APPEAR = 0.18;
+export const APPEAR = SHORT;
 
 const RING_POP = { from: 0.6, cubic: 2.2, square: 1.2 };
 
@@ -24,7 +25,7 @@ export function ringPop(a: number): { scale: number; alpha: number } {
 const glslFloat = (v: number) => v.toFixed(2);
 const GLSL_RING_POP = /* glsl */ `
 float ringPopScale(float a) {
-  float s = a <= 0.0 ? ${glslFloat(RING_POP.from)} : 1.0 + ${glslFloat(RING_POP.cubic)} * pow(a - 1.0, 3.0) + ${glslFloat(RING_POP.square)} * pow(a - 1.0, 2.0);
+  float s = a <= 0.0 ? ${glslFloat(RING_POP.from)} : 1.0 + ${glslFloat(RING_POP.cubic)} * (a - 1.0) * (a - 1.0) * (a - 1.0) + ${glslFloat(RING_POP.square)} * (a - 1.0) * (a - 1.0);
   return ${glslFloat(RING_POP.from)} + ${glslFloat(1 - RING_POP.from)} * s;
 }
 float ringPopAlpha(float a) {
@@ -79,12 +80,17 @@ function regionMaterial(alpha: number) {
 const TICKS = 10;
 const TICK_STEP = 0.06;
 const MAX_SPAN = 0.8;
+export const SWEEP = MAX_SPAN + APPEAR;
+
+let lastSweep = { id: '', span: MAX_SPAN };
+export const sweepLength = (id: string) => (lastSweep.id === id ? lastSweep.span : MAX_SPAN) + APPEAR;
 const POP = 0.11;
 const onScreen = new THREE.Vector3();
 
 interface Sweep {
   delays: number[];
   ticks: number[];
+  span: number;
 }
 
 function sweep(tiles: RegionTile[], camera: THREE.Camera): Sweep {
@@ -119,12 +125,13 @@ function sweep(tiles: RegionTile[], camera: THREE.Camera): Sweep {
   pick.forEach((i, rank) => (delays[i] = at(rank)));
   const count = Math.min(TICKS, n);
   const ticks = Array.from({ length: count }, (_, k) => (count > 1 ? (span * k) / (count - 1) : 0) + POP);
-  return { delays, ticks };
+  return { delays, ticks, span };
 }
 
 function useTicks(region: Region | null, plan: Sweep | null, t0: number) {
   useEffect(() => {
     if (!region?.tick || !plan) return;
+    lastSweep = { id: region.id, span: plan.span };
     const late = sceneNow() - t0;
     sfx.ticks(plan.ticks.map((at) => at - late));
   }, [region]);

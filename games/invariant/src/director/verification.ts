@@ -1,21 +1,20 @@
 import type { CheckResult } from '../checker/check';
 import { RULES, type Rule } from '../checker/types';
-import { useGame, type Game, type Region } from '../game/store';
+import { useGame, type Game, type Region, type RegionTile } from '../game/store';
+import { tilesNear, type TileWindow } from '../levels/tiles';
 import { t as messages } from '../i18n/i18n';
-import { EGG_REGROW } from '../scene/area/glsl';
+import { BEAT, HOLD, ms, TICK } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
+import { sweepLength } from '../scene/labels/Region';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sleep } from '../scene/sceneTime';
 import { runChecker } from './checkRun';
-import { counterexample, type CounterexampleOptions } from './counterexample';
+import { counterexample, offerOtherBoard, onOtherBoard, type CounterexampleOptions } from './counterexample';
 import { sendFrogsHome } from './frogs';
 import { proofWave } from './ghosts';
 import { eggRegion, endingsRegion } from './regions';
 import { busyWhile, type Token } from './sequence';
 
-const HOLD_MS = 1000;
-const REGION_MS = 1300;
-const BETWEEN_MS = 300;
 
 export function revealAll(res: CheckResult) {
   useGame.setState((g) => ({ verdicts: { ...g.verdicts, ...res.verdicts }, pending: [] }));
@@ -55,13 +54,18 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
   let undecided = false;
   if (frogWorld.frogs.length) {
     await sendFrogsHome();
-    await sleep(EGG_REGROW * 1000);
+    await sleep(ms(TICK));
     if (!tok.alive) return null;
   }
   for (const [i, rule] of order.entries()) {
     const v = res.verdicts[rule];
     if (!v) continue;
     if (v.status === 'fail') {
+      if (onOtherBoard(v.cex)) {
+        reveal(rule, res);
+        offerOtherBoard(v.cex, onFail(rule));
+        return { failing: rule, undecided };
+      }
       await counterexample(tok, v.cex, onFail(rule));
       if (!tok.alive) return null;
       reveal(rule, res);
@@ -70,7 +74,7 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
     if (v.status === 'undecided') {
       reveal(rule, res);
       undecided = true;
-      await sleep(HOLD_MS);
+      await sleep(ms(HOLD));
       if (!tok.alive) return null;
       continue;
     }
@@ -79,11 +83,11 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
     reveal(rule, res);
     if (tag) useGame.setState({ callouts: [tag] });
     if (i < order.length - 1) {
-      await sleep(HOLD_MS);
+      await sleep(ms(HOLD));
       if (!tok.alive) return null;
       useGame.setState({ region: null, callouts: [] });
       void sendFrogsHome('test');
-      await sleep(BETWEEN_MS);
+      await sleep(ms(BEAT));
       if (!tok.alive) return null;
     }
   }
@@ -92,15 +96,39 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
 
 type Callout = Game['callouts'][number];
 
+let shown = 0;
+const IN_VIEW = 6;
+const LOOK_AROUND = 40;
+const SHOWN_TOGETHER = 3;
+
+function hopTiles(win: TileWindow): RegionTile[] {
+  const { level, inputs, valid } = useGame.getState();
+  const L = level!;
+  return tilesNear(L, inputs, win, (s, x, y) => (L.fast.planeReq(s) === true && L.fast.guard(s) === true && valid?.fast(s) === true ? { x, y, tone: 'good' as const } : undefined));
+}
+
+async function bringIntoView(tiles: Region['tiles']) {
+  const { x: cx, y: cy } = cameraRig.viewCenter();
+  const dist = (t: { x: number; y: number }) => Math.hypot(t.x - cx, t.y - cy);
+  const found = tiles({ cx: Math.round(cx), cy: Math.round(cy), R: LOOK_AROUND }).sort((a, b) => dist(a) - dist(b));
+  if (!found.length || dist(found[0]) <= IN_VIEW) return;
+  const [first] = found;
+  const focus = found.filter((t) => Math.hypot(t.x - first.x, t.y - first.y) <= SHOWN_TOGETHER).map((t) => [t.x, t.y] as const);
+  await cameraRig.arrive({ focus, centre: true });
+}
+
 async function showHolds(rule: Rule): Promise<Callout | null> {
   const text = messages().verdicts.holdsTag[rule];
+  await bringIntoView(rule === 'maintenance' ? hopTiles : rule === 'initialization' ? eggRegion('good').tiles : endingsRegion('good').tiles);
   if (rule === 'maintenance') {
     const f = await proofWave();
     return f ? { x: f.x, y: f.y, frog: f.id, text, tone: 'good' } : null;
   }
   const region = rule === 'initialization' ? eggRegion('good') : endingsRegion('good');
-  useGame.setState({ region: { ...region, id: `check-${rule}`, tick: true } });
-  await sleep(REGION_MS);
+  const id = `check-${rule}-${++shown}`;
+  useGame.setState({ region: { ...region, id, tick: true } });
+  await sleep(ms(TICK));
+  await sleep(ms(sweepLength(id) + BEAT - TICK));
   const near = nearestTile(region);
   return near ? { ...near, text, tone: 'good' } : null;
 }

@@ -3,11 +3,11 @@ import { t } from '../i18n/i18n';
 import type { State } from '../lang/ast';
 import { planeKey } from '../levels/inputs';
 import { running, toBig } from '../levels/level';
-import { eggsNear, tileState } from '../levels/tiles';
+import { eggsNear, tileOf, tileState } from '../levels/tiles';
 import { cameraRig, type Tile } from '../scene/cameraRig';
 import { frogWorld, HOP_GAP_MS, type FrogSim } from '../scene/frogs/frogWorld';
 import { sleep } from '../scene/sceneTime';
-import { firstEggTiles, hatch, hopOn, RUN_BEATS, sceneBusy, sendFrogsHome, whileStepping } from './frogs';
+import { firstEggTiles, hatch, HATCHED_MS, hopOn, RUN_BEATS, sceneBusy, sendFrogsHome, soleEgg, whileStepping } from './frogs';
 import { eggRegion } from './regions';
 import { begin, currentLevel, events } from './sequence';
 
@@ -39,12 +39,25 @@ function nothingToHop(f: FrogSim | undefined) {
   cameraRig.include([tile]);
 }
 
+async function hatchSoleEgg(): Promise<FrogSim | undefined> {
+  const egg = useGame.getState().mode === 'level' ? soleEgg() : null;
+  if (!egg) return undefined;
+  const L = currentLevel();
+  if (frogWorld.hatched.has(tileOf(L, egg).join(','))) return undefined;
+  cameraRig.include([tileOf(L, egg)]);
+  await whileStepping(async () => {
+    pickEgg(egg);
+    await sleep(HATCHED_MS);
+  });
+  return currentFrog();
+}
+
 export async function stepFrogs(scripted = false) {
   const g = useGame.getState();
   if (sceneBusy(g)) return;
   if (!scripted && g.mode === 'tutorial' && !g.tutorial.allow.step) return;
   const L = currentLevel();
-  const f = currentFrog();
+  const f = currentFrog() ?? (await hatchSoleEgg());
   if (!f || !running(L, f.state)) return nothingToHop(f);
   useGame.setState({ failMark: null, callouts: g.mode === 'level' ? [] : g.callouts });
   await whileStepping(() => hopOn(L, f));
@@ -56,7 +69,7 @@ export async function runFrogs() {
   if (sceneBusy(g)) return;
   if (g.mode === 'tutorial' && !g.tutorial.allow.run) return;
   const L = currentLevel();
-  const f = currentFrog();
+  const f = currentFrog() ?? (await hatchSoleEgg());
   if (!f || !running(L, f.state)) return nothingToHop(f);
   const tok = begin();
   useGame.setState({ failMark: null, running: true });

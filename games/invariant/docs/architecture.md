@@ -27,7 +27,7 @@ src/
   audio/       sound clips and the synthesised ghost siren
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
   storage.ts   localStorage behind a try/catch: language, mute, cleared levels, code panel width
-  timing.ts    EXIT_MS, the length of every exit animation (`--duration-exit` in styles.css)
+  motion.ts    the motion tokens: every duration and pause (`--duration-*` in styles.css), EXIT_MS
   scene/       the 3D world: canvas, camera rig, scene time, hovered tile, WebGL check
     floor/       the infinite floor, drawn per pixel from the level's formulas (GLSL)
     area/        the learner's slabs, eggs and goal columns
@@ -130,6 +130,14 @@ backend agree. `pnpm validate` and the tests are the safety net.
   `startScene` fades them out.
 - **UI timing is real time** and matched to its CSS (exits last `EXIT_MS`,
   the CSS's `--duration-exit`).
+- **Every duration and pause is a token** from `motion.ts`: `MICRO`, `SHORT`,
+  `EXIT`, `BASE`, `LONG` for how long something moves, `TICK`, `BEAT`, `HOLD`
+  for the gaps between moves (`ms()` turns one into a `sleep`). The CSS
+  mirrors them as `--duration-*`. A new wait picks the token for what it is
+  for, not a number that felt right; only accent animations (hatching, a
+  cheer, a ghost's rise) keep their own lengths. Values that settle towards a
+  target over time use `Toward` (`scene/easing.ts`), a timed smootherstep,
+  not a per-frame exponential.
 
 ## Sequences
 
@@ -162,13 +170,31 @@ backend agree. `pnpm validate` and the tests are the safety net.
   all frame this way; don't call `moveTo`/`dollyTo` directly. The other
   entries are narrow: `include(labels)` (callouts), `zoomTo` (the proof's
   wide view), `resetAngle`; the home screen drives its own camera.
-  A move waits until the panels have been still for `SETTLE_MS`, so it is
-  measured against the new caption, and requests made meanwhile merge; the
-  last shot is re-fitted (without its `at`) when the panels settle at a new
-  size. Before a screen shows, placements snap; after, they glide. Use
-  `arrive()` when something should start once the camera is there (a hatch,
-  a counterexample's frog): it glides quickly and waits for the camera, up
-  to `ARRIVING_MS`.
+  A move waits a few frames (`LAYOUT_BEAT_MS`) so a new caption is laid out,
+  and, if the panels moved, until they have been still for `SETTLE_MS`;
+  requests made meanwhile merge, and the last shot is re-fitted (without its
+  `at`) when the panels settle at a new size. Before a screen shows,
+  placements snap; after, they fly.
+- **A camera move is a planned flight** (`scene/flight.ts`), not
+  camera-controls' smoothing, which takes the same time for any distance
+  (so far moves were fast) and starts with its hardest acceleration. A
+  flight's length grows with the log of the trip (screens panned, zoom
+  doublings, turn) from `FLIGHT_MIN` to `FLIGHT_MAX`, it eases with
+  smootherstep (no jolt at either end), and on trips over about a screen it
+  pulls back on the way, high enough that about two and a half screens show
+  at its peak (up to `HIGHEST`), so the ground crosses the screen at a
+  similar speed however far the trip. A
+  new move mid-flight starts from where the camera is with the speed it has
+  (quintic Hermite), so it bends rather than kinks. Position, zoom and angle
+  share one flight (`opening` turns and moves at once). The player's drag or
+  wheel stops a flight. camera-controls' own smoothing is left for the
+  player's moves. `arrive()` resolves `ARRIVE_LEAD` before the flight lands,
+  so a counterexample's frog sets off as the camera gets there. Fitting
+  starts from the tiles' middle when they don't project (behind the camera),
+  so a far target behind the view is still reached.
+- **A counterexample on another board waits for the learner**
+  (`offerOtherBoard` in `director/counterexample.ts`): the check ends on a
+  caption whose button plays it, and only then are the inputs changed.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
   formula) and the view they show (`camera`, `focus`, `labels`; default
   `VIEW`), so Back and skip-ahead can rebuild any step instantly and frame

@@ -3,13 +3,14 @@ import type { Counterexample } from '../checker/types';
 import { useGame, type Caption, type CaptionTone } from '../game/store';
 import { t as messages } from '../i18n/i18n';
 import type { State } from '../lang/ast';
-import { inputsOf, planeKey } from '../levels/inputs';
+import { inputsOf, planeKey, showInputs } from '../levels/inputs';
 import { showState } from '../levels/level';
 import { tileOf } from '../levels/tiles';
+import { BEAT, ms } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
 import { HOP, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { hatch, HATCH_MS, hopFrog, sendFrogsHome } from './frogs';
+import { hatch, HATCHED_MS, hopFrog, sendFrogsHome } from './frogs';
 import { GHOST_RISE, raiseGhost } from './ghosts';
 import { busyWhile, currentLevel, type Token } from './sequence';
 
@@ -29,16 +30,32 @@ function markFailure(x: number, y: number, label: string) {
   sfx.fail();
 }
 
-async function focusOn(cex: Counterexample) {
+const LOOK = BEAT;
+
+const planeOf = (cex: Counterexample) => inputsOf(currentLevel(), cex.state);
+
+export const onOtherBoard = (cex: Counterexample) => planeKey(planeOf(cex)) !== planeKey(useGame.getState().inputs);
+
+export function offerOtherBoard(cex: Counterexample, opts: CounterexampleOptions) {
   const L = currentLevel();
-  const inputs = inputsOf(L, cex.state);
-  if (planeKey(inputs) !== planeKey(useGame.getState().inputs)) {
-    useGame.setState({ inputs });
-    await sleep(250);
+  const say = messages().verdicts;
+  const there = showInputs(L, planeOf(cex));
+  sfx.fail();
+  useGame.setState({
+    caption: { text: say.elsewhere(showInputs(L, useGame.getState().inputs), there), tone: 'fail', action: { label: say.showThere(there), onClick: () => void playCounterexample(cex, { ...opts, prefix: opts.prefix ?? '' }) } },
+  });
+}
+
+async function focusOn(tok: Token, cex: Counterexample, leaving: Promise<void>) {
+  const L = currentLevel();
+  if (onOtherBoard(cex)) {
+    useGame.setState({ inputs: planeOf(cex) });
+    await sleep(ms(LOOK));
+    if (!tok.alive) return;
   }
   const tile = (s: State) => tileOf(L, s);
   const labels = [cex.state, cex.next].flatMap((s) => (s ? [tile(s)] : []));
-  await cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile) });
+  await Promise.all([cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile), centre: true }), leaving]);
 }
 
 export function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
@@ -51,10 +68,8 @@ const FASTEST_HOP = 0.08;
 export async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
   const L = currentLevel();
   useGame.setState({ failMark: null, region: null });
-  await sendFrogsHome();
-  if (!tok.alive) return;
   const [x, y] = tileOf(L, cex.state);
-  await focusOn(cex);
+  await focusOn(tok, cex, sendFrogsHome());
   if (!tok.alive) return;
   const say = messages().verdicts;
   const prefix = opts.prefix ?? (cex.far ? say.far : '');
@@ -64,7 +79,7 @@ export async function counterexample(tok: Token, cex: Counterexample, opts: Coun
   let f: FrogSim;
   if (run) {
     f = hatch(run[0]);
-    await sleep(HATCH_MS);
+    await sleep(HATCHED_MS);
     const pace = Math.max(FASTEST_HOP, Math.min(HOP, REAL_RUN_SECONDS / run.length));
     for (const s of run.slice(1)) {
       if (!tok.alive) return;
@@ -73,7 +88,7 @@ export async function counterexample(tok: Token, cex: Counterexample, opts: Coun
   } else {
     sfx.ghost();
     f = raiseGhost(cex.state);
-    await sleep(GHOST_RISE * 1000 + 250);
+    await sleep(ms(GHOST_RISE + BEAT));
   }
   if (!tok.alive) return;
   const from = run ? run[0] : null;

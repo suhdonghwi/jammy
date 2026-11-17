@@ -46,7 +46,7 @@ export function InputsSection({ folded }: { folded: boolean }) {
   const hasArrays = Object.keys(level.arrays).length > 0;
   return (
     <div
-      className={`-mx-4 flex min-w-0 shrink-0 flex-col border-t px-4 transition-[opacity,border-color,padding] ${FOLD} max-md:-mx-2.5 max-md:px-2.5 ${busy ? 'opacity-60' : ''} ${
+      className={`-mx-4 flex min-w-0 shrink-0 flex-col border-t px-4 transition-[opacity,border-color,padding] ${FOLD} max-md:-mx-2.5 max-md:px-2.5 ${
         folded ? 'border-transparent pt-1' : 'border-line pt-2.5 max-md:pt-2'
       }`}
     >
@@ -95,6 +95,8 @@ export function InputsSection({ folded }: { folded: boolean }) {
   );
 }
 
+const changed = (pops: number) => (pops > 0 ? 'animate-input-changed' : 'animate-pop');
+
 function usePop(value: string): [number, () => void] {
   const [seen, setSeen] = useState(value);
   const [ownNext, setOwnNext] = useState(false);
@@ -141,7 +143,7 @@ function IntRow({ name, value, disabled, onChange, labels }: { name: string; val
   };
   const bad = draft !== null && !INT.test(draft.trim());
   return (
-    <div key={pops} className="flex animate-pop items-center">
+    <div key={pops} className={`flex items-center rounded-md ${changed(pops)}`}>
       <SmallButton onClick={() => commit(value - 1)} disabled={disabled} label={labels[0]} className="rounded-r-none">
         <Minus size={12} strokeWidth={2.6} />
       </SmallButton>
@@ -183,7 +185,7 @@ function ArrayRow({ level, name, inputs, disabled, onChange, label }: { level: C
   };
   const bad = draft !== null && !incomplete(draft) && parseArray(draft) === null;
   return (
-    <div key={pops} className="flex min-w-0 flex-1 animate-pop items-center gap-1.5">
+    <div key={pops} className={`flex min-w-0 flex-1 items-center gap-1.5 rounded-md ${changed(pops)}`}>
       <input
         className={`${FIELD} flex-1 ${bad ? 'border-fail/50 text-fail' : ''}`}
         {...field}

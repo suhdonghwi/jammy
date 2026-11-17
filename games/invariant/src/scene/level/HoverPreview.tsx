@@ -5,6 +5,7 @@ import { useGame } from '../../game/store';
 import { hopFrom, tileState } from '../../levels/tiles';
 import { field } from '../area/field';
 import { yawToward } from '../frogs/frogWorld';
+import { occupancy } from '../frogs/occupancy';
 import { HopLine } from '../frogs/HopLine';
 import { useHover } from '../hover';
 import { frogGeometry, frogMaterial, ghostDepthMaterial } from '../models';
@@ -34,6 +35,7 @@ export function HoverPreview() {
   useFrame(() => {
     const g = ghost.current;
     if (!g || !hop) return;
+    g.visible = !occupancy.frogs.has(`${hop.to[0]},${hop.to[1]}`);
     g.position.set(hop.to[0], field.groundAt(hop.to[0], hop.to[1]), -hop.to[1]);
     g.rotation.y = yawToward(hop.from[0], hop.from[1], hop.to[0], hop.to[1]);
   });

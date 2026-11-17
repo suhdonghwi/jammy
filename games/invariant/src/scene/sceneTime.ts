@@ -1,4 +1,4 @@
-import { EXIT_MS } from '../timing';
+import { EXIT_MS } from '../motion';
 
 let started = false;
 let hidden = typeof document !== 'undefined' && document.hidden;

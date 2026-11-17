@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SHORT } from '../../motion';
 import { MASK_SIZE } from './mask';
 
 export const GLSL_MASK = /* glsl */ `
@@ -24,7 +25,7 @@ float heightNow() {
 }
 `;
 
-export const SLOT_DUR = 0.18;
+export const SLOT_DUR = SHORT;
 export const GLSL_SLOT = /* glsl */ `
 attribute vec4 aSlot;
 attribute vec3 aSlotAnim;
@@ -34,7 +35,7 @@ vec3 slotNow() {
 }
 `;
 
-export const EGG_REGROW = 0.2;
+export const EGG_REGROW = SHORT;
 export const GLSL_BACK = /* glsl */ `
 attribute float aBack;
 float backNow() {
@@ -50,7 +51,7 @@ uniform vec2 uAppearCenter;
 float easeOutBack(float a) {
   float c1 = ${APPEAR_OVERSHOOT};
   float c3 = c1 + 1.0;
-  return a <= 0.0 ? 0.0 : 1.0 + c3 * pow(a - 1.0, 3.0) + c1 * pow(a - 1.0, 2.0);
+  return a <= 0.0 ? 0.0 : 1.0 + c3 * (a - 1.0) * (a - 1.0) * (a - 1.0) + c1 * (a - 1.0) * (a - 1.0);
 }
 float appearNow() {
   float delay = min(length(aTile - uAppearCenter) * 0.035, 0.7);

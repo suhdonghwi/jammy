@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { useGame } from '../../game/store';
 import { COMPACT_HOME, useMedia } from '../../hooks/media';
 import { cameraRig } from '../cameraRig';
+import { easeInOut } from '../easing';
 import { sceneNow } from '../sceneTime';
 
 const FOCUS = { x: 4.6, y: 9, span: 11 };
@@ -52,7 +53,7 @@ export function useHomeCamera() {
     const t = sceneNow();
     restingPose(t, size, compact);
     const u = Math.min(1, (t - intro.current.t0) / INTRO_SECONDS);
-    const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    const e = easeInOut(u);
     eye.lerpVectors(intro.current.eye, eye, e);
     target.lerpVectors(intro.current.target, target, e);
     const c = cameraRig.controls;

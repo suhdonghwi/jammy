@@ -6,7 +6,7 @@ import { useHover } from '../../scene/hover';
 import { hopFrom, tileState } from '../../levels/tiles';
 
 const READOUT =
-  'flex animate-[fade_0.15s_var(--ease-entrance)] items-center gap-2 rounded-full bg-ink/86 p-1.25 text-sm text-white shadow-card has-[>span+span]:pr-2 compact:mx-4 compact:flex-wrap compact:justify-center compact:pr-1.25!';
+  'flex animate-[fade_var(--duration-micro)_var(--ease-entrance)] items-center gap-2 rounded-full bg-ink/86 p-1.25 text-sm text-white shadow-card has-[>span+span]:pr-2 compact:mx-4 compact:flex-wrap compact:justify-center compact:pr-1.25!';
 const TAG = 'rounded-full px-2.5 py-0.75 font-display text-sm font-medium compact:hidden';
 const VAR = 'flex items-baseline gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 font-mono';
 
