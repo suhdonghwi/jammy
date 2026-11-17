@@ -237,6 +237,14 @@ backend agree. `pnpm validate` and the tests are the safety net.
   within view are listed from it (`useMaskTiles`), again out to where the
   floor is visible. Eggs within 40 tiles of the camera target use the full
   egg model and the rest a coarse one; a far egg is a few pixels.
+- **Panning a zoomed-out board must not stall.** A board like Even Out has
+  tens of thousands of eggs in view, so: the window moves in steps of 32
+  tiles, and a move alone is read back asynchronously (a new level or
+  inputs is still read at once, so eggs never show the old board); the egg
+  list is refreshed with a margin of an eighth of the view's reach; and
+  each egg field writes per-egg state only for the few eggs with a frog, a
+  hatch or a slot animation, found by binary search in the list (sorted by
+  row, then column), resetting the ones it touched last time.
 - Frogs and hatching shells are **instanced**.
 - **Errors don't take the page down**: the WebGL 2 check (`scene/webgl.ts`),
   the error boundary around the game (`ui/ErrorBoundary.tsx`) and the 3D
