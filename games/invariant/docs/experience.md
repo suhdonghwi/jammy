@@ -106,7 +106,9 @@ behind many small decisions; keep them when changing or adding UI.
   ringing its landing tile; Exit sweeps every stop on the area like
   the eggs. Then the light turns, the picture clears, and a short pause
   separates it from the next rule. A rule that holds gets a green tag near
-  the middle of the view, as a failure gets its red one. The first failing
+  the middle of the view, as a failure gets its red one. If none of the
+  rule's tiles are in view (eggs, hops inside the area, endings), the
+  camera first goes to the nearest ones, so no rule is checked off screen. The first failing
   rule ends the check; an undecided one gets an amber light with a question
   mark.
 - **The board changes only when the learner asks.** If the failing case is

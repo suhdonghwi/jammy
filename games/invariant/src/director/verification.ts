@@ -1,6 +1,7 @@
 import type { CheckResult } from '../checker/check';
 import { RULES, type Rule } from '../checker/types';
-import { useGame, type Game, type Region } from '../game/store';
+import { useGame, type Game, type Region, type RegionTile } from '../game/store';
+import { tilesNear, type TileWindow } from '../levels/tiles';
 import { t as messages } from '../i18n/i18n';
 import { BEAT, HOLD, ms, TICK } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
@@ -95,8 +96,29 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
 
 type Callout = Game['callouts'][number];
 
+const IN_VIEW = 6;
+const LOOK_AROUND = 40;
+const SHOWN_TOGETHER = 3;
+
+function hopTiles(win: TileWindow): RegionTile[] {
+  const { level, inputs, valid } = useGame.getState();
+  const L = level!;
+  return tilesNear(L, inputs, win, (s, x, y) => (L.fast.planeReq(s) === true && L.fast.guard(s) === true && valid?.fast(s) === true ? { x, y, tone: 'good' as const } : undefined));
+}
+
+async function bringIntoView(tiles: Region['tiles']) {
+  const { x: cx, y: cy } = cameraRig.viewCenter();
+  const dist = (t: { x: number; y: number }) => Math.hypot(t.x - cx, t.y - cy);
+  const found = tiles({ cx: Math.round(cx), cy: Math.round(cy), R: LOOK_AROUND }).sort((a, b) => dist(a) - dist(b));
+  if (!found.length || dist(found[0]) <= IN_VIEW) return;
+  const [first] = found;
+  const focus = found.filter((t) => Math.hypot(t.x - first.x, t.y - first.y) <= SHOWN_TOGETHER).map((t) => [t.x, t.y] as const);
+  await cameraRig.arrive({ focus, centre: true });
+}
+
 async function showHolds(rule: Rule): Promise<Callout | null> {
   const text = messages().verdicts.holdsTag[rule];
+  await bringIntoView(rule === 'maintenance' ? hopTiles : rule === 'initialization' ? eggRegion('good').tiles : endingsRegion('good').tiles);
   if (rule === 'maintenance') {
     const f = await proofWave();
     return f ? { x: f.x, y: f.y, frog: f.id, text, tone: 'good' } : null;
