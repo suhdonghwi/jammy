@@ -1,6 +1,7 @@
 import { sfx } from '../audio/sfx';
 import { useGame, type Game } from '../game/store';
 import type { State } from '../lang/ast';
+import type { FastState } from '../lang/eval';
 import { inputsOf, planeKey } from '../levels/inputs';
 import { hop, running, toBig, type CompiledLevel } from '../levels/level';
 import { eggsNear, tileOf, tileState } from '../levels/tiles';
@@ -31,6 +32,17 @@ export function firstEggTiles(count: number): Tile[] {
   return eggsNear(level!, inputs, 0, 0, 30)
     .sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]) || a[1] - b[1] || a[0] - b[0])
     .slice(0, count);
+}
+
+export function soleEgg(): State | null {
+  const { level, inputs } = useGame.getState();
+  const L = level!;
+  if (L.freeDims.includes(L.view.x) || L.freeDims.includes(L.view.y)) return null;
+  const free: FastState = { ...inputs };
+  if (L.fast.planeReq(free) !== true) return null;
+  const s: FastState = { ...free };
+  for (const v in L.fast.init) s[v] = L.fast.init[v](free) as number;
+  return L.fast.eggReq(s) === true ? toBig(s) : null;
 }
 
 function runTiles(L: CompiledLevel, egg: State): Tile[] {

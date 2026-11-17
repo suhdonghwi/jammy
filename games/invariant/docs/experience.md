@@ -159,8 +159,11 @@ behind many small decisions; keep them when changing or adding UI.
   egg hatches its frog, which waits. Step hops it once; Run hops it until it
   stops, and turns into Pause meanwhile. In a level there is one real frog
   at a time: picking another egg sends the last one home. Pressed with no
-  frog, Step and Run point at an egg ("pick an egg first"); pressed on a
-  frog that has stopped, they say so. They never choose a frog themselves.
+  frog, Step and Run point at an egg ("pick an egg first"), unless the
+  board has only one egg (both axes start at fixed values): then there is
+  nothing to choose, so they hatch it, wait the hatch's beat and go on.
+  Pressed on a frog that has stopped, they say so. Where there is a choice
+  they never make it themselves.
 - **A frog has the middle of its tile.** An egg sharing the tile with a frog,
   live or in a trail, shrinks into the near corner and comes back when the
   frog is gone. So a frog looks the same on every tile, and only frogs
