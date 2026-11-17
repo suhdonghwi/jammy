@@ -13,6 +13,7 @@ export interface Shot {
   at?: View;
   focus?: readonly Tile[];
   labels?: readonly Tile[];
+  centre?: boolean;
 }
 
 let controls: CameraControls | null = null;
@@ -45,6 +46,7 @@ const ARRIVE_CAP_MS = 2400;
 const LAYOUT_BEAT_MS = 60;
 const STAY = 0.01;
 const SETTLE_MS = EXIT_MS + 100;
+const CENTRE_ZONE = 0.22;
 
 function safeRect(): Rect {
   const r = freeRect(size.width, size.height);
@@ -119,6 +121,13 @@ function middle(shot: Shot): { x: number; y: number } | null {
   return { x: tiles.reduce((s, t) => s + t[0], 0) / tiles.length, y: tiles.reduce((s, t) => s + t[1], 0) / tiles.length };
 }
 
+function zone(r: Rect, shot: Shot): Rect {
+  if (!shot.centre) return r;
+  const w = (r.right - r.left) * CENTRE_ZONE;
+  const h = (r.bottom - r.top) * CENTRE_ZONE;
+  return { left: r.left + w, top: r.top + h, right: r.right - w, bottom: r.bottom - h };
+}
+
 function solve(x: number, y: number, d: number, shot: Shot, r: Rect): { x: number; y: number; d: number } {
   const far = Math.min(MAX_DISTANCE, d * ZOOM_OUT);
   place(x, y, d);
@@ -127,7 +136,7 @@ function solve(x: number, y: number, d: number, shot: Shot, r: Rect): { x: numbe
   for (let i = 0; i < 8; i++) {
     place(x, y, d);
     let b = bounds(shot);
-    if (inside(b, r)) break;
+    if (inside(b, zone(r, shot))) break;
     const grow = b ? Math.max((b.right - b.left) / (r.right - r.left), (b.bottom - b.top) / (r.bottom - r.top)) : 1.5;
     if (grow > 1 && d < far) {
       d = Math.min(far, d * grow * 1.04);
@@ -214,7 +223,7 @@ function apply(shot: Shot, smooth: boolean, lead = 0, angle?: Angle): Promise<vo
   const r = safeRect();
   if (shot.at) base = shot.at[2];
   const view = endView();
-  if (!shot.at && !angle && fits(view.x, view.y, view.d, shot, r)) return Promise.resolve();
+  if (!shot.at && !angle && fits(view.x, view.y, view.d, shot, zone(r, shot))) return Promise.resolve();
   const from = shot.at ? { x: shot.at[0], y: shot.at[1] } : view;
   const to = solve(from.x, from.y, base ?? view.d, shot, r);
   return glide({ ...to, ...angle }, smooth, lead);

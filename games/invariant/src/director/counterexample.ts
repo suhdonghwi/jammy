@@ -55,7 +55,7 @@ async function focusOn(tok: Token, cex: Counterexample, leaving: Promise<void>) 
   }
   const tile = (s: State) => tileOf(L, s);
   const labels = [cex.state, cex.next].flatMap((s) => (s ? [tile(s)] : []));
-  await Promise.all([cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile) }), leaving]);
+  await Promise.all([cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile), centre: true }), leaving]);
 }
 
 export function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
