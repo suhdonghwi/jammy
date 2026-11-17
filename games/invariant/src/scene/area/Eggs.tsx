@@ -12,7 +12,7 @@ import { colorUniform, getBlobTexture, GLSL_COMMON } from '../shaders/common';
 import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/fade';
 import { areaMask, EGG } from './mask';
 import { useMaskTiles } from './maskTiles';
-import { GLSL_APPEAR, GLSL_BACK, GLSL_HEIGHT, GLSL_SLOT, instanced, SLOT_DUR } from './glsl';
+import { EGG_REGROW, GLSL_APPEAR, GLSL_BACK, GLSL_HEIGHT, GLSL_SLOT, instanced, SLOT_DUR } from './glsl';
 
 const eggVertex = /* glsl */ `
 ${GLSL_HEIGHT}
@@ -87,6 +87,7 @@ interface SlotAnim {
   ty: number;
   ts: number;
   t0: number;
+  hidden: boolean;
 }
 
 const PER_FROG_ATTRS = ['aHide', 'aBack', 'aSlot', 'aSlotAnim'] as const;
@@ -146,14 +147,15 @@ function EggField({ eggs, base }: { eggs: [number, number][]; base: THREE.Buffer
       back[i] = frogWorld.returned.get(k) ?? -100;
       const target = occupancy.frogs.has(k) ? EGG_ASIDE : EGG_ALONE;
       const prev = slots.current.get(k);
-      let cur: SlotAnim = { fx: target.dx, fy: target.dy, fs: target.scale, tx: target.dx, ty: target.dy, ts: target.scale, t0: 0 };
-      if (prev) {
+      const unseen = hatched || prev?.hidden || now - back[i] < EGG_REGROW;
+      let cur: SlotAnim = { fx: target.dx, fy: target.dy, fs: target.scale, tx: target.dx, ty: target.dy, ts: target.scale, t0: 0, hidden: hatched };
+      if (prev && !unseen) {
         const e = smoothstep(clamp01((now - prev.t0) / SLOT_DUR));
         const at = { x: prev.fx + (prev.tx - prev.fx) * e, y: prev.fy + (prev.ty - prev.fy) * e, s: prev.fs + (prev.ts - prev.fs) * e };
         cur =
           prev.tx === target.dx && prev.ty === target.dy && prev.ts === target.scale
             ? prev
-            : { fx: at.x, fy: at.y, fs: at.s, tx: target.dx, ty: target.dy, ts: target.scale, t0: now };
+            : { fx: at.x, fy: at.y, fs: at.s, tx: target.dx, ty: target.dy, ts: target.scale, t0: now, hidden: false };
       }
       slots.current.set(k, cur);
       slot.set([cur.fx, cur.fy, cur.tx, cur.ty], i * 4);
