@@ -81,12 +81,16 @@ const TICKS = 10;
 const TICK_STEP = 0.06;
 const MAX_SPAN = 0.8;
 export const SWEEP = MAX_SPAN + APPEAR;
+
+let lastSweep = { id: '', span: MAX_SPAN };
+export const sweepLength = (id: string) => (lastSweep.id === id ? lastSweep.span : MAX_SPAN) + APPEAR;
 const POP = 0.11;
 const onScreen = new THREE.Vector3();
 
 interface Sweep {
   delays: number[];
   ticks: number[];
+  span: number;
 }
 
 function sweep(tiles: RegionTile[], camera: THREE.Camera): Sweep {
@@ -121,12 +125,13 @@ function sweep(tiles: RegionTile[], camera: THREE.Camera): Sweep {
   pick.forEach((i, rank) => (delays[i] = at(rank)));
   const count = Math.min(TICKS, n);
   const ticks = Array.from({ length: count }, (_, k) => (count > 1 ? (span * k) / (count - 1) : 0) + POP);
-  return { delays, ticks };
+  return { delays, ticks, span };
 }
 
 function useTicks(region: Region | null, plan: Sweep | null, t0: number) {
   useEffect(() => {
     if (!region?.tick || !plan) return;
+    lastSweep = { id: region.id, span: plan.span };
     const late = sceneNow() - t0;
     sfx.ticks(plan.ticks.map((at) => at - late));
   }, [region]);

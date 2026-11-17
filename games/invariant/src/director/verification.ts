@@ -5,7 +5,7 @@ import { tilesNear, type TileWindow } from '../levels/tiles';
 import { t as messages } from '../i18n/i18n';
 import { BEAT, HOLD, ms, TICK } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
-import { SWEEP } from '../scene/labels/Region';
+import { sweepLength } from '../scene/labels/Region';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sleep } from '../scene/sceneTime';
 import { runChecker } from './checkRun';
@@ -96,6 +96,7 @@ async function verifyRules(tok: Token, res: CheckResult, rules: Rule[], onFail: 
 
 type Callout = Game['callouts'][number];
 
+let shown = 0;
 const IN_VIEW = 6;
 const LOOK_AROUND = 40;
 const SHOWN_TOGETHER = 3;
@@ -124,8 +125,10 @@ async function showHolds(rule: Rule): Promise<Callout | null> {
     return f ? { x: f.x, y: f.y, frog: f.id, text, tone: 'good' } : null;
   }
   const region = rule === 'initialization' ? eggRegion('good') : endingsRegion('good');
-  useGame.setState({ region: { ...region, id: `check-${rule}`, tick: true } });
-  await sleep(ms(SWEEP + BEAT));
+  const id = `check-${rule}-${++shown}`;
+  useGame.setState({ region: { ...region, id, tick: true } });
+  await sleep(ms(TICK));
+  await sleep(ms(sweepLength(id) + BEAT - TICK));
   const near = nearestTile(region);
   return near ? { ...near, text, tone: 'good' } : null;
 }
