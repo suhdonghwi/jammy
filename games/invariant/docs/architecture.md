@@ -138,10 +138,6 @@ backend agree. `pnpm validate` and the tests are the safety net.
   cheer, a ghost's rise) keep their own lengths. Values that settle towards a
   target over time use `Toward` (`scene/easing.ts`), a timed smootherstep,
   not a per-frame exponential.
-- **`?slowmo=N`** (dev only) slows scene time N times, the camera's flights
-  included; CSS and the player's own camera moves stay real time. `?motion`
-  (dev only) opens the motion notes page, with buttons that replay the
-  transitions in the game.
 
 ## Sequences
 
