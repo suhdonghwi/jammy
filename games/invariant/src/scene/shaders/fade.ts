@@ -22,6 +22,26 @@ export function fadeUniforms(): Record<string, THREE.IUniform> {
 
 export const fadeRadius = () => Math.max(26, cameraRig.distance() * 2.6);
 
+const VIEW_MARGIN = 3;
+const corner = new THREE.Vector3();
+
+export function viewRadius(): number {
+  const R = fadeRadius();
+  const camera = cameraRig.controls?.camera;
+  if (!camera) return R;
+  camera.updateMatrixWorld();
+  const { x: tx, z: tz } = cameraRig.target();
+  const eye = camera.position;
+  let reach = 0;
+  for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    corner.set(sx, sy, 0.5).unproject(camera).sub(eye);
+    if (corner.y > -1e-4) return R;
+    const k = -eye.y / corner.y;
+    reach = Math.max(reach, Math.hypot(eye.x + corner.x * k - tx, eye.z + corner.z * k - tz));
+  }
+  return Math.min(R, reach + VIEW_MARGIN);
+}
+
 export function updateFade(u: Record<string, THREE.IUniform>): number {
   const t = cameraRig.target();
   const R = fadeRadius();
