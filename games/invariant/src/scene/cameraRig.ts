@@ -3,14 +3,12 @@ import * as THREE from 'three';
 import type { CompiledLevel } from '../levels/level';
 import { EXIT_MS, reducedMotion } from '../motion';
 import { HIGHEST, plan, sample, STILL, travel, velocity, type Flight, type Pose } from './flight';
-import { freeRect, type Rect } from './freeRect';
+import { followKeyboard, freeRect, overlaps, softBlocks, type Rect } from './freeRect';
 import { sceneNow, sceneStarted, sleep } from './sceneTime';
 
 export type Tile = readonly [number, number];
-export type View = readonly [number, number, number];
 
 export interface Shot {
-  at?: View;
   focus?: readonly Tile[];
   labels?: readonly Tile[];
   centre?: boolean;
@@ -19,10 +17,10 @@ export interface Shot {
 let controls: CameraControls | null = null;
 let size = { width: 1, height: 1 };
 let current: Shot | null = null;
-let base: number | null = null;
 let layout = { key: '', changed: 0, settled: true };
 let pending: { shot: Shot; since: number; lead: number; done: () => void; settled: Promise<void> } | null = null;
 let flight: { plan: Flight; t0: number; waiters: { at: number; done: () => void }[] } | null = null;
+let unfollowKeyboard = () => {};
 
 const tmp = new THREE.Vector3();
 const point = new THREE.Vector3();
@@ -32,15 +30,17 @@ const ray = new THREE.Raycaster();
 const floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const ndc = new THREE.Vector2();
 
-const VIEW = { polar: 0.8, azimuth: 0.26 };
-const MARGIN = 14;
+const MARGIN = 20;
 const TAG_ROOM = 46;
 const TAG_HALF = 64;
 const TILE_RADIUS = 0.5;
 export const FOV = 36;
 export const MAX_DISTANCE = HIGHEST;
 const DEFAULT_DISTANCE = 14;
-const ZOOM_OUT = 1.6;
+const MIN_DISTANCE = 15;
+const TOO_FAR = 1.5;
+const FIT_SLACK = 1.04;
+const ASPECT_PROBE = 20;
 const ARRIVE_LEAD = 0.12;
 const ARRIVE_CAP_MS = 2400;
 const LAYOUT_BEAT_MS = 60;
@@ -48,9 +48,11 @@ const STAY = 0.01;
 const SETTLE_MS = EXIT_MS + 100;
 const CENTRE_ZONE = 0.22;
 
-function safeRect(): Rect {
-  const r = freeRect(size.width, size.height);
-  return { left: r.left + MARGIN, top: r.top + MARGIN, right: r.right - MARGIN, bottom: r.bottom - MARGIN };
+function safeRect(aspect = 0, padding = 0, margin = MARGIN, soft = true): Rect {
+  const r = freeRect(size.width, size.height, aspect, soft);
+  const px = margin + (r.right - r.left) * padding;
+  const py = margin + (r.bottom - r.top) * padding;
+  return { left: r.left + px, top: r.top + py, right: r.right - px, bottom: r.bottom - py };
 }
 
 function endView(): { x: number; y: number; d: number } {
@@ -60,11 +62,20 @@ function endView(): { x: number; y: number; d: number } {
   return { x: tmp.x, y: -tmp.z, d: controls.getSpherical(sph, true).radius };
 }
 
-function place(x: number, y: number, d: number) {
-  const cam = controls!.camera as THREE.PerspectiveCamera;
-  probe.copy(cam);
-  controls!.getSpherical(sph, true);
-  sph.radius = d;
+type Angle = Pick<Pose, 'az' | 'po'>;
+
+const ANGLE: Angle = { az: 0.26, po: 0.8 };
+
+function currentAngle(): Angle {
+  if (flight) return { az: flight.plan.to.az, po: flight.plan.to.po };
+  if (!controls) return ANGLE;
+  controls.getSpherical(sph, true);
+  return { az: sph.theta, po: sph.phi };
+}
+
+function place(x: number, y: number, d: number, angle: Angle) {
+  probe.copy(controls!.camera as THREE.PerspectiveCamera);
+  sph.set(d, angle.po, angle.az);
   probe.position.setFromSpherical(sph).add(point.set(x, 0, -y));
   probe.lookAt(x, 0, -y);
   probe.updateMatrixWorld();
@@ -110,11 +121,6 @@ function ground(sx: number, sy: number): { x: number; y: number } | null {
   return hit ? { x: hit.x, y: -hit.z } : null;
 }
 
-function fits(x: number, y: number, d: number, shot: Shot, r: Rect): boolean {
-  place(x, y, d);
-  return inside(bounds(shot), r);
-}
-
 function middle(shot: Shot): { x: number; y: number } | null {
   const tiles = tilesOf(shot);
   if (!tiles.length) return null;
@@ -128,29 +134,61 @@ function zone(r: Rect, shot: Shot): Rect {
   return { left: r.left + w, top: r.top + h, right: r.right - w, bottom: r.bottom - h };
 }
 
-function solve(x: number, y: number, d: number, shot: Shot, r: Rect): { x: number; y: number; d: number } {
-  const far = Math.min(MAX_DISTANCE, d * ZOOM_OUT);
-  place(x, y, d);
-  const mid = middle(shot);
-  if (!bounds(shot) && mid) [x, y] = [mid.x, mid.y];
-  for (let i = 0; i < 8; i++) {
-    place(x, y, d);
+function shape(shot: Shot, angle: Angle): number {
+  const { x, y } = middle(shot) ?? { x: 0, y: 0 };
+  place(x, y, ASPECT_PROBE, angle);
+  const b = bounds(shot);
+  return b ? (b.right - b.left) / Math.max(1, b.bottom - b.top) : 0;
+}
+
+function fit(shot: Shot, r: Rect, angle: Angle): { x: number; y: number; d: number } {
+  let { x, y } = middle(shot) ?? { x: 0, y: 0 };
+  let d = MIN_DISTANCE;
+  for (let i = 0; i < 10; i++) {
+    place(x, y, d, angle);
     let b = bounds(shot);
-    if (inside(b, zone(r, shot))) break;
-    const grow = b ? Math.max((b.right - b.left) / (r.right - r.left), (b.bottom - b.top) / (r.bottom - r.top)) : 1.5;
-    if (grow > 1 && d < far) {
-      d = Math.min(far, d * grow * 1.04);
-      place(x, y, d);
-      b = bounds(shot);
+    if (!b) {
+      d = Math.min(MAX_DISTANCE, d * 1.5);
+      continue;
     }
+    const grow = Math.max((b.right - b.left) / (r.right - r.left), (b.bottom - b.top) / (r.bottom - r.top));
+    d = THREE.MathUtils.clamp(d * grow, MIN_DISTANCE, MAX_DISTANCE);
+    place(x, y, d, angle);
+    b = bounds(shot);
     if (!b) continue;
-    const from = ground((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+    const at = ground((b.left + b.right) / 2, (b.top + b.bottom) / 2);
     const to = ground((r.left + r.right) / 2, (r.top + r.bottom) / 2);
-    if (!from || !to) break;
-    x += from.x - to.x;
-    y += from.y - to.y;
+    if (!at || !to) break;
+    x += at.x - to.x;
+    y += at.y - to.y;
   }
-  return { x, y, d };
+  return { x, y, d: Math.min(MAX_DISTANCE, d * FIT_SLACK) };
+}
+
+function tagsClear(shot: Shot): boolean {
+  const soft = softBlocks();
+  return (shot.labels ?? []).every(([x, y]) => {
+    const c = toScreen(x, y);
+    if (!c) return false;
+    const tag = { left: c[0] - TAG_HALF, right: c[0] + TAG_HALF, top: c[1] - TAG_ROOM, bottom: c[1] };
+    return !soft.some((b) => overlaps(tag, b));
+  });
+}
+
+function placement(shot: Shot, angle: Angle): { x: number; y: number; d: number } {
+  const sh = shape(shot, angle);
+  const over = fit(shot, safeRect(sh, 0, MARGIN, false), angle);
+  place(over.x, over.y, over.d, angle);
+  return tagsClear(shot) ? over : fit(shot, safeRect(sh), angle);
+}
+
+function needsMove(shot: Shot, fitted: number): boolean {
+  const view = endView();
+  if (view.d > fitted * TOO_FAR) return true;
+  const angle = currentAngle();
+  const r = zone(safeRect(shape(shot, angle), 0, 0, false), shot);
+  place(view.x, view.y, view.d, angle);
+  return !inside(bounds(shot), r) || !tagsClear(shot);
 }
 
 function poseNow(c: CameraControls): Pose {
@@ -207,10 +245,6 @@ function snap(to: Partial<Pose>) {
   put(c, { ...poseNow(c), ...to });
 }
 
-type Angle = Pick<Pose, 'az' | 'po'>;
-
-const ANGLE: Angle = { az: VIEW.azimuth, po: VIEW.polar };
-
 function glide(to: Partial<Pose>, smooth: boolean, lead = 0): Promise<void> {
   if (!smooth) {
     snap(to);
@@ -220,12 +254,10 @@ function glide(to: Partial<Pose>, smooth: boolean, lead = 0): Promise<void> {
 }
 
 function apply(shot: Shot, smooth: boolean, lead = 0, angle?: Angle): Promise<void> {
-  const r = safeRect();
-  if (shot.at) base = shot.at[2];
-  const view = endView();
-  if (!shot.at && !angle && fits(view.x, view.y, view.d, shot, zone(r, shot))) return Promise.resolve();
-  const from = shot.at ? { x: shot.at[0], y: shot.at[1] } : view;
-  const to = solve(from.x, from.y, base ?? view.d, shot, r);
+  if (!tilesOf(shot).length) return Promise.resolve();
+  const a = angle ?? currentAngle();
+  const to = placement(shot, a);
+  if (!angle && smooth && !needsMove(shot, to.d)) return Promise.resolve();
   return glide({ ...to, ...angle }, smooth, lead);
 }
 
@@ -239,24 +271,37 @@ function retarget(shot: Shot) {
   pending = null;
 }
 
-function startView(level: CompiledLevel): { x: number; y: number; distance: number } {
-  const cam = level.camera ?? { x: 0, y: 0 };
-  return { x: cam.x, y: cam.y, distance: (cam.distance ?? 15) * 1.2 };
+const OPENING: readonly [Tile, Tile] = [[0, 0], [4, 4]];
+
+function box([[x0, y0], [x1, y1]]: readonly [Tile, Tile]): Tile[] {
+  return [[x0, y0], [x1, y0], [x0, y1], [x1, y1]];
 }
 
-const stopFlying = () => land();
+const release = () => {
+  current = null;
+};
+
+const takeOver = () => {
+  land();
+  release();
+};
 
 export const cameraRig = {
   attach(c: CameraControls | null) {
-    controls?.removeEventListener('controlstart', stopFlying);
+    controls?.removeEventListener('controlstart', takeOver);
+    document.removeEventListener('pointerdown', release, true);
+    unfollowKeyboard();
     land();
     controls = c;
-    c?.addEventListener('controlstart', stopFlying);
+    if (!c) return;
+    c.addEventListener('controlstart', takeOver);
+    document.addEventListener('pointerdown', release, true);
+    unfollowKeyboard = followKeyboard();
   },
   get controls() {
     return controls;
   },
-  userMoved: stopFlying,
+  userMoved: takeOver,
   get flying() {
     return flight !== null;
   },
@@ -270,7 +315,7 @@ export const cameraRig = {
   viewCenter(): { x: number; y: number } {
     const v = endView();
     if (!controls) return v;
-    place(v.x, v.y, v.d);
+    place(v.x, v.y, v.d, currentAngle());
     const r = safeRect();
     return ground((r.left + r.right) / 2, (r.top + r.bottom) / 2) ?? v;
   },
@@ -311,11 +356,12 @@ export const cameraRig = {
     if (pending && now - pending.since >= LAYOUT_BEAT_MS && now - layout.changed >= SETTLE_MS) {
       const { shot, lead, done } = pending;
       pending = null;
+      current = shot;
       layout.settled = true;
       void apply(shot, true, lead).then(done);
     } else if (!pending && !layout.settled && now - layout.changed >= SETTLE_MS) {
       layout.settled = true;
-      if (current && tilesOf(current).length) void apply({ ...current, at: undefined }, true);
+      if (current) void apply(current, true);
     }
   },
   async zoomTo(distance: number) {
@@ -326,15 +372,13 @@ export const cameraRig = {
     await glide(ANGLE, smooth);
   },
   opening(level: CompiledLevel, smooth: boolean) {
-    const v = startView(level);
-    const shot: Shot = { at: [v.x, v.y, v.distance], focus: [[v.x, v.y]] };
+    const shot: Shot = { focus: box(level.frame ?? OPENING) };
     retarget(shot);
     if (!controls) return;
-    if (!smooth || !sceneStarted()) {
-      snap(ANGLE);
-      void apply(shot, false);
-      return;
-    }
-    void apply(shot, true, 0, ANGLE);
+    void apply(shot, smooth && sceneStarted(), 0, ANGLE);
+  },
+  fitInto(shot: Shot, angle: Angle, viewport: { width: number; height: number }, padding: number): { x: number; y: number; d: number } | null {
+    size = viewport;
+    return controls ? fit(shot, safeRect(shape(shot, angle), padding), angle) : null;
   },
 };

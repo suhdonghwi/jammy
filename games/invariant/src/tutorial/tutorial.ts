@@ -9,7 +9,7 @@ import { cameraRig, type Shot } from '../scene/cameraRig';
 import { LONG, ms } from '../motion';
 import { sleep, switchScene } from '../scene/sceneTime';
 import { newGeneration, setSkipStep, settled } from './script';
-import { learnerFormula, resetProgress, st, STEPS, VIEW, type Scene } from './steps';
+import { BOARD, learnerFormula, resetProgress, st, STEPS, type Scene } from './steps';
 
 export { tutorialCheck } from './script';
 
@@ -19,7 +19,7 @@ const shown = new Set<number>();
 let onFinish: () => void = () => {};
 
 const levelOf = (scene: Scene) => (scene.example ? exampleLevel : tutorialLevel);
-const shotOf = (scene: Scene): Shot => ({ at: scene.camera ?? VIEW, focus: scene.focus, labels: scene.labels });
+const shotOf = (scene: Scene): Shot => ({ focus: scene.focus ?? BOARD, labels: scene.labels });
 
 function loopExampleFrogs() {
   const L = useGame.getState().level!;

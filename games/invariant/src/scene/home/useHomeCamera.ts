@@ -2,46 +2,36 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useGame } from '../../game/store';
-import { COMPACT_HOME, useMedia } from '../../hooks/media';
-import { cameraRig } from '../cameraRig';
+import { cameraRig, type Shot } from '../cameraRig';
 import { easeInOut } from '../easing';
 import { sceneNow } from '../sceneTime';
 
-const FOCUS = { x: 4.6, y: 9, span: 11 };
-const COPY_W = 29.5 * 16;
+const RING: Shot = { focus: [[1, 8], [7, 8], [1, 12], [7, 12]] };
+const ANGLE = { az: 0, po: 0.95 };
+const PADDING = 0.15;
+const SWAY = 0.025;
 const INTRO_SECONDS = 1.6;
 const OVERVIEW = new THREE.Vector3(0, 9, 7);
+const FALLBACK = { x: 4, y: 10, d: 20 };
 
 const eye = new THREE.Vector3();
 const target = new THREE.Vector3();
+const sph = new THREE.Spherical();
 
-function restingPose(t: number, { width, height }: { width: number; height: number }, compact: boolean) {
-  const aspect = width / height;
-  const sway = Math.sin(t * 0.13) * 0.35;
-  const k = Math.max(0.9, FOCUS.span / 8.5);
-  if (aspect > 1.1) {
-    const copy = Math.min(0.6, (Math.max(0.05 * width, 24) + COPY_W) / width);
-    const back = Math.max(1, 0.62 / (aspect * 0.75 * (1 - copy)));
-    const sx = -6.4 * copy * aspect * back;
-    eye.set(FOCUS.x + sx + sway, 7.6 * k * back, -FOCUS.y + 11.6 * k * back);
-    target.set(FOCUS.x + sx, 0.2, -FOCUS.y + 0.4);
-  } else {
-    const kn = Math.max(k, FOCUS.span / (aspect * 13.5));
-    eye.set(FOCUS.x + sway, 10 * kn, -FOCUS.y + 15.5 * kn);
-    if (compact) target.set(FOCUS.x, 0.2, -FOCUS.y - 10.5 * kn);
-    else target.set(FOCUS.x, -1.6 * kn, -FOCUS.y + 2.4 * kn);
-  }
+function restingPose(t: number, size: { width: number; height: number }) {
+  const at = cameraRig.fitInto(RING, ANGLE, size, PADDING) ?? FALLBACK;
+  target.set(at.x, 0, -at.y);
+  eye.setFromSpherical(sph.set(at.d, ANGLE.po, ANGLE.az + Math.sin(t * 0.13) * SWAY)).add(target);
 }
 
 export function useHomeCamera() {
   const mode = useGame((s) => s.mode);
   const intro = useRef<{ t0: number; eye: THREE.Vector3; target: THREE.Vector3 } | null>(null);
-  const compact = useMedia(COMPACT_HOME);
 
   const { camera, size } = useThree();
   useLayoutEffect(() => {
     const t = sceneNow();
-    restingPose(t, size, compact);
+    restingPose(t, size);
     intro.current = { t0: t, eye: eye.clone().add(OVERVIEW), target: target.clone() };
     camera.position.copy(intro.current.eye);
     camera.lookAt(intro.current.target);
@@ -51,7 +41,7 @@ export function useHomeCamera() {
   useFrame(({ size, camera }) => {
     if (mode !== 'menu' || !intro.current) return;
     const t = sceneNow();
-    restingPose(t, size, compact);
+    restingPose(t, size);
     const u = Math.min(1, (t - intro.current.t0) / INTRO_SECONDS);
     const e = easeInOut(u);
     eye.lerpVectors(intro.current.eye, eye, e);
