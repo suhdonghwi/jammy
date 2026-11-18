@@ -53,7 +53,7 @@ export function CodePanel() {
         watch.observe(el);
         return () => watch.disconnect();
       }}
-      data-frame
+      data-frame={compact ? 'soft' : ''}
       className={`${CARD} relative flex min-h-0 flex-col animate-slide-in px-4 [animation-delay:70ms] pt-3.25 pb-3 max-md:p-2.5 ${sized ? 'max-w-max' : 'max-w-105 max-md:max-w-64'} ${spot === 'code' ? 'spotlight' : ''}`}
       style={sized ? { width: `min(${size.width}px, 100%)` } : undefined}
     >

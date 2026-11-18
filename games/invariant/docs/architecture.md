@@ -155,26 +155,39 @@ backend agree. `pnpm validate` and the tests are the safety net.
   only while no solver call is running (`z3-guard.ts`). The area box is
   read-only while `busy` or `checking`, so what gets cleared is what was
   checked.
-- **The camera moves through one call.** `cameraRig.frame({ at, focus })`
-  takes the tiles a moment is about (`focus`, plus `labels` for tiles that
-  carry a tag) and, optionally, a preferred view (`at`), and fits them into
-  the largest rectangle of the visible screen that no element marked
-  `data-frame` (top bar, code panel, caption column) covers. The visible
-  screen ends at `innerHeight`: the canvas is `h-lvh`, so on iOS Safari its
-  bottom sits behind the toolbar. With `at` it always goes there, zoomed out
-  and shifted only as far as the tiles need; without it, it moves only when
-  the tiles don't fit. A move starts from the zoom of the last `at` (the
-  level's or the tutorial step's) and zooms out at most `ZOOM_OUT` beyond it,
-  so repeated checks don't drift outward and the player's zoom stays while
-  the tiles fit. Tutorial steps, counterexamples, Run and a level's start
-  all frame this way; don't call `moveTo`/`dollyTo` directly. The other
-  entries are narrow: `include(labels)` (callouts), `zoomTo` (the proof's
-  wide view), `resetAngle`; the home screen drives its own camera.
-  A move waits a few frames (`LAYOUT_BEAT_MS`) so a new caption is laid out,
-  and, if the panels moved, until they have been still for `SETTLE_MS`;
-  requests made meanwhile merge, and the last shot is re-fitted (without its
-  `at`) when the panels settle at a new size. Before a screen shows,
-  placements snap; after, they fly.
+- **The camera follows one rule.** A moment names only what must be
+  seen: `cameraRig.frame({ focus, labels })`, the tiles it is about plus the
+  tiles that carry a tag. Nothing names a position or a zoom; a level's
+  opening names a box of tiles (`frame`), a tutorial step its `focus`
+  (default the tutorial board). The camera keeps one angle, and its pose is
+  the closest one (from `MIN_DISTANCE` out to `MAX_DISTANCE`) that fits
+  those tiles, centred, into the free screen: the part of the visible
+  screen (it ends at `innerHeight`; the canvas is `h-lvh`, so on iOS Safari
+  its bottom sits behind the toolbar) that no `data-frame` element covers.
+  Of the free rectangles it takes the one where the tiles come out largest
+  for their shape, not the largest by area, so a tall strip beside a panel
+  doesn't win over a wide one under it. On phones the code panel is
+  `data-frame="soft"`: tiles may pass under it, tags may not. The camera
+  moves only when the tiles leave the free screen, a tag is under a soft
+  panel, or it is more than `TOO_FAR` times further out than the fit; a
+  move fits into the free screen inset by `MARGIN`, so a panel that grows
+  a little doesn't move it again. Tutorial steps, callouts, counterexamples,
+  Run, a level's start and the home screen all frame this way; don't call
+  `moveTo`/`dollyTo` directly. The other entries are narrow: `zoomTo` (the
+  proof's wide view), `resetAngle`, and `fitInto`, which the home screen
+  uses each frame for its ring at its own lower angle. A move waits a few
+  frames (`LAYOUT_BEAT_MS`) so a new caption is laid out, and, if the
+  panels moved, until they have been still for `SETTLE_MS`; requests made
+  meanwhile merge. Before a screen shows, placements snap; after, they fly.
+  The rig holds the shot it was given until the player does anything (a
+  tap or click anywhere, a drag, the wheel): while it holds one, the shot
+  is checked again whenever the panels settle at a new size, so a caption
+  the game brings in or a panel the tutorial opens can't cover it; once the
+  player acts, the view is theirs, and folding the code panel, resizing it
+  or opening the keyboard moves nothing until the game shows something
+  new. While a text field has focus on a touch screen, the free screen is
+  the one from just before (`followKeyboard`), so a shot the game shows
+  meanwhile is fitted as if the keyboard were closed.
 - **A camera move is a planned flight** (`scene/flight.ts`), not
   camera-controls' smoothing, which takes the same time for any distance
   (so far moves were fast) and starts with its hardest acceleration. A
@@ -190,15 +203,14 @@ backend agree. `pnpm validate` and the tests are the safety net.
   wheel stops a flight. camera-controls' own smoothing is left for the
   player's moves. `arrive()` resolves `ARRIVE_LEAD` before the flight lands,
   so a counterexample's frog sets off as the camera gets there. Fitting
-  starts from the tiles' middle when they don't project (behind the camera),
-  so a far target behind the view is still reached.
+  starts from the tiles' middle, so a far target behind the view is still
+  reached.
 - **A counterexample on another board waits for the learner**
   (`offerOtherBoard` in `director/counterexample.ts`): the check ends on a
   caption whose button plays it, and only then are the inputs changed.
 - **Tutorial steps declare the scene they start from** (reveal flags, frogs,
-  formula) and the view they show (`camera`, `focus`, `labels`; default
-  `VIEW`), so Back and skip-ahead can rebuild any step instantly and frame
-  its view. Steps don't move the camera themselves, except through a played
+  formula) and what they show (`focus`, `labels`; default `BOARD`), so
+  Back and skip-ahead can rebuild any step instantly and frame it. Steps don't move the camera themselves, except through a played
   proof (the wrap-up). A step runs under a generation token and calls
   `gen.guard()` after every `await`, inside a beat's `prepare` too (a fast
   Next can skip ahead mid-glide, and what the old step does after it would

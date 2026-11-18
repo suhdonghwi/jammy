@@ -8,7 +8,7 @@ import { resetFrogs } from '../director/reset';
 import type { Token } from '../director/sequence';
 import { useGame, type Reveal } from '../game/store';
 import { t } from '../i18n/i18n';
-import type { Tile, View } from '../scene/cameraRig';
+import type { Tile } from '../scene/cameraRig';
 import { frogWorld } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
 import { EXIT, HOLD, LONG, ms, SHORT, TICK } from '../motion';
@@ -23,7 +23,6 @@ export interface Scene {
   frogs?: [number, number][];
   tags?: boolean;
   formula?: string | 'learner';
-  camera?: View;
   focus?: readonly Tile[];
   labels?: readonly Tile[];
   loop?: boolean;
@@ -57,15 +56,11 @@ const DRAW = { ...WORLD, formula: true, area: true, lights: RULES };
 const AWAKE_INITIALIZATION = { ...DRAW, awake: upTo('initialization') };
 const AWAKE_MAINTENANCE = { ...DRAW, awake: upTo('maintenance') };
 const AWAKE_ALL = { ...DRAW, awake: RULES };
-export const VIEW: View = [2, 2, 15.6];
-const PROOF_VIEW: View = [2, 2, 18];
-const BOARD: Tile[] = [[0, 0], [0, 4], [4, 4]];
+export const BOARD: Tile[] = [[0, 0], [0, 4], [4, 4]];
 
 const EXAMPLE = { axes: true, stop: true, hover: true, eggs: true, goals: true } as const;
 const EXAMPLE_AREA = '0 <= x <= 4';
 const EXAMPLE_DRAWN = { ...EXAMPLE, area: true } as const;
-const EXAMPLE_CAM: View = [2.5, 2, 14.4];
-const EXAMPLE_WIDE: View = [3, 2, 17];
 const EXAMPLE_BOARD: Tile[] = [[0, 0], [0, 4], [5, 0], [5, 4]];
 
 const TESTED = Array.from({ length: 10 }, (_, n): [number, number] => [n, n]);
@@ -200,7 +195,7 @@ export const STEPS: Step[] = [
     },
   },
   {
-    scene: { reveal: WORLD, frogs: TESTED, camera: [4, 10, 55], focus: [[0, 0], [9, 9], [0, 18]] },
+    scene: { reveal: WORLD, frogs: TESTED, focus: [[0, 0], [9, 9], [0, 18]] },
     run: async (gen) => {
       await beat(gen, T().endless, {
         callouts: [
@@ -218,11 +213,11 @@ export const STEPS: Step[] = [
   },
 
   {
-    scene: { example: true, reveal: EXAMPLE, camera: EXAMPLE_CAM, loop: true, focus: EXAMPLE_BOARD },
+    scene: { example: true, reveal: EXAMPLE, loop: true, focus: EXAMPLE_BOARD },
     run: (gen) => beat(gen, T().exWorld, { settle: ms(HOLD) }),
   },
   {
-    scene: { example: true, reveal: EXAMPLE, camera: EXAMPLE_CAM, loop: true, focus: EXAMPLE_BOARD },
+    scene: { example: true, reveal: EXAMPLE, loop: true, focus: EXAMPLE_BOARD },
     run: (gen) =>
       beat(gen, T().exArea, {
         prepare: () => {
@@ -233,7 +228,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { example: true, reveal: EXAMPLE_DRAWN, formula: EXAMPLE_AREA, camera: EXAMPLE_WIDE, focus: [...EXAMPLE_BOARD, [6, 0], [6, 3]] },
+    scene: { example: true, reveal: EXAMPLE_DRAWN, formula: EXAMPLE_AREA, focus: [...EXAMPLE_BOARD, [6, 0], [6, 3]] },
     run: (gen) =>
       beat(gen, T().exWhy, {
         callouts: [
@@ -244,7 +239,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { example: true, reveal: EXAMPLE_DRAWN, formula: EXAMPLE_AREA, camera: EXAMPLE_CAM, focus: EXAMPLE_BOARD },
+    scene: { example: true, reveal: EXAMPLE_DRAWN, formula: EXAMPLE_AREA, focus: EXAMPLE_BOARD },
     run: (gen) =>
       beat(gen, T().exEndings, {
         region: endingsRegion('good'),
@@ -252,7 +247,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { example: true, reveal: EXAMPLE_DRAWN, formula: EXAMPLE_AREA, camera: EXAMPLE_CAM, focus: EXAMPLE_BOARD },
+    scene: { example: true, reveal: EXAMPLE_DRAWN, formula: EXAMPLE_AREA, focus: EXAMPLE_BOARD },
     run: (gen) =>
       beat(gen, T().exRules, {
         label: T().backToOurs,
@@ -325,7 +320,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { reveal: AWAKE_MAINTENANCE, formula: 'learner', camera: [1.5, 3, 12], labels: [[0, 3], [3, 3]] },
+    scene: { reveal: AWAKE_MAINTENANCE, formula: 'learner', focus: [[0, 3], [3, 3]], labels: [[0, 3], [3, 3]] },
     run: async (gen) => {
       await beat(gen, T().together, {
         prepare: async () => {
@@ -386,7 +381,7 @@ export const STEPS: Step[] = [
       }),
   },
   {
-    scene: { reveal: AWAKE_ALL, formula: 'learner', camera: PROOF_VIEW, focus: BOARD },
+    scene: { reveal: AWAKE_ALL, formula: 'learner', focus: BOARD },
     run: async (gen) => {
       await beat(gen, T().wrapUp(mine()), { label: T().finish, prepare: () => playProof() });
       useGame.setState({ showRules: true });

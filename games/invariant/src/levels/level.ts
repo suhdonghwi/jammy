@@ -19,7 +19,7 @@ export interface LevelDef {
   pitfalls?: Pitfall[];
   intro?: string;
   hints?: string[];
-  camera?: { x: number; y: number; distance?: number };
+  frame?: readonly [readonly [number, number], readonly [number, number]];
   start?: Inputs;
   dice?: Record<string, Dice>;
 }

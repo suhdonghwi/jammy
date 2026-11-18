@@ -24,6 +24,7 @@ export function HomeOverlay() {
         <HeroCopy behind={picking} />
       </div>
       <div
+        data-frame
         className={`fixed top-4 right-4 flex max-sm:top-2.5 max-sm:right-2.5 animate-[fade_0.4s_var(--ease-entrance)_0.6s_both] items-center gap-2 ${dim}`}
       >
         <CornerControls />
@@ -57,7 +58,7 @@ function HeroCopy({ behind }: { behind: boolean }) {
   const tr = useT();
   const narrow = useMedia(NARROW_HOME);
   return (
-    <div className={`max-w-118 narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
+    <div data-frame className={`max-w-118 narrow:text-center ${behind ? '' : 'pointer-events-auto'}`}>
       <p className="mb-3 animate-[rise_0.5s_var(--ease-entrance)_0.1s_both] font-display short:mb-2 text-xs font-semibold tracking-[0.08em] text-muted uppercase">{tr.home.tagline}</p>
       <h1 className="mb-3.5 short:mb-2">
         <span className="sr-only">Invariant Frog</span>

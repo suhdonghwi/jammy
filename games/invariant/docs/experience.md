@@ -123,9 +123,15 @@ behind many small decisions; keep them when changing or adding UI.
   The last picture stays under the result caption, and clear of it: a taller
   caption nudges the camera. A red light, like the caption's Replay, plays
   the failure again.
-- **Each step has its view.** A step, and each callout it adds, glides the
-  camera to the step's view, fitted so what it is about clears the panels,
-  whether or not the learner moved the camera.
+- **The camera moves only when it must.** A step, and each callout it
+  adds, names what it is about; the camera stays put while that is on
+  screen, clear of the panels, and not tiny, and otherwise glides to the
+  closest view that shows it. Steps that keep to the same tiles don't move
+  the camera, and a step that shows more (ten eggs, the endless column)
+  pulls back as far as it takes, on a phone too.
+- **The camera is the game's only while it is showing something.** As soon
+  as the player taps, drags or scrolls, it stops answering to the panels:
+  folding the code or opening the keyboard leaves the view where it is.
 
 ## Clarity
 
@@ -225,7 +231,10 @@ behind many small decisions; keep them when changing or adding UI.
 - Desktop first; the 3D scene is full-screen and panels float over it.
 - Narrow or tall windows stack the home copy under the scene; on small,
   squarish screens the copy fills the screen over a faint backdrop of the
-  scene. A phone held sideways keeps the desktop home layout, smaller.
+  scene. A phone held sideways keeps the desktop home layout, smaller. The
+  home ring is fitted into the largest space the copy and corner buttons
+  leave (beside the copy, above it, or under the buttons), so it never sits
+  behind the text or the toolbar.
 - Level panels shrink on narrow screens. On short landscape screens (a phone
   held sideways) the caption, area box and controls form a column on the
   right, so the scene keeps its height.

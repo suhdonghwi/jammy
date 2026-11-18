@@ -1,24 +1,11 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
 import { useGame } from '../game/store';
-import { cameraRig, FOV } from './cameraRig';
-
-const PHONE = 640;
-const MIN_ASPECT = 0.6;
+import { cameraRig } from './cameraRig';
 
 export function Framing() {
-  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
   useFrame(() => {
-    const { mode } = useGame.getState();
-    const aspect = size.width / size.height;
-    const narrow = size.width < PHONE && mode !== 'menu' && aspect < MIN_ASPECT;
-    const fov = narrow ? THREE.MathUtils.radToDeg(2 * Math.atan((Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * MIN_ASPECT) / aspect)) : FOV;
-    if (camera.fov !== fov) {
-      camera.fov = fov;
-      camera.updateProjectionMatrix();
-    }
-    cameraRig.tick(size.width, size.height, mode !== 'menu');
+    cameraRig.tick(size.width, size.height, useGame.getState().mode !== 'menu');
   });
   return null;
 }
