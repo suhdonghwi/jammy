@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
-import * as THREE from 'three';
 import { clickTile, stepFrogs } from '../../director/controls';
 import { useGame } from '../../game/store';
 import { levels, tutorialLevel } from '../../levels/catalog';
 import type { LevelDef } from '../../levels/level';
 import { cameraRig, type Tile } from '../../scene/cameraRig';
-import { SLAB_H } from '../../scene/constants';
 import { figureClip, type ClipBox } from '../../scene/figureClip';
 import { sceneStarted, sleep } from '../../scene/sceneTime';
 
@@ -24,16 +22,6 @@ interface FigureDef {
   area?: string;
   /** Hide the eggs, the stop region and the goals. */
   bare?: boolean;
-  /**
-   * Rectangles of tiles for the paper to outline, on the floor or on top of
-   * the slabs. The page does not draw them: it reports where their corners
-   * land on screen (`__figureMarks`), and the paper draws the outlines.
-   */
-  marks?: Mark[];
-}
-
-interface Mark extends ClipBox {
-  on: 'floor' | 'slab';
 }
 
 const overshoot = levels.find((l) => l.id === 'overshoot')!;
@@ -54,46 +42,13 @@ export const FIGURES: Record<string, FigureDef> = {
   a: { level: tutorialLevel, box: STATES, frog: { tile: [0, 2], hops: 2 }, bare: true },
   b: { level: tutorialLevel, box: STATES, frog: { tile: [0, 2], hops: 2 } },
   c: { level: tutorialLevel, box: STATES, frog: { tile: [0, 2], hops: 2 }, area: `i <= n && ${IN_STATES}` },
-  'overshoot-init': {
-    level: overshoot,
-    box: OVERSHOOT,
-    area: `i == n && ${IN_OVERSHOOT}`,
-    marks: [{ x0: 0, y0: 1, x1: 0, y1: 2, on: 'floor' }],
-  },
-  'overshoot-maint': {
-    level: overshoot,
-    box: OVERSHOOT,
-    frog: { tile: [0, 2], hops: 1 },
-    area: `i <= n && ${IN_OVERSHOOT}`,
-    marks: [{ x0: 3, y0: 2, x1: 3, y1: 2, on: 'floor' }],
-  },
-  'overshoot-exit': {
-    level: overshoot,
-    box: OVERSHOOT,
-    area: `i <= n + 3 && ${IN_OVERSHOOT}`,
-    marks: [3, 4, 5].map((x) => ({ x0: x, y0: x - 3, x1: x, y1: x - 3, on: 'slab' as const })),
-  },
+  'overshoot-init': { level: overshoot, box: OVERSHOOT, area: `i == n && ${IN_OVERSHOOT}` },
+  'overshoot-maint': { level: overshoot, box: OVERSHOOT, frog: { tile: [0, 2], hops: 1 }, area: `i <= n && ${IN_OVERSHOOT}` },
+  'overshoot-exit': { level: overshoot, box: OVERSHOOT, area: `i <= n + 3 && ${IN_OVERSHOOT}` },
   'overshoot-pass': { level: overshoot, box: OVERSHOOT, area: `i <= n + 2 && ${IN_OVERSHOOT}` },
 };
 
 const SETTLE_MS = 2500;
-
-/** Where a mark's corners land on screen, in CSS pixels, clockwise from the front left. */
-function project(m: Mark): [number, number][] {
-  const camera = cameraRig.controls!.camera;
-  camera.updateMatrixWorld();
-  const h = m.on === 'slab' ? SLAB_H : 0;
-  const corners: [number, number][] = [
-    [m.x0 - 0.5, m.y0 - 0.5],
-    [m.x0 - 0.5, m.y1 + 0.5],
-    [m.x1 + 0.5, m.y1 + 0.5],
-    [m.x1 + 0.5, m.y0 - 0.5],
-  ];
-  return corners.map(([x, y]) => {
-    const v = new THREE.Vector3(x, h, -y).project(camera);
-    return [((v.x + 1) / 2) * innerWidth, ((1 - v.y) / 2) * innerHeight];
-  });
-}
 
 export function Figure() {
   useEffect(() => {
@@ -120,7 +75,7 @@ export function Figure() {
       for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) tiles.push([x, y]);
       await cameraRig.frame({ focus: tiles }, false);
       await sleep(SETTLE_MS);
-      Object.assign(window, { __figureMarks: (fig.marks ?? []).map(project), __figureReady: true });
+      Object.assign(window, { __figureReady: true });
     })();
   }, []);
   return null;
