@@ -93,17 +93,19 @@ interface SlotAnim {
 const PER_FROG_ATTRS = ['aHide', 'aBack', 'aSlot', 'aSlotAnim'] as const;
 
 const DETAILED_WITHIN = 40;
+const DETAILED_UNTIL = 56;
 const NEVER_BACK = -100;
 
 export function Eggs() {
-  const { tiles, cx, cy } = useMaskTiles(EGG);
+  const { tiles, cx, cy, distance } = useMaskTiles(EGG);
   const { near, far } = useMemo(() => {
     const near: [number, number][] = [];
     const far: [number, number][] = [];
-    const R2 = DETAILED_WITHIN * DETAILED_WITHIN;
-    for (const t of tiles) ((t[0] - cx) ** 2 + (t[1] - cy) ** 2 <= R2 ? near : far).push(t);
+    const R = Math.max(0, Math.min(DETAILED_WITHIN, DETAILED_UNTIL - distance));
+    const R2 = R * R;
+    for (const t of tiles) (R > 0 && (t[0] - cx) ** 2 + (t[1] - cy) ** 2 <= R2 ? near : far).push(t);
     return { near, far };
-  }, [tiles, cx, cy]);
+  }, [tiles, cx, cy, distance]);
   const shapes = useMemo(() => ({ detailed: eggGeometry(), plain: eggGeometry(5, 8) }), []);
   useEffect(() => () => (shapes.detailed.dispose(), shapes.plain.dispose()), [shapes]);
   return (

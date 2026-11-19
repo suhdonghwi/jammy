@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { CompiledLevel } from '../../levels/level';
@@ -14,11 +14,13 @@ import { fadeUniforms, GLSL_FADE, updateFade } from '../shaders/fade';
 import { GLSL_GOAL, goalUniforms } from '../shaders/goal';
 import { GLSL_MASK, instanced } from './glsl';
 import { areaMask, MASK_REACH } from './mask';
+import { VisibleCells } from './visibleCells';
 
 const CORNER = 0.07;
-const CORNER_STEPS = 3;
 const BEVEL = 0.07;
-const BEVEL_STEPS = 3;
+const ROUND = [3, 3] as const;
+const FACETED = [1, 1] as const;
+const FACETED_BELOW_PX = 30;
 
 const slabVertex = /* glsl */ `
 ${GLSL_MASK}
@@ -132,14 +134,14 @@ void main() {
 `;
 
 
-function slabGeometry(): THREE.BufferGeometry {
+function slabGeometry(cornerSteps: number, bevelSteps: number): THREE.BufferGeometry {
   const half = TILE / 2;
   const rim: [number, number, number, number][] = [];
   for (let c = 0; c < 4; c++) {
     const sx = c === 0 || c === 3 ? 1 : -1;
     const sz = c < 2 ? 1 : -1;
-    for (let k = 0; k <= CORNER_STEPS; k++) {
-      const a = (c + k / CORNER_STEPS) * (Math.PI / 2);
+    for (let k = 0; k <= cornerSteps; k++) {
+      const a = (c + k / cornerSteps) * (Math.PI / 2);
       rim.push([sx * (half - CORNER), sz * (half - CORNER), Math.cos(a), Math.sin(a)]);
     }
   }
@@ -154,8 +156,8 @@ function slabGeometry(): THREE.BufferGeometry {
     }
     return first;
   };
-  const rings = Array.from({ length: BEVEL_STEPS + 1 }, (_, k) => {
-    const tilt = (k / BEVEL_STEPS) * (Math.PI / 2);
+  const rings = Array.from({ length: bevelSteps + 1 }, (_, k) => {
+    const tilt = (k / bevelSteps) * (Math.PI / 2);
     return ring(CORNER - BEVEL * (1 - Math.sin(tilt)), SLAB_H - BEVEL * (1 - Math.cos(tilt)), tilt);
   });
   rings.push(ring(CORNER, 0, Math.PI / 2));
@@ -176,33 +178,23 @@ function slabGeometry(): THREE.BufferGeometry {
   return g;
 }
 
-const grid = (() => {
-  const cells: [number, number, number][] = [];
-  for (let y = -MASK_REACH; y <= MASK_REACH; y++) {
-    for (let x = -MASK_REACH; x <= MASK_REACH; x++) {
-      const d = Math.hypot(x, y);
-      if (d <= MASK_REACH) cells.push([x, y, d]);
-    }
-  }
-  cells.sort((a, b) => a[2] - b[2]);
-  const offsets = new Float32Array(cells.length * 2);
-  const within = new Uint32Array(MASK_REACH + 1);
-  cells.forEach(([x, y, d], i) => {
-    offsets.set([x, y], i * 2);
-    within.fill(i + 1, Math.ceil(d));
-  });
-  return { offsets, within };
-})();
-
 export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel; dim: boolean; showStop: boolean; showGoal: boolean }) {
+  const camera = useThree((three) => three.camera);
+  const canvas = useThree((three) => three.gl.domElement);
+  const cells = useMemo(() => new VisibleCells(), []);
   const geoms = useMemo(() => {
-    const cells = { aOffset: [grid.offsets, 2] } as const;
-    return {
-      slabs: instanced(slabGeometry(), 0, cells),
-      shadow: instanced(new THREE.PlaneGeometry(1.45, 1.45).rotateX(-Math.PI / 2), 0, cells),
+    const shadow = new THREE.PlaneGeometry(1.45, 1.45).rotateX(-Math.PI / 2);
+    const at = (base: THREE.BufferGeometry, offsets: THREE.InstancedBufferAttribute) => {
+      const g = instanced(base, 0, {});
+      g.setAttribute('aOffset', offsets);
+      return g;
     };
-  }, []);
-  useEffect(() => () => Object.values(geoms).forEach((g) => g.dispose()), [geoms]);
+    return {
+      near: { slabs: at(slabGeometry(...ROUND), cells.near), shadow: at(shadow, cells.near) },
+      far: { slabs: at(slabGeometry(...FACETED), cells.far), shadow: at(shadow, cells.far) },
+    };
+  }, [cells]);
+  useEffect(() => () => [geoms.near, geoms.far].forEach((g) => (g.slabs.dispose(), g.shadow.dispose())), [geoms]);
 
   const material = useMemo(
     () =>
@@ -255,12 +247,17 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
     const reach = Math.min(MASK_REACH, Math.ceil(updateFade(material.uniforms)));
     const target = cameraRig.target();
     (material.uniforms.uGrid.value as THREE.Vector2).set(Math.round(target.x), Math.round(-target.z));
-    geoms.slabs.instanceCount = geoms.shadow.instanceCount = grid.within[reach];
+    const tilePxAtUnitDistance = (camera.projectionMatrix.elements[5] * canvas.height) / 2;
+    cells.update(camera, target, reach, tilePxAtUnitDistance / FACETED_BELOW_PX);
+    geoms.near.slabs.instanceCount = geoms.near.shadow.instanceCount = cells.nearCount;
+    geoms.far.slabs.instanceCount = geoms.far.shadow.instanceCount = cells.farCount;
   });
   return (
     <>
-      <mesh geometry={geoms.shadow} material={shadowMat} frustumCulled={false} renderOrder={1} />
-      <mesh geometry={geoms.slabs} material={material} frustumCulled={false} />
+      <mesh geometry={geoms.near.shadow} material={shadowMat} frustumCulled={false} renderOrder={1} />
+      <mesh geometry={geoms.far.shadow} material={shadowMat} frustumCulled={false} renderOrder={1} />
+      <mesh geometry={geoms.near.slabs} material={material} frustumCulled={false} />
+      <mesh geometry={geoms.far.slabs} material={material} frustumCulled={false} />
     </>
   );
 }

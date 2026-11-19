@@ -236,19 +236,25 @@ backend agree. `pnpm validate` and the tests are the safety net.
 - The floor is **one shader plane**: the level's precondition, guard and
   postcondition are evaluated per pixel, so the plane is truly infinite.
 - **Slabs are one instanced grid centred on the camera**, sorted outward,
-  drawn as far as the floor is still visible. A cell with no slab collapses
-  in the vertex shader. So the area reaches the horizon at any zoom, and a
-  near slab and a far one are the same mesh and shader. The slab is the
-  same mesh at every zoom: a rounded prism whose top edge is a modelled
-  quarter-round, kept to 75 vertices so it can serve tens of thousands of
-  cells. Labels start close to the edge, so the edge must stay nearly
-  level there; a straight chamfer makes them run down the side.
+  reaching as far as the floor is still visible. Only the cells the camera
+  can see are drawn (`scene/area/visibleCells.ts`): the grid moves with the
+  camera's target, so the list is rebuilt when the camera zooms or turns,
+  never on a pan. A cell with no slab collapses in the vertex shader. So the
+  area reaches the horizon at any zoom, with one shader. The slab is a
+  rounded prism whose top edge is a modelled quarter-round. Labels start
+  close to the edge, so the edge must stay nearly level there; a straight
+  chamfer makes them run down the side. Cells whose tile is under
+  `FACETED_BELOW_PX` pixels wide use a second mesh with one facet for each
+  curve, which differs from the round one by less than a pixel there.
 - **Eggs and goal columns are sparse, so they are listed.** The mask also
   marks which tiles hold an egg (`level.eggAt`) and which are goals. When
   the level, inputs or window change it is read back once, and the tiles
-  within view are listed from it (`useMaskTiles`), again out to where the
-  floor is visible. Eggs within 40 tiles of the camera target use the full
-  egg model and the rest a coarse one; a far egg is a few pixels.
+  within view are listed from it (`useMaskTiles`): a circle around the
+  camera's target that covers the ground on screen (`viewRadius`), never
+  past where the floor is visible. Eggs near the camera target use the full
+  egg model and the rest a coarse one; the near circle is 40 tiles at the
+  opening zoom and shrinks to nothing as the camera pulls back
+  (`DETAILED_UNTIL`), since a far egg is a few pixels.
 - **Panning a zoomed-out board must not stall.** A board like Even Out has
   tens of thousands of eggs in view, so: the window moves in steps of 32
   tiles, and a move alone is read back asynchronously (a new level or
