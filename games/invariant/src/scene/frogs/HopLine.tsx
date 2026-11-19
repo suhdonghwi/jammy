@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { COLORS } from '../constants';
-import { arcPoints, useArcLine, type ArcEnd } from './hopArc';
+import { arcPoints, setArc, useArcLine, type ArcEnd } from './hopArc';
 
 const SEGMENTS = 24;
 
@@ -19,13 +19,12 @@ export function HopLine({ path }: { path: () => HopPath | null }) {
     const p = path();
     line.visible = !!p && p.opacity > 0 && p.drawn > 0;
     if (!p || !line.visible) return;
-    const key = [...p.from, ...p.to].map((v) => v.toFixed(3)).join();
+    const count = Math.max(1, Math.round(SEGMENTS * Math.min(1, p.drawn)));
+    const key = [...p.from, ...p.to].map((v) => v.toFixed(3)).join() + `:${count}`;
     if (key !== line.userData.key) {
       line.userData.key = key;
-      line.geometry.setPositions(arcPoints(p.from, p.to, SEGMENTS));
-      line.computeLineDistances();
+      setArc(line, arcPoints(p.from, p.to, SEGMENTS, count));
     }
-    line.geometry.instanceCount = Math.max(1, Math.round(SEGMENTS * Math.min(1, p.drawn)));
     line.material.opacity = 0.9 * p.opacity;
     line.material.resolution.set(size.width, size.height);
   });

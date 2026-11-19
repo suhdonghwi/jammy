@@ -1,5 +1,4 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { useGame } from '../../game/store';
 import { planeKey } from '../../levels/inputs';
 import { field } from '../area/field';
@@ -7,7 +6,7 @@ import { COLORS } from '../constants';
 import { clamp01 } from '../easing';
 import { sceneNow } from '../sceneTime';
 import { leaveFade, trailFrogs, type FrogSim } from './frogWorld';
-import { arcPoints, useArcLine, type ArcEnd } from './hopArc';
+import { arcPoints, setArc, useArcLine, type ArcEnd } from './hopArc';
 
 const TRAILS = 4;
 const SEGMENTS = 16;
@@ -40,9 +39,7 @@ function TrailLine({ index }: { index: number }) {
     const key = points.join();
     if (key !== line.userData.key) {
       line.userData.key = key;
-      line.geometry.dispose();
-      line.geometry = new LineGeometry().setPositions(points);
-      line.computeLineDistances();
+      setArc(line, points);
     }
     line.material.opacity = 0.9 * leaveFade(f, sceneNow());
     line.material.resolution.set(size.width, size.height);
