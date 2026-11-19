@@ -13,6 +13,7 @@
     "validate": "tsx scripts/validate-levels.ts",
     "fonts": "node scripts/subset-fonts.mjs",
     "og": "tsx scripts/make-og.ts",
+    "figure": "tsx scripts/make-figure.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

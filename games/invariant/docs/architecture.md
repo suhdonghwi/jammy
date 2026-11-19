@@ -28,7 +28,7 @@ src/
   hooks/       React hooks the scene and the DOM share: exit animations, media queries
   storage.ts   localStorage behind a try/catch: language, mute, cleared levels, code panel width
   motion.ts    the motion tokens: every duration and pause (`--duration-*` in styles.css), EXIT_MS
-  scene/       the 3D world: canvas, camera rig, scene time, hovered tile, WebGL check
+  scene/       the 3D world: canvas, camera rig, scene time, hovered tile, WebGL check, the figure page's clip
     floor/       the infinite floor, drawn per pixel from the level's formulas (GLSL)
     area/        the learner's slabs, eggs and goal columns
     frogs/       frog state, motion, rendering, hatching, the real frog's trail
@@ -40,7 +40,7 @@ src/
     hud/         level screen: top bar, code panel, inputs, caption, formula box, rule lights, tile readout, controls
     home/        title (3D lettering), home copy and level list, corner buttons, language switch
     rules/       the rules and syntax cards
-    dev/         the link preview's page (`?poster`, development only)
+    dev/         the link preview's page (`?poster`) and the paper's figure of the tutorial's states (`?figure=a|b|c`), development only
   styles.css   Tailwind setup and the little that is clearer as CSS (see Styling)
 scripts/       level validation, the Z3 copy, font subsets, the title's glyphs, the link preview image
 tests/         unit tests (language, counterexample search)

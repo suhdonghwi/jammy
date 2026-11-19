@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useState } from 'react';
 import { cameraRig } from '../cameraRig';
+import { inFigureClip } from '../figureClip';
 import { viewRadius } from '../shaders/fade';
 import { areaMask, MASK_REACH, type MaskBit } from './mask';
 
@@ -29,7 +30,7 @@ export function useMaskTiles(bit: MaskBit): MaskTiles {
     if (!zoomed && areaMask.revision === s.revision && Math.abs(cx - s.cx) <= s.drift && Math.abs(cy - s.cy) <= s.drift && R <= s.R && R >= s.R - 2 * s.drift) return;
     const drift = Math.max(MIN_DRIFT, Math.round(R * DRIFT_SHARE));
     seen.current = { revision: areaMask.revision, cx, cy, R: R + drift, drift, distance };
-    setFound({ tiles: areaMask.tilesWithin(bit, cx, cy, R + 2 * drift), cx, cy, distance });
+    setFound({ tiles: areaMask.tilesWithin(bit, cx, cy, R + 2 * drift).filter(([x, y]) => inFigureClip(x, y)), cx, cy, distance });
   });
   return found;
 }

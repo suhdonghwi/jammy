@@ -13,6 +13,9 @@ import { Trouble } from './ui/Trouble';
 const Poster =
   import.meta.env.DEV && new URLSearchParams(location.search).has('poster') ? lazy(() => import('./ui/dev/Poster').then((m) => ({ default: m.Poster }))) : null;
 
+const Figure =
+  import.meta.env.DEV && new URLSearchParams(location.search).has('figure') ? lazy(() => import('./ui/dev/Figure').then((m) => ({ default: m.Figure }))) : null;
+
 export function App() {
   if (!hasWebGL2) return <Trouble reason="webgl" />;
   return (
@@ -31,14 +34,18 @@ function Game() {
         <div className="world fixed inset-x-0 top-0 h-lvh">
           <World />
         </div>
-        {Poster ? (
+        {Figure ? (
+          <Suspense fallback={null}>
+            <Figure />
+          </Suspense>
+        ) : Poster ? (
           <Suspense fallback={null}>
             <Poster />
           </Suspense>
         ) : (
           mode === 'menu' && <HomeOverlay />
         )}
-        {mode !== 'menu' && level && <Hud />}
+        {!Figure && mode !== 'menu' && level && <Hud />}
         <RulesCard />
         <SyntaxCard />
       </div>
