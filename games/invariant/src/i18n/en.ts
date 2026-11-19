@@ -113,7 +113,7 @@ export const en = {
   level: {
     hint: (k: number, of: number) => `**Hint ${k} of ${of}.**`,
     anotherHint: 'Another hint',
-    undecided: "I couldn't find a frog that breaks this nearby — but I couldn't prove it either.",
+    undecided: "I couldn't prove this, and I couldn't find a tile where it breaks either.",
     avoidDivision: ' Try avoiding division — for example `2 * s == …` instead of `s == … / 2`.',
     proved: 'Proved. Every frog, everywhere you claimed — for every input.',
     next: (title: string) => `Next: ${title}`,
@@ -239,9 +239,9 @@ export const en = {
     askMaintenance: 'Now change your area so **no hop leads off it**. **Check** tests rules 1 and 2 together.',
     nudgeMaintenance: 'Every frog starts at `i = 0`, and a hop only ever increases `i`.',
     ghostMaintenance:
-      'The see-through frog is a **ghost frog**. Check never runs real frogs; for every tile of your area it asks: if a frog were here, where would it land? No real frog may ever get here, but your area says one could.',
+      'The see-through frog is a **ghost frog**. Check never runs real frogs, and it doesn’t try tiles one by one: it reasons about your formula, which covers every tile of your area at once. This ghost frog shows one tile where a hop leads off it. No real frog may ever get here, but your area says one could.',
     passedMaintenance:
-      'Correct! No hop leads off your area: **Maintenance** holds.\n\nThe see-through frogs are **ghost frogs**. Check never runs real frogs. It asks every tile of your area at once: if a frog were here, where would it land? Every answer is on your area.',
+      'Correct! No hop leads off your area: **Maintenance** holds.\n\nThe see-through frogs are **ghost frogs**, just a few examples. Check never runs real frogs and doesn’t try tiles one by one: it reasons about your formula, like solving an equation, so it covers every tile of your area at once. From any tile on your area, a hop lands on your area.',
     questionMaintenance: 'Does every hop from the area land on the area?',
 
     together:
