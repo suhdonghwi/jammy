@@ -61,10 +61,29 @@ async function crop([png, [x0, y0, x1, y1]]: [string, Box]): Promise<string> {
   return c.toDataURL('image/png').split(',')[1];
 }
 
-async function render(page: Page, base: string, name: string): Promise<string> {
+type Point = [number, number];
+
+interface Shot {
+  png: string;
+  /** The corners of each outline the figure asks for, in CSS pixels. */
+  marks: Point[][];
+}
+
+async function render(page: Page, base: string, name: string): Promise<Shot> {
   await page.goto(new URL(`?figure=${name}`, base).href);
   await page.waitForFunction(() => (window as { __figureReady?: boolean }).__figureReady, null, { timeout: 60_000 });
-  return (await page.screenshot({ omitBackground: true, timeout: 90_000 })).toString('base64');
+  const marks = await page.evaluate(() => (window as { __figureMarks?: Point[][] }).__figureMarks ?? []);
+  return { png: (await page.screenshot({ omitBackground: true, timeout: 90_000 })).toString('base64'), marks };
+}
+
+// The outlines of one figure as TikZ paths, in fractions of the cropped image
+// with (0,0) at the bottom left, so the paper can draw them over the PNG.
+function marksTex(file: string, marks: Point[][], [x0, y0, x1, y1]: Box): string {
+  const f = (v: number) => v.toFixed(4);
+  const paths = marks.map(
+    (m) => `\\draw[fmark] ${m.map(([x, y]) => `(${f((x * SCALE - x0) / (x1 - x0 + 1))},${f(1 - (y * SCALE - y0) / (y1 - y0 + 1))})`).join(' -- ')} -- cycle;`,
+  );
+  return `\\expandafter\\def\\csname figmarks@${file}\\endcsname{${paths.join(' ')}}\n`;
 }
 
 mkdirSync(OUT, { recursive: true });
@@ -78,20 +97,24 @@ try {
   const H = VIEW.height * SCALE - 1;
   for (const [group, figures] of Object.entries(GROUPS)) {
     if (only && group !== only) continue;
-    const shots: string[] = [];
+    const shots: Shot[] = [];
     for (const [name] of figures) shots.push(await render(page, base, name));
-    const boxes = await Promise.all(shots.map((s) => page.evaluate(drawn, s)));
+    const boxes = await Promise.all(shots.map((s) => page.evaluate(drawn, s.png)));
     const box: Box = [
       Math.max(0, Math.min(...boxes.map((b) => b[0])) - PAD),
       Math.max(0, Math.min(...boxes.map((b) => b[1])) - PAD),
       Math.min(W, Math.max(...boxes.map((b) => b[2])) + PAD),
       Math.min(H, Math.max(...boxes.map((b) => b[3])) + PAD),
     ];
+    let tex = `% Written by pnpm figure (games/invariant/scripts/make-figure.ts): the outlines\n% the figures of group ${group} ask for. Each \\csname figmarks@<file>\\endcsname\n% draws them with the style fmark, in the PNG's fractions.\n`;
     for (const [k, [, file]] of figures.entries()) {
       const path = `${OUT}/${file}.png`;
-      writeFileSync(path, Buffer.from(await page.evaluate(crop, [shots[k], box] as [string, Box]), 'base64'));
+      writeFileSync(path, Buffer.from(await page.evaluate(crop, [shots[k].png, box] as [string, Box]), 'base64'));
       console.log(`wrote ${path}`);
+      tex += marksTex(file, shots[k].marks, box);
     }
+    writeFileSync(`${OUT}/${group}-marks.tex`, tex);
+    console.log(`wrote ${OUT}/${group}-marks.tex`);
   }
 } finally {
   await browser.close();
