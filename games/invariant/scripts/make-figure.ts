@@ -1,18 +1,28 @@
-// Renders the paper's figure of the tutorial's states (ui/dev/Figure.tsx):
-// one transparent PNG per step, all cropped to the same box, so the board
-// lines up across them. pnpm figure <out-dir>
+// Renders the paper's figures (ui/dev/Figure.tsx): one transparent PNG per
+// figure, and the figures of one group cropped to the same box, so the board
+// lines up across them. pnpm figure <out-dir> [group]
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium, type Page } from 'playwright-core';
 import { createServer } from 'vite';
 
 const dir = process.argv[2];
-if (!dir) throw new Error('usage: pnpm figure <out-dir>');
+if (!dir) throw new Error('usage: pnpm figure <out-dir> [group]');
 const OUT = resolve(process.env.INIT_CWD ?? process.cwd(), dir);
 const VIEW = { width: 900, height: 620 };
 const SCALE = 6;
 const PAD = 6 * SCALE;
-const STEPS = ['a', 'b', 'c'];
+// Each group: the `?figure=` names, and the file each is written to.
+const GROUPS: Record<string, [string, string][]> = {
+  states: [
+    ['a', 'states-a'],
+    ['b', 'states-b'],
+    ['c', 'states-c'],
+  ],
+  overshoot: ['init', 'maint', 'exit', 'pass'].map((k) => [`overshoot-${k}`, `overshoot-${k}`]),
+};
+const only = process.argv[3];
+if (only && !GROUPS[only]) throw new Error(`no group ${only}; groups: ${Object.keys(GROUPS).join(', ')}`);
 
 type Box = [number, number, number, number];
 
@@ -51,8 +61,8 @@ async function crop([png, [x0, y0, x1, y1]]: [string, Box]): Promise<string> {
   return c.toDataURL('image/png').split(',')[1];
 }
 
-async function render(page: Page, base: string, step: string): Promise<string> {
-  await page.goto(new URL(`?figure=${step}`, base).href);
+async function render(page: Page, base: string, name: string): Promise<string> {
+  await page.goto(new URL(`?figure=${name}`, base).href);
   await page.waitForFunction(() => (window as { __figureReady?: boolean }).__figureReady, null, { timeout: 60_000 });
   return (await page.screenshot({ omitBackground: true, timeout: 90_000 })).toString('base64');
 }
@@ -64,21 +74,24 @@ const browser = await chromium.launch({ channel: 'chrome', chromiumSandbox: true
 try {
   const page = await browser.newPage({ viewport: VIEW, deviceScaleFactor: SCALE });
   const base = server.resolvedUrls!.local[0];
-  const shots: string[] = [];
-  for (const step of STEPS) shots.push(await render(page, base, step));
-  const boxes = await Promise.all(shots.map((s) => page.evaluate(drawn, s)));
   const W = VIEW.width * SCALE - 1;
   const H = VIEW.height * SCALE - 1;
-  const box: Box = [
-    Math.max(0, Math.min(...boxes.map((b) => b[0])) - PAD),
-    Math.max(0, Math.min(...boxes.map((b) => b[1])) - PAD),
-    Math.min(W, Math.max(...boxes.map((b) => b[2])) + PAD),
-    Math.min(H, Math.max(...boxes.map((b) => b[3])) + PAD),
-  ];
-  for (const [k, step] of STEPS.entries()) {
-    const path = `${OUT}/states-${step}.png`;
-    writeFileSync(path, Buffer.from(await page.evaluate(crop, [shots[k], box] as [string, Box]), 'base64'));
-    console.log(`wrote ${path}`);
+  for (const [group, figures] of Object.entries(GROUPS)) {
+    if (only && group !== only) continue;
+    const shots: string[] = [];
+    for (const [name] of figures) shots.push(await render(page, base, name));
+    const boxes = await Promise.all(shots.map((s) => page.evaluate(drawn, s)));
+    const box: Box = [
+      Math.max(0, Math.min(...boxes.map((b) => b[0])) - PAD),
+      Math.max(0, Math.min(...boxes.map((b) => b[1])) - PAD),
+      Math.min(W, Math.max(...boxes.map((b) => b[2])) + PAD),
+      Math.min(H, Math.max(...boxes.map((b) => b[3])) + PAD),
+    ];
+    for (const [k, [, file]] of figures.entries()) {
+      const path = `${OUT}/${file}.png`;
+      writeFileSync(path, Buffer.from(await page.evaluate(crop, [shots[k], box] as [string, Box]), 'base64'));
+      console.log(`wrote ${path}`);
+    }
   }
 } finally {
   await browser.close();

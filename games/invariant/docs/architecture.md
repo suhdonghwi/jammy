@@ -40,7 +40,7 @@ src/
     hud/         level screen: top bar, code panel, inputs, caption, formula box, rule lights, tile readout, controls
     home/        title (3D lettering), home copy and level list, corner buttons, language switch
     rules/       the rules and syntax cards
-    dev/         the link preview's page (`?poster`) and the paper's figure of the tutorial's states (`?figure=a|b|c`), development only
+    dev/         the link preview's page (`?poster`) and the paper's figures (`?figure=<name>`: the tutorial's states, and guesses at Overshoot's invariant), development only
   styles.css   Tailwind setup and the little that is clearer as CSS (see Styling)
 scripts/       level validation, the Z3 copy, font subsets, the title's glyphs, the link preview image
 tests/         unit tests (language, counterexample search)

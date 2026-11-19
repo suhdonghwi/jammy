@@ -38,4 +38,4 @@ the same headers. `pnpm dev` and `pnpm build` copy Z3's browser build into `publ
 | `pnpm preview` | Serves the production build with the solver's headers |
 | `pnpm fonts` | Rebuilds the Korean font subsets in `src/assets/fonts/` |
 | `pnpm og` | Redraws the link preview image, `public/og.png`, by screenshotting the game's `?poster` page in the system Chrome |
-| `pnpm figure <dir>` | Renders the paper's figure of the tutorial's twelve states (`?figure` page) in three steps, as transparent PNGs cropped to one box, into `<dir>` |
+| `pnpm figure <dir> [group]` | Renders the paper's figures (`?figure` page) as transparent PNGs into `<dir>`, the figures of one group cropped to one box: `states`, the tutorial's twelve states in three steps; `overshoot`, four guesses at Overshoot's invariant |
