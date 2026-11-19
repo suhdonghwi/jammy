@@ -7,6 +7,7 @@ import { cameraRig, FOV, MAX_DISTANCE } from './cameraRig';
 import { MAX_DPR } from './constants';
 import { HomeScene } from './home/HomeScene';
 import { LevelScene } from './level/LevelScene';
+import { figurePage } from './figureClip';
 import { Framing } from './Framing';
 import { startScene } from './sceneTime';
 
@@ -85,7 +86,7 @@ function SceneSwitch() {
 }
 
 export function World() {
-  const top = Math.max(1, Math.min(window.devicePixelRatio, MAX_DPR));
+  const top = Math.max(1, figurePage ? window.devicePixelRatio : Math.min(window.devicePixelRatio, MAX_DPR));
   const [dpr, setDpr] = useState(top);
   return (
     <Canvas
@@ -96,7 +97,7 @@ export function World() {
     >
       <PerformanceMonitor
         factor={1}
-        onChange={({ factor }) => setDpr(factor === 1 ? top : Math.round((1 + (top - 1) * factor) * 4) / 4)}
+        onChange={({ factor }) => !figurePage && setDpr(factor === 1 ? top : Math.round((1 + (top - 1) * factor) * 4) / 4)}
       />
       <Lights />
       <Controls />

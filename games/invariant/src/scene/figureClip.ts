@@ -13,6 +13,9 @@ export interface ClipBox {
 
 export const figureClip: { box: ClipBox | null } = { box: null };
 
+/** The figure page renders at the page's full pixel ratio, past MAX_DPR. */
+export const figurePage = import.meta.env.DEV && new URLSearchParams(location.search).has('figure');
+
 export function inFigureClip(x: number, y: number): boolean {
   const b = figureClip.box;
   return !b || (x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1);

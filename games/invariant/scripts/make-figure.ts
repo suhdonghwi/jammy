@@ -10,8 +10,8 @@ const dir = process.argv[2];
 if (!dir) throw new Error('usage: pnpm figure <out-dir>');
 const OUT = resolve(process.env.INIT_CWD ?? process.cwd(), dir);
 const VIEW = { width: 900, height: 620 };
-const SCALE = 3;
-const PAD = 18;
+const SCALE = 6;
+const PAD = 6 * SCALE;
 const STEPS = ['a', 'b', 'c'];
 
 type Box = [number, number, number, number];
