@@ -59,7 +59,7 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
-uniform vec3 uTop, uSide, uHatch;
+uniform vec3 uTop, uSide, uHatch, uLabel, uLabelHalo;
 uniform vec2 uHover;
 uniform float uHoverOn;
 uniform float uDim;
@@ -90,7 +90,7 @@ void main() {
     col = topColor(vFlags.x, vFlags.y, hatch, fwr);
     if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.45 * uGoalAmt);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
-    col = mix(col, vec3(1.0), axisLabelMask(vF, t) * 0.85);
+    col = drawAxisLabel(col, vF, t, uLabel, uLabelHalo, 0.9, 1.0);
     if (uHoverOn > 0.5 && t.x == int(uHover.x) && t.y == int(uHover.y)) {
       col = mix(col, vec3(1.0), (1.0 - smoothstep(-fwRing, fwRing, ringD)) * 0.95);
     }
@@ -206,6 +206,8 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
           uTop: colorUniform('slabTop'),
           uSide: colorUniform('slabSide'),
           uHatch: colorUniform('slabHatch'),
+          uLabel: colorUniform('slabLabel'),
+          uLabelHalo: colorUniform('slabLabelHalo'),
           ...goalUniforms(),
           uHover: { value: new THREE.Vector2() },
           uHoverOn: { value: 0 },
