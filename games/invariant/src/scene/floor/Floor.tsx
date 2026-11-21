@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { planeExists, type Inputs } from '../../levels/inputs';
 import type { CompiledLevel } from '../../levels/level';
 import { field } from '../area/field';
+import { figureClip } from '../figureClip';
 import { cameraRig } from '../cameraRig';
 import { SLAB_H } from '../constants';
 import { hover } from '../hover';
@@ -62,6 +63,8 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
         uShowStop: { value: showStop ? 1 : 0 },
         uShowGoal: { value: showGoal ? 1 : 0 },
         uShowAxes: { value: showAxes ? 1 : 0 },
+        uClip: { value: new THREE.Vector4() },
+        uClipOn: { value: 0 },
         uDigits: { value: getDigitTexture() },
         ...axisNameUniforms(),
         ...goalUniforms(),
@@ -102,6 +105,9 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
     u.uShowGoal.value = amounts.goal.at(showGoal ? 1 : 0, now);
     u.uShowAxes.value = amounts.axes.at(showAxes ? 1 : 0, now);
     u.uOpacity.value = amounts.shown.at(1, now);
+    const clip = figureClip.box;
+    u.uClipOn.value = clip ? 1 : 0;
+    if (clip) u.uClip.value.set(clip.x0, clip.y0, clip.x1, clip.y1);
     if (interactive && hover.tile) {
       u.uHover.value.set(hover.tile[0], hover.tile[1]);
       u.uHoverOn.value = 1;
