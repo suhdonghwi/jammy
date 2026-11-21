@@ -46,8 +46,8 @@ behind many small decisions; keep them when changing or adding UI.
 - **Overlap, don't queue.** The next move starts while the last one is
   finishing (frogs go home while the board changes).
   A sequence never waits on nothing.
-- **A new frog gets a beat before it moves.** Every hatch, in a
-  counterexample, Run or an example loop, finishes and rests for a beat
+- **A new frog gets a beat before it moves.** Every hatch, in Run or an
+  example loop, finishes and rests for a beat
   (`HATCHED_MS`) before the first hop, so its egg reads as where it starts.
 - **The camera's time follows the distance.** A short move is short, a long
   one is longer but never more than about a second, and it never jumps in
@@ -68,8 +68,7 @@ behind many small decisions; keep them when changing or adding UI.
 - **Quick where nothing is being shown.** A hop is the loop body running, so
   it takes long enough to follow, and every hop takes the same 0.34 s
   whichever button or sequence starts it, with the same short pause between
-  hops in a run. Only a long run staged by Check hops faster, so it ends in
-  a few seconds. Hatching, a frog going home,
+  hops in a run. Hatching, a frog going home,
   an egg coming back or stepping aside carry no content, so they take about
   a fifth of a second, and an egg starts coming back as its frog starts to
   leave rather than after it has gone.
@@ -111,6 +110,12 @@ behind many small decisions; keep them when changing or adding UI.
   camera first goes to the nearest ones, so no rule is checked off screen. The first failing
   rule ends the check; an undecided one gets an amber light with a question
   mark.
+- **A failure looks the same whether or not a real frog gets there.** An
+  Initialization failure rings the egg off the area with its red tag; a
+  Maintenance failure raises a ghost frog on the tile, which hops off the
+  area; an Exit failure raises one on the stop that is not a goal. Check
+  never stages a real frog's run (design.md, *Ghost frogs*), so frogs on
+  the board go home and Check's frogs are always ghost frogs.
 - **The board changes only when the learner asks.** If the failing case is
   on another board, nothing moves: the rule's light turns red and the
   caption says nothing breaks near this board, but something does at the
@@ -118,8 +123,8 @@ behind many small decisions; keep them when changing or adding UI.
   the input, and the boards stacked as floors, were both tried and read as
   busy.) The button switches the board at once with the slabs' sound, and
   the camera holds still on it for a beat; then, if it is off
-  screen, the camera flies to it and the frog sets off just before it
-  lands; if it is on screen the camera stays put. The light turns red as the caption arrives.
+  screen, the camera flies to it and the failure starts playing just
+  before it lands; if it is on screen the camera stays put. The light turns red as the caption arrives.
   The last picture stays under the result caption, and clear of it: a taller
   caption nudges the camera. A red light, like the caption's Replay, plays
   the failure again.
@@ -179,8 +184,7 @@ behind many small decisions; keep them when changing or adding UI.
   frog stood so the frog hopping away uncovers it, and a dashed green arc
   joins each to the next, the same arc a hop draws. The trail grows with
   each hop and stays after the frog stops, so where it came from can still
-  be read. One trail shows at a time: the frog the learner picked, or the
-  real frog Check staged. It goes when the frog does, fading with it
+  be read. One trail shows at a time: the frog the learner picked. It goes when the frog does, fading with it
   rather than vanishing. A ghost frog is pale
   blue and has one dark dashed arc, its single hop: it has no past. The
   tutorial's ten tested frogs and the example's looping frogs leave no

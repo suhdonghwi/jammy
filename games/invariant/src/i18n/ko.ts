@@ -133,11 +133,9 @@ export const ko: Messages = {
     noLongerHolds: (part) => ` 여기서는 \`${part}\` 조건이 깨집니다.`,
     falseThere: (part) => ` 여기서는 \`${part}\` 조건이 거짓입니다.`,
     startsOutsideTag: (area) => `${area} 밖에서 출발`,
-    startsOutside: (state, area) => `이 개구리는 ${state}에서 출발하는데, ${area} 밖입니다.`,
+    startsOutside: (state, area) => `${state}의 알이 ${area} 밖에 있습니다.`,
     landsOutsideTag: (area) => `${area} 밖에 착지`,
     landsOutside: (from, to, area) => `${from}의 유령 개구리가 한 번 뛰면 ${to}에 착지하는데, ${area} 밖입니다.`,
-    eggLandsOutside: (from, to, area) => `${from}의 알에서 나온 개구리가 한 번 뛰면 ${to}에 착지하는데, ${area} 밖입니다.`,
-    realLandsOutside: (egg, from, to, area) => `${egg}의 알에서 나온 개구리가 ${from}까지 온 뒤, 다음 점프에서 ${to}에 착지하는데, ${area} 밖입니다.`,
     offGoalTag: '멈췄지만 목표가 아님',
     holdsTag: {
       initialization: '모든 알이 영역 위에',
@@ -145,7 +143,6 @@ export const ko: Messages = {
       exit: '영역 위에서 멈추는 곳은 모두 목표',
     },
     offGoal: (state) => `${state}의 유령 개구리는 거기서 멈추지만, 목표가 아닙니다. 사후 조건이 성립하지 않습니다.`,
-    realOffGoal: (egg, state) => `${egg}의 알에서 나온 개구리가 ${state}에서 멈추지만, 목표가 아닙니다. 사후 조건이 성립하지 않습니다.`,
   },
 
   langErrors: {
@@ -238,7 +235,7 @@ export const ko: Messages = {
     askMaintenance: '이제 **어떤 점프도 영역 밖으로 나가지 않도록** 고쳐 보세요. **검사**는 규칙 1과 2를 함께 확인합니다.',
     nudgeMaintenance: '개구리는 모두 `i = 0`에서 출발하고, 뛸 때마다 `i`는 늘어나기만 합니다.',
     ghostMaintenance:
-      '반투명한 개구리는 **유령 개구리**입니다. 검사는 실제 개구리를 실행하지 않고, 칸을 하나씩 확인하지도 않습니다. 식을 따져서 영역의 모든 칸을 한꺼번에 다룹니다. 이 유령 개구리는 점프가 영역 밖으로 나가는 칸 하나를 보여 줍니다. 실제 개구리는 여기에 오지 않을 수도 있지만, 영역은 올 수 있다고 말하고 있습니다.',
+      '반투명한 개구리는 **유령 개구리**입니다. 검사는 실제 개구리를 실행하지 않고, 칸을 하나씩 확인하지도 않습니다. 식을 따져서 영역의 모든 칸을 한꺼번에 다룹니다. 이 유령 개구리는 영역 위에 서 있지만, 한 번 뛰면 영역 밖에 착지합니다. 영역은 개구리가 여기에 있을 수 있다고 말하므로, 실제 개구리가 여기에 오든 오지 않든 이 점프도 따져야 합니다.',
     passedMaintenance:
       '정답입니다! 어떤 점프도 영역 밖으로 나가지 않으므로 **유지** 규칙이 성립합니다.\n\n반투명한 개구리들은 **유령 개구리**로, 몇 가지 예시일 뿐입니다. 검사는 실제 개구리를 실행하지 않고 칸을 하나씩 확인하지도 않습니다. 방정식을 풀듯 식을 따져서 영역의 모든 칸을 한꺼번에 다룹니다. 영역의 어느 칸에서 뛰어도 착지하는 곳은 영역 위입니다.',
     questionMaintenance: '영역 위에서 뛰면 다시 영역 위에 착지하나요?',

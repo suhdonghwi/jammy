@@ -104,7 +104,7 @@ async function checkPitfalls(level: CompiledLevel, inputs: Inputs) {
       continue;
     }
     const r = await checkFormula(ctx, level, f, inputs, { timeout: 5000 });
-    const failed = Object.entries(r.verdicts).flatMap(([k, v]) => (v.status === 'fail' ? [`${k} (${v.cex.run ? 'real' : 'ghost'} frog at ${showState(level, v.cex.state)}${v.cex.far ? ', far' : ''})`] : []));
+    const failed = Object.entries(r.verdicts).flatMap(([k, v]) => (v.status === 'fail' ? [`${k} (at ${showState(level, v.cex.state)}${v.cex.far ? ', far' : ''})`] : []));
     const undecided = Object.entries(r.verdicts).filter(([, v]) => v.status === 'undecided').map(([k]) => k);
     if (failed.length === 0) fail(`pitfall '${p.formula}' does not fail`);
     else if (undecided.length) fail(`pitfall '${p.formula}' has undecided rules: ${undecided}`);

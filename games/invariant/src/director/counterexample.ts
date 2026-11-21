@@ -8,9 +8,8 @@ import { showState } from '../levels/level';
 import { tileOf } from '../levels/tiles';
 import { BEAT, ms } from '../motion';
 import { cameraRig } from '../scene/cameraRig';
-import { HOP, type FrogSim } from '../scene/frogs/frogWorld';
 import { sceneNow, sleep } from '../scene/sceneTime';
-import { hatch, HATCHED_MS, hopFrog, sendFrogsHome } from './frogs';
+import { hopFrog, sendFrogsHome } from './frogs';
 import { GHOST_RISE, raiseGhost } from './ghosts';
 import { busyWhile, currentLevel, type Token } from './sequence';
 
@@ -19,6 +18,7 @@ export interface CounterexampleOptions {
   area?: string;
   tone?: CaptionTone;
   extra?: string;
+  /** Said after a ghost frog's caption: a Maintenance or Exit failure. */
   ghostExtra?: string;
   action?: () => Caption['action'];
 }
@@ -55,16 +55,18 @@ async function focusOn(tok: Token, cex: Counterexample, leaving: Promise<void>) 
   }
   const tile = (s: State) => tileOf(L, s);
   const labels = [cex.state, cex.next].flatMap((s) => (s ? [tile(s)] : []));
-  await Promise.all([cameraRig.arrive({ labels, focus: (cex.run ?? []).map(tile), centre: true }), leaving]);
+  await Promise.all([cameraRig.arrive({ labels, centre: true }), leaving]);
 }
 
 export function playCounterexample(cex: Counterexample, opts: CounterexampleOptions = {}) {
   return busyWhile((tok) => counterexample(tok, cex, opts));
 }
 
-const REAL_RUN_SECONDS = 6;
-const FASTEST_HOP = 0.08;
-
+// Every counterexample is shown the same way, whether or not a real frog can
+// get there: Check can't tell, and the rules don't ask. An Initialization
+// failure is an egg off the area, so only the egg is marked. A Maintenance or
+// Exit failure is a tile of the area, so a ghost frog stands on it: the area
+// claims a frog could be there.
 export async function counterexample(tok: Token, cex: Counterexample, opts: CounterexampleOptions) {
   const L = currentLevel();
   useGame.setState({ failMark: null, region: null });
@@ -75,41 +77,33 @@ export async function counterexample(tok: Token, cex: Counterexample, opts: Coun
   const prefix = opts.prefix ?? (cex.far ? say.far : '');
   const area = opts.area ?? say.yourArea;
   const broken = cex.broken ? (cex.rule === 'maintenance' ? say.noLongerHolds(cex.broken) : say.falseThere(cex.broken)) : '';
-  const run = cex.run;
-  let f: FrogSim;
-  if (run) {
-    f = hatch(run[0]);
-    await sleep(HATCHED_MS);
-    const pace = Math.max(FASTEST_HOP, Math.min(HOP, REAL_RUN_SECONDS / run.length));
-    for (const s of run.slice(1)) {
-      if (!tok.alive) return;
-      await hopFrog(L, f, s, pace);
-    }
-  } else {
-    sfx.ghost();
-    f = raiseGhost(cex.state);
-    await sleep(ms(GHOST_RISE + BEAT));
-  }
-  if (!tok.alive) return;
-  const from = run ? run[0] : null;
-  let text: string;
   if (cex.rule === 'initialization') {
+    await sleep(ms(BEAT));
+    if (!tok.alive) return;
     markFailure(x, y, say.startsOutsideTag(area));
-    text = `${prefix}${say.startsOutside(fmt(cex.state), area)}${broken}`;
-  } else if (cex.rule === 'maintenance' && cex.next) {
+    finish(cex, opts, `${prefix}${say.startsOutside(fmt(cex.state), area)}${broken}`);
+    return;
+  }
+  sfx.ghost();
+  const f = raiseGhost(cex.state);
+  await sleep(ms(GHOST_RISE + BEAT));
+  if (!tok.alive) return;
+  let text: string;
+  if (cex.rule === 'maintenance' && cex.next) {
     await hopFrog(L, f, cex.next);
     if (!tok.alive) return;
     markFailure(...tileOf(L, cex.next), say.landsOutsideTag(area));
-    const lands =
-      !from ? say.landsOutside(fmt(cex.state), fmt(cex.next), area)
-      : run!.length === 1 ? say.eggLandsOutside(fmt(cex.state), fmt(cex.next), area)
-      : say.realLandsOutside(fmt(from), fmt(cex.state), fmt(cex.next), area);
-    text = `${prefix}${lands}${broken}`;
+    text = `${prefix}${say.landsOutside(fmt(cex.state), fmt(cex.next), area)}${broken}`;
   } else {
     markFailure(x, y, say.offGoalTag);
-    text = `${prefix}${from ? say.realOffGoal(fmt(from), fmt(cex.state)) : say.offGoal(fmt(cex.state))}`;
+    text = `${prefix}${say.offGoal(fmt(cex.state))}`;
   }
-  if (!run && opts.ghostExtra) text += `\n\n${opts.ghostExtra}`;
+  if (opts.ghostExtra) text += `\n\n${opts.ghostExtra}`;
+  finish(cex, opts, text);
+}
+
+function finish(cex: Counterexample, opts: CounterexampleOptions, said: string) {
+  let text = said;
   if (opts.extra) text += `\n\n${opts.extra}`;
   const { mode, pitfallMessage } = useGame.getState();
   if (mode === 'level' && pitfallMessage) text += `\n\n${pitfallMessage}`;

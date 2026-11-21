@@ -65,7 +65,8 @@ labels.
 **Real frogs and ghost frogs.** Real frogs are actual runs: they hatch from
 eggs. **Ghost frogs** (유령 개구리) are hypothetical states placed to test the
 area's claim: see-through and floating a little above their tile, so they
-read as "not really there" without an explanation.
+read as "put there by Check" without an explanation. Every frog Check shows
+is a ghost frog, and real frogs come only from the learner's own runs.
 
 ## The narrative: intuition first, then the rules
 
@@ -96,11 +97,17 @@ Check asks of every tile: if a frog were here, where would it land, or where
 would it stop? A ghost frog acts out that question. If you don't want a frog
 there, shrink the claim — that is **strengthening**.
 
-A failure on a real frog's path is acted out by that real frog, hopping
-there from its egg. Check looks for those first: if a real frog in view
-leaves the area, that is the failure shown. A ghost frog stands on a tile no
-real frog passes. The scene shows the difference: a real frog trails its
-earlier selves back to its egg, a ghost frog trails nothing.
+A ghost frog says nothing about whether a real frog gets to its tile, and
+it looks the same either way. Check can't tell in general: knowing which
+tiles no frog reaches takes an invariant, the very thing the learner is
+looking for, and searching runs only finds the tiles some frog does reach.
+The rules don't ask either, since they are about every tile of the area.
+(Earlier versions acted out a failure on a real frog's path with that real
+frog, hopping from its egg, and raised a ghost frog otherwise. Since the
+search was bounded, "ghost" only meant "not found on a run", but the
+contrast read as "no frog can get here".) What the learner can see is the
+eggs: a ghost frog standing on an egg is on a tile a real frog does start
+from, and that frog can be run to check.
 
 Nothing else stages the scene: tags, outlines, the spotlight, lit code lines
 and the camera show where to look.
@@ -138,10 +145,11 @@ programmer expects, and have room for arrays.)
 - **A rule passes only if it is proved.** Z3 decides every rule over every
   plane and tile. A large search never silently stands in for a proof — that
   would contradict what the game teaches.
-- **On failure, show one concrete frog**, the first found in this order:
-  1. *a real frog on the plane in view* — the eggs within 8 tiles of the
-     origin are run until they stop; the first hop that leaves the area is a
-     Maintenance failure;
+- **On failure, show one counterexample**, the first found in this order:
+  1. *a hop on a real frog's run on the plane in view* — the eggs within 8
+     tiles of the origin are run until they stop; the first hop that leaves
+     the area is a Maintenance failure. This only picks which failure to
+     show: it is shown like any other;
   2. *the smallest tile on the plane in view* — of the tiles within 8 of the
      origin, the one nearest the origin that breaks the rule (for
      Initialization, the nearest egg off the area);
@@ -151,14 +159,13 @@ programmer expects, and have room for arrays.)
 
   Steps 1 and 2 are exact evaluation, with no solver. The 8 is the same in
   all three.
-- **Real or ghost is decided by running the frog.** The counterexample's
-  inputs fix its egg; that egg is run until it stops, and the counterexample
-  is a real frog if the run passes through it, a ghost frog otherwise. Where
-  a variable starts unset (Meet in the Middle, Even Out) a plane has many
-  eggs, and the ones within 8 of the origin are tried.
+- **Check never says whether a real frog gets there.** An Initialization
+  failure is an egg off the area, and only the egg is marked; a Maintenance
+  or Exit failure is a tile of the area, and a ghost frog stands on it (see
+  *Ghost frogs* above).
 - **Three verdicts**, played rule by rule (see experience.md, *Verifying*):
-  proved (the level is cleared); a counterexample (acted out by a real frog if
-  it is on that frog's path, otherwise a ghost frog); **undecided** (said in the
+  proved (the level is cleared); a counterexample (an egg off the area, or a
+  ghost frog on the area); **undecided** (said in the
   caption, the level is *not* cleared). Before giving up, the checker tries
   proving the formula equivalent to a known solution. Ghost frogs only show
   where they would hop: Check asks the question, it doesn't run the frog.
@@ -285,9 +292,11 @@ endless as the loop it stands in for. Both are real levels (`tutorialLevel`,
 - **Every failure is witnessed:** by the learner's own formula if it fails,
   or else by a demo of that stage's pitfall, after the learner predicts the
   outcome (yes or no; the caption says if they were right, nothing is
-  counted). Initialization's and Maintenance's pitfalls fail on real frogs;
-  Exit's (`i >= 0`) on a ghost frog, which is where the objection
-  above is answered.
+  counted). Initialization's pitfall leaves an egg off the area;
+  Maintenance's fails on a ghost frog standing on an egg; Exit's (`i >= 0`)
+  on a ghost frog on a tile no real frog reaches, which is where the
+  objection above is answered (the caption says so: the tutorial's author
+  knows, Check doesn't).
 - **One hint per stage:** a sentence that names the fact that matters,
   without giving the formula.
 - **Say what things are once, then keep one name each** (below).

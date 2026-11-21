@@ -2,10 +2,10 @@ import type { Context } from 'z3-solver';
 import { mk } from '../lang/ast';
 import type { Inputs } from '../levels/inputs';
 import { compileFormula, type CompiledLevel, type Formula, type Pitfall } from '../levels/level';
-import { realFailure, realRunTo, smallestOnPlane } from './nearby';
+import { failureOnARun, smallestOnPlane } from './nearby';
 import { breaksRule, counterexample, ruleQuery } from './rules';
 import { equivalent, solve } from './smt';
-import { RULES, type Counterexample, type Rule, type RuleVerdict, type Verdicts } from './types';
+import { RULES, type Rule, type RuleVerdict, type Verdicts } from './types';
 
 interface CheckOptions {
   timeout?: number;
@@ -15,11 +15,6 @@ interface CheckOptions {
 export interface CheckResult {
   verdicts: Partial<Verdicts>;
   pitfall?: Pitfall;
-}
-
-function withRun(level: CompiledLevel, cex: Counterexample): Counterexample {
-  if (cex.run) return cex;
-  return { ...cex, run: cex.rule === 'initialization' ? [cex.state] : realRunTo(level, cex.state) };
 }
 
 export async function checkFormula(
@@ -33,9 +28,9 @@ export async function checkFormula(
   const rules = opts.rules ?? RULES;
   const verdicts: Partial<Verdicts> = {};
   for (const rule of rules) {
-    const near = (rule === 'maintenance' ? realFailure(level, inv, inputs) : undefined) ?? smallestOnPlane(level, inv, rule, inputs);
+    const near = (rule === 'maintenance' ? failureOnARun(level, inv, inputs) : undefined) ?? smallestOnPlane(level, inv, rule, inputs);
     if (near) {
-      verdicts[rule] = { status: 'fail', cex: withRun(level, near) };
+      verdicts[rule] = { status: 'fail', cex: near };
       continue;
     }
     const query = ruleQuery(level, inv.expr, rule);
@@ -44,7 +39,7 @@ export async function checkFormula(
       r.kind === 'unsat'
         ? { status: 'pass', how: 'proved' }
         : r.kind === 'sat'
-          ? { status: 'fail', cex: withRun(level, counterexample(level, inv, rule, r.state, true)) }
+          ? { status: 'fail', cex: counterexample(level, inv, rule, r.state, true) }
           : { status: 'undecided' };
   }
 
