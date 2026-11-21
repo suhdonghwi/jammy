@@ -34,20 +34,17 @@ function tiles(level: CompiledLevel, plane: State): State[] {
   return smallestFirst(level, ranging([level.view.x, level.view.y], plane));
 }
 
-function sameTile(level: CompiledLevel, a: State, b: State): boolean {
-  return level.program.vars.every((v) => a[v.name] === b[v.name]);
-}
-
-export function realFailure(level: CompiledLevel, inv: Formula, inputs: Inputs): Counterexample | undefined {
+// Only picks which Maintenance counterexample to show: one on the run of an
+// egg in view comes first. The counterexample says nothing about runs, and
+// Check shows it like any other (design.md, *The checker*).
+export function failureOnARun(level: CompiledLevel, inv: Formula, inputs: Inputs): Counterexample | undefined {
   const maintenance = ruleQuery(level, inv.expr, 'maintenance');
   for (const egg of eggs(level, toBig(inputs))) {
     if (!withinBudget(() => holds(inv.expr, egg))) continue;
-    const run = [egg];
     let s = egg;
     for (let k = 0; k < RUN_LIMIT && running(level, s); k++) {
-      if (breaksRule(maintenance, s)) return { ...counterexample(level, inv, 'maintenance', s, false), run };
+      if (breaksRule(maintenance, s)) return counterexample(level, inv, 'maintenance', s, false);
       s = hop(level, s);
-      run.push(s);
     }
   }
 }
@@ -58,24 +55,4 @@ export function smallestOnPlane(level: CompiledLevel, inv: Formula, rule: Rule, 
   const query = ruleQuery(level, inv.expr, rule);
   const s = candidates.find((c) => breaksRule(query, c));
   return s && counterexample(level, inv, rule, s, false);
-}
-
-export function realRunTo(level: CompiledLevel, s: State): State[] | undefined {
-  const inputs: State = {};
-  for (const { name } of level.program.inputs) inputs[name] = s[name];
-  let shortest: State[] | undefined;
-  for (const egg of eggs(level, inputs)) {
-    const run = [egg];
-    let cur = egg;
-    for (let k = 0; k <= RUN_LIMIT && (!shortest || run.length < shortest.length); k++) {
-      if (sameTile(level, cur, s)) {
-        shortest = run;
-        break;
-      }
-      if (!running(level, cur)) break;
-      cur = hop(level, cur);
-      run.push(cur);
-    }
-  }
-  return shortest;
 }
