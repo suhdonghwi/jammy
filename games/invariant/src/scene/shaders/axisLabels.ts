@@ -4,8 +4,13 @@ import type { CompiledLevel } from '../../levels/level';
 const GLYPHS = '0123456789-=abcdefghijklmnopqrstuvwxyz';
 const CELL = 0.14;
 const advance: number[] = [...GLYPHS].map(() => CELL * 0.8);
-const LABEL_SIZE = 0.82;
+const LABEL_SIZE = 0.84;
 
+/**
+ * The tags on the axes' tiles (`i=3`, `n=0`). The glyph texture holds each
+ * glyph in red and the glyph grown by a halo in green, so a tag stays
+ * legible over stripes, pools and slabs.
+ */
 export const GLSL_AXIS_LABELS = /* glsl */ `
 uniform sampler2D uDigits;
 uniform ivec3 uNameX, uNameY;
@@ -15,19 +20,20 @@ uniform float uNameXW, uNameYW;
 uniform float uDigitW;
 int nameGlyph(ivec3 name, int k) { return k == 0 ? name.x : (k == 1 ? name.y : name.z); }
 float pick(vec4 v, int k) { return k == 0 ? v.x : (k == 1 ? v.y : (k == 2 ? v.z : v.w)); }
-float glyphMask(int glyph, float dx, float vy) {
+vec2 glyphMask(int glyph, float dx, float vy) {
   float u = 0.5 + dx / ${CELL.toFixed(2)};
-  if (u < 0.0 || u > 1.0) return 0.0;
-  return texture2D(uDigits, vec2((float(glyph) + u) / ${GLYPHS.length.toFixed(1)}, vy)).a;
+  if (u < 0.0 || u > 1.0) return vec2(0.0);
+  return texture2D(uDigits, vec2((float(glyph) + u) / ${GLYPHS.length.toFixed(1)}, vy)).rg;
 }
-float labelMask(vec2 f, ivec3 name, int nameLen, vec4 mid, float nameW, int v, float row) {
+// x: glyph, y: halo
+vec2 labelMask(vec2 f, ivec3 name, int nameLen, vec4 mid, float nameW, int v, float row) {
   int a = v < 0 ? -v : v;
   int digits = a >= 100 ? 3 : (a >= 10 ? 2 : 1);
   int numLen = digits + (v < 0 ? 1 : 0);
   float pw = nameLen > 0 ? nameW : 0.0;
   float w = pw + uDigitW * float(numLen);
   vec2 q = (f - vec2(-0.41, -0.42 + row * ${(0.26 * LABEL_SIZE).toFixed(3)})) / min(${LABEL_SIZE.toFixed(2)}, 0.82 / w);
-  if (q.y < 0.0 || q.y > 0.23 || q.x < 0.0 || q.x >= w) return 0.0;
+  if (q.y < 0.0 || q.y > 0.23 || q.x < -0.03 || q.x >= w + 0.03) return vec2(0.0);
   float vy = q.y / 0.23;
   if (q.x < pw) {
     int k = 0;
@@ -37,20 +43,26 @@ float labelMask(vec2 f, ivec3 name, int nameLen, vec4 mid, float nameW, int v, f
     return glyphMask(k < nameLen ? nameGlyph(name, k) : 11, q.x - pick(mid, k), vy);
   }
   float x = (q.x - pw) / uDigitW;
-  int j = int(floor(x));
+  int j = int(clamp(floor(x), 0.0, float(numLen - 1)));
   int glyph = 10;
   if (!(v < 0 && j == 0)) {
     int pos = numLen - 1 - j;
     int p10 = pos == 0 ? 1 : (pos == 1 ? 10 : 100);
     glyph = a / p10 - (a / (p10 * 10)) * 10;
   }
-  return glyphMask(glyph, (fract(x) - 0.5) * uDigitW, vy);
+  return glyphMask(glyph, (x - float(j) - 0.5) * uDigitW, vy);
 }
-float axisLabelMask(vec2 f, ivec2 t) {
-  float m = 0.0;
+vec2 axisLabelMask(vec2 f, ivec2 t) {
+  vec2 m = vec2(0.0);
   if (t.y == 0) m = labelMask(f, uNameX, uNameXLen, uNameXMid, uNameXW, t.x, 0.0);
   if (t.x == 0 && (t.y != 0 || uNameYLen > 0)) m = max(m, labelMask(f, uNameY, uNameYLen, uNameYMid, uNameYW, t.y, t.y == 0 ? 1.0 : 0.0));
   return m;
+}
+vec3 drawAxisLabel(vec3 col, vec2 f, ivec2 t, vec3 ink, vec3 halo, float haloA, float amt) {
+  if (t.x != 0 && t.y != 0) return col;
+  vec2 m = axisLabelMask(f, t) * amt;
+  col = mix(col, halo, m.y * haloA);
+  return mix(col, ink, m.x);
 }
 `;
 
@@ -124,14 +136,24 @@ export function getDigitTexture(): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.generateMipmaps = false;
   tex.minFilter = THREE.LinearFilter;
-  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.colorSpace = THREE.NoColorSpace;
   const g = canvas.getContext('2d')!;
-  g.fillStyle = '#ffffff';
-  g.font = `600 84px ${CODE_FONT}`;
+  g.fillStyle = '#000000';
+  g.fillRect(0, 0, canvas.width, canvas.height);
+  g.font = `700 84px ${CODE_FONT}`;
   g.textAlign = 'center';
   g.textBaseline = 'alphabetic';
+  g.lineJoin = 'round';
+  g.lineWidth = 9;
+  g.globalCompositeOperation = 'lighter';
   [...GLYPHS].forEach((c, i) => {
-    g.fillText(c, i * cw + cw / 2, chh - 18);
+    const x = i * cw + cw / 2;
+    const y = chh - 18;
+    g.strokeStyle = g.fillStyle = '#00ff00';
+    g.strokeText(c, x, y);
+    g.fillText(c, x, y);
+    g.fillStyle = '#ff0000';
+    g.fillText(c, x, y);
     advance[i] = (g.measureText(c).width / cw) * CELL;
   });
   tex.needsUpdate = true;

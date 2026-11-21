@@ -29,7 +29,7 @@ uniform float uShowGoal;
 uniform float uShowAxes;
 uniform vec4 uClip;
 uniform float uClipOn;
-uniform vec3 uGap, uVoid, uTile, uStop, uHatch, uHoverCol, uCross, uLabel;
+uniform vec3 uGap, uVoid, uTile, uStop, uHatch, uHoverCol, uCross, uLabel, uLabelHalo;
 ${GLSL_COMMON}
 ${GLSL_AXIS_LABELS}
 ${GLSL_GOAL}
@@ -66,10 +66,7 @@ void main() {
     }
     if (onCross) tcol = mix(tcol, uCross * 0.96, st ? 0.45 : 0.9);
     if (st && uShowGoal > 0.002 && L_goal(t)) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
-    if (uShowAxes > 0.002) {
-      float m = axisLabelMask(f, t.xy);
-      tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);
-    }
+    if (uShowAxes > 0.002) tcol = drawAxisLabel(tcol, f, t.xy, uLabel, uLabelHalo, 1.0, uShowAxes);
     col = mix(uGap, tcol, inside);
     if (uShowGoal > 0.002) col = mix(col, SPLASH, splashAt(p) * 0.45 * uShowGoal);
   } else {

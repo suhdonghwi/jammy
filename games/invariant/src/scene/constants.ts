@@ -20,7 +20,10 @@ export const COLORS = {
   ghostFrog: '#b9caff',
   fail: '#f04f55',
   outline: '#2a3142',
-  label: '#9aa4b4',
+  label: '#3b4456',
+  labelHalo: '#ffffff',
+  slabLabel: '#ffffff',
+  slabLabelHalo: '#1d4ea6',
 };
 
 export const SLAB_H = 0.24;

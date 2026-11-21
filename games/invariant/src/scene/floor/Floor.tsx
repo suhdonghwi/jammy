@@ -77,6 +77,7 @@ export function Floor({ level, inputs, fadeIn = 0, interactive, showStop = true,
         uHoverCol: colorUniform('hover'),
         uCross: colorUniform('cross'),
         uLabel: colorUniform('label'),
+        uLabelHalo: colorUniform('labelHalo'),
       },
     });
     setAxisNames(m.uniforms, level);
