@@ -59,7 +59,7 @@ varying vec3 vWorld;
 varying vec2 vF;
 varying vec2 vFlags;
 varying vec2 vTile;
-uniform vec3 uTop, uSide, uHatch;
+uniform vec3 uTop, uSide, uStopCol, uStopHatch;
 uniform vec2 uHover;
 uniform float uHoverOn;
 uniform float uDim;
@@ -69,25 +69,29 @@ ${GLSL_COMMON}
 ${GLSL_AXIS_LABELS}
 ${GLSL_GOAL}
 ${GLSL_FADE}
-vec3 topColor(float stopFlag, float goalFlag, float hatch, float fwr) {
-  vec3 col = uTop;
-  bool stop = stopFlag > 0.5 && uStopAmt > 0.002;
-  if (stop) col = mix(uTop, uHatch, hatch * uStopAmt);
-  if (stop && goalFlag > 0.5 && uGoalAmt > 0.002) col = mix(col, drawGoal(col, vF, fwr, vTile), uGoalAmt);
-  return col;
+// A slab only lifts the ground: on a stop tile its top shows that tile's ground
+// (striped grey, or amber where it is a goal) inside a blue rim.
+const float WINDOW = 0.3;
+vec3 topColor(float stopFlag, float goalFlag, float hatch, float win) {
+  if (stopFlag < 0.5 || uStopAmt < 0.002) return uTop;
+  vec3 ground = mix(uStopCol, uStopHatch, hatch);
+  if (goalFlag > 0.5 && uGoalAmt > 0.002) ground = mix(ground, goalGround(vTile + vF, vTile), uGoalAmt);
+  return mix(uTop, ground, win * uStopAmt);
 }
 void main() {
   vec2 fw = fwidth(vF);
   float hatchV = (vF.x - vF.y) * STOP_HATCH_FREQ;
   float hatch = stopHatch(hatchV, fwidth(hatchV));
-  float fwr = fwidth(length(vF));
+  float winD = sdRoundBox(vF, vec2(WINDOW), 0.07);
+  float fwWin = fwidth(winD);
+  float win = 1.0 - smoothstep(-fwWin, fwWin, winD);
   float ringD = abs(sdRoundBox(vF, vec2(0.372), 0.1)) - 0.026;
   float fwRing = fwidth(ringD);
   vec3 n = normalize(vN);
   float top = step(0.6, n.y);
   vec3 col;
   if (top > 0.5) {
-    col = topColor(vFlags.x, vFlags.y, hatch, fwr);
+    col = topColor(vFlags.x, vFlags.y, hatch, win);
     if (uGoalAmt > 0.002) col = mix(col, SPLASH, splashAt(vTile + vF) * 0.45 * uGoalAmt);
     ivec2 t = ivec2(int(floor(vTile.x + 0.5)), int(floor(vTile.y + 0.5)));
     col = mix(col, vec3(1.0), axisLabelMask(vF, t) * 0.85);
@@ -205,7 +209,8 @@ export function Slabs({ level, dim, showStop, showGoal }: { level: CompiledLevel
           uTime: { value: 0 },
           uTop: colorUniform('slabTop'),
           uSide: colorUniform('slabSide'),
-          uHatch: colorUniform('slabHatch'),
+          uStopCol: colorUniform('stopTile'),
+          uStopHatch: colorUniform('stopHatch'),
           ...goalUniforms(),
           uHover: { value: new THREE.Vector2() },
           uHoverOn: { value: 0 },

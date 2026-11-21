@@ -20,8 +20,7 @@ float tilePulse(vec2 tile, float dur, float rise, float fall) {
 
 export const GLSL_GOAL = /* glsl */ `
 uniform vec3 uGoal;
-uniform vec3 uPoolLight;
-uniform vec3 uPoolDeep;
+uniform vec3 uGoalGround;
 uniform float uTime;
 uniform float uLastEvent;
 ${GLSL_GOAL_PULSE}
@@ -67,31 +66,20 @@ float splashAt(vec2 p) {
 
 const vec3 SPLASH = vec3(1.0, 0.8, 0.36);
 
-vec3 drawGoal(vec3 col, vec2 f, float fwr, vec2 tc) {
-  float aa = fwr * 1.3;
-  float r = length(f);
-  float pool = 1.0 - smoothstep(0.3 - aa, 0.3 + aa, r);
-  vec2 n = r > 0.0 ? f / r : vec2(0.0);
-  vec3 water = mix(uPoolLight, uPoolDeep, smoothstep(0.0, 0.3, r));
-  float shade = smoothstep(0.12, 0.3, r) * max(dot(n, vec2(0.0, 1.0)), 0.0);
-  water *= 1.0 - 0.12 * shade;
-  water = mix(water, vec3(1.0, 0.98, 0.92), rippleAt(tc + f) * 0.75);
+// A goal is a kind of ground: plain amber, the same on the floor and in a slab's window.
+// p is the point in plane coordinates, tc its tile. A frog stopping here flashes it and rings it.
+vec3 goalGround(vec2 p, vec2 tc) {
+  vec3 g = uGoalGround;
+  g = mix(g, vec3(1.0, 0.97, 0.86), rippleAt(p) * 0.55);
   float flash = tilePulse(tc, 0.8, 0.08, 2.0);
-  water = mix(water, vec3(1.0, 0.97, 0.82), flash * 0.85);
-  col = mix(col, SPLASH, flash * 0.55 * (1.0 - smoothstep(0.3, 0.46, r)));
-  col = mix(col, water, pool);
-  float edge = 1.0 - smoothstep(0.011 - aa, 0.011 + aa, abs(r - 0.3));
-  col = mix(col, vec3(1.0, 0.98, 0.93), edge * max(-dot(n, vec2(0.0, 1.0)), 0.0) * 0.85);
-  col = mix(col, mix(col, uGoal, 0.55) * 0.92, edge * max(dot(n, vec2(0.0, 1.0)), 0.0) * 0.55);
-  return col;
+  return mix(g, vec3(1.0, 0.96, 0.8), flash * 0.8);
 }
 `;
 
 export function goalUniforms(): Record<string, THREE.IUniform> {
   return {
     uGoal: { value: new THREE.Color(COLORS.goal) },
-    uPoolLight: { value: new THREE.Color(COLORS.poolLight) },
-    uPoolDeep: { value: new THREE.Color(COLORS.poolDeep) },
+    uGoalGround: { value: new THREE.Color(COLORS.goalGround) },
     ...goalEvents.uniforms,
   };
 }

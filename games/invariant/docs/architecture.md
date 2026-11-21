@@ -35,7 +35,7 @@ src/
     labels/      tags over tiles and frogs, and outlines of endless regions
     level/       a level's scene and hover preview
     home/        the home screen's scene
-    shaders/     shared GLSL: lighting and stripes, axis labels, goal pools and ripples, the horizon fade
+    shaders/     shared GLSL: lighting and stripes, axis labels, goal ground and ripples, the horizon fade
   ui/          the DOM over the scene; shared dialogs, caption Markdown, syntax colours, RevealSlot, error cards
     hud/         level screen: top bar, code panel, inputs, caption, formula box, rule lights, tile readout, controls
     home/        title (3D lettering), home copy and level list, corner buttons, language switch

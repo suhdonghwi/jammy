@@ -47,7 +47,6 @@ void main() {
 
   // derivatives up front, outside branches (they need uniform control flow)
   vec2 fw = fwidth(p);
-  float fwr = fwidth(length(f));
   float ringD = abs(sdRoundBox(f, vec2(0.47), 0.13)) - 0.035;
   float fwRing = fwidth(ringD);
   float d = sdRoundBox(f, vec2(${(TILE / 2).toFixed(3)}), 0.1);
@@ -62,10 +61,12 @@ void main() {
     bool st = stopAt(t);
     vec3 tcol = uTile;
     if (st) {
-      tcol = mix(uTile, mix(uStop, uHatch, hatch), uShowStop);
+      // the stop region is striped grey ground, except where the postcondition holds: amber goal ground
+      vec3 ground = mix(uStop, uHatch, hatch);
+      if (uShowGoal > 0.002 && L_goal(t)) ground = mix(ground, goalGround(p, tc), uShowGoal);
+      tcol = mix(uTile, ground, uShowStop);
     }
     if (onCross) tcol = mix(tcol, uCross * 0.96, st ? 0.45 : 0.9);
-    if (st && uShowGoal > 0.002 && L_goal(t)) tcol = mix(tcol, drawGoal(tcol, f, fwr, tc), uShowGoal);
     if (uShowAxes > 0.002) {
       float m = axisLabelMask(f, t.xy);
       tcol = mix(tcol, uLabel, m * 0.9 * uShowAxes);

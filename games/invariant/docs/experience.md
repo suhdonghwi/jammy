@@ -79,8 +79,8 @@ behind many small decisions; keep them when changing or adding UI.
   ten-egg test, the last of the frogs hopping together), then sits on the
   `while` line, green with a tick if the loop goes on, amber with a cross if
   it stops, and drops to cover the `ensures` lines when the loop ends.
-- **Visible, not loud.** A goal landing should be noticed (a ripple, a flash,
-  the pool's light column brightening) without becoming a splash.
+- **Visible, not loud.** A goal landing should be noticed (a ripple and a flash
+  on its amber ground, and a light column rising from it) without becoming a splash.
 - **Changing an input switches the board at once**, with the slabs' sound;
   animating the board itself (a wave across it, or boards sliding past)
   read worse than a clean switch. What makes a switch the game does not

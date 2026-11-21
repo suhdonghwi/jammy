@@ -41,10 +41,10 @@ bound*.
 |---|---|
 | Program state | A tile |
 | One loop iteration | One frog hop (never per statement — the invariant only matters at the loop head) |
-| Loop guard false | The **stop** region: striped tiles |
+| Loop guard false | The **stop** region: striped grey ground, or amber where it is a goal |
 | States the precondition allows (after init code) | **Eggs**; real frogs hatch from them |
 | States the precondition rules out | Faint ghost tiles — not possible states |
-| Postcondition | **Goal** pools, shown only in the stop region |
+| Postcondition | **Goals**: amber ground, shown only in the stop region |
 | Loop invariant | The learner's **area**, raised as blue slabs |
 | An input the loop never changes (an integer or an array) | A **plane** per value, picked in the **inputs** at the foot of the code card |
 
@@ -53,14 +53,17 @@ learner's area is the only saturated surface (blue slabs, height). Other
 colours are reserved: real frogs green, ghost frogs pale and see-through,
 goals amber, and **red only for failures** (and Reset's confirmation).
 
-Each idea has one channel, and the channels stack without changing each
-other. The area is height and blue, the same blue on every tile. The stop
-region is a surface pattern: a light tint and stripes on the floor, the same
-stripes, a shade darker than the slab, on a slab's top. A goal is its amber
-pool, on the floor or on a slab. So a stop on the area that is not a goal is
-a striped blue slab with no pool, as heavy as any other slab. Nothing is
-drawn as a line: the stop region has no outline, and the axes are only their
-labels.
+The level decides the ground and the area only lifts it. The ground is one
+of three kinds: plain white where the loop goes on; where it stops, striped
+grey, or plain amber where the postcondition holds (a goal). The area is
+height with blue sides and a blue rim, the same on every tile: a slab on a
+stop tile shows that tile's ground in a window inside its rim, a slab
+elsewhere is blue all over. So a stop on the area that is not a goal is a
+slab with a striped grey window, and Exit asks for no striped tile on the
+area, as Initialization asks for every egg on it. The rim and sides keep such
+a slab as heavy as any other (a stop slab that turned pale once read as a
+weaker area). Nothing is drawn as a line: the stop region has no outline,
+and the axes are only their labels.
 
 **Real frogs and ghost frogs.** Real frogs are actual runs: they hatch from
 eggs. **Ghost frogs** (유령 개구리) are hypothetical states placed to test the
@@ -310,7 +313,7 @@ or not, is too weak.
 | States a frog can start from | **eggs** | 알 |
 | `ensures` | the **postcondition** | 사후 조건 |
 | Tiles where the postcondition holds | **goals** | 목표 |
-| Loop guard false | the loop **stops** here | 멈춘다 (빗금 친 칸) |
+| Loop guard false | the loop **stops** here (striped tiles, amber where a goal) | 멈춘다 (빗금 친 칸, 목표면 주황색 칸) |
 | The learner's formula | the **area** (**invariant area**); it is the **loop invariant** | 영역 (불변식 영역), 루프 불변식 |
 | Raised tiles | **slabs** | 블록 |
 | A state placed to test the area's claim | a **ghost frog** | 유령 개구리 |

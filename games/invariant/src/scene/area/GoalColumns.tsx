@@ -39,9 +39,8 @@ varying vec3 vWorld;
 void main() {
   vec3 V = normalize(cameraPosition - vWorld);
   float edge = pow(1.0 - abs(dot(normalize(vN), V)), 1.4);
-  float fall = pow(1.0 - vV, 1.6);
-  float a = fall * (0.2 + 0.32 * edge);
-  a += (0.25 + 0.45 * edge) * vBurst * pow(1.0 - vV, 0.8);
+  // no column at rest (a goal is ground, not an object): it rises only when a frog stops here
+  float a = (0.25 + 0.45 * edge) * vBurst * pow(1.0 - vV, 0.8);
   a *= smoothstep(0.0, 0.7, uTime - uAppearT0);
   vec3 col = mix(uColor, vec3(1.0, 0.93, 0.72), 0.25 + 0.4 * vBurst);
   gl_FragColor = vec4(col, min(a, 0.92));
@@ -52,7 +51,7 @@ void main() {
 export function GoalColumns() {
   const { tiles } = useMaskTiles(GOAL);
 
-  const base = useMemo(() => new THREE.CylinderGeometry(0.3, 0.3, 0.4, 40, 1, true).translate(0, 0.2, 0), []);
+  const base = useMemo(() => new THREE.CylinderGeometry(0.424, 0.424, 0.4, 4, 1, true).rotateY(Math.PI / 4).translate(0, 0.2, 0), []);
   const geom = useMemo(() => {
     const n = tiles.length;
     const tile = new Float32Array(n * 2);

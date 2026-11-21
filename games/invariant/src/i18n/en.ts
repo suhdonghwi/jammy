@@ -203,7 +203,7 @@ export const en = {
     eggs: 'Where can a frog start? The **precondition** is what we assume about the input. Here, the precondition `requires n >= 0` lets `n` be any number from `0` up.\n\nEach **egg** is one place a frog can start.',
     eggsTag: 'starts at i = 0, n = 2',
     goals:
-      'The **postcondition**, `ensures i == n`, is the condition that must hold once the loop ends. The tiles where it holds are the **goals**, the amber pools.\n\nThe frog you stepped stopped on one, at `i = 3, n = 3`.',
+      'The **postcondition**, `ensures i == n`, is the condition that must hold once the loop ends. Of the striped tiles, the ones where it holds turn amber: they are the **goals**.\n\nThe frog you stepped stopped on one, at `i = 3, n = 3`.',
     goalsTag: 'stopped on a goal',
     bug: 'Not every place to stop is a goal. A frog that stopped here, at `i = 3, n = 1`, would leave the loop with `i ≠ n`: the program would be wrong.\n\nFor the program to be correct, **every frog must stop on a goal**.',
     bugTag: 'stops, but i ≠ n',
@@ -215,7 +215,7 @@ export const en = {
     testedTag: 'tested: n = 0 to 9',
     endlessTag: 'n = 18, 19, … never end',
     detour: 'There is a way to be sure about every egg without hatching infinitely many of them. Let’s leave our loop for a moment.',
-    exWorld: 'Here is another loop. Its frogs hatch and hop straight to the right until they reach the stripes, where they stop.\n\nThis loop’s eggs never end either: they go on up and down forever.',
+    exWorld: 'Here is another loop. Its frogs hatch and hop straight to the right until the loop stops, on an amber or a striped tile.\n\nThis loop’s eggs never end either: they go on up and down forever.',
     exArea:
       'These blue slabs are an **invariant area**. Drawing an area is claiming that **“every tile a frog ever lands on is on this area.”**',
     exBadTag: 'stops, but not a goal',
@@ -224,7 +224,7 @@ export const en = {
     exEndings: 'On the area, the loop can only stop in this one column, and every tile of it is a goal. So if the claim that frogs only ever move on the area is true, **every frog stops on a goal**.',
     exEndingTag: 'a possible ending',
     exRules:
-      'So all it takes is three things:\n\n- **Initialization:** every egg is on the area.\n- **Maintenance:** no hop leads off the area.\n- **Exit:** every striped tile on the area is a goal.\n\nThen every frog is proved to stop on a goal.',
+      'So all it takes is three things:\n\n- **Initialization:** every egg is on the area.\n- **Maintenance:** no hop leads off the area.\n- **Exit:** no striped tile is on the area, so every stop on it is a goal.\n\nThen every frog is proved to stop on a goal.',
     backToOurs: 'Back to our loop',
 
     draw: 'Back to our loop, and this time you draw the area. Type any condition on `i` and `n`: the tiles where it’s true rise as **slabs**.\n\nTry something like `i == 2`, `i % 2 == 0` or `i < n`.',
@@ -249,16 +249,16 @@ export const en = {
     stillOnTag: 'still on your area',
 
     leadExit:
-      'When it reaches a striped tile and the loop stops, the frog is still on your area. The outlined tiles are where a frog can stop on this area.\n\n**So does a frog that stops on the area always stop on a goal?** Making sure of that is the third rule.',
+      'When the loop stops, the frog is still on your area. The outlined tiles are where a frog can stop on this area.\n\n**So does a frog that stops on the area always stop on a goal?** Making sure of that is the third rule.',
 
     askExit:
-      '**Rule 3 · Exit:** every striped tile on your area must be a goal.\n\nChange your area so **every striped tile on it is a goal**, then press **Check**. It now tests all three rules.',
+      '**Rule 3 · Exit:** no striped tile may be on your area, so that every stop on it is a goal.\n\nChange your area so **no striped tile is on it**, then press **Check**. It now tests all three rules.',
     nudgeExit: 'A real frog never passes `n`, so `i` is never greater than `n`.',
     objection:
       '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile. But your area claims “a frog could be here too”. The area is too large.',
     objectionDemo:
       '“But `i` can never pass `n`!” Indeed, no real frog gets to this tile.\n\nBut the area `i >= 0` claims “a frog could be on any tile where `i >= 0`”. Checking that claim covers tiles where `i` is greater than `n` too.',
-    passedExit: 'Correct! Every striped tile on your area is a goal: **Exit** holds.',
+    passedExit: 'Correct! No striped tile is on your area, so every stop on it is a goal: **Exit** holds.',
     questionExit: 'Would it pass all three rules?',
     afterDemoExit: (mine: string) =>
       `\`i >= 0\` isn’t a false claim in itself: every real frog keeps \`i >= 0\`. But it leaves room for a frog to stop off a goal, so it is too weak to prove the postcondition.\n\nYour area ${mine}, on the other hand, is strong enough to prove it.`,
@@ -270,7 +270,7 @@ export const en = {
     tooWeakTag: 'too weak: stops off a goal',
 
     wrapUp: (mine: string) =>
-      `Your area ${mine} passes all three rules:\n\n- **Initialization:** every egg is on it.\n- **Maintenance:** no hop leads off it.\n- **Exit:** every striped tile on it is a goal.\n\nSo every frog stops on a goal. You’ve proved our loop correct for infinitely many inputs! 🎉`,
+      `Your area ${mine} passes all three rules:\n\n- **Initialization:** every egg is on it.\n- **Maintenance:** no hop leads off it.\n- **Exit:** no striped tile is on it.\n\nSo every frog stops on a goal. You’ve proved our loop correct for infinitely many inputs! 🎉`,
     finish: 'Finish',
   },
 };
