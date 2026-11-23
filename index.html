@@ -11,7 +11,6 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍓</text></svg>"
     />
-    <!-- Invariant Frog's rounded type: Fredoka for headings, Nunito for the rest -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -46,9 +45,7 @@
       }
       body {
         margin: 0;
-        /* svh, not vh: on phones 100vh is the height with the browser's
-           toolbars hidden, taller than the screen while they show, so the page
-           scrolled though everything fits */
+        /* on phones 100vh is taller than the screen while the toolbars show */
         min-height: 100vh;
         min-height: 100svh;
         display: grid;
