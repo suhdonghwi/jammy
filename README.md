@@ -17,6 +17,7 @@ always come from the same build.
 www.jammy.fun redirects to jammy.fun through the domain's own settings in
 Vercel (Project → Domains), not through `vercel.json`.
 
-Any other path redirects to the landing page (a temporary redirect, so a game
-added later at a new path is never shadowed by a cached one). A path under a
-game that doesn't exist gets `404.html`, which sends the visitor here too.
+The game is public at https://invariant.donghwi.me/. Its root serves the
+game build with the isolation headers required by Z3. On jammy.fun,
+`/invariant` and its descendants permanently redirect to the game domain.
+Other unknown hub paths temporarily redirect to the landing page.
