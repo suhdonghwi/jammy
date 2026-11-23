@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "redirects": [
+    {
+      "source": "/invariant/",
+      "destination": "https://invariant.donghwi.me/",
+      "permanent": true
+    },
+    {
+      "source": "/invariant/:path*",
+      "destination": "https://invariant.donghwi.me/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/((?!invariant(?:/|$)).+)",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
+}

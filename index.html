@@ -18,26 +18,23 @@
       href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito:wght@400;600&display=swap"
     />
     <style>
-      /* The colours follow games/invariant/src/styles.css. */
       :root {
         --wash: #f4f6fa;
-        --card: #ffffff;
         --ink: #1c2333;
         --muted: #66708a;
-        --line: rgb(32 44 70 / 0.09);
         --grid: rgb(32 44 70 / 0.05);
-        --brand: #3b82f6;
+
         color-scheme: light dark;
       }
       @media (prefers-color-scheme: dark) {
         :root {
           --wash: #151a24;
-          --card: #1d2430;
+
           --ink: #eef1f6;
           --muted: #9aa4b8;
-          --line: rgb(200 212 235 / 0.1);
+
           --grid: rgb(200 212 235 / 0.04);
-          --brand: #5b97f8;
+
         }
       }
       * {
@@ -71,28 +68,13 @@
         margin: 0 0 28px;
         color: var(--muted);
       }
-      ul {
-        list-style: none;
+      .placeholder {
         margin: 0;
-        padding: 0;
-        display: grid;
-        gap: 12px;
-      }
-      a.game {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 16px 18px;
-        border: 1px solid var(--line);
+        padding: 28px 18px;
+        border: 2px dotted var(--muted);
         border-radius: 20px;
-        background: var(--card);
-        color: inherit;
-        text-decoration: none;
-      }
-      a.game:hover,
-      a.game:focus-visible {
-        border-color: var(--brand);
-        outline: none;
+        color: var(--muted);
+        text-align: center;
       }
       footer {
         margin-top: 24px;
@@ -115,17 +97,6 @@
         height: 16px;
         fill: currentColor;
       }
-      .emoji {
-        font-size: 32px;
-        line-height: 1;
-      }
-      .name {
-        font: 600 18px/1.3 Fredoka, ui-rounded, system-ui, sans-serif;
-      }
-      .desc {
-        color: var(--muted);
-        font-size: 14px;
-      }
       @media (max-width: 480px) {
         body {
           padding: 24px 16px;
@@ -137,19 +108,9 @@
     <main>
       <h1>jammy.fun</h1>
       <p class="lede">small games, made for fun.</p>
-      <ul>
-        <li>
-          <a class="game" href="https://invariant.donghwi.me/">
-            <span class="emoji" aria-hidden="true">🐸</span>
-            <span>
-              <span class="name">Invariant Frog</span><br />
-              <span class="desc">A visual intro to loop invariants, checked by Z3.</span>
-            </span>
-          </a>
-        </li>
-      </ul>
+      <p class="placeholder">TBD</p>
       <footer>
-        <a href="https://github.com/suhdonghwi/invariant-frog">
+        <a href="https://github.com/suhdonghwi/jammy">
           <svg viewBox="0 0 16 16" aria-hidden="true">
             <path
               d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
